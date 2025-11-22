@@ -77,6 +77,11 @@ const PropertyDetail: React.FC = () => {
     loadData();
   }, [id]);
 
+  // Scroll to top when component mounts or ID changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [id]);
+
   const toggleFavorite = () => {
     if (!property) return;
     if (isFav) {
