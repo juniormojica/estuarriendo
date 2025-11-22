@@ -1,0 +1,215 @@
+import React, { useState, useRef, DragEvent } from 'react';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
+
+interface ImageUploaderProps {
+    images: string[]; // base64 strings or URLs
+    onChange: (images: string[]) => void;
+    maxImages?: number;
+    maxSizeMB?: number;
+}
+
+const ImageUploader: React.FC<ImageUploaderProps> = ({
+    images,
+    onChange,
+    maxImages = 10,
+    maxSizeMB = 5
+}) => {
+    const [isDragging, setIsDragging] = useState(false);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = async (files: FileList | null) => {
+        if (!files) return;
+
+        const fileArray = Array.from(files);
+        const remainingSlots = maxImages - images.length;
+        const filesToProcess = fileArray.slice(0, remainingSlots);
+
+        const newImages: string[] = [];
+
+        for (const file of filesToProcess) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert(`${file.name} no es una imagen válida`);
+                continue;
+            }
+
+            // Validate file size
+            const sizeMB = file.size / (1024 * 1024);
+            if (sizeMB > maxSizeMB) {
+                alert(`${file.name} excede el tamaño máximo de ${maxSizeMB}MB`);
+                continue;
+            }
+
+            // Convert to base64
+            const base64 = await fileToBase64(file);
+            newImages.push(base64);
+        }
+
+        onChange([...images, ...newImages]);
+    };
+
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+        handleFileSelect(e.dataTransfer.files);
+    };
+
+    const handleClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleDelete = (index: number) => {
+        const newImages = images.filter((_, i) => i !== index);
+        onChange(newImages);
+    };
+
+    // Drag and drop reordering
+    const handleImageDragStart = (e: DragEvent<HTMLDivElement>, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleImageDragOver = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleImageDrop = (e: DragEvent<HTMLDivElement>, dropIndex: number) => {
+        e.preventDefault();
+
+        if (draggedIndex === null || draggedIndex === dropIndex) {
+            setDraggedIndex(null);
+            return;
+        }
+
+        const newImages = [...images];
+        const [draggedImage] = newImages.splice(draggedIndex, 1);
+        newImages.splice(dropIndex, 0, draggedImage);
+
+        onChange(newImages);
+        setDraggedIndex(null);
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* Upload Area */}
+            <div
+                onClick={handleClick}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-8 transition-all cursor-pointer ${isDragging
+                        ? 'border-emerald-500 bg-emerald-50'
+                        : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
+                    }`}
+            >
+                <div className="text-center">
+                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <div className="text-sm text-gray-600 mb-2">
+                        <span className="font-medium text-emerald-600">Haz clic para subir</span> o arrastra y suelta
+                    </div>
+                    <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF hasta {maxSizeMB}MB cada una (máximo {maxImages} imágenes)
+                    </p>
+                    {images.length > 0 && (
+                        <p className="text-sm text-emerald-600 font-medium mt-2">
+                            {images.length} de {maxImages} imágenes cargadas
+                        </p>
+                    )}
+                </div>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => handleFileSelect(e.target.files)}
+                    className="hidden"
+                />
+            </div>
+
+            {/* Image Previews */}
+            {images.length > 0 && (
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-gray-700">
+                            Imágenes ({images.length})
+                        </h3>
+                        <p className="text-xs text-gray-500">Arrastra para reordenar</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {images.map((image, index) => (
+                            <div
+                                key={index}
+                                draggable
+                                onDragStart={(e) => handleImageDragStart(e, index)}
+                                onDragOver={handleImageDragOver}
+                                onDrop={(e) => handleImageDrop(e, index)}
+                                className={`relative group rounded-lg overflow-hidden border-2 transition-all cursor-move ${draggedIndex === index
+                                        ? 'border-emerald-500 opacity-50'
+                                        : 'border-gray-200 hover:border-emerald-300'
+                                    }`}
+                            >
+                                <div className="aspect-square bg-gray-100">
+                                    <img
+                                        src={image}
+                                        alt={`Preview ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+
+                                {/* Order Badge */}
+                                <div className="absolute top-2 left-2 bg-emerald-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                                    {index + 1}
+                                </div>
+
+                                {/* Delete Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => handleDelete(index)}
+                                    className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                                    title="Eliminar imagen"
+                                >
+                                    <X size={16} />
+                                </button>
+
+                                {/* Drag Indicator */}
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all flex items-center justify-center">
+                                    <ImageIcon className="text-white opacity-0 group-hover:opacity-70 transition-opacity" size={24} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {images.length === 0 && (
+                <div className="text-center py-8 text-gray-400">
+                    <ImageIcon className="h-16 w-16 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No hay imágenes cargadas</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default ImageUploader;
