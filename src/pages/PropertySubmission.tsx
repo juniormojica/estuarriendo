@@ -66,10 +66,22 @@ const PropertySubmission: React.FC = () => {
         }));
       }
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
+      // Handle property type changes
+      if (field === 'type') {
+        setFormData(prev => ({
+          ...prev,
+          [field]: value,
+          // Auto-set rooms to 1 for habitacion type, undefined for others
+          rooms: value === 'habitacion' ? 1 : undefined,
+          // Set bathrooms to undefined for habitacion type
+          bathrooms: value === 'habitacion' ? undefined : prev.bathrooms
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          [field]: value
+        }));
+      }
     }
   };
 
@@ -316,27 +328,33 @@ const PropertySubmission: React.FC = () => {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Detalles de la Propiedad</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Número de habitaciones</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.rooms || ''}
-                  onChange={(e) => handleInputChange('rooms', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
+              {/* Hide rooms field for habitacion type */}
+              {formData.type !== 'habitacion' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número de habitaciones</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.rooms || ''}
+                    onChange={(e) => handleInputChange('rooms', e.target.value ? parseInt(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                </div>
+              )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Número de baños</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.bathrooms || ''}
-                  onChange={(e) => handleInputChange('bathrooms', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
+              {/* Hide bathrooms field for habitacion type */}
+              {formData.type !== 'habitacion' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número de baños</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.bathrooms || ''}
+                    onChange={(e) => handleInputChange('bathrooms', e.target.value ? parseInt(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Área (m²)</label>
@@ -353,7 +371,14 @@ const PropertySubmission: React.FC = () => {
 
           {/* Amenities */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Comodidades</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {formData.type === 'habitacion' ? 'Características de la Habitación' : 'Comodidades'}
+            </h2>
+            {formData.type === 'habitacion' && (
+              <p className="text-sm text-gray-600 mb-4">
+                Selecciona las características que tiene tu habitación. Si tiene baño interno, márcalo en las opciones.
+              </p>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {amenities.map(amenity => (
                 <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">

@@ -13,6 +13,14 @@ export const mockAmenities: Amenity[] = [
   { id: 'ac', name: 'Aire Acondicionado', icon: 'snowflake' },
   { id: 'heating', name: 'Calefacción', icon: 'flame' },
   { id: 'kitchen', name: 'Cocina Equipada', icon: 'chef-hat' },
+  // Room-specific amenities
+  { id: 'private-bathroom', name: 'Baño Interno', icon: 'bath' },
+  { id: 'closet', name: 'Closet', icon: 'cabinet' },
+  { id: 'fan', name: 'Abanico', icon: 'fan' },
+  { id: 'desk', name: 'Escritorio', icon: 'desk' },
+  { id: 'window', name: 'Ventana Exterior', icon: 'window' },
+  { id: 'bed', name: 'Cama Incluida', icon: 'bed' },
+  { id: 'tv', name: 'TV', icon: 'tv' },
 ];
 
 export const universities = [

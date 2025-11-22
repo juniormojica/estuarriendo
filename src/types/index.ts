@@ -53,3 +53,45 @@ export interface PropertyFormData {
   amenities: string[];
   images: File[] | string[]; // Support both File objects and base64 strings
 }
+
+export interface PropertyStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  featured: number;
+  totalRevenue: number;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  propertiesCount: number;
+  approvedCount: number;
+  pendingCount: number;
+  rejectedCount: number;
+  joinedAt: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  type: 'property_submitted' | 'property_approved' | 'property_rejected' | 'property_deleted' | 'property_featured' | 'user_registered' | 'config_updated';
+  message: string;
+  timestamp: string;
+  userId?: string;
+  propertyId?: string;
+}
+
+export interface SystemConfig {
+  commissionRate: number;
+  featuredPropertyPrice: number;
+  maxImagesPerProperty: number;
+  minPropertyPrice: number;
+  maxPropertyPrice: number;
+  autoApprovalEnabled: boolean;
+}
+
+export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity';

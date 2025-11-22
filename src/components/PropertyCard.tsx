@@ -66,7 +66,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
 
         <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
           <div className="flex items-center space-x-4">
-            {property.rooms && (
+            {/* Only show rooms if not a single room (habitacion) */}
+            {property.rooms && property.type !== 'habitacion' && (
               <div className="flex items-center">
                 <Bed className="h-4 w-4 mr-1" />
                 <span>{property.rooms}</span>

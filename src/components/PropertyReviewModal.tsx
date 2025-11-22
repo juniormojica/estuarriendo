@@ -207,7 +207,8 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                         </div>
                                     </div>
 
-                                    {property.rooms !== undefined && (
+                                    {/* Only show rooms if not a single room (habitacion) */}
+                                    {property.rooms !== undefined && property.type !== 'habitacion' && (
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Habitaciones</label>
                                             <p className="text-gray-900 mt-1">{property.rooms}</p>
@@ -248,7 +249,9 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                 {/* Amenities */}
                                 {property.amenities && property.amenities.length > 0 && (
                                     <div>
-                                        <label className="text-sm font-medium text-gray-500 mb-2 block">Comodidades</label>
+                                        <label className="text-sm font-medium text-gray-500 mb-2 block">
+                                            {property.type === 'habitacion' ? 'Características' : 'Comodidades'}
+                                        </label>
                                         <div className="flex flex-wrap gap-2">
                                             {property.amenities.map((amenity) => (
                                                 <span

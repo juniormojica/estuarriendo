@@ -146,7 +146,8 @@ const PropertyDetail: React.FC = () => {
 
               {/* Property Details */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                {property.rooms && (
+                {/* Only show rooms if not a single room (habitacion) */}
+                {property.rooms && property.type !== 'habitacion' && (
                   <div className="text-center">
                     <Bed className="h-6 w-6 mx-auto text-gray-600 mb-1" />
                     <p className="text-sm text-gray-600">Habitaciones</p>
@@ -183,7 +184,9 @@ const PropertyDetail: React.FC = () => {
               {/* Amenities */}
               {property.amenities.length > 0 && (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-3">Comodidades</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                    {property.type === 'habitacion' ? 'Características' : 'Comodidades'}
+                  </h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {property.amenities.map(amenityId => {
                       const amenity = getAmenityDetails(amenityId);

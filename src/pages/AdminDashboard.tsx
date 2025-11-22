@@ -1,34 +1,88 @@
 import React, { useEffect, useState } from 'react';
-import { Property } from '../types';
+import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, Amenity } from '../types';
 import { api } from '../services/api';
-import { Check, Clock, MapPin, Home } from 'lucide-react';
 import PropertyReviewModal from '../components/PropertyReviewModal';
+import AdminSidebar from '../components/admin/AdminSidebar';
+import AdminStats from '../components/admin/AdminStats';
+import PropertiesTable from '../components/admin/PropertiesTable';
+import UsersTable from '../components/admin/UsersTable';
+import ActivityFeed from '../components/admin/ActivityFeed';
+import AdminConfig from '../components/admin/AdminConfig';
 
 const AdminDashboard = () => {
-    const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
+    const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
     const [loading, setLoading] = useState(true);
+
+    // Data states
+    const [stats, setStats] = useState<PropertyStats>({
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        featured: 0,
+        totalRevenue: 0
+    });
+    const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
+    const [allProperties, setAllProperties] = useState<Property[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [activities, setActivities] = useState<ActivityLog[]>([]);
+    const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
+    const [amenities, setAmenities] = useState<Amenity[]>([]);
+
+    // UI states
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
     useEffect(() => {
-        loadPendingProperties();
+        loadInitialData();
     }, []);
 
-    const loadPendingProperties = async () => {
+    const loadInitialData = async () => {
         try {
-            const properties = await api.getPendingProperties();
-            setPendingProperties(properties);
+            setLoading(true);
+            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, amenitiesData] = await Promise.all([
+                api.getPropertyStats(),
+                api.getPendingProperties(),
+                api.getAllPropertiesAdmin(),
+                api.getUsers(),
+                api.getActivityLog(),
+                api.getSystemConfig(),
+                api.getAmenities()
+            ]);
+
+            setStats(statsData);
+            setPendingProperties(pendingData);
+            setAllProperties(allPropsData);
+            setUsers(usersData);
+            setActivities(activitiesData);
+            setSystemConfig(configData);
+            setAmenities(amenitiesData);
         } catch (error) {
-            console.error('Error loading pending properties:', error);
+            console.error('Error loading admin data:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const refreshData = async () => {
+        const [statsData, pendingData, allPropsData, usersData] = await Promise.all([
+            api.getPropertyStats(),
+            api.getPendingProperties(),
+            api.getAllPropertiesAdmin(),
+            api.getUsers()
+        ]);
+
+        setStats(statsData);
+        setPendingProperties(pendingData);
+        setAllProperties(allPropsData);
+        setUsers(usersData);
     };
 
     const handleApprove = async (id: string) => {
         try {
             const success = await api.approveProperty(id);
             if (success) {
-                setPendingProperties(prev => prev.filter(p => p.id !== id));
+                await refreshData();
+                setSelectedProperty(null);
             }
         } catch (error) {
             console.error('Error approving property:', error);
@@ -39,10 +93,36 @@ const AdminDashboard = () => {
         try {
             const success = await api.rejectProperty(id);
             if (success) {
-                setPendingProperties(prev => prev.filter(p => p.id !== id));
+                await refreshData();
+                setSelectedProperty(null);
             }
         } catch (error) {
             console.error('Error rejecting property:', error);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm('¿Estás seguro de que deseas eliminar esta propiedad permanentemente?')) {
+            try {
+                const success = await api.deleteProperty(id);
+                if (success) {
+                    await refreshData();
+                    setSelectedProperty(null);
+                }
+            } catch (error) {
+                console.error('Error deleting property:', error);
+            }
+        }
+    };
+
+    const handleToggleFeatured = async (id: string) => {
+        try {
+            const success = await api.toggleFeaturedProperty(id);
+            if (success) {
+                await refreshData();
+            }
+        } catch (error) {
+            console.error('Error toggling featured status:', error);
         }
     };
 
@@ -50,124 +130,208 @@ const AdminDashboard = () => {
         try {
             const success = await api.deletePropertyImage(propertyId, imageIndex);
             if (success) {
-                // Update the local state to reflect the deleted image
+                // Update local state
                 setPendingProperties(prev => prev.map(p => {
                     if (p.id === propertyId) {
-                        return {
-                            ...p,
-                            images: p.images.filter((_, i) => i !== imageIndex)
-                        };
+                        return { ...p, images: p.images.filter((_, i) => i !== imageIndex) };
                     }
                     return p;
                 }));
+                setAllProperties(prev => prev.map(p => {
+                    if (p.id === propertyId) {
+                        return { ...p, images: p.images.filter((_, i) => i !== imageIndex) };
+                    }
+                    return p;
+                }));
+                if (selectedProperty && selectedProperty.id === propertyId) {
+                    setSelectedProperty({
+                        ...selectedProperty,
+                        images: selectedProperty.images.filter((_, i) => i !== imageIndex)
+                    });
+                }
             }
         } catch (error) {
             console.error('Error deleting image:', error);
         }
     };
 
-    const handlePropertyClick = (property: Property) => {
-        setSelectedProperty(property);
+    const handleViewUserProperties = async (userId: string) => {
+        try {
+            const userProperties = await api.getUserProperties(userId);
+            // For now, just switch to all properties view
+            // In a more advanced version, we could filter the table
+            setCurrentSection('all-properties');
+        } catch (error) {
+            console.error('Error loading user properties:', error);
+        }
     };
 
-    const handleCloseModal = () => {
-        setSelectedProperty(null);
+    const handleSaveConfig = async (config: SystemConfig) => {
+        try {
+            const success = await api.updateSystemConfig(config);
+            if (success) {
+                setSystemConfig(config);
+                alert('Configuración guardada exitosamente');
+            }
+        } catch (error) {
+            console.error('Error saving config:', error);
+        }
+    };
+
+    const handleAddAmenity = async (amenity: Omit<Amenity, 'id'>) => {
+        try {
+            const success = await api.addAmenity(amenity);
+            if (success) {
+                alert('Amenidad agregada exitosamente');
+                const updatedAmenities = await api.getAmenities();
+                setAmenities(updatedAmenities);
+            }
+        } catch (error) {
+            console.error('Error adding amenity:', error);
+        }
+    };
+
+    const handleDeleteAmenity = async () => {
+        try {
+            const success = await api.deleteAmenity();
+            if (success) {
+                alert('Amenidad eliminada exitosamente');
+                const updatedAmenities = await api.getAmenities();
+                setAmenities(updatedAmenities);
+            }
+        } catch (error) {
+            console.error('Error deleting amenity:', error);
+        }
     };
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="flex justify-center items-center min-h-screen">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         );
     }
 
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
-                <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-medium flex items-center gap-2">
-                    <Clock size={20} />
-                    {pendingProperties.length} Pendientes
-                </div>
-            </div>
-
-            {pendingProperties.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="bg-green-100 text-green-600 p-4 rounded-full inline-block mb-4">
-                        <Check size={48} />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">¡Todo al día!</h3>
-                    <p className="text-gray-600">No hay propiedades pendientes de revisión.</p>
-                </div>
-            ) : (
-                <div className="grid gap-6">
-                    {pendingProperties.map((property) => (
-                        <div
-                            key={property.id}
-                            onClick={() => handlePropertyClick(property)}
-                            className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 flex flex-col md:flex-row cursor-pointer hover:shadow-lg hover:border-emerald-300 transition-all"
-                        >
-                            <div className="md:w-1/3 h-48 md:h-auto relative">
-                                <img
-                                    src={property.images[0]}
-                                    alt={property.title}
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-bold uppercase">
-                                    Pendiente
-                                </div>
-                                {property.images.length > 1 && (
-                                    <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-medium">
-                                        +{property.images.length - 1} fotos
+    const renderContent = () => {
+        switch (currentSection) {
+            case 'dashboard':
+                return (
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+                        <AdminStats stats={stats} />
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <ActivityFeed activities={activities} maxItems={8} />
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen Rápido</h3>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                                        <span className="text-gray-700">Propiedades Pendientes</span>
+                                        <span className="text-2xl font-bold text-yellow-600">{stats.pending}</span>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="p-6 md:w-2/3 flex flex-col justify-between">
-                                <div>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="text-xl font-bold text-gray-900">{property.title}</h3>
-                                        <span className="text-xl font-bold text-blue-600">
-                                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: property.currency }).format(property.price)}
-                                        </span>
+                                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                                        <span className="text-gray-700">Propiedades Aprobadas</span>
+                                        <span className="text-2xl font-bold text-green-600">{stats.approved}</span>
                                     </div>
-
-                                    <p className="text-gray-600 mb-4 line-clamp-2">{property.description}</p>
-
-                                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm text-gray-500">
-                                        <div className="flex items-center gap-2">
-                                            <MapPin size={16} />
-                                            {property.address.city}, {property.address.department}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Home size={16} />
-                                            {property.type}
-                                        </div>
-                                        {property.rooms !== undefined && (
-                                            <div className="flex items-center gap-2">
-                                                🛏️ {property.rooms} Habitaciones
-                                            </div>
-                                        )}
+                                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                                        <span className="text-gray-700">Propiedades Destacadas</span>
+                                        <span className="text-2xl font-bold text-purple-600">{stats.featured}</span>
                                     </div>
-                                </div>
-
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <p className="text-sm text-emerald-600 font-medium">
-                                        👆 Haz clic para revisar en detalle
-                                    </p>
+                                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                                        <span className="text-gray-700">Total Usuarios</span>
+                                        <span className="text-2xl font-bold text-blue-600">{users.length}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-            )}
+                    </div>
+                );
+
+            case 'pending':
+                return (
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Propiedades Pendientes</h1>
+                        <PropertiesTable
+                            properties={pendingProperties}
+                            onView={setSelectedProperty}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            onDelete={handleDelete}
+                            onToggleFeatured={handleToggleFeatured}
+                            users={users}
+                        />
+                    </div>
+                );
+
+            case 'all-properties':
+                return (
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Todas las Propiedades</h1>
+                        <PropertiesTable
+                            properties={allProperties}
+                            onView={setSelectedProperty}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            onDelete={handleDelete}
+                            onToggleFeatured={handleToggleFeatured}
+                            users={users}
+                        />
+                    </div>
+                );
+
+            case 'users':
+                return (
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Usuarios</h1>
+                        <UsersTable users={users} onViewProperties={handleViewUserProperties} />
+                    </div>
+                );
+
+            case 'activity':
+                return (
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Actividad del Sistema</h1>
+                        <ActivityFeed activities={activities} maxItems={50} />
+                    </div>
+                );
+
+            case 'config':
+                return (
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Configuración</h1>
+                        {systemConfig && (
+                            <AdminConfig
+                                config={systemConfig}
+                                amenities={amenities}
+                                onSaveConfig={handleSaveConfig}
+                                onAddAmenity={handleAddAmenity}
+                                onDeleteAmenity={handleDeleteAmenity}
+                            />
+                        )}
+                    </div>
+                );
+
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="flex min-h-screen bg-gray-50">
+            <AdminSidebar
+                currentSection={currentSection}
+                onSectionChange={setCurrentSection}
+                pendingCount={stats.pending}
+            />
+
+            <div className="flex-1 p-8">
+                {renderContent()}
+            </div>
 
             {/* Property Review Modal */}
             {selectedProperty && (
                 <PropertyReviewModal
                     property={selectedProperty}
-                    onClose={handleCloseModal}
+                    onClose={() => setSelectedProperty(null)}
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onDeleteImage={handleDeleteImage}
