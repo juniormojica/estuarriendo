@@ -3,6 +3,7 @@ import { Property, SearchFilters } from '../types';
 import { api } from '../services/api';
 import SearchFiltersComponent from '../components/SearchFilters';
 import PropertyGrid from '../components/PropertyGrid';
+import WelcomeModal from '../components/WelcomeModal';
 
 const HomePage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -50,6 +51,9 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Welcome Modal */}
+      <WelcomeModal />
+
       {/* Hero Section */}
       {/* Hero Section */}
       <div className="relative bg-gray-900 text-white">
@@ -85,8 +89,8 @@ const HomePage: React.FC = () => {
                   key={city}
                   onClick={() => handleCityClick(city)}
                   className={`px-4 py-2 rounded-full font-medium transition-all ${selectedCity === city
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
                     }`}
                 >
                   {city}
