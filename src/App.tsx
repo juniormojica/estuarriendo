@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import PropertyDetail from './pages/PropertyDetail';
 import PropertySubmission from './pages/PropertySubmission';
@@ -19,6 +20,7 @@ function App() {
             <Route path="/publicar" element={<PropertySubmission />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
+          <Footer />
         </div>
       </Router>
     </FavoritesProvider>
