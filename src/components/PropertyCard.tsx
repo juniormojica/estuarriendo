@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck, Wifi, Car, Waves, Dumbbell, Shirt, Shield, ArrowUp, Home, Sofa, Snowflake, Flame, ChefHat, Fan, Monitor, AppWindow, Tv, BedDouble, DoorClosed } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Property } from '../types';
+import { mockAmenities } from '../data/mockData';
 import { useFavorites } from '../context/FavoritesContext';
 import { Badge } from './ui/Badge';
 import { cn } from '../lib/utils';
@@ -43,6 +44,36 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
       'aparta-estudio': 'Aparta-estudio'
     };
     return labels[type];
+  };
+
+  const getAmenityIcon = (amenityId: string) => {
+    const amenity = mockAmenities.find(a => a.id === amenityId);
+    if (!amenity) return null;
+
+    const iconProps = { size: 14, className: "text-gray-500" };
+
+    switch (amenity.icon) {
+      case 'wifi': return <Wifi {...iconProps} />;
+      case 'car': return <Car {...iconProps} />;
+      case 'waves': return <Waves {...iconProps} />;
+      case 'dumbbell': return <Dumbbell {...iconProps} />;
+      case 'shirt': return <Shirt {...iconProps} />;
+      case 'shield': return <Shield {...iconProps} />;
+      case 'arrow-up': return <ArrowUp {...iconProps} />;
+      case 'home': return <Home {...iconProps} />;
+      case 'sofa': return <Sofa {...iconProps} />;
+      case 'snowflake': return <Snowflake {...iconProps} />;
+      case 'flame': return <Flame {...iconProps} />;
+      case 'chef-hat': return <ChefHat {...iconProps} />;
+      case 'bath': return <Bath {...iconProps} />;
+      case 'cabinet': return <DoorClosed {...iconProps} />;
+      case 'fan': return <Fan {...iconProps} />;
+      case 'desk': return <Monitor {...iconProps} />;
+      case 'window': return <AppWindow {...iconProps} />;
+      case 'bed': return <BedDouble {...iconProps} />;
+      case 'tv': return <Tv {...iconProps} />;
+      default: return <Star {...iconProps} />;
+    }
   };
 
   return (
@@ -106,6 +137,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
           <div className="flex items-center text-gray-500 text-sm mb-3">
             <MapPin className="h-4 w-4 mr-1 text-emerald-500" />
             <span className="line-clamp-1">{property.address.city}, {property.address.department}</span>
+          </div>
+
+          {/* Amenities Icons */}
+          <div className="flex gap-3 mb-3 overflow-hidden">
+            {property.amenities.slice(0, 5).map(amenityId => (
+              <div key={amenityId} title={mockAmenities.find(a => a.id === amenityId)?.name} className="bg-gray-50 p-1.5 rounded-md">
+                {getAmenityIcon(amenityId)}
+              </div>
+            ))}
+            {property.amenities.length > 5 && (
+              <div className="bg-gray-50 p-1.5 rounded-md text-xs text-gray-500 font-medium flex items-center justify-center w-7 h-7">
+                +{property.amenities.length - 5}
+              </div>
+            )}
           </div>
 
           <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">

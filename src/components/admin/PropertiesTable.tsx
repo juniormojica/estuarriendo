@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Property, User } from '../../types';
-import { Search, Filter, Eye, CheckCircle, XCircle, Trash2, Star } from 'lucide-react';
+import { Search, Filter, Eye, CheckCircle, XCircle, Trash2, Star, Edit } from 'lucide-react';
 
 interface PropertiesTableProps {
     properties: Property[];
@@ -8,6 +8,7 @@ interface PropertiesTableProps {
     onApprove: (id: string) => void;
     onReject: (id: string) => void;
     onDelete: (id: string) => void;
+    onEdit?: (property: Property) => void;
     onToggleFeatured: (id: string) => void;
     showActions?: boolean;
     users?: User[];
@@ -19,6 +20,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
     onApprove,
     onReject,
     onDelete,
+    onEdit,
     onToggleFeatured,
     showActions = true,
     users = []
@@ -247,8 +249,8 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                                     onToggleFeatured(property.id);
                                                 }}
                                                 className={`p-2 rounded-lg transition-colors ${property.featured
-                                                    ? 'text-yellow-600 hover:bg-yellow-50'
-                                                    : 'text-gray-400 hover:bg-gray-50'
+                                                        ? 'text-yellow-600 hover:bg-yellow-50'
+                                                        : 'text-gray-400 hover:bg-gray-50'
                                                     }`}
                                                 title={property.featured ? 'Quitar destacado' : 'Destacar'}
                                             >
@@ -257,7 +259,6 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    console.log('Delete clicked for:', property.id);
                                                     onDelete(property.id);
                                                 }}
                                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -265,6 +266,18 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                             >
                                                 <Trash2 size={18} />
                                             </button>
+                                            {onEdit && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onEdit(property);
+                                                    }}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Edit size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 )}

@@ -9,6 +9,7 @@ import UsersTable from '../components/admin/UsersTable';
 import ActivityFeed from '../components/admin/ActivityFeed';
 import AdminConfig from '../components/admin/AdminConfig';
 import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
+import PropertyEditModal from '../components/admin/PropertyEditModal';
 
 const AdminDashboard = () => {
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
@@ -32,6 +33,7 @@ const AdminDashboard = () => {
 
     // UI states
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+    const [editingProperty, setEditingProperty] = useState<Property | null>(null);
     const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -132,6 +134,15 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleEdit = (property: Property) => {
+        setEditingProperty(property);
+    };
+
+    const handleSaveProperty = async () => {
+        await refreshData();
+        setEditingProperty(null);
+    };
+
     const handleToggleFeatured = async (id: string) => {
         try {
             const success = await api.toggleFeaturedProperty(id);
@@ -208,35 +219,36 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleDeleteAmenity = async () => {
-        try {
-            const success = await api.deleteAmenity();
-            if (success) {
-                alert('Amenidad eliminada exitosamente');
-                const updatedAmenities = await api.getAmenities();
-                setAmenities(updatedAmenities);
+    const handleDeleteAmenity = async (id: string) => {
+        if (window.confirm('¿Estás seguro de eliminar esta amenidad?')) {
+            try {
+                const success = await api.deleteAmenity();
+                if (success) {
+                    const updatedAmenities = await api.getAmenities();
+                    setAmenities(updatedAmenities);
+                }
+            } catch (error) {
+                console.error('Error deleting amenity:', error);
             }
-        } catch (error) {
-            console.error('Error deleting amenity:', error);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
-
     const renderContent = () => {
+        if (loading) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                </div>
+            );
+        }
+
         switch (currentSection) {
             case 'dashboard':
                 return (
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
                         <AdminStats stats={stats} />
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                             <ActivityFeed activities={activities} maxItems={8} />
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen Rápido</h3>
@@ -262,96 +274,98 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 );
-
             case 'pending':
                 return (
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Propiedades Pendientes</h1>
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Propiedades Pendientes</h2>
                         <PropertiesTable
                             properties={pendingProperties}
                             onView={setSelectedProperty}
                             onApprove={handleApprove}
                             onReject={handleReject}
                             onDelete={handleDeleteClick}
+                            onEdit={handleEdit}
                             onToggleFeatured={handleToggleFeatured}
                             users={users}
                         />
                     </div>
                 );
-
             case 'all-properties':
                 return (
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Todas las Propiedades</h1>
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Todas las Propiedades</h2>
                         <PropertiesTable
                             properties={allProperties}
                             onView={setSelectedProperty}
                             onApprove={handleApprove}
                             onReject={handleReject}
                             onDelete={handleDeleteClick}
+                            onEdit={handleEdit}
                             onToggleFeatured={handleToggleFeatured}
                             users={users}
                         />
                     </div>
                 );
-
             case 'users':
                 return (
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Usuarios</h1>
-                        <UsersTable users={users} onViewProperties={handleViewUserProperties} />
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Usuarios</h2>
+                        <UsersTable
+                            users={users}
+                            onViewProperties={handleViewUserProperties}
+                        />
                     </div>
                 );
-
             case 'activity':
                 return (
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Actividad del Sistema</h1>
-                        <ActivityFeed activities={activities} maxItems={50} />
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Registro de Actividad</h2>
+                        <ActivityFeed activities={activities} />
                     </div>
                 );
-
             case 'config':
                 return (
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Configuración</h1>
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Configuración del Sistema</h2>
                         {systemConfig && (
                             <AdminConfig
                                 config={systemConfig}
+                                onSave={handleSaveConfig}
                                 amenities={amenities}
-                                onSaveConfig={handleSaveConfig}
                                 onAddAmenity={handleAddAmenity}
                                 onDeleteAmenity={handleDeleteAmenity}
                             />
                         )}
                     </div>
                 );
-
             default:
                 return null;
         }
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-100">
             <AdminSidebar
                 currentSection={currentSection}
                 onSectionChange={setCurrentSection}
                 pendingCount={stats.pending}
             />
 
-            <div className="flex-1 p-8">
-                {renderContent()}
+            <div className="flex-1 overflow-auto">
+                <div className="p-8">
+                    {renderContent()}
+                </div>
             </div>
 
             {/* Property Review Modal */}
             {selectedProperty && (
                 <PropertyReviewModal
                     property={selectedProperty}
+                    isOpen={!!selectedProperty}
                     onClose={() => setSelectedProperty(null)}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
-                    onDeleteImage={handleDeleteImage}
+                    onApprove={() => handleApprove(selectedProperty.id)}
+                    onReject={() => handleReject(selectedProperty.id)}
+                    onDeleteImage={(index) => handleDeleteImage(selectedProperty.id, index)}
                 />
             )}
 
@@ -362,6 +376,16 @@ const AdminDashboard = () => {
                 onConfirm={handleConfirmDelete}
                 isProcessing={isDeleting}
             />
+
+            {/* Edit Modal */}
+            {editingProperty && (
+                <PropertyEditModal
+                    property={editingProperty}
+                    isOpen={!!editingProperty}
+                    onClose={() => setEditingProperty(null)}
+                    onSave={handleSaveProperty}
+                />
+            )}
         </div>
     );
 };

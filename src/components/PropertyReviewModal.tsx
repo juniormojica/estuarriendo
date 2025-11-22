@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize } from 'lucide-react';
 import { Property } from '../types';
 
@@ -20,6 +20,17 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const [localImages, setLocalImages] = useState(property.images);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
 
     const handleApprove = async () => {
         setIsProcessing(true);
@@ -103,7 +114,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                         <img
                                             src={localImages[currentImageIndex]}
                                             alt={`${property.title} - ${currentImageIndex + 1}`}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-contain bg-black"
                                         />
 
                                         {/* Image Counter */}
