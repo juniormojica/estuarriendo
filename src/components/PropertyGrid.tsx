@@ -38,10 +38,10 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, isLoading, erro
           {properties.length} propiedad{properties.length !== 1 ? 'es' : ''} encontrada{properties.length !== 1 ? 's' : ''}
         </p>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {properties.map(property => (
-          <PropertyCard key={property.id} property={property} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {properties.map((property, index) => (
+          <PropertyCard key={property.id} property={property} index={index} />
         ))}
       </div>
     </div>

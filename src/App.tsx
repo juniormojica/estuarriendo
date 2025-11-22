@@ -5,20 +5,23 @@ import HomePage from './pages/HomePage';
 import PropertyDetail from './pages/PropertyDetail';
 import PropertySubmission from './pages/PropertySubmission';
 import AdminDashboard from './pages/AdminDashboard';
+import { FavoritesProvider } from './context/FavoritesContext';
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/propiedad/:id" element={<PropertyDetail />} />
-          <Route path="/publicar" element={<PropertySubmission />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Routes>
-      </div>
-    </Router>
+    <FavoritesProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Header />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/propiedad/:id" element={<PropertyDetail />} />
+            <Route path="/publicar" element={<PropertySubmission />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Routes>
+        </div>
+      </Router>
+    </FavoritesProvider>
   );
 }
 

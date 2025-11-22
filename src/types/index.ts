@@ -20,6 +20,7 @@ export interface Property {
   nearbyUniversities?: string[];
   createdAt: string;
   featured?: boolean;
+  isVerified?: boolean;
   status: 'pending' | 'approved' | 'rejected';
 }
 
