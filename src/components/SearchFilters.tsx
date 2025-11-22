@@ -155,38 +155,40 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           </div>
 
           {/* Rooms and Bathrooms */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones mínimas</label>
-              <select
-                value={filters.rooms || ''}
-                onChange={(e) => handleFilterChange('rooms', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                disabled={isLoading}
-              >
-                <option value="">Cualquier cantidad</option>
-                <option value="1">1+</option>
-                <option value="2">2+</option>
-                <option value="3">3+</option>
-                <option value="4">4+</option>
-              </select>
-            </div>
+          {filters.type !== 'habitacion' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones mínimas</label>
+                <select
+                  value={filters.rooms || ''}
+                  onChange={(e) => handleFilterChange('rooms', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  disabled={isLoading}
+                >
+                  <option value="">Cualquier cantidad</option>
+                  <option value="1">1+</option>
+                  <option value="2">2+</option>
+                  <option value="3">3+</option>
+                  <option value="4">4+</option>
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Baños mínimos</label>
-              <select
-                value={filters.bathrooms || ''}
-                onChange={(e) => handleFilterChange('bathrooms', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                disabled={isLoading}
-              >
-                <option value="">Cualquier cantidad</option>
-                <option value="1">1+</option>
-                <option value="2">2+</option>
-                <option value="3">3+</option>
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Baños mínimos</label>
+                <select
+                  value={filters.bathrooms || ''}
+                  onChange={(e) => handleFilterChange('bathrooms', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  disabled={isLoading}
+                >
+                  <option value="">Cualquier cantidad</option>
+                  <option value="1">1+</option>
+                  <option value="2">2+</option>
+                  <option value="3">3+</option>
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Amenities */}
           <div>

@@ -8,6 +8,7 @@ import PropertiesTable from '../components/admin/PropertiesTable';
 import UsersTable from '../components/admin/UsersTable';
 import ActivityFeed from '../components/admin/ActivityFeed';
 import AdminConfig from '../components/admin/AdminConfig';
+import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
 
 const AdminDashboard = () => {
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
@@ -31,6 +32,8 @@ const AdminDashboard = () => {
 
     // UI states
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+    const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         loadInitialData();
@@ -101,17 +104,31 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar esta propiedad permanentemente?')) {
-            try {
-                const success = await api.deleteProperty(id);
-                if (success) {
-                    await refreshData();
-                    setSelectedProperty(null);
-                }
-            } catch (error) {
-                console.error('Error deleting property:', error);
+    const handleDeleteClick = (id: string) => {
+        setPropertyToDelete(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!propertyToDelete) return;
+
+        setIsDeleting(true);
+        try {
+            console.log('Attempting to delete property with ID:', propertyToDelete);
+            const success = await api.deleteProperty(propertyToDelete);
+            if (success) {
+                await refreshData();
+                setSelectedProperty(null);
+                setPropertyToDelete(null);
+                // Optional: Show success toast/notification
+            } else {
+                console.error('Failed to delete property. API returned false.');
+                alert('No se pudo eliminar la propiedad. Por favor intente nuevamente.');
             }
+        } catch (error) {
+            console.error('Error deleting property:', error);
+            alert('Ocurrió un error al eliminar la propiedad.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -255,7 +272,7 @@ const AdminDashboard = () => {
                             onView={setSelectedProperty}
                             onApprove={handleApprove}
                             onReject={handleReject}
-                            onDelete={handleDelete}
+                            onDelete={handleDeleteClick}
                             onToggleFeatured={handleToggleFeatured}
                             users={users}
                         />
@@ -271,7 +288,7 @@ const AdminDashboard = () => {
                             onView={setSelectedProperty}
                             onApprove={handleApprove}
                             onReject={handleReject}
-                            onDelete={handleDelete}
+                            onDelete={handleDeleteClick}
                             onToggleFeatured={handleToggleFeatured}
                             users={users}
                         />
@@ -337,6 +354,14 @@ const AdminDashboard = () => {
                     onDeleteImage={handleDeleteImage}
                 />
             )}
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={!!propertyToDelete}
+                onClose={() => setPropertyToDelete(null)}
+                onConfirm={handleConfirmDelete}
+                isProcessing={isDeleting}
+            />
         </div>
     );
 };

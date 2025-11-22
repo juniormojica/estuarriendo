@@ -26,8 +26,12 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
     const [filterUser, setFilterUser] = useState<string>('all');
+    const [filterCity, setFilterCity] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    // Get unique cities from properties
+    const cities = Array.from(new Set(properties.map(p => p.address.city))).sort();
 
     // Filter properties
     const filteredProperties = properties.filter(property => {
@@ -41,7 +45,9 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
         const propertyUserId = `user-${property.id.substring(0, 3)}`;
         const matchesUser = filterUser === 'all' || propertyUserId === filterUser;
 
-        return matchesSearch && matchesStatus && matchesUser;
+        const matchesCity = filterCity === 'all' || property.address.city === filterCity;
+
+        return matchesSearch && matchesStatus && matchesUser && matchesCity;
     });
 
     // Pagination
@@ -84,7 +90,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <Filter size={20} className="text-gray-400" />
                         <select
                             value={filterStatus}
@@ -96,6 +102,20 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                             <option value="approved">Aprobadas</option>
                             <option value="rejected">Rechazadas</option>
                         </select>
+
+                        <select
+                            value={filterCity}
+                            onChange={(e) => setFilterCity(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="all">Todas las ciudades</option>
+                            {cities.map(city => (
+                                <option key={city} value={city}>
+                                    {city}
+                                </option>
+                            ))}
+                        </select>
+
                         {users.length > 0 && (
                             <select
                                 value={filterUser}
@@ -186,7 +206,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                 </td>
                                 {showActions && (
                                     <td className="px-4 py-4">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 relative z-10">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -237,6 +257,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    console.log('Delete clicked for:', property.id);
                                                     onDelete(property.id);
                                                 }}
                                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

@@ -242,7 +242,8 @@ export const api = {
   async deleteProperty(id: string): Promise<boolean> {
     await delay(500);
     const properties = getStoredProperties();
-    const filteredProperties = properties.filter(p => p.id !== id);
+    // Ensure we compare strings to avoid type mismatches
+    const filteredProperties = properties.filter(p => String(p.id) !== String(id));
 
     if (filteredProperties.length < properties.length) {
       saveProperties(filteredProperties);
