@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import PropertyDetail from './pages/PropertyDetail';
 import PropertySubmission from './pages/PropertySubmission';
 import AdminDashboard from './pages/AdminDashboard';
+import FavoritesPage from './pages/FavoritesPage';
 import { FavoritesProvider } from './context/FavoritesContext';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/propiedad/:id" element={<PropertyDetail />} />
+            <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/publicar" element={<PropertySubmission />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
