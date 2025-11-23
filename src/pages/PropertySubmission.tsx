@@ -16,6 +16,8 @@ const PropertySubmission: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>('');
   const [availableCities, setAvailableCities] = useState<string[]>([]);
+  const [user, setUser] = useState<any>(null);
+
   const [formData, setFormData] = useState<PropertyFormData>({
     title: '',
     description: '',
@@ -37,6 +39,12 @@ const PropertySubmission: React.FC = () => {
   });
 
   useEffect(() => {
+    const storedUser = localStorage.getItem('estuarriendo_user');
+    if (!storedUser) {
+      window.location.href = '/registro-propietario';
+      return;
+    }
+    setUser(JSON.parse(storedUser));
     api.getAmenities().then(setAmenities);
   }, []);
 
@@ -138,7 +146,11 @@ const PropertySubmission: React.FC = () => {
     setError('');
 
     try {
-      const result = await api.submitProperty(formData);
+      const submissionData = {
+        ...formData,
+        ownerId: user?.id
+      };
+      const result = await api.submitProperty(submissionData);
       if (result.success) {
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -157,7 +169,7 @@ const PropertySubmission: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-md w-full mx-4 text-center animate-fadeIn">
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">¡Propiedad Enviada!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">¡Propiedad Enviada a Revisión!</h2>
           <p className="text-gray-600 mb-6">
             Tu propiedad ha sido enviada exitosamente. Nuestro equipo la revisará y será publicada pronto.
           </p>
@@ -232,8 +244,8 @@ const PropertySubmission: React.FC = () => {
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold mb-1 transition-colors ${index <= currentStep
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-gray-100 text-gray-500'
+                    ? 'bg-emerald-100 text-emerald-600'
+                    : 'bg-gray-100 text-gray-500'
                     }`}
                 >
                   {index + 1}
@@ -431,8 +443,8 @@ const PropertySubmission: React.FC = () => {
                       <label
                         key={amenity.id}
                         className={`flex items-center space-x-3 cursor-pointer p-3 border rounded-lg transition-all ${formData.amenities.includes(amenity.id)
-                            ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
-                            : 'border-gray-200 hover:bg-gray-50'
+                          ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
+                          : 'border-gray-200 hover:bg-gray-50'
                           }`}
                       >
                         <input
@@ -472,8 +484,8 @@ const PropertySubmission: React.FC = () => {
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
               className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${currentStep === 0
-                  ? 'text-gray-300 cursor-not-allowed'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                ? 'text-gray-300 cursor-not-allowed'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
             >
               <ChevronLeft className="h-5 w-5" />
