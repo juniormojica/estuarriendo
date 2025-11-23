@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, IdType, OwnerRole, PaymentMethod, BankDetails, BillingDetails } from '../types';
-import { Building2, User as UserIcon, ShieldCheck, CreditCard, ArrowRight, CheckCircle } from 'lucide-react';
+import { Building2, User as UserIcon, ShieldCheck, CreditCard, ArrowRight, CheckCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const OwnerRegistration = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState<1 | 2>(1);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [error, setError] = useState('');
+
     const [formData, setFormData] = useState<Partial<User>>({
         role: 'individual',
         idType: 'CC',
@@ -25,6 +29,7 @@ const OwnerRegistration = () => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (error) setError('');
     };
 
     const handleNestedChange = (parent: 'bankDetails' | 'billingDetails', field: string, value: string) => {
@@ -34,11 +39,31 @@ const OwnerRegistration = () => {
         }));
     };
 
+    const validatePhase1 = () => {
+        if (!formData.name || !formData.idNumber || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
+            setError('Por favor completa todos los campos obligatorios.');
+            return false;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Las contraseñas no coinciden.');
+            return false;
+        }
+
+        if (formData.password.length < 6) {
+            setError('La contraseña debe tener al menos 6 caracteres.');
+            return false;
+        }
+
+        return true;
+    };
+
     const handlePhase1Submit = (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, validate and save draft/user
-        console.log('Phase 1 data:', formData);
-        setStep(2);
+        if (validatePhase1()) {
+            console.log('Phase 1 data:', formData);
+            setStep(2);
+        }
     };
 
     const handlePhase2Submit = (e: React.FormEvent) => {
@@ -96,6 +121,13 @@ const OwnerRegistration = () => {
                 <div className="bg-white shadow rounded-lg p-8">
                     {step === 1 ? (
                         <form onSubmit={handlePhase1Submit} className="space-y-6">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700">
+                                    <AlertCircle className="h-5 w-5 mr-2" />
+                                    {error}
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Tipo de Perfil</label>
@@ -172,16 +204,46 @@ const OwnerRegistration = () => {
                                     />
                                 </div>
 
-                                <div>
+                                <div className="relative">
                                     <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        required
-                                        value={formData.password || ''}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                                    />
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            name="password"
+                                            required
+                                            value={formData.password || ''}
+                                            onChange={handleInputChange}
+                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pr-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                        >
+                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="relative">
+                                    <label className="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            name="confirmPassword"
+                                            required
+                                            value={formData.confirmPassword || ''}
+                                            onChange={handleInputChange}
+                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pr-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

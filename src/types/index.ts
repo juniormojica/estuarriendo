@@ -125,6 +125,7 @@ export interface User {
   idNumber?: string;
   role?: OwnerRole;
   password?: string; // In a real app, this wouldn't be here, but for mock auth
+  confirmPassword?: string;
 
   // Phase 2: Business Profile & Trust
   isVerified?: boolean;
