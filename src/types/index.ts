@@ -124,6 +124,7 @@ export interface User {
   idType?: IdType;
   idNumber?: string;
   role?: OwnerRole;
+  userType?: 'owner' | 'tenant'; // Distinguish between property owners and tenants
   password?: string; // In a real app, this wouldn't be here, but for mock auth
   confirmPassword?: string;
 

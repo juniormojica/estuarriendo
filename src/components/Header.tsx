@@ -1,9 +1,16 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { authService } from '../services/authService';
 
 const Header: React.FC = () => {
   const location = useLocation();
+  const currentUser = authService.getCurrentUser();
+
+  const handleLogout = () => {
+    authService.logout();
+    window.location.reload();
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -45,16 +52,13 @@ const Header: React.FC = () => {
 
             <div className="h-6 w-px bg-gray-300 mx-2"></div>
 
-            {localStorage.getItem('estuarriendo_user') ? (
+            {currentUser ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-700 font-medium">
-                  Hola, {JSON.parse(localStorage.getItem('estuarriendo_user') || '{}').name?.split(' ')[0]}
+                  Hola, {currentUser.name?.split(' ')[0]}
                 </span>
                 <button
-                  onClick={() => {
-                    localStorage.removeItem('estuarriendo_user');
-                    window.location.reload();
-                  }}
+                  onClick={handleLogout}
                   className="text-sm text-red-600 hover:text-red-700 font-medium"
                 >
                   Cerrar Sesión

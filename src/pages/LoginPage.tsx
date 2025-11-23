@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User } from '../types';
 import { LogIn, AlertCircle } from 'lucide-react';
+import { authService } from '../services/authService';
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -9,29 +9,23 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        // Mock authentication logic
-        const storedUserStr = localStorage.getItem('estuarriendo_user');
-        if (storedUserStr) {
-            const storedUser: User = JSON.parse(storedUserStr);
-            if (storedUser.email === email && storedUser.password === password) {
-                // Login successful
-                // In a real app, we would set a session token here.
-                // For now, we just redirect.
-                navigate('/publicar');
-                return;
-            }
-        }
+        // Login via authService
+        const response = await authService.login(email, password);
 
-        // Fallback for demo purposes if no user is registered yet or credentials don't match
-        // allowing "demo" login if needed, or just strict check.
-        // Let's stick to strict check against localStorage for now as per previous flow, 
-        // but maybe allow a "demo" user for ease of testing if requested. 
-        // For now, strict check.
-        setError('Credenciales inválidas. Por favor verifica tu correo y contraseña.');
+        if (response.success && response.user) {
+            // Redirect based on user type
+            if (response.user.userType === 'owner') {
+                navigate('/publicar');
+            } else {
+                navigate('/'); // Tenants go to home
+            }
+        } else {
+            setError(response.message || 'Error al iniciar sesión.');
+        }
     };
 
     return (

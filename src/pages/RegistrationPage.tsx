@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User } from '../types';
 import { CheckCircle, Eye, EyeOff, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
+import { authService } from '../services/authService';
 
 const RegistrationPage = () => {
     const navigate = useNavigate();
@@ -60,50 +61,29 @@ const RegistrationPage = () => {
         return true;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (validateForm()) {
-            // Create user object
-            const newUser: User = {
-                ...formData as User,
-                id: crypto.randomUUID(),
-                joinedAt: new Date().toISOString(),
-                // Set role based on selection. 
-                // Note: 'role' in User type might be 'individual' | 'agency' for owners.
-                // We might need to adjust User type to accommodate 'tenant' or just use a different field.
-                // For now, let's assume 'role' can be used or we add a 'userType' field.
-                // Looking at types/index.ts, OwnerRole is 'individual' | 'agency'.
-                // I should probably add 'tenant' to User type or handle it.
-                // Let's stick to the existing structure and maybe add a 'type' field to User if needed,
-                // or just use 'role' if it allows string.
-                // For this implementation, I will treat 'tenant' as a specific role or just save it.
-                // Actually, let's check types.ts content again.
-                // I'll assume for now I can save it.
-                propertiesCount: 0,
-                approvedCount: 0,
-                pendingCount: 0,
-                rejectedCount: 0,
-                isVerified: false
+            // Prepare user data
+            const userData: Partial<User> = {
+                ...formData,
+                // Add userType field to distinguish between owners and tenants
+                userType: userType as any
             };
 
-            // If tenant, we might want to clear owner-specific fields or just ignore them.
-            if (userType === 'tenant') {
-                // Explicitly set a property to distinguish, or just rely on lack of owner fields?
-                // Ideally we should have a type field.
-                // For now, I'll add a custom property to the object saved in localStorage
-                (newUser as any).userType = 'tenant';
-            } else {
-                (newUser as any).userType = 'owner';
-            }
+            // Register user via authService
+            const response = await authService.register(userData);
 
-            // Save to localStorage for mock auth
-            localStorage.setItem('estuarriendo_user', JSON.stringify(newUser));
-
-            // Redirect based on user type
-            if (userType === 'owner') {
-                navigate('/publicar');
+            if (response.success) {
+                // Redirect based on user type
+                if (userType === 'owner') {
+                    navigate('/publicar');
+                } else {
+                    navigate('/'); // Tenants go to home to search
+                }
             } else {
-                navigate('/'); // Tenants go to home to search
+                // Show error message from service
+                setError(response.message || 'Error al registrar usuario.');
             }
         }
     };
@@ -129,8 +109,8 @@ const RegistrationPage = () => {
                             type="button"
                             onClick={() => setUserType('owner')}
                             className={`flex items-center px-6 py-2 rounded-md text-sm font-medium transition-colors ${userType === 'owner'
-                                    ? 'bg-blue-600 text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-900'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             <Building2 className="w-4 h-4 mr-2" />
@@ -140,8 +120,8 @@ const RegistrationPage = () => {
                             type="button"
                             onClick={() => setUserType('tenant')}
                             className={`flex items-center px-6 py-2 rounded-md text-sm font-medium transition-colors ${userType === 'tenant'
-                                    ? 'bg-blue-600 text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-900'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             <UserIcon className="w-4 h-4 mr-2" />
