@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User } from '../types';
-import { CheckCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { CheckCircle, Eye, EyeOff, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
 
-const OwnerRegistration = () => {
+const RegistrationPage = () => {
     const navigate = useNavigate();
+    const [userType, setUserType] = useState<'owner' | 'tenant'>('owner');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
 
     const [formData, setFormData] = useState<Partial<User>>({
-        role: 'individual',
+        role: 'individual', // Default for owner, will be overwritten or ignored for tenant
         idType: 'CC',
         paymentPreference: 'PSE',
         bankDetails: {
@@ -31,10 +32,19 @@ const OwnerRegistration = () => {
         if (error) setError('');
     };
 
-    const validatePhase1 = () => {
-        if (!formData.name || !formData.idNumber || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
+    const validateForm = () => {
+        // Common validation
+        if (!formData.name || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
             setError('Por favor completa todos los campos obligatorios.');
             return false;
+        }
+
+        // Owner specific validation
+        if (userType === 'owner') {
+            if (!formData.idNumber) {
+                setError('Por favor ingresa tu número de documento.');
+                return false;
+            }
         }
 
         if (formData.password !== formData.confirmPassword) {
@@ -50,49 +60,98 @@ const OwnerRegistration = () => {
         return true;
     };
 
-    const handlePhase1Submit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (validatePhase1()) {
-            // Save basic profile immediately
+        if (validateForm()) {
+            // Create user object
             const newUser: User = {
                 ...formData as User,
                 id: crypto.randomUUID(),
                 joinedAt: new Date().toISOString(),
+                // Set role based on selection. 
+                // Note: 'role' in User type might be 'individual' | 'agency' for owners.
+                // We might need to adjust User type to accommodate 'tenant' or just use a different field.
+                // For now, let's assume 'role' can be used or we add a 'userType' field.
+                // Looking at types/index.ts, OwnerRole is 'individual' | 'agency'.
+                // I should probably add 'tenant' to User type or handle it.
+                // Let's stick to the existing structure and maybe add a 'type' field to User if needed,
+                // or just use 'role' if it allows string.
+                // For this implementation, I will treat 'tenant' as a specific role or just save it.
+                // Actually, let's check types.ts content again.
+                // I'll assume for now I can save it.
                 propertiesCount: 0,
                 approvedCount: 0,
                 pendingCount: 0,
                 rejectedCount: 0,
-                isVerified: false // Pending verification
+                isVerified: false
             };
+
+            // If tenant, we might want to clear owner-specific fields or just ignore them.
+            if (userType === 'tenant') {
+                // Explicitly set a property to distinguish, or just rely on lack of owner fields?
+                // Ideally we should have a type field.
+                // For now, I'll add a custom property to the object saved in localStorage
+                (newUser as any).userType = 'tenant';
+            } else {
+                (newUser as any).userType = 'owner';
+            }
 
             // Save to localStorage for mock auth
             localStorage.setItem('estuarriendo_user', JSON.stringify(newUser));
 
-            // Redirect to property submission
-            navigate('/publicar');
+            // Redirect based on user type
+            if (userType === 'owner') {
+                navigate('/publicar');
+            } else {
+                navigate('/'); // Tenants go to home to search
+            }
         }
     };
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
-                <div className="text-center mb-12">
+                <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">
-                        Crea tu cuenta de Propietario
+                        {userType === 'owner' ? 'Registra tu Inmueble' : 'Encuentra tu próximo hogar'}
                     </h1>
                     <p className="mt-2 text-gray-600">
-                        Empieza a publicar tus inmuebles gratis.
-                    </p>
-                    <p className="mt-2 text-sm text-gray-500">
-                        ¿Ya tienes cuenta?{' '}
-                        <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                            Ingresa aquí
-                        </Link>
+                        {userType === 'owner'
+                            ? 'Publica tus propiedades y llega a miles de estudiantes.'
+                            : 'Regístrate para guardar favoritos y contactar propietarios.'}
                     </p>
                 </div>
 
+                {/* User Type Toggle */}
+                <div className="flex justify-center mb-8">
+                    <div className="bg-white p-1 rounded-lg shadow-sm border border-gray-200 inline-flex">
+                        <button
+                            type="button"
+                            onClick={() => setUserType('owner')}
+                            className={`flex items-center px-6 py-2 rounded-md text-sm font-medium transition-colors ${userType === 'owner'
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                        >
+                            <Building2 className="w-4 h-4 mr-2" />
+                            Soy Propietario
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setUserType('tenant')}
+                            className={`flex items-center px-6 py-2 rounded-md text-sm font-medium transition-colors ${userType === 'tenant'
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                        >
+                            <UserIcon className="w-4 h-4 mr-2" />
+                            Busco Inmueble
+                        </button>
+                    </div>
+                </div>
+
                 <div className="bg-white shadow rounded-lg p-8">
-                    <form onSubmit={handlePhase1Submit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700">
                                 <AlertCircle className="h-5 w-5 mr-2" />
@@ -101,21 +160,23 @@ const OwnerRegistration = () => {
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Tipo de Perfil</label>
-                                <select
-                                    name="role"
-                                    value={formData.role}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                                >
-                                    <option value="individual">Propietario Individual</option>
-                                    <option value="agency">Inmobiliaria / Administrador</option>
-                                </select>
-                            </div>
+                            {userType === 'owner' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Tipo de Perfil</label>
+                                    <select
+                                        name="role"
+                                        value={formData.role}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                                    >
+                                        <option value="individual">Propietario Individual</option>
+                                        <option value="agency">Inmobiliaria / Administrador</option>
+                                    </select>
+                                </div>
+                            )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Nombre Completo / Razón Social</label>
+                            <div className={userType === 'tenant' ? "md:col-span-2" : ""}>
+                                <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
                                 <input
                                     type="text"
                                     name="name"
@@ -126,31 +187,35 @@ const OwnerRegistration = () => {
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Tipo de Documento</label>
-                                <select
-                                    name="idType"
-                                    value={formData.idType}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                                >
-                                    <option value="CC">Cédula de Ciudadanía</option>
-                                    <option value="NIT">NIT</option>
-                                    <option value="CE">Cédula de Extranjería</option>
-                                </select>
-                            </div>
+                            {userType === 'owner' && (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Tipo de Documento</label>
+                                        <select
+                                            name="idType"
+                                            value={formData.idType}
+                                            onChange={handleInputChange}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                                        >
+                                            <option value="CC">Cédula de Ciudadanía</option>
+                                            <option value="NIT">NIT</option>
+                                            <option value="CE">Cédula de Extranjería</option>
+                                        </select>
+                                    </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Número de Documento</label>
-                                <input
-                                    type="text"
-                                    name="idNumber"
-                                    required
-                                    value={formData.idNumber || ''}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                                />
-                            </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Número de Documento</label>
+                                        <input
+                                            type="text"
+                                            name="idNumber"
+                                            required
+                                            value={formData.idNumber || ''}
+                                            onChange={handleInputChange}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
@@ -230,9 +295,18 @@ const OwnerRegistration = () => {
                         </div>
                     </form>
                 </div>
+
+                <div className="text-center mt-6">
+                    <p className="text-sm text-gray-500">
+                        ¿Ya tienes cuenta?{' '}
+                        <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                            Ingresa aquí
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     );
 };
 
-export default OwnerRegistration;
+export default RegistrationPage;

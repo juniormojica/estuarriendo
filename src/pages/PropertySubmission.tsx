@@ -41,7 +41,7 @@ const PropertySubmission: React.FC = () => {
   useEffect(() => {
     const storedUser = localStorage.getItem('estuarriendo_user');
     if (!storedUser) {
-      window.location.href = '/registro-propietario';
+      window.location.href = '/login';
       return;
     }
     setUser(JSON.parse(storedUser));

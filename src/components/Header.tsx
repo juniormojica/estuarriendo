@@ -42,6 +42,40 @@ const Header: React.FC = () => {
               <Plus className="h-4 w-4" />
               <span>Publicar</span>
             </Link>
+
+            <div className="h-6 w-px bg-gray-300 mx-2"></div>
+
+            {localStorage.getItem('estuarriendo_user') ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-700 font-medium">
+                  Hola, {JSON.parse(localStorage.getItem('estuarriendo_user') || '{}').name?.split(' ')[0]}
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('estuarriendo_user');
+                    window.location.reload();
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Ingresar
+                </Link>
+                <Link
+                  to="/registro"
+                  className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium shadow-sm"
+                >
+                  Registrarse
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </div>

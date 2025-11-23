@@ -7,13 +7,16 @@ import PropertyDetail from './pages/PropertyDetail';
 import PropertySubmission from './pages/PropertySubmission';
 import AdminDashboard from './pages/AdminDashboard';
 import FavoritesPage from './pages/FavoritesPage';
-import OwnerRegistration from './pages/OwnerRegistration';
+import RegistrationPage from './pages/RegistrationPage';
+import LoginPage from './pages/LoginPage';
 import { FavoritesProvider } from './context/FavoritesContext';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
     <FavoritesProvider>
       <Router>
+        <ScrollToTop />
         <div className="min-h-screen bg-gray-50">
           <Header />
           <Routes>
@@ -21,7 +24,8 @@ function App() {
             <Route path="/propiedad/:id" element={<PropertyDetail />} />
             <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/publicar" element={<PropertySubmission />} />
-            <Route path="/registro-propietario" element={<OwnerRegistration />} />
+            <Route path="/registro" element={<RegistrationPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
           <Footer />
