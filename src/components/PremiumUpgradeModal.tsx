@@ -96,7 +96,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                         </div>
 
                         <Link
-                            to="/perfil"
+                            to="/perfil?tab=billing"
                             className="block w-full bg-emerald-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
                         >
                             Obtener Premium

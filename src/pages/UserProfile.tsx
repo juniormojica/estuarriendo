@@ -17,6 +17,13 @@ const UserProfile: React.FC = () => {
     const [formData, setFormData] = useState<Partial<User>>({});
 
     useEffect(() => {
+        // Handle tab parameter
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
+        if (tabParam === 'billing' || tabParam === 'security' || tabParam === 'profile') {
+            setActiveTab(tabParam);
+        }
+
         const loadUserAndPayment = async () => {
             const currentUser = authService.getCurrentUser();
             if (currentUser) {
@@ -72,6 +79,7 @@ const UserProfile: React.FC = () => {
             }
         }
         setMessage({ type: 'success', text: 'Comprobante enviado correctamente. Tu pago está en revisión.' });
+        window.scrollTo(0, 0);
     };
 
     if (loading) {
@@ -123,7 +131,7 @@ const UserProfile: React.FC = () => {
                     {/* Content */}
                     <div className="flex-1 p-6 md:p-8">
                         {message && (
-                            <div className={`mb-6 p-4 rounded-lg flex items-center ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                            <div className={`mb-6 p-4 rounded-lg flex items-center justify-center ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                                 }`}>
                                 {message.type === 'success' ? <CheckCircle className="w-5 h-5 mr-2" /> : <AlertCircle className="w-5 h-5 mr-2" />}
                                 {message.text}
@@ -272,10 +280,10 @@ const UserProfile: React.FC = () => {
                                         <h3 className="text-lg font-medium text-gray-900 mb-4">Mejorar a Premium</h3>
 
                                         {paymentRequest && paymentRequest.status === 'pending' ? (
-                                            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-                                                <Clock className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
+                                                <Clock className="h-12 w-12 text-yellow-500 mb-3" />
                                                 <h4 className="text-lg font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
-                                                <p className="text-yellow-700 mb-4">
+                                                <p className="text-yellow-700 mb-4 max-w-md">
                                                     Hemos recibido tu comprobante. El plan se activará en un máximo de 2 horas tras la verificación manual.
                                                 </p>
                                                 <div className="text-sm text-yellow-600 bg-yellow-100 inline-block px-3 py-1 rounded-full">
