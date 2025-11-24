@@ -6,13 +6,15 @@ interface ImageUploaderProps {
     onChange: (images: string[]) => void;
     maxImages?: number;
     maxSizeMB?: number;
+    onLimitReached?: () => void;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
     images,
     onChange,
     maxImages = 10,
-    maxSizeMB = 5
+    maxSizeMB = 5,
+    onLimitReached
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -22,7 +24,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         if (!files) return;
 
         const fileArray = Array.from(files);
+
+        // Check if adding these files would exceed the limit
+        if (images.length + fileArray.length > maxImages) {
+            if (onLimitReached) {
+                onLimitReached();
+                // If callback exists, we might want to stop or just add up to the limit
+                // Let's add up to the limit and notify
+            } else {
+                alert(`Solo puedes subir un máximo de ${maxImages} imágenes.`);
+            }
+        }
+
         const remainingSlots = maxImages - images.length;
+        if (remainingSlots <= 0) return;
+
         const filesToProcess = fileArray.slice(0, remainingSlots);
 
         const newImages: string[] = [];
@@ -119,8 +135,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-lg p-8 transition-all cursor-pointer ${isDragging
-                        ? 'border-emerald-500 bg-emerald-50'
-                        : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
                     }`}
             >
                 <div className="text-center">
@@ -165,8 +181,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                                 onDragOver={handleImageDragOver}
                                 onDrop={(e) => handleImageDrop(e, index)}
                                 className={`relative group rounded-lg overflow-hidden border-2 transition-all cursor-move ${draggedIndex === index
-                                        ? 'border-emerald-500 opacity-50'
-                                        : 'border-gray-200 hover:border-emerald-300'
+                                    ? 'border-emerald-500 opacity-50'
+                                    : 'border-gray-200 hover:border-emerald-300'
                                     }`}
                             >
                                 <div className="aspect-square bg-gray-100">

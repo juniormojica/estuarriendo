@@ -5,6 +5,7 @@ import { PropertyFormData, Amenity } from '../types';
 import { api } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ImageUploader from '../components/ImageUploader';
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import { departments, getCitiesByDepartment } from '../data/colombiaLocations';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
@@ -20,6 +21,9 @@ const PropertySubmission: React.FC = () => {
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [user, setUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const maxImages = user?.plan === 'premium' ? 10 : 3;
 
   const [formData, setFormData] = useState<PropertyFormData>({
     title: '',
@@ -521,14 +525,35 @@ const PropertySubmission: React.FC = () => {
             {currentStep === 3 && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Galería de Imágenes</h2>
+
+                {user?.plan !== 'premium' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start space-x-3">
+                    <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-blue-800">Plan Gratuito</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Estás limitado a 3 imágenes por propiedad.
+                        <button
+                          onClick={() => setShowPremiumModal(true)}
+                          className="ml-1 underline font-medium hover:text-blue-900"
+                        >
+                          Mejora a Premium
+                        </button>
+                        {' '}para subir hasta 10 imágenes y videos.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-gray-600">
                   Sube al menos una imagen de tu propiedad. Las mejores fotos aumentan las posibilidades de arriendo.
                 </p>
                 <ImageUploader
                   images={formData.images as string[]}
                   onChange={handleImagesChange}
-                  maxImages={10}
+                  maxImages={maxImages}
                   maxSizeMB={5}
+                  onLimitReached={() => setShowPremiumModal(true)}
                 />
               </div>
             )}
@@ -581,6 +606,11 @@ const PropertySubmission: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <PremiumUpgradeModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
     </div>
   );
 };
