@@ -69,44 +69,28 @@ export type IdType = 'CC' | 'NIT' | 'CE';
 export type OwnerRole = 'individual' | 'agency';
 export type PaymentMethod = 'PSE' | 'CreditCard' | 'Nequi' | 'Daviplata';
 
-export interface BankDetails {
-  bankName: string;
-  accountType: 'savings' | 'checking';
-  accountNumber: string;
-  accountHolder: string;
-}
+phone: string;
+whatsapp: string;
+idType ?: IdType;
+idNumber ?: string;
+role ?: OwnerRole;
+userType ?: 'owner' | 'tenant'; // Distinguish between property owners and tenants
+password ?: string; // In a real app, this wouldn't be here, but for mock auth
+confirmPassword ?: string;
 
-export interface BillingDetails {
-  address: string;
-  rut: string;
-}
+// Phase 2: Business Profile & Trust
+isVerified ?: boolean;
+verificationDocuments ?: string[]; // URLs to docs
+availableForVisit ?: boolean;
+paymentPreference ?: PaymentMethod;
+bankDetails ?: BankDetails;
+billingDetails ?: BillingDetails;
 
-export interface User {
-  id: string;
-  // Phase 1: Basic Info
-  name: string; // Razón Social or Full Name
-  email: string;
-  phone: string;
-  whatsapp: string;
-  idType?: IdType;
-  idNumber?: string;
-  role?: OwnerRole;
-  userType?: 'owner' | 'tenant'; // Distinguish between property owners and tenants
-  password?: string; // In a real app, this wouldn't be here, but for mock auth
-  confirmPassword?: string;
-
-  // Phase 2: Business Profile & Trust
-  isVerified?: boolean;
-  verificationDocuments?: string[]; // URLs to docs
-  availableForVisit?: boolean;
-  paymentPreference?: PaymentMethod;
-  bankDetails?: BankDetails;
-  billingDetails?: BillingDetails;
-
-  // Stats
-  propertiesCount: number;
-  approvedCount: number;
-  pendingCount: number;
-  rejectedCount: number;
-  joinedAt: string;
+// Stats
+propertiesCount: number;
+approvedCount: number;
+pendingCount: number;
+rejectedCount: number;
+joinedAt: string;
+plan ?: 'free' | 'premium';
 }

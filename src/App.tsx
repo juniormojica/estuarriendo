@@ -10,6 +10,7 @@ import FavoritesPage from './pages/FavoritesPage';
 import RegistrationPage from './pages/RegistrationPage';
 import LoginPage from './pages/LoginPage';
 import OwnerDashboard from './pages/OwnerDashboard';
+import UserProfile from './pages/UserProfile';
 import { FavoritesProvider } from './context/FavoritesContext';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -29,6 +30,7 @@ function App() {
             <Route path="/registro" element={<RegistrationPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/mis-propiedades" element={<OwnerDashboard />} />
+            <Route path="/perfil" element={<UserProfile />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
           <Footer />
