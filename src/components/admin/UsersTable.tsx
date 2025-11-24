@@ -4,10 +4,10 @@ import { Search, Mail, Phone, MessageCircle, Home } from 'lucide-react';
 
 interface UsersTableProps {
     users: User[];
-    onViewProperties: (userId: string) => void;
+    onViewDetails: (user: User) => void;
 }
 
-const UsersTable: React.FC<UsersTableProps> = ({ users, onViewProperties }) => {
+const UsersTable: React.FC<UsersTableProps> = ({ users, onViewDetails }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -52,13 +52,13 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onViewProperties }) => {
                                 Usuario
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Contacto
+                                Rol / Plan
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Estado
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Propiedades
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Fecha de Registro
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
@@ -75,57 +75,44 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onViewProperties }) => {
                                         </div>
                                         <div>
                                             <div className="font-medium text-gray-900">{user.name}</div>
-                                            <div className="text-sm text-gray-500">ID: {user.id}</div>
+                                            <div className="text-sm text-gray-500">{user.email}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-4 py-4">
                                     <div className="space-y-1">
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <Mail size={14} />
-                                            {user.email}
+                                        <div className="text-sm font-medium text-gray-900 capitalize">
+                                            {user.userType === 'owner' ? 'Propietario' : 'Arrendatario'}
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <Phone size={14} />
-                                            {user.phone}
+                                        <div className="text-xs text-gray-500 capitalize">
+                                            Plan: {user.plan === 'premium' ? 'Premium' : 'Gratuito'}
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-4 py-4">
-                                    <div className="space-y-1 text-sm">
-                                        <div className="font-medium text-gray-900">
-                                            Total: {user.propertiesCount}
-                                        </div>
-                                        <div className="text-gray-600">
-                                            <span className="text-green-600">✓ {user.approvedCount}</span>
-                                            {' · '}
-                                            <span className="text-yellow-600">⏱ {user.pendingCount}</span>
-                                            {' · '}
-                                            <span className="text-red-600">✗ {user.rejectedCount}</span>
-                                        </div>
-                                    </div>
+                                    {user.isVerified ? (
+                                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            Verificado
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            No Verificado
+                                        </span>
+                                    )}
                                 </td>
-                                <td className="px-4 py-4 text-sm text-gray-900">
-                                    {new Date(user.joinedAt).toLocaleDateString('es-CO')}
+                                <td className="px-4 py-4">
+                                    <div className="text-sm text-gray-900">
+                                        {user.propertiesCount} Publicadas
+                                    </div>
                                 </td>
                                 <td className="px-4 py-4">
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => onViewProperties(user.id)}
-                                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            onClick={() => onViewDetails(user)}
+                                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                         >
-                                            <Home size={16} />
-                                            Ver Propiedades
+                                            Ver Detalle
                                         </button>
-                                        <a
-                                            href={`https://wa.me/${user.whatsapp.replace(/\D/g, '')}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                            title="Contactar por WhatsApp"
-                                        >
-                                            <MessageCircle size={18} />
-                                        </a>
                                     </div>
                                 </td>
                             </tr>

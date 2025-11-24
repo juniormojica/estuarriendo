@@ -10,6 +10,7 @@ import ActivityFeed from '../components/admin/ActivityFeed';
 import AdminConfig from '../components/admin/AdminConfig';
 import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
 import PropertyEditModal from '../components/admin/PropertyEditModal';
+import UserDetailsModal from '../components/admin/UserDetailsModal';
 import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -38,6 +39,7 @@ const AdminDashboard = () => {
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
     const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     useEffect(() => {
         loadInitialData();
@@ -416,7 +418,7 @@ const AdminDashboard = () => {
                         <h2 className="text-2xl font-bold text-gray-900">Usuarios</h2>
                         <UsersTable
                             users={users}
-                            onViewProperties={handleViewUserProperties}
+                            onViewDetails={setSelectedUser}
                         />
                     </div>
                 );
@@ -489,6 +491,15 @@ const AdminDashboard = () => {
                     isOpen={!!editingProperty}
                     onClose={() => setEditingProperty(null)}
                     onSave={handleSaveProperty}
+                />
+            )}
+
+            {/* User Details Modal */}
+            {selectedUser && (
+                <UserDetailsModal
+                    user={selectedUser}
+                    isOpen={!!selectedUser}
+                    onClose={() => setSelectedUser(null)}
                 />
             )}
         </div>
