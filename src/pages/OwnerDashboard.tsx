@@ -167,13 +167,13 @@ const OwnerDashboard: React.FC = () => {
 
                                                 <div className="flex items-center space-x-2">
                                                     {/* Placeholder for Edit - could be implemented later */}
-                                                    <button
-                                                        className="p-2 text-gray-400 hover:text-gray-500 transition-colors"
-                                                        title="Editar (Próximamente)"
-                                                        disabled
+                                                    <Link
+                                                        to={`/editar-propiedad/${property.id}`}
+                                                        className="p-2 text-gray-400 hover:text-emerald-600 transition-colors"
+                                                        title="Editar"
                                                     >
                                                         <Edit className="h-5 w-5" />
-                                                    </button>
+                                                    </Link>
 
                                                     {deleteId === property.id ? (
                                                         <div className="flex items-center space-x-2 animate-fadeIn">

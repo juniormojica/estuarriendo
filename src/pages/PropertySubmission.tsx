@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import { PropertyFormData, Amenity } from '../types';
 import { api } from '../services/api';
@@ -10,6 +10,8 @@ import { departments, getCitiesByDepartment } from '../data/colombiaLocations';
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
 const PropertySubmission: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +19,7 @@ const PropertySubmission: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState<PropertyFormData>({
     title: '',
@@ -46,7 +49,45 @@ const PropertySubmission: React.FC = () => {
     }
     setUser(JSON.parse(storedUser));
     api.getAmenities().then(setAmenities);
-  }, []);
+
+    if (id) {
+      setIsEditing(true);
+      loadProperty(id);
+    }
+  }, [id]);
+
+  const loadProperty = async (propertyId: string) => {
+    try {
+      const property = await api.getProperty(propertyId);
+      if (property) {
+        setFormData({
+          title: property.title,
+          description: property.description,
+          type: property.type,
+          price: property.price,
+          currency: property.currency,
+          address: property.address,
+          rooms: property.rooms,
+          bathrooms: property.bathrooms,
+          area: property.area,
+          amenities: property.amenities,
+          images: property.images,
+          ownerId: property.ownerId
+        });
+
+        // Load available cities for the department
+        const dept = departments.find(d => d.name === property.address.department);
+        if (dept) {
+          const cities = getCitiesByDepartment(dept.id);
+          setAvailableCities(cities.map(c => c.name));
+        }
+      } else {
+        setError('Propiedad no encontrada');
+      }
+    } catch (err) {
+      setError('Error al cargar la propiedad');
+    }
+  };
 
   const handleInputChange = (field: string, value: any) => {
     if (field.startsWith('address.')) {
@@ -150,7 +191,15 @@ const PropertySubmission: React.FC = () => {
         ...formData,
         ownerId: user?.id
       };
-      const result = await api.submitProperty(submissionData);
+
+      let result;
+      if (isEditing && id) {
+        const success = await api.updateProperty(id, submissionData);
+        result = { success, message: success ? 'Propiedad actualizada exitosamente' : 'Error al actualizar' };
+      } else {
+        result = await api.submitProperty(submissionData);
+      }
+
       if (result.success) {
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -169,46 +218,52 @@ const PropertySubmission: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-md w-full mx-4 text-center animate-fadeIn">
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">¡Propiedad Enviada a Revisión!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {isEditing ? '¡Propiedad Actualizada!' : '¡Propiedad Enviada a Revisión!'}
+          </h2>
           <p className="text-gray-600 mb-6">
-            Tu propiedad ha sido enviada exitosamente. Nuestro equipo la revisará y será publicada pronto.
+            {isEditing
+              ? 'Tu propiedad ha sido actualizada exitosamente.'
+              : 'Tu propiedad ha sido enviada exitosamente. Nuestro equipo la revisará y será publicada pronto.'}
           </p>
           <div className="space-y-3">
             <Link
-              to="/"
+              to="/mis-propiedades"
               className="block w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
             >
-              Ver Propiedades
+              Volver a Mis Propiedades
             </Link>
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                setCurrentStep(0);
-                setFormData({
-                  title: '',
-                  description: '',
-                  type: 'apartamento',
-                  price: 0,
-                  currency: 'COP',
-                  address: {
-                    country: 'Colombia',
-                    department: '',
-                    city: '',
-                    street: '',
-                    postalCode: ''
-                  },
-                  rooms: undefined,
-                  bathrooms: undefined,
-                  area: undefined,
-                  amenities: [],
-                  images: []
-                });
-                setAvailableCities([]);
-              }}
-              className="block w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Publicar Otra Propiedad
-            </button>
+            {!isEditing && (
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setCurrentStep(0);
+                  setFormData({
+                    title: '',
+                    description: '',
+                    type: 'apartamento',
+                    price: 0,
+                    currency: 'COP',
+                    address: {
+                      country: 'Colombia',
+                      department: '',
+                      city: '',
+                      street: '',
+                      postalCode: ''
+                    },
+                    rooms: undefined,
+                    bathrooms: undefined,
+                    area: undefined,
+                    amenities: [],
+                    images: []
+                  });
+                  setAvailableCities([]);
+                }}
+                className="block w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Publicar Otra Propiedad
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -221,15 +276,17 @@ const PropertySubmission: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <Link
-            to="/"
+            to={isEditing ? "/mis-propiedades" : "/"}
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Volver al inicio</span>
+            <span>{isEditing ? 'Volver a Mis Propiedades' : 'Volver al inicio'}</span>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Publicar Propiedad</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isEditing ? 'Editar Propiedad' : 'Publicar Propiedad'}
+          </h1>
           <p className="text-gray-600 mt-2">
-            Completa la información en {STEPS.length} sencillos pasos.
+            {isEditing ? 'Actualiza la información de tu propiedad.' : `Completa la información en ${STEPS.length} sencillos pasos.`}
           </p>
         </div>
 
@@ -502,11 +559,11 @@ const PropertySubmission: React.FC = () => {
                 {isSubmitting ? (
                   <>
                     <LoadingSpinner size="sm" />
-                    <span>Publicando...</span>
+                    <span>{isEditing ? 'Actualizando...' : 'Publicando...'}</span>
                   </>
                 ) : (
                   <>
-                    <span>Publicar Propiedad</span>
+                    <span>{isEditing ? 'Actualizar Propiedad' : 'Publicar Propiedad'}</span>
                     <CheckCircle className="h-5 w-5" />
                   </>
                 )}

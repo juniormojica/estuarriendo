@@ -25,6 +25,7 @@ function App() {
             <Route path="/propiedad/:id" element={<PropertyDetail />} />
             <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/publicar" element={<PropertySubmission />} />
+            <Route path="/editar-propiedad/:id" element={<PropertySubmission />} />
             <Route path="/registro" element={<RegistrationPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/mis-propiedades" element={<OwnerDashboard />} />
