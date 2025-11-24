@@ -9,6 +9,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import FavoritesPage from './pages/FavoritesPage';
 import RegistrationPage from './pages/RegistrationPage';
 import LoginPage from './pages/LoginPage';
+import OwnerDashboard from './pages/OwnerDashboard';
 import { FavoritesProvider } from './context/FavoritesContext';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -26,6 +27,7 @@ function App() {
             <Route path="/publicar" element={<PropertySubmission />} />
             <Route path="/registro" element={<RegistrationPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/mis-propiedades" element={<OwnerDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
           <Footer />

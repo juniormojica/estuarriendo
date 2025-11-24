@@ -36,39 +36,6 @@ export interface SearchFilters {
   type?: string;
   priceMin?: number;
   priceMax?: number;
-  rooms?: number;
-  bathrooms?: number;
-  amenities?: string[];
-  university?: string;
-}
-
-export interface PropertyFormData {
-  title: string;
-  description: string;
-  type: Property['type'];
-  price: number;
-  currency: string;
-  address: Property['address'];
-  rooms?: number;
-  bathrooms?: number;
-  area?: number;
-  amenities: string[];
-  images: File[] | string[]; // Support both File objects and base64 strings
-}
-
-export interface PropertyStats {
-  total: number;
-  pending: number;
-  approved: number;
-  rejected: number;
-  featured: number;
-  totalRevenue: number;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
   phone: string;
   whatsapp: string;
   propertiesCount: number;

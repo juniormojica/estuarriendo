@@ -131,7 +131,8 @@ export const api = {
       images: imageStrings,
       amenities: formData.amenities,
       createdAt: new Date().toISOString().split('T')[0],
-      status: 'pending'
+      status: 'pending',
+      ownerId: formData.ownerId
     };
 
     properties.unshift(newProperty);
@@ -310,8 +311,8 @@ export const api = {
   async getUserProperties(userId: string): Promise<Property[]> {
     await delay(300);
     const properties = getStoredProperties();
-    // Filter properties that belong to this user (simplified logic)
-    return properties.filter(p => `user-${p.id.substring(0, 3)}` === userId);
+    // Filter properties that belong to this user
+    return properties.filter(p => p.ownerId === userId || `user-${p.id.substring(0, 3)}` === userId);
   },
 
   // Get activity log

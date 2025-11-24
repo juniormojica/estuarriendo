@@ -1,0 +1,217 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Property } from '../types';
+import { api } from '../services/api';
+import { authService } from '../services/authService';
+import LoadingSpinner from '../components/LoadingSpinner';
+
+const OwnerDashboard: React.FC = () => {
+    const [properties, setProperties] = useState<Property[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchProperties = async () => {
+            try {
+                const user = authService.getCurrentUser();
+                if (!user) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const userProperties = await api.getUserProperties(user.id);
+                setProperties(userProperties);
+            } catch (err) {
+                setError('Error al cargar tus propiedades.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProperties();
+    }, []);
+
+    const handleDelete = async (id: string) => {
+        try {
+            const success = await api.deleteProperty(id);
+            if (success) {
+                setProperties(properties.filter(p => p.id !== id));
+                setDeleteId(null);
+            } else {
+                setError('No se pudo eliminar la propiedad.');
+            }
+        } catch (err) {
+            setError('Error al eliminar la propiedad.');
+        }
+    };
+
+    const getStatusBadge = (status: Property['status']) => {
+        switch (status) {
+            case 'approved':
+                return (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Aprobada
+                    </span>
+                );
+            case 'pending':
+                return (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Pendiente
+                    </span>
+                );
+            case 'rejected':
+                return (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <XCircle className="w-3 h-3 mr-1" />
+                        Rechazada
+                    </span>
+                );
+            default:
+                return null;
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <LoadingSpinner size="lg" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Mis Propiedades</h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Gestiona tus publicaciones y revisa su estado
+                        </p>
+                    </div>
+                    <Link
+                        to="/publicar"
+                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nueva Propiedad
+                    </Link>
+                </div>
+
+                {error && (
+                    <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4 flex items-center">
+                        <AlertCircle className="h-5 w-5 text-red-400 mr-3" />
+                        <span className="text-red-700">{error}</span>
+                    </div>
+                )}
+
+                {properties.length === 0 ? (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                        <Home className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">No tienes propiedades</h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Comienza publicando tu primera propiedad para arriendo.
+                        </p>
+                        <div className="mt-6">
+                            <Link
+                                to="/publicar"
+                                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700"
+                            >
+                                <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                                Publicar Propiedad
+                            </Link>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                        <ul className="divide-y divide-gray-200">
+                            {properties.map((property) => (
+                                <li key={property.id}>
+                                    <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center min-w-0 flex-1">
+                                                <div className="flex-shrink-0 h-16 w-16 rounded-lg overflow-hidden bg-gray-100">
+                                                    <img
+                                                        className="h-16 w-16 object-cover"
+                                                        src={property.images[0]}
+                                                        alt={property.title}
+                                                    />
+                                                </div>
+                                                <div className="min-w-0 flex-1 px-4 md:grid md:grid-cols-2 md:gap-4">
+                                                    <div>
+                                                        <p className="text-sm font-medium text-emerald-600 truncate">
+                                                            {property.title}
+                                                        </p>
+                                                        <p className="mt-1 flex items-center text-sm text-gray-500">
+                                                            <span className="truncate">
+                                                                {property.address.city}, {property.address.department}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                    <div className="hidden md:block">
+                                                        <div className="flex items-center text-sm text-gray-500">
+                                                            Precio: ${property.price.toLocaleString()} {property.currency}
+                                                        </div>
+                                                        <div className="mt-1 flex items-center text-sm text-gray-500">
+                                                            Publicado: {new Date(property.createdAt).toLocaleDateString()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-4 ml-4">
+                                                {getStatusBadge(property.status)}
+
+                                                <div className="flex items-center space-x-2">
+                                                    {/* Placeholder for Edit - could be implemented later */}
+                                                    <button
+                                                        className="p-2 text-gray-400 hover:text-gray-500 transition-colors"
+                                                        title="Editar (Próximamente)"
+                                                        disabled
+                                                    >
+                                                        <Edit className="h-5 w-5" />
+                                                    </button>
+
+                                                    {deleteId === property.id ? (
+                                                        <div className="flex items-center space-x-2 animate-fadeIn">
+                                                            <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
+                                                            <button
+                                                                onClick={() => handleDelete(property.id)}
+                                                                className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                                                            >
+                                                                Sí
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setDeleteId(null)}
+                                                                className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                                                            >
+                                                                No
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setDeleteId(property.id)}
+                                                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 className="h-5 w-5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default OwnerDashboard;
