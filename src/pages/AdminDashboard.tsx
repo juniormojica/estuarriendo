@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, Amenity } from '../types';
+import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, Amenity, PaymentRequest } from '../types';
 import { api } from '../services/api';
 import PropertyReviewModal from '../components/PropertyReviewModal';
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -10,6 +10,7 @@ import ActivityFeed from '../components/admin/ActivityFeed';
 import AdminConfig from '../components/admin/AdminConfig';
 import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
 import PropertyEditModal from '../components/admin/PropertyEditModal';
+import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 
 const AdminDashboard = () => {
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
@@ -30,6 +31,7 @@ const AdminDashboard = () => {
     const [activities, setActivities] = useState<ActivityLog[]>([]);
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [amenities, setAmenities] = useState<Amenity[]>([]);
+    const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
 
     // UI states
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -44,14 +46,15 @@ const AdminDashboard = () => {
     const loadInitialData = async () => {
         try {
             setLoading(true);
-            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, amenitiesData] = await Promise.all([
+            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, amenitiesData, paymentsData] = await Promise.all([
                 api.getPropertyStats(),
                 api.getPendingProperties(),
                 api.getAllPropertiesAdmin(),
                 api.getUsers(),
                 api.getActivityLog(),
                 api.getSystemConfig(),
-                api.getAmenities()
+                api.getAmenities(),
+                api.getPaymentRequests()
             ]);
 
             setStats(statsData);
@@ -61,6 +64,7 @@ const AdminDashboard = () => {
             setActivities(activitiesData);
             setSystemConfig(configData);
             setAmenities(amenitiesData);
+            setPaymentRequests(paymentsData);
         } catch (error) {
             console.error('Error loading admin data:', error);
         } finally {
@@ -69,17 +73,19 @@ const AdminDashboard = () => {
     };
 
     const refreshData = async () => {
-        const [statsData, pendingData, allPropsData, usersData] = await Promise.all([
+        const [statsData, pendingData, allPropsData, usersData, paymentsData] = await Promise.all([
             api.getPropertyStats(),
             api.getPendingProperties(),
             api.getAllPropertiesAdmin(),
-            api.getUsers()
+            api.getUsers(),
+            api.getPaymentRequests()
         ]);
 
         setStats(statsData);
         setPendingProperties(pendingData);
         setAllProperties(allPropsData);
         setUsers(usersData);
+        setPaymentRequests(paymentsData);
     };
 
     const handleApprove = async (id: string) => {
@@ -233,6 +239,32 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleVerifyPayment = async (id: string) => {
+        if (window.confirm('¿Estás seguro de verificar este pago? El usuario será actualizado a Premium.')) {
+            try {
+                const success = await api.verifyPaymentRequest(id);
+                if (success) {
+                    await refreshData();
+                }
+            } catch (error) {
+                console.error('Error verifying payment:', error);
+            }
+        }
+    };
+
+    const handleRejectPayment = async (id: string) => {
+        if (window.confirm('¿Estás seguro de rechazar este pago?')) {
+            try {
+                const success = await api.rejectPaymentRequest(id);
+                if (success) {
+                    await refreshData();
+                }
+            } catch (error) {
+                console.error('Error rejecting payment:', error);
+            }
+        }
+    };
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -288,6 +320,78 @@ const AdminDashboard = () => {
                             onToggleFeatured={handleToggleFeatured}
                             users={users}
                         />
+                    </div>
+                );
+            case 'payments':
+                const pendingPayments = paymentRequests.filter(r => r.status === 'pending');
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Solicitudes de Pago</h2>
+                        {pendingPayments.length === 0 ? (
+                            <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
+                                No hay solicitudes de pago pendientes.
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referencia</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comprobante</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {pendingPayments.map((request) => (
+                                            <tr key={request.id}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {request.referenceCode}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {request.userName}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    ${request.amount.toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <a
+                                                        href={request.proofImage}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        <FileText className="w-4 h-4 mr-1" />
+                                                        Ver Comprobante
+                                                    </a>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {new Date(request.createdAt).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button
+                                                        onClick={() => handleVerifyPayment(request.id)}
+                                                        className="text-green-600 hover:text-green-900 mr-4"
+                                                        title="Verificar Pago"
+                                                    >
+                                                        <CheckCircle className="w-5 h-5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRejectPayment(request.id)}
+                                                        className="text-red-600 hover:text-red-900"
+                                                        title="Rechazar Pago"
+                                                    >
+                                                        <XCircle className="w-5 h-5" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 );
             case 'all-properties':
@@ -349,6 +453,7 @@ const AdminDashboard = () => {
                 currentSection={currentSection}
                 onSectionChange={setCurrentSection}
                 pendingCount={stats.pending}
+                paymentCount={paymentRequests.filter(r => r.status === 'pending').length}
             />
 
             <div className="flex-1 overflow-auto">

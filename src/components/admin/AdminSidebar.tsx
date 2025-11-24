@@ -1,14 +1,15 @@
 import React from 'react';
 import { AdminSection } from '../../types';
-import { LayoutDashboard, Clock, Home, Users, Settings, Activity } from 'lucide-react';
+import { LayoutDashboard, Clock, Home, Users, Settings, Activity, CreditCard } from 'lucide-react';
 
 interface AdminSidebarProps {
     currentSection: AdminSection;
     onSectionChange: (section: AdminSection) => void;
     pendingCount: number;
+    paymentCount?: number;
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionChange, pendingCount }) => {
+const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionChange, pendingCount, paymentCount = 0 }) => {
     const menuItems = [
         {
             id: 'dashboard' as AdminSection,
@@ -21,6 +22,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionCh
             label: 'Pendientes',
             icon: Clock,
             badge: pendingCount > 0 ? pendingCount : null
+        },
+        {
+            id: 'payments' as AdminSection,
+            label: 'Pagos',
+            icon: CreditCard,
+            badge: paymentCount > 0 ? paymentCount : null
         },
         {
             id: 'all-properties' as AdminSection,
@@ -65,8 +72,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionCh
                             key={item.id}
                             onClick={() => onSectionChange(item.id)}
                             className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all ${isActive
-                                    ? 'bg-blue-50 text-blue-700 font-medium'
-                                    : 'text-gray-700 hover:bg-gray-50'
+                                ? 'bg-blue-50 text-blue-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             <div className="flex items-center gap-3">

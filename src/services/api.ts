@@ -400,5 +400,117 @@ export const api = {
     await delay(300);
     // In a real app, this would delete from a database
     return true;
+  },
+
+  // Payment Requests
+  async createPaymentRequest(request: Omit<import('../types').PaymentRequest, 'id' | 'status' | 'createdAt'>): Promise<boolean> {
+    await delay(500);
+    const requests = getStoredPaymentRequests();
+    const newRequest: import('../types').PaymentRequest = {
+      id: Date.now().toString(),
+      ...request,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    requests.push(newRequest);
+    savePaymentRequests(requests);
+
+    // Update user with paymentRequestId
+    const users = JSON.parse(localStorage.getItem('estuarriendo_users') || '[]');
+    const userIndex = users.findIndex((u: any) => u.id === request.userId);
+    if (userIndex !== -1) {
+      users[userIndex].paymentRequestId = newRequest.id;
+      localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+
+      // Update current user if needed
+      const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
+      if (currentUser.id === request.userId) {
+        currentUser.paymentRequestId = newRequest.id;
+        localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+      }
+    }
+
+    return true;
+  },
+
+  async getPaymentRequests(): Promise<import('../types').PaymentRequest[]> {
+    await delay(500);
+    return getStoredPaymentRequests();
+  },
+
+  async verifyPaymentRequest(requestId: string): Promise<boolean> {
+    await delay(500);
+    const requests = getStoredPaymentRequests();
+    const index = requests.findIndex(r => r.id === requestId);
+
+    if (index !== -1) {
+      requests[index].status = 'verified';
+      requests[index].processedAt = new Date().toISOString();
+      savePaymentRequests(requests);
+
+      // Upgrade user to premium
+      const userId = requests[index].userId;
+      const users = JSON.parse(localStorage.getItem('estuarriendo_users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.id === userId);
+
+      if (userIndex !== -1) {
+        users[userIndex].plan = 'premium';
+        users[userIndex].paymentRequestId = undefined; // Clear request id
+        localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+
+        // Update current user if needed
+        const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
+        if (currentUser.id === userId) {
+          currentUser.plan = 'premium';
+          currentUser.paymentRequestId = undefined;
+          localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+        }
+      }
+
+      return true;
+    }
+    return false;
+  },
+
+  async rejectPaymentRequest(requestId: string): Promise<boolean> {
+    await delay(500);
+    const requests = getStoredPaymentRequests();
+    const index = requests.findIndex(r => r.id === requestId);
+
+    if (index !== -1) {
+      requests[index].status = 'rejected';
+      requests[index].processedAt = new Date().toISOString();
+      savePaymentRequests(requests);
+
+      // Clear paymentRequestId from user so they can try again
+      const userId = requests[index].userId;
+      const users = JSON.parse(localStorage.getItem('estuarriendo_users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.id === userId);
+
+      if (userIndex !== -1) {
+        users[userIndex].paymentRequestId = undefined;
+        localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+
+        // Update current user if needed
+        const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
+        if (currentUser.id === userId) {
+          currentUser.paymentRequestId = undefined;
+          localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+        }
+      }
+
+      return true;
+    }
+    return false;
   }
+};
+
+// Helper for payment requests
+const getStoredPaymentRequests = (): import('../types').PaymentRequest[] => {
+  const stored = localStorage.getItem('estuarriendo_payment_requests');
+  return stored ? JSON.parse(stored) : [];
+};
+
+const savePaymentRequests = (requests: import('../types').PaymentRequest[]) => {
+  localStorage.setItem('estuarriendo_payment_requests', JSON.stringify(requests));
 };

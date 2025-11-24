@@ -36,13 +36,6 @@ export interface SearchFilters {
   type?: string;
   priceMin?: number;
   priceMax?: number;
-  phone: string;
-  whatsapp: string;
-  propertiesCount: number;
-  approvedCount: number;
-  pendingCount: number;
-  rejectedCount: number;
-  joinedAt: string;
 }
 
 export interface ActivityLog {
@@ -63,34 +56,60 @@ export interface SystemConfig {
   autoApprovalEnabled: boolean;
 }
 
-export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity';
+export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity' | 'payments';
 
 export type IdType = 'CC' | 'NIT' | 'CE';
 export type OwnerRole = 'individual' | 'agency';
 export type PaymentMethod = 'PSE' | 'CreditCard' | 'Nequi' | 'Daviplata';
 
-phone: string;
-whatsapp: string;
-idType ?: IdType;
-idNumber ?: string;
-role ?: OwnerRole;
-userType ?: 'owner' | 'tenant'; // Distinguish between property owners and tenants
-password ?: string; // In a real app, this wouldn't be here, but for mock auth
-confirmPassword ?: string;
+export interface BankDetails {
+  bankName: string;
+  accountType: string;
+  accountNumber: string;
+  holderName: string;
+}
 
-// Phase 2: Business Profile & Trust
-isVerified ?: boolean;
-verificationDocuments ?: string[]; // URLs to docs
-availableForVisit ?: boolean;
-paymentPreference ?: PaymentMethod;
-bankDetails ?: BankDetails;
-billingDetails ?: BillingDetails;
+export interface BillingDetails {
+  taxId: string;
+  billingAddress: string;
+  city: string;
+}
 
-// Stats
-propertiesCount: number;
-approvedCount: number;
-pendingCount: number;
-rejectedCount: number;
-joinedAt: string;
-plan ?: 'free' | 'premium';
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  idType?: IdType;
+  idNumber?: string;
+  role?: OwnerRole;
+  userType?: 'owner' | 'tenant';
+  password?: string;
+  confirmPassword?: string;
+  isVerified?: boolean;
+  verificationDocuments?: string[];
+  availableForVisit?: boolean;
+  paymentPreference?: PaymentMethod;
+  bankDetails?: BankDetails;
+  billingDetails?: BillingDetails;
+  propertiesCount: number;
+  approvedCount: number;
+  pendingCount: number;
+  rejectedCount: number;
+  joinedAt: string;
+  plan?: 'free' | 'premium';
+  paymentRequestId?: string;
+}
+
+export interface PaymentRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  amount: number;
+  referenceCode: string;
+  proofImage: string; // base64
+  status: 'pending' | 'verified' | 'rejected';
+  createdAt: string;
+  processedAt?: string;
 }

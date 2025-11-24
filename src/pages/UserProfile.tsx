@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, IdType, PaymentMethod } from '../types';
+import { User, IdType, PaymentMethod, PaymentRequest } from '../types';
 import { authService } from '../services/authService';
-import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader } from 'lucide-react';
+import { api } from '../services/api';
+import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock } from 'lucide-react';
+import PaymentUploadForm from '../components/PaymentUploadForm';
 
 const UserProfile: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
@@ -9,26 +11,29 @@ const UserProfile: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing'>('profile');
+    const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
 
     // Form states
     const [formData, setFormData] = useState<Partial<User>>({});
-    const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
-    const [billingData, setBillingData] = useState({
-        cardNumber: '',
-        expiry: '',
-        cvc: '',
-        name: ''
-    });
 
     useEffect(() => {
-        const currentUser = authService.getCurrentUser();
-        if (currentUser) {
-            setUser(currentUser);
-            setFormData(currentUser);
-        } else {
-            window.location.href = '/login';
-        }
-        setLoading(false);
+        const loadUserAndPayment = async () => {
+            const currentUser = authService.getCurrentUser();
+            if (currentUser) {
+                setUser(currentUser);
+                setFormData(currentUser);
+
+                if (currentUser.paymentRequestId) {
+                    const requests = await api.getPaymentRequests();
+                    const req = requests.find(r => r.id === currentUser.paymentRequestId);
+                    if (req) setPaymentRequest(req);
+                }
+            } else {
+                window.location.href = '/login';
+            }
+            setLoading(false);
+        };
+        loadUserAndPayment();
     }, []);
 
     const handleInputChange = (field: keyof User, value: any) => {
@@ -55,23 +60,18 @@ const UserProfile: React.FC = () => {
         }
     };
 
-    const handleUpgradePremium = async () => {
-        if (!user) return;
-        setSaving(true);
-
-        // Simulate payment processing
-        setTimeout(async () => {
-            try {
-                const result = await authService.updateUser(user.id, { plan: 'premium' });
-                if (result.success) {
-                    setUser(result.user as User);
-                    setMessage({ type: 'success', text: '¡Felicidades! Ahora eres usuario Premium.' });
-                    setFormData(prev => ({ ...prev, plan: 'premium' }));
-                }
-            } finally {
-                setSaving(false);
+    const handlePaymentSuccess = async () => {
+        // Reload user to get the new paymentRequestId
+        const currentUser = authService.getCurrentUser();
+        if (currentUser) {
+            setUser(currentUser);
+            if (currentUser.paymentRequestId) {
+                const requests = await api.getPaymentRequests();
+                const req = requests.find(r => r.id === currentUser.paymentRequestId);
+                if (req) setPaymentRequest(req);
             }
-        }, 2000);
+        }
+        setMessage({ type: 'success', text: 'Comprobante enviado correctamente. Tu pago está en revisión.' });
     };
 
     if (loading) {
@@ -270,52 +270,53 @@ const UserProfile: React.FC = () => {
                                 {user.plan !== 'premium' && (
                                     <div>
                                         <h3 className="text-lg font-medium text-gray-900 mb-4">Mejorar a Premium</h3>
-                                        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                                            <ul className="space-y-3 mb-6">
-                                                <li className="flex items-center text-gray-600">
-                                                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                                                    Publicaciones destacadas
-                                                </li>
-                                                <li className="flex items-center text-gray-600">
-                                                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                                                    Soporte prioritario
-                                                </li>
-                                                <li className="flex items-center text-gray-600">
-                                                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                                                    Estadísticas avanzadas
-                                                </li>
-                                            </ul>
 
-                                            <div className="border-t border-gray-200 pt-6">
-                                                <h4 className="text-sm font-medium text-gray-900 mb-4">Método de Pago</h4>
-                                                <div className="grid grid-cols-1 gap-4 max-w-md">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Número de Tarjeta"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                    />
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <input
-                                                            type="text"
-                                                            placeholder="MM/YY"
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            placeholder="CVC"
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                        />
-                                                    </div>
-                                                    <button
-                                                        onClick={handleUpgradePremium}
-                                                        disabled={saving}
-                                                        className="w-full py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 flex justify-center items-center"
-                                                    >
-                                                        {saving ? <Loader className="w-5 h-5 animate-spin" /> : 'Pagar y Mejorar Plan'}
-                                                    </button>
+                                        {paymentRequest && paymentRequest.status === 'pending' ? (
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                                                <Clock className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
+                                                <h4 className="text-lg font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
+                                                <p className="text-yellow-700 mb-4">
+                                                    Hemos recibido tu comprobante. El plan se activará en un máximo de 2 horas tras la verificación manual.
+                                                </p>
+                                                <div className="text-sm text-yellow-600 bg-yellow-100 inline-block px-3 py-1 rounded-full">
+                                                    Referencia: <span className="font-mono font-bold">{paymentRequest.referenceCode}</span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        ) : paymentRequest && paymentRequest.status === 'rejected' ? (
+                                            <div className="space-y-6">
+                                                <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                                                    <div className="flex items-center space-x-3 mb-2">
+                                                        <AlertCircle className="h-6 w-6 text-red-600" />
+                                                        <h4 className="text-lg font-bold text-red-800">Pago Rechazado</h4>
+                                                    </div>
+                                                    <p className="text-red-700">
+                                                        Tu último pago fue rechazado. Por favor intenta nuevamente o contacta a soporte.
+                                                    </p>
+                                                </div>
+                                                <PaymentUploadForm user={user} onSuccess={handlePaymentSuccess} />
+                                            </div>
+                                        ) : (
+                                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                                <ul className="space-y-3 mb-6">
+                                                    <li className="flex items-center text-gray-600">
+                                                        <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                                                        Publicaciones destacadas
+                                                    </li>
+                                                    <li className="flex items-center text-gray-600">
+                                                        <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                                                        Soporte prioritario
+                                                    </li>
+                                                    <li className="flex items-center text-gray-600">
+                                                        <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                                                        Estadísticas avanzadas
+                                                    </li>
+                                                </ul>
+
+                                                <div className="border-t border-gray-200 pt-6">
+                                                    <PaymentUploadForm user={user} onSuccess={handlePaymentSuccess} />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
