@@ -149,3 +149,22 @@ export interface PaymentRequest {
   createdAt: string;
   processedAt?: string;
 }
+
+export interface StudentRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone: string;
+  studentWhatsapp: string;
+  universityTarget: string;
+  budgetMax: number;
+  propertyTypeDesired: 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio';
+  requiredAmenities: string[];
+  moveInDate: string;
+  contractDuration?: number; // meses
+  additionalNotes?: string;
+  status: 'open' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+}

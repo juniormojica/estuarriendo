@@ -7,7 +7,8 @@ import {
   PropertyStats,
   ActivityLog,
   SystemConfig,
-  PaymentRequest
+  PaymentRequest,
+  StudentRequest
 } from '../types';
 import { mockProperties, mockAmenities } from '../data/mockData';
 
@@ -533,5 +534,100 @@ export const api = {
       return true;
     }
     return false;
+  },
+
+  // Student Request Methods
+  async createStudentRequest(request: Omit<StudentRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<{ success: boolean; message: string; id?: string }> {
+    await delay(500);
+
+    // Check if student already has an open request
+    const existingRequest = await this.getMyStudentRequest(request.studentId);
+    if (existingRequest) {
+      return { success: false, message: 'Ya tienes una solicitud activa. Cierra la actual antes de crear una nueva.' };
+    }
+
+    const requests = getStoredStudentRequests();
+    const newRequest: StudentRequest = {
+      id: Date.now().toString(),
+      ...request,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    requests.push(newRequest);
+    saveStudentRequests(requests);
+
+    return { success: true, message: 'Solicitud creada exitosamente', id: newRequest.id };
+  },
+
+  async getStudentRequests(filters?: { universityTarget?: string; budgetMax?: number; propertyTypeDesired?: string }): Promise<StudentRequest[]> {
+    await delay(300);
+    let requests = getStoredStudentRequests();
+
+    // Only return open requests
+    requests = requests.filter(r => r.status === 'open');
+
+    if (filters) {
+      if (filters.universityTarget) {
+        requests = requests.filter(r => r.universityTarget.toLowerCase().includes(filters.universityTarget!.toLowerCase()));
+      }
+      if (filters.budgetMax) {
+        requests = requests.filter(r => r.budgetMax <= filters.budgetMax!);
+      }
+      if (filters.propertyTypeDesired) {
+        requests = requests.filter(r => r.propertyTypeDesired === filters.propertyTypeDesired);
+      }
+    }
+
+    return requests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  async getMyStudentRequest(studentId: string): Promise<StudentRequest | null> {
+    await delay(300);
+    const requests = getStoredStudentRequests();
+    return requests.find(r => r.studentId === studentId && r.status === 'open') || null;
+  },
+
+  async updateStudentRequest(id: string, updates: Partial<StudentRequest>): Promise<boolean> {
+    await delay(500);
+    const requests = getStoredStudentRequests();
+    const index = requests.findIndex(r => r.id === id);
+
+    if (index !== -1) {
+      requests[index] = {
+        ...requests[index],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      saveStudentRequests(requests);
+      return true;
+    }
+    return false;
+  },
+
+  async deleteStudentRequest(id: string): Promise<boolean> {
+    await delay(500);
+    const requests = getStoredStudentRequests();
+    const index = requests.findIndex(r => r.id === id);
+
+    if (index !== -1) {
+      // Mark as closed instead of deleting
+      requests[index].status = 'closed';
+      requests[index].updatedAt = new Date().toISOString();
+      saveStudentRequests(requests);
+      return true;
+    }
+    return false;
   }
+};
+
+// Helper for student requests
+const getStoredStudentRequests = (): StudentRequest[] => {
+  const stored = localStorage.getItem('estuarriendo_student_requests');
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveStudentRequests = (requests: StudentRequest[]) => {
+  localStorage.setItem('estuarriendo_student_requests', JSON.stringify(requests));
 };

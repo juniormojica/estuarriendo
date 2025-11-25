@@ -52,15 +52,39 @@ const Header: React.FC = () => {
 
             {currentUser && (
               <>
-                <Link
-                  to="/mis-propiedades"
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/mis-propiedades'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                >
-                  Mis Propiedades
-                </Link>
+                {currentUser.userType === 'tenant' && (
+                  <Link
+                    to="/busco-inmueble"
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/busco-inmueble'
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      }`}
+                  >
+                    Busco Inmueble
+                  </Link>
+                )}
+                {currentUser.userType === 'owner' && (
+                  <>
+                    <Link
+                      to="/oportunidades"
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/oportunidades'
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        }`}
+                    >
+                      Oportunidades
+                    </Link>
+                    <Link
+                      to="/mis-propiedades"
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/mis-propiedades'
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        }`}
+                    >
+                      Mis Propiedades
+                    </Link>
+                  </>
+                )}
                 <Link
                   to="/perfil"
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/perfil'
