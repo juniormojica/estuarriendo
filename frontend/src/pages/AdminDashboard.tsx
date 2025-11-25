@@ -500,6 +500,7 @@ const AdminDashboard = () => {
                     user={selectedUser}
                     isOpen={!!selectedUser}
                     onClose={() => setSelectedUser(null)}
+                    onUpdate={refreshData}
                 />
             )}
         </div>

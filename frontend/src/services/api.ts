@@ -28,6 +28,16 @@ const saveProperties = (properties: Property[]) => {
   localStorage.setItem('estuarriendo_properties', JSON.stringify(properties));
 };
 
+// Helper for payment requests
+const getStoredPaymentRequests = (): PaymentRequest[] => {
+  const stored = localStorage.getItem('estuarriendo_payment_requests');
+  return stored ? JSON.parse(stored) : [];
+};
+
+const savePaymentRequests = (requests: PaymentRequest[]) => {
+  localStorage.setItem('estuarriendo_payment_requests', JSON.stringify(requests));
+};
+
 export const api = {
   // Get all properties with optional filters
   async getProperties(filters?: SearchFilters): Promise<Property[]> {
@@ -450,6 +460,7 @@ export const api = {
       if (userIndex !== -1) {
         users[userIndex].plan = 'premium';
         users[userIndex].paymentRequestId = undefined; // Clear request id
+        users[userIndex].premiumSince = new Date().toISOString(); // Set premium date
         localStorage.setItem('estuarriendo_users', JSON.stringify(users));
 
         // Update current user if needed
@@ -457,6 +468,7 @@ export const api = {
         if (currentUser.id === userId) {
           currentUser.plan = 'premium';
           currentUser.paymentRequestId = undefined;
+          currentUser.premiumSince = users[userIndex].premiumSince;
           localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
         }
       }
@@ -496,15 +508,30 @@ export const api = {
       return true;
     }
     return false;
+  },
+
+  // Update user details
+  async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
+    await delay(500);
+    const usersJson = localStorage.getItem('estuarriendo_users');
+    if (!usersJson) return false;
+
+    const users: User[] = JSON.parse(usersJson);
+    const index = users.findIndex(u => u.id === userId);
+
+    if (index !== -1) {
+      users[index] = { ...users[index], ...updates };
+      localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+
+      // Update current user if it matches
+      const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
+      if (currentUser.id === userId) {
+        const updatedCurrentUser = { ...currentUser, ...updates };
+        localStorage.setItem('estuarriendo_current_user', JSON.stringify(updatedCurrentUser));
+      }
+
+      return true;
+    }
+    return false;
   }
-};
-
-// Helper for payment requests
-const getStoredPaymentRequests = (): PaymentRequest[] => {
-  const stored = localStorage.getItem('estuarriendo_payment_requests');
-  return stored ? JSON.parse(stored) : [];
-};
-
-const savePaymentRequests = (requests: PaymentRequest[]) => {
-  localStorage.setItem('estuarriendo_payment_requests', JSON.stringify(requests));
 };
