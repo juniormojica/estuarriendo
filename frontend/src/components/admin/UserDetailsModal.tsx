@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, IdType } from '../../types';
 import { X, User as UserIcon, Mail, Phone, MessageCircle, Shield, CreditCard, Calendar, CheckCircle, XCircle, FileText, Edit2, Save, ArrowUpCircle, XOctagon } from 'lucide-react';
 import { api } from '../../services/api';
@@ -14,6 +14,23 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editedUser, setEditedUser] = useState<User>(user);
+
+    // Handle ESC key to close modal
+    useEffect(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !isSaving) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen, isSaving, onClose]);
 
     if (!isOpen) return null;
 
