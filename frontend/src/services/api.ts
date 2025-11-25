@@ -1,4 +1,14 @@
-import { Property, Amenity, SearchFilters, PropertyFormData } from '../types';
+import {
+  Property,
+  Amenity,
+  SearchFilters,
+  PropertyFormData,
+  User,
+  PropertyStats,
+  ActivityLog,
+  SystemConfig,
+  PaymentRequest
+} from '../types';
 import { mockProperties, mockAmenities } from '../data/mockData';
 
 // Simulate API delay
@@ -208,7 +218,7 @@ export const api = {
   },
 
   // Get property statistics
-  async getPropertyStats(): Promise<import('../types').PropertyStats> {
+  async getPropertyStats(): Promise<PropertyStats> {
     await delay(300);
     const properties = getStoredProperties();
 
@@ -269,42 +279,26 @@ export const api = {
     return false;
   },
 
-  // Get users (extracted from properties)
-  async getUsers(): Promise<import('../types').User[]> {
+  // Get users (actual registered users)
+  async getUsers(): Promise<User[]> {
     await delay(500);
+    const usersJson = localStorage.getItem('estuarriendo_users');
+    const users: User[] = usersJson ? JSON.parse(usersJson) : [];
+
+    // Calculate stats for each user based on current properties
     const properties = getStoredProperties();
 
-    // Create mock users from property data
-    const userMap = new Map<string, import('../types').User>();
+    return users.map(user => {
+      const userProperties = properties.filter(p => p.ownerId === user.id);
 
-    properties.forEach(property => {
-      // Use a simple hash of the property ID to create consistent user IDs
-      const userId = `user-${property.id.substring(0, 3)}`;
-
-      if (!userMap.has(userId)) {
-        userMap.set(userId, {
-          id: userId,
-          name: `Propietario ${userId.substring(5)}`,
-          email: `propietario${userId.substring(5)}@example.com`,
-          phone: `+57 300 ${Math.floor(Math.random() * 9000000 + 1000000)}`,
-          whatsapp: `+57 300 ${Math.floor(Math.random() * 9000000 + 1000000)}`,
-          propertiesCount: 0,
-          approvedCount: 0,
-          pendingCount: 0,
-          rejectedCount: 0,
-          joinedAt: property.createdAt
-        });
-      }
-
-      const user = userMap.get(userId)!;
-      user.propertiesCount++;
-
-      if (property.status === 'approved') user.approvedCount++;
-      if (property.status === 'pending') user.pendingCount++;
-      if (property.status === 'rejected') user.rejectedCount++;
+      return {
+        ...user,
+        propertiesCount: userProperties.length,
+        approvedCount: userProperties.filter(p => p.status === 'approved').length,
+        pendingCount: userProperties.filter(p => p.status === 'pending').length,
+        rejectedCount: userProperties.filter(p => p.status === 'rejected').length
+      };
     });
-
-    return Array.from(userMap.values());
   },
 
   // Get properties by user
@@ -316,7 +310,7 @@ export const api = {
   },
 
   // Get activity log
-  async getActivityLog(): Promise<import('../types').ActivityLog[]> {
+  async getActivityLog(): Promise<ActivityLog[]> {
     await delay(300);
 
     // Get from localStorage or create default
@@ -327,7 +321,7 @@ export const api = {
 
     // Create initial activity log based on properties
     const properties = getStoredProperties();
-    const activities: import('../types').ActivityLog[] = [];
+    const activities: ActivityLog[] = [];
 
     properties.forEach((property) => {
       activities.push({
@@ -357,7 +351,7 @@ export const api = {
   },
 
   // Get system configuration
-  async getSystemConfig(): Promise<import('../types').SystemConfig> {
+  async getSystemConfig(): Promise<SystemConfig> {
     await delay(200);
 
     const stored = localStorage.getItem('estuarriendo_system_config');
@@ -365,7 +359,7 @@ export const api = {
       return JSON.parse(stored);
     }
 
-    const defaultConfig: import('../types').SystemConfig = {
+    const defaultConfig: SystemConfig = {
       commissionRate: 10,
       featuredPropertyPrice: 50000,
       maxImagesPerProperty: 20,
@@ -379,14 +373,14 @@ export const api = {
   },
 
   // Update system configuration
-  async updateSystemConfig(config: import('../types').SystemConfig): Promise<boolean> {
+  async updateSystemConfig(config: SystemConfig): Promise<boolean> {
     await delay(300);
     localStorage.setItem('estuarriendo_system_config', JSON.stringify(config));
     return true;
   },
 
   // Add amenity
-  async addAmenity(amenity: Omit<import('../types').Amenity, 'id'>): Promise<boolean> {
+  async addAmenity(amenity: Omit<Amenity, 'id'>): Promise<boolean> {
     await delay(300);
     const amenities = [...mockAmenities];
     const newId = (amenities.length + 1).toString();
@@ -403,10 +397,10 @@ export const api = {
   },
 
   // Payment Requests
-  async createPaymentRequest(request: Omit<import('../types').PaymentRequest, 'id' | 'status' | 'createdAt'>): Promise<boolean> {
+  async createPaymentRequest(request: Omit<PaymentRequest, 'id' | 'status' | 'createdAt'>): Promise<boolean> {
     await delay(500);
     const requests = getStoredPaymentRequests();
-    const newRequest: import('../types').PaymentRequest = {
+    const newRequest: PaymentRequest = {
       id: Date.now().toString(),
       ...request,
       status: 'pending',
@@ -433,7 +427,7 @@ export const api = {
     return true;
   },
 
-  async getPaymentRequests(): Promise<import('../types').PaymentRequest[]> {
+  async getPaymentRequests(): Promise<PaymentRequest[]> {
     await delay(500);
     return getStoredPaymentRequests();
   },
@@ -506,11 +500,11 @@ export const api = {
 };
 
 // Helper for payment requests
-const getStoredPaymentRequests = (): import('../types').PaymentRequest[] => {
+const getStoredPaymentRequests = (): PaymentRequest[] => {
   const stored = localStorage.getItem('estuarriendo_payment_requests');
   return stored ? JSON.parse(stored) : [];
 };
 
-const savePaymentRequests = (requests: import('../types').PaymentRequest[]) => {
+const savePaymentRequests = (requests: PaymentRequest[]) => {
   localStorage.setItem('estuarriendo_payment_requests', JSON.stringify(requests));
 };
