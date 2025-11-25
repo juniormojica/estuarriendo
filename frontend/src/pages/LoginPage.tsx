@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { authService } from '../services/authService';
+import { api } from '../services/api';
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -19,7 +20,18 @@ const LoginPage = () => {
         if (response.success && response.user) {
             // Redirect based on user type
             if (response.user.userType === 'owner') {
-                navigate('/publicar');
+                try {
+                    const userProperties = await api.getUserProperties(response.user.id);
+                    if (userProperties.length > 0) {
+                        navigate('/mis-propiedades');
+                    } else {
+                        navigate('/publicar');
+                    }
+                } catch (error) {
+                    // Fallback to default behavior on error
+                    console.error('Error checking properties:', error);
+                    navigate('/publicar');
+                }
             } else {
                 navigate('/'); // Tenants go to home
             }
