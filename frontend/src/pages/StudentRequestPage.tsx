@@ -3,26 +3,36 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
 import { StudentRequest } from '../types';
-import { Calendar, DollarSign, Home, MapPin, Clock, FileText, CheckCircle } from 'lucide-react';
+import { Calendar, DollarSign, Home, MapPin, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';
+import StudentRequestFormSteps from '../components/StudentRequestFormSteps';
+import ConfirmModal from '../components/ConfirmModal';
+
+const dealBreakerOptions = [
+    { id: 'no-pets', name: 'Alérgico a mascotas', icon: '🐕' },
+    { id: 'no-smoking', name: 'No fumadores', icon: '🚭' },
+    { id: 'no-noise', name: 'Ambiente tranquilo', icon: '🔇' },
+    { id: 'no-parties', name: 'Sin fiestas', icon: '🎉' },
+    { id: 'vegetarian-friendly', name: 'Preferencia vegetariana/vegana', icon: '🥗' },
+    { id: 'lgbtq-friendly', name: 'Ambiente LGBTQ+ friendly', icon: '🏳️‍🌈' },
+    { id: 'female-only', name: 'Solo mujeres', icon: '👩' },
+    { id: 'male-only', name: 'Solo hombres', icon: '👨' },
+];
 
 const StudentRequestPage: React.FC = () => {
     const navigate = useNavigate();
-    const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+    const currentUser = authService.getCurrentUser();
     const [existingRequest, setExistingRequest] = useState<StudentRequest | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-
-    const [formData, setFormData] = useState({
-        universityTarget: '',
-        budgetMax: '',
-        propertyTypeDesired: '' as 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio' | '',
-        requiredAmenities: [] as string[],
-        moveInDate: '',
-        contractDuration: '',
-        additionalNotes: ''
-    });
+    const [showModal, setShowModal] = useState(false);
+    const [modalConfig, setModalConfig] = useState<{
+        title: string;
+        message: string;
+        type: 'success' | 'warning' | 'danger';
+        onConfirm?: () => void;
+    }>({ title: '', message: '', type: 'success' });
 
     useEffect(() => {
         if (!currentUser) {
@@ -45,21 +55,11 @@ const StudentRequestPage: React.FC = () => {
         const request = await api.getMyStudentRequest(currentUser.id);
         if (request) {
             setExistingRequest(request);
-            setFormData({
-                universityTarget: request.universityTarget,
-                budgetMax: request.budgetMax.toString(),
-                propertyTypeDesired: request.propertyTypeDesired,
-                requiredAmenities: request.requiredAmenities,
-                moveInDate: request.moveInDate.split('T')[0],
-                contractDuration: request.contractDuration?.toString() || '',
-                additionalNotes: request.additionalNotes || ''
-            });
         }
         setLoading(false);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (formData: any) => {
         if (!currentUser) return;
 
         setSubmitting(true);
@@ -74,6 +74,7 @@ const StudentRequestPage: React.FC = () => {
             budgetMax: parseFloat(formData.budgetMax),
             propertyTypeDesired: formData.propertyTypeDesired as 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio',
             requiredAmenities: formData.requiredAmenities,
+            dealBreakers: formData.dealBreakers,
             moveInDate: formData.moveInDate,
             contractDuration: formData.contractDuration ? parseInt(formData.contractDuration) : undefined,
             additionalNotes: formData.additionalNotes
@@ -84,48 +85,56 @@ const StudentRequestPage: React.FC = () => {
             if (success) {
                 await loadExistingRequest();
                 setIsEditing(false);
-                alert('Solicitud actualizada exitosamente');
+                setModalConfig({
+                    title: 'Solicitud Actualizada',
+                    message: 'Tu solicitud ha sido actualizada exitosamente.',
+                    type: 'success'
+                });
+                setShowModal(true);
             }
         } else {
             const result = await api.createStudentRequest(requestData);
             if (result.success) {
                 await loadExistingRequest();
-                alert(result.message);
+                setModalConfig({
+                    title: 'Solicitud Creada',
+                    message: result.message,
+                    type: 'success'
+                });
+                setShowModal(true);
             } else {
-                alert(result.message);
+                setModalConfig({
+                    title: 'Error',
+                    message: result.message,
+                    type: 'danger'
+                });
+                setShowModal(true);
             }
         }
 
         setSubmitting(false);
     };
 
-    const handleCloseRequest = async () => {
+    const handleCloseRequest = () => {
         if (!existingRequest) return;
-        if (!window.confirm('¿Estás seguro de cerrar tu solicitud? Los propietarios ya no podrán verla.')) return;
-
-        const success = await api.deleteStudentRequest(existingRequest.id);
-        if (success) {
-            setExistingRequest(null);
-            setFormData({
-                universityTarget: '',
-                budgetMax: '',
-                propertyTypeDesired: '',
-                requiredAmenities: [],
-                moveInDate: '',
-                contractDuration: '',
-                additionalNotes: ''
-            });
-            alert('Solicitud cerrada exitosamente');
-        }
-    };
-
-    const toggleAmenity = (amenityId: string) => {
-        setFormData(prev => ({
-            ...prev,
-            requiredAmenities: prev.requiredAmenities.includes(amenityId)
-                ? prev.requiredAmenities.filter(id => id !== amenityId)
-                : [...prev.requiredAmenities, amenityId]
-        }));
+        setModalConfig({
+            title: 'Cerrar Solicitud',
+            message: '¿Estás seguro de cerrar tu solicitud? Los propietarios ya no podrán verla.',
+            type: 'warning',
+            onConfirm: async () => {
+                const success = await api.deleteStudentRequest(existingRequest.id);
+                if (success) {
+                    setExistingRequest(null);
+                    setModalConfig({
+                        title: 'Solicitud Cerrada',
+                        message: 'Tu solicitud ha sido cerrada exitosamente.',
+                        type: 'success'
+                    });
+                    setShowModal(true);
+                }
+            }
+        });
+        setShowModal(true);
     };
 
     if (loading) {
@@ -209,8 +218,29 @@ const StudentRequestPage: React.FC = () => {
                                         {existingRequest.requiredAmenities.map(amenityId => {
                                             const amenity = mockAmenities.find(a => a.id === amenityId);
                                             return amenity ? (
-                                                <span key={amenityId} className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm">
+                                                <span key={amenityId} className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm flex items-center">
+                                                    <span className="mr-1">{amenity.icon}</span>
                                                     {amenity.name}
+                                                </span>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {existingRequest.dealBreakers && existingRequest.dealBreakers.length > 0 && (
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <h3 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
+                                        <AlertCircle className="w-4 h-4 mr-2" />
+                                        Preferencias Personales
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {existingRequest.dealBreakers.map(dealBreakerId => {
+                                            const dealBreaker = dealBreakerOptions.find(d => d.id === dealBreakerId);
+                                            return dealBreaker ? (
+                                                <span key={dealBreakerId} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center">
+                                                    <span className="mr-1">{dealBreaker.icon}</span>
+                                                    {dealBreaker.name}
                                                 </span>
                                             ) : null;
                                         })}
@@ -250,6 +280,15 @@ const StudentRequestPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
+
+                    <ConfirmModal
+                        isOpen={showModal}
+                        onClose={() => setShowModal(false)}
+                        onConfirm={modalConfig.onConfirm || (() => { })}
+                        title={modalConfig.title}
+                        message={modalConfig.message}
+                        type={modalConfig.type}
+                    />
                 </div>
             </div>
         );
@@ -267,147 +306,35 @@ const StudentRequestPage: React.FC = () => {
                         Completa el formulario para que los propietarios puedan encontrarte
                     </p>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <MapPin className="w-4 h-4 inline mr-2" />
-                                Universidad o Zona de Interés *
-                            </label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.universityTarget}
-                                onChange={(e) => setFormData({ ...formData, universityTarget: e.target.value })}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                placeholder="Ej: Universidad Popular del Cesar, Centro de Valledupar"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <DollarSign className="w-4 h-4 inline mr-2" />
-                                    Presupuesto Máximo (COP/mes) *
-                                </label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="0"
-                                    value={formData.budgetMax}
-                                    onChange={(e) => setFormData({ ...formData, budgetMax: e.target.value })}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                    placeholder="500000"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <Home className="w-4 h-4 inline mr-2" />
-                                    Tipo de Inmueble *
-                                </label>
-                                <select
-                                    required
-                                    value={formData.propertyTypeDesired}
-                                    onChange={(e) => setFormData({ ...formData, propertyTypeDesired: e.target.value as any })}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    <option value="habitacion">Habitación</option>
-                                    <option value="apartamento">Apartamento</option>
-                                    <option value="aparta-estudio">Aparta-estudio</option>
-                                    <option value="pension">Pensión</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <Calendar className="w-4 h-4 inline mr-2" />
-                                    Fecha de Mudanza *
-                                </label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={formData.moveInDate}
-                                    onChange={(e) => setFormData({ ...formData, moveInDate: e.target.value })}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <Clock className="w-4 h-4 inline mr-2" />
-                                    Duración del Contrato (meses)
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={formData.contractDuration}
-                                    onChange={(e) => setFormData({ ...formData, contractDuration: e.target.value })}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                    placeholder="6"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
-                                Comodidades Requeridas
-                            </label>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {mockAmenities.map(amenity => (
-                                    <button
-                                        key={amenity.id}
-                                        type="button"
-                                        onClick={() => toggleAmenity(amenity.id)}
-                                        className={`p-3 rounded-lg border-2 transition-all ${formData.requiredAmenities.includes(amenity.id)
-                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                                : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300'
-                                            }`}
-                                    >
-                                        <span className="text-2xl mb-1 block">{amenity.icon}</span>
-                                        <span className="text-sm font-medium">{amenity.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <FileText className="w-4 h-4 inline mr-2" />
-                                Notas Adicionales
-                            </label>
-                            <textarea
-                                value={formData.additionalNotes}
-                                onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
-                                rows={4}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                placeholder="Ej: Prefiero zonas tranquilas, necesito parqueadero, etc."
-                            />
-                        </div>
-
-                        <div className="flex gap-4">
-                            {isEditing && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsEditing(false);
-                                        loadExistingRequest();
-                                    }}
-                                    className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                            )}
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors disabled:opacity-50"
-                            >
-                                {submitting ? 'Guardando...' : existingRequest ? 'Actualizar Solicitud' : 'Publicar Solicitud'}
-                            </button>
-                        </div>
-                    </form>
+                    <StudentRequestFormSteps
+                        initialData={existingRequest ? {
+                            universityTarget: existingRequest.universityTarget,
+                            budgetMax: existingRequest.budgetMax.toString(),
+                            propertyTypeDesired: existingRequest.propertyTypeDesired,
+                            requiredAmenities: existingRequest.requiredAmenities,
+                            dealBreakers: existingRequest.dealBreakers || [],
+                            moveInDate: existingRequest.moveInDate.split('T')[0],
+                            contractDuration: existingRequest.contractDuration?.toString() || '',
+                            additionalNotes: existingRequest.additionalNotes || ''
+                        } : undefined}
+                        onSubmit={handleSubmit}
+                        onCancel={isEditing ? () => {
+                            setIsEditing(false);
+                            loadExistingRequest();
+                        } : undefined}
+                        submitting={submitting}
+                        isEditing={isEditing}
+                    />
                 </div>
+
+                <ConfirmModal
+                    isOpen={showModal}
+                    onClose={() => setShowModal(false)}
+                    onConfirm={modalConfig.onConfirm || (() => { })}
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    type={modalConfig.type}
+                />
             </div>
         </div>
     );

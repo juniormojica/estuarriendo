@@ -161,6 +161,7 @@ export interface StudentRequest {
   budgetMax: number;
   propertyTypeDesired: 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio';
   requiredAmenities: string[];
+  dealBreakers?: string[];
   moveInDate: string;
   contractDuration?: number; // meses
   additionalNotes?: string;
