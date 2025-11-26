@@ -1,14 +1,16 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { authService } from '../services/authService';
 
 const Header: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
   const handleLogout = () => {
     authService.logout();
+    navigate('/');
     window.location.reload();
   };
 
