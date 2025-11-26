@@ -3,10 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck,
   Wifi, Car, Waves, Dumbbell, Shirt, Shield, ArrowUp, Home, Sofa, Snowflake, Flame, ChefHat,
-  DoorOpen, Fan, Monitor, AppWindow, Tv
+  DoorOpen, Fan, Monitor, AppWindow, Tv, Lock
 } from 'lucide-react';
-import { Property, Amenity } from '../types';
+import { Property, Amenity, User } from '../types';
 import { api } from '../services/api';
+import { authService } from '../services/authService';
 import { universities } from '../data/mockData';
 import ImageGallery from '../components/ImageGallery';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -42,6 +43,8 @@ const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [ownerDetails, setOwnerDetails] = useState<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -67,6 +70,17 @@ const PropertyDetail: React.FC = () => {
 
         setProperty(propertyData);
         setAmenities(amenitiesData);
+
+        // Fetch owner details
+        if (propertyData.ownerId) {
+          const owner = await api.getOwnerContactDetails(propertyData.ownerId);
+          setOwnerDetails(owner);
+        }
+
+        // Get current user
+        const user = authService.getCurrentUser();
+        setCurrentUser(user);
+
       } catch (err) {
         setError('Error al cargar la propiedad');
       } finally {
@@ -146,6 +160,8 @@ const PropertyDetail: React.FC = () => {
   const getAmenityDetails = (amenityId: string) => {
     return amenities.find(a => a.id === amenityId);
   };
+
+  const canContact = ownerDetails?.plan === 'premium' || currentUser?.plan === 'premium';
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -316,15 +332,25 @@ const PropertyDetail: React.FC = () => {
 
                 {/* Actions */}
                 <div className="space-y-3">
-                  <a
-                    href={`https://wa.me/573000000000?text=Hola, estoy interesado en la propiedad: ${property.title} (ID: ${property.id})`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-emerald-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center space-x-2 group"
-                  >
-                    <MessageCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                    <span>Contactar por WhatsApp</span>
-                  </a>
+                  {canContact ? (
+                    <a
+                      href={`https://wa.me/${ownerDetails?.whatsapp}?text=Hola, estoy interesado en la propiedad: ${property.title} (ID: ${property.id})`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-emerald-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center space-x-2 group"
+                    >
+                      <MessageCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                      <span>Contactar por WhatsApp</span>
+                    </a>
+                  ) : (
+                    <Link
+                      to="/perfil?tab=billing"
+                      className="w-full bg-gray-100 text-gray-500 py-3.5 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center justify-center space-x-2 group cursor-pointer border border-gray-200"
+                    >
+                      <Lock className="h-5 w-5" />
+                      <span>Actualiza a Premium para contactar</span>
+                    </Link>
+                  )}
 
                   <button
                     onClick={toggleFavorite}
