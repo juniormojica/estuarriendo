@@ -76,7 +76,7 @@ const OpportunitiesPage: React.FC = () => {
     };
 
     const handleUpgradeToPremium = () => {
-        navigate('/perfil');
+        navigate('/perfil?tab=billing');
     };
 
     if (loading) {
@@ -256,8 +256,8 @@ const OpportunitiesPage: React.FC = () => {
                                     <button
                                         onClick={() => handleContactClick(opportunity)}
                                         className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${currentUser?.plan === 'premium'
-                                                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         {currentUser?.plan === 'premium' ? (
