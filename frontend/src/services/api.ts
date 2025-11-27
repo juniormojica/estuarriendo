@@ -109,6 +109,31 @@ export const api = {
     return properties.find(p => p.id === id) || null;
   },
 
+  // Get owner contact details
+  async getOwnerContactDetails(ownerId: string): Promise<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null> {
+    await delay(300);
+    const usersJson = localStorage.getItem('estuarriendo_users');
+    const users: User[] = usersJson ? JSON.parse(usersJson) : [];
+    const owner = users.find(u => u.id === ownerId);
+
+    if (owner) {
+      return {
+        name: owner.name,
+        whatsapp: owner.whatsapp,
+        email: owner.email,
+        plan: owner.plan || 'free'
+      };
+    }
+
+    // Fallback for mock data or if user not found
+    return {
+      name: 'Propietario EstuArriendo',
+      whatsapp: '3000000000',
+      email: 'contacto@estuarriendo.com',
+      plan: 'free'
+    };
+  },
+
   // Get all amenities
   async getAmenities(): Promise<Amenity[]> {
     await delay(200);
