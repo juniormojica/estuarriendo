@@ -90,21 +90,40 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                             </ul>
                         </div>
 
-                        <div className="text-center mb-5">
-                            <span className="text-3xl font-bold text-gray-900">$25.000</span>
-                            <span className="text-gray-500 text-sm"> / mes</span>
+                        <div className="space-y-3 mb-5">
+                            <h4 className="text-sm font-semibold text-gray-900 text-center">Elige tu plan</h4>
+                            <div className="grid grid-cols-3 gap-2">
+                                <Link
+                                    to="/perfil?tab=billing&plan=weekly"
+                                    className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all"
+                                >
+                                    <span className="text-xs text-gray-600 mb-1">Semanal</span>
+                                    <span className="text-lg font-bold text-gray-900">$12.500</span>
+                                    <span className="text-xs text-gray-500">7 días</span>
+                                </Link>
+                                <Link
+                                    to="/perfil?tab=billing&plan=monthly"
+                                    className="flex flex-col items-center p-3 border-2 border-emerald-600 bg-emerald-50 rounded-lg relative"
+                                >
+                                    <span className="absolute -top-2 bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">Popular</span>
+                                    <span className="text-xs text-emerald-700 mb-1 font-medium">Mensual</span>
+                                    <span className="text-lg font-bold text-emerald-700">$20.000</span>
+                                    <span className="text-xs text-emerald-600">30 días</span>
+                                </Link>
+                                <Link
+                                    to="/perfil?tab=billing&plan=quarterly"
+                                    className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all"
+                                >
+                                    <span className="text-xs text-gray-600 mb-1">Trimestral</span>
+                                    <span className="text-lg font-bold text-gray-900">$28.000</span>
+                                    <span className="text-xs text-emerald-600 font-medium">Ahorra $32K</span>
+                                </Link>
+                            </div>
                         </div>
-
-                        <Link
-                            to="/perfil?tab=billing"
-                            className="block w-full bg-emerald-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
-                        >
-                            Obtener Premium
-                        </Link>
 
                         <button
                             onClick={onClose}
-                            className="block w-full text-center py-3 text-gray-500 hover:text-gray-700 text-sm mt-1"
+                            className="block w-full text-center py-3 text-gray-500 hover:text-gray-700 text-sm"
                         >
                             Continuar con Plan Gratuito
                         </button>

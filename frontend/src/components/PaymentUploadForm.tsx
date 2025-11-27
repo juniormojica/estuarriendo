@@ -14,13 +14,21 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState<string | null>(null);
     const [error, setError] = useState('');
+    const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'quarterly'>('monthly');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const referenceCode = `ESTU-P-${user.id.substring(0, 4).toUpperCase()}-${Date.now().toString().substring(9)}`;
 
+    const plans = [
+        { id: 'weekly' as const, name: 'Semanal', price: 12500, duration: 7, description: '7 días' },
+        { id: 'monthly' as const, name: 'Mensual', price: 20000, duration: 30, description: '30 días', recommended: true },
+        { id: 'quarterly' as const, name: 'Trimestral', price: 28000, duration: 90, description: '90 días', savings: 'Ahorra $32,000' }
+    ];
+
     const bankAccounts = [
-        { name: 'Nequi', number: '300 123 4567', type: 'Ahorros' },
-        { name: 'Daviplata', number: '300 987 6543', type: 'Ahorros' }
+        { name: 'Nequi', number: '3044736477', type: 'Ahorros', holder: 'Junior Armando Mojica Dominguez' },
+        { name: 'Llave Bre-B', number: '1065841642', type: 'Cuenta', holder: 'Junior Armando Mojica Dominguez' },
+        { name: 'Llave Bre-B', number: '@moj841', type: 'Alias', holder: 'Junior Armando Mojica Dominguez' }
     ];
 
     const handleCopy = (text: string, key: string) => {
@@ -58,11 +66,15 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
         }
 
         setIsSubmitting(true);
+        const selectedPlanData = plans.find(p => p.id === selectedPlan)!;
+
         try {
             await api.createPaymentRequest({
                 userId: user.id,
                 userName: user.name,
-                amount: 25000,
+                amount: selectedPlanData.price,
+                planType: selectedPlan,
+                planDuration: selectedPlanData.duration,
                 referenceCode,
                 proofImage: preview
             });
@@ -84,30 +96,67 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
             </div>
 
             <div className="p-6 space-y-6">
+                {/* Plan Selection */}
+                <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Selecciona tu Plan</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {plans.map((plan) => (
+                            <button
+                                key={plan.id}
+                                type="button"
+                                onClick={() => setSelectedPlan(plan.id)}
+                                className={`relative p-4 rounded-lg border-2 transition-all text-left ${selectedPlan === plan.id
+                                        ? 'border-emerald-600 bg-emerald-50'
+                                        : 'border-gray-200 hover:border-emerald-300'
+                                    }`}
+                            >
+                                {plan.recommended && (
+                                    <span className="absolute -top-2 -right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                        Recomendado
+                                    </span>
+                                )}
+                                <div className="text-center">
+                                    <p className="font-bold text-gray-900 text-lg">{plan.name}</p>
+                                    <p className="text-2xl font-bold text-emerald-600 mt-2">
+                                        ${plan.price.toLocaleString('es-CO')}
+                                    </p>
+                                    <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
+                                    {plan.savings && (
+                                        <p className="text-xs text-emerald-600 font-medium mt-2">{plan.savings}</p>
+                                    )}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Amount */}
                 <div className="text-center pb-6 border-b border-gray-100">
                     <p className="text-gray-500 text-sm mb-1">Total a Pagar</p>
-                    <p className="text-3xl font-bold text-gray-900">$25.000 <span className="text-sm font-normal text-gray-500">COP</span></p>
+                    <p className="text-3xl font-bold text-gray-900">
+                        ${plans.find(p => p.id === selectedPlan)!.price.toLocaleString('es-CO')} <span className="text-sm font-normal text-gray-500">COP</span>
+                    </p>
                 </div>
 
                 {/* Bank Accounts */}
                 <div className="space-y-4">
                     <h4 className="font-medium text-gray-900">Cuentas Bancarias</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {bankAccounts.map((account) => (
-                            <div key={account.name} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="grid grid-cols-1 gap-4">
+                        {bankAccounts.map((account, index) => (
+                            <div key={`${account.name}-${index}`} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="font-bold text-gray-900">{account.name}</span>
                                     <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">{account.type}</span>
                                 </div>
+                                <p className="text-xs text-gray-600 mb-2">{account.holder}</p>
                                 <div className="flex items-center justify-between bg-white p-2 rounded border border-gray-200">
                                     <code className="text-emerald-600 font-mono font-medium">{account.number}</code>
                                     <button
-                                        onClick={() => handleCopy(account.number, account.name)}
+                                        onClick={() => handleCopy(account.number, `${account.name}-${index}`)}
                                         className="text-gray-400 hover:text-emerald-600 transition-colors"
                                         title="Copiar número"
                                     >
-                                        {copied === account.name ? <Check size={16} /> : <Copy size={16} />}
+                                        {copied === `${account.name}-${index}` ? <Check size={16} /> : <Copy size={16} />}
                                     </button>
                                 </div>
                             </div>

@@ -134,6 +134,9 @@ export interface User {
   rejectedCount: number;
   joinedAt: string;
   plan?: 'free' | 'premium';
+  planType?: 'weekly' | 'monthly' | 'quarterly';
+  planStartedAt?: string;
+  planExpiresAt?: string;
   paymentRequestId?: string;
   premiumSince?: string;
 }
@@ -143,6 +146,8 @@ export interface PaymentRequest {
   userId: string;
   userName: string;
   amount: number;
+  planType: 'weekly' | 'monthly' | 'quarterly';
+  planDuration: number; // days
   referenceCode: string;
   proofImage: string; // base64
   status: 'pending' | 'verified' | 'rejected';
