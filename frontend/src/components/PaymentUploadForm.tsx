@@ -41,8 +41,8 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
 
-            if (selectedFile.size > 5 * 1024 * 1024) {
-                setError('El archivo no debe superar los 5MB');
+            if (selectedFile.size > 2 * 1024 * 1024) {
+                setError('El archivo no debe superar los 2MB');
                 return;
             }
 
@@ -80,6 +80,7 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
             });
             onSuccess();
         } catch (err) {
+            console.error('Error al enviar comprobante:', err);
             setError('Error al enviar el comprobante. Inténtalo de nuevo.');
         } finally {
             setIsSubmitting(false);
@@ -106,8 +107,8 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
                                 type="button"
                                 onClick={() => setSelectedPlan(plan.id)}
                                 className={`relative p-4 rounded-lg border-2 transition-all text-left ${selectedPlan === plan.id
-                                        ? 'border-emerald-600 bg-emerald-50'
-                                        : 'border-gray-200 hover:border-emerald-300'
+                                    ? 'border-emerald-600 bg-emerald-50'
+                                    : 'border-gray-200 hover:border-emerald-300'
                                     }`}
                             >
                                 {plan.recommended && (
@@ -199,7 +200,7 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
                             <p className="text-sm text-gray-600 font-medium">
                                 Haz clic para subir imagen o PDF
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">Máximo 5MB</p>
+                            <p className="text-xs text-gray-500 mt-1">Máximo 2MB</p>
                         </div>
                     ) : (
                         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center justify-between">

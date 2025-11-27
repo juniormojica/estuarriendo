@@ -19,7 +19,12 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const getStoredProperties = (): Property[] => {
   const stored = localStorage.getItem('estuarriendo_properties');
   if (stored) {
-    return JSON.parse(stored);
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored properties:', e);
+      return mockProperties;
+    }
   }
   return mockProperties;
 };
@@ -32,11 +37,51 @@ const saveProperties = (properties: Property[]) => {
 // Helper for payment requests
 const getStoredPaymentRequests = (): PaymentRequest[] => {
   const stored = localStorage.getItem('estuarriendo_payment_requests');
-  return stored ? JSON.parse(stored) : [];
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored payment requests:', e);
+      return [];
+    }
+  }
+  return [];
 };
 
 const savePaymentRequests = (requests: PaymentRequest[]) => {
   localStorage.setItem('estuarriendo_payment_requests', JSON.stringify(requests));
+};
+
+// Helper for users
+const getStoredUsers = (): User[] => {
+  const stored = localStorage.getItem('estuarriendo_users');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored users:', e);
+      return [];
+    }
+  }
+  return [];
+};
+
+const saveStoredUsers = (users: User[]) => {
+  localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+};
+
+// Helper for current user
+const getStoredCurrentUser = (): User | any => {
+  const stored = localStorage.getItem('estuarriendo_current_user');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored current user:', e);
+      return {};
+    }
+  }
+  return {};
 };
 
 export const api = {
@@ -112,8 +157,7 @@ export const api = {
   // Get owner contact details
   async getOwnerContactDetails(ownerId: string): Promise<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null> {
     await delay(300);
-    const usersJson = localStorage.getItem('estuarriendo_users');
-    const users: User[] = usersJson ? JSON.parse(usersJson) : [];
+    const users = getStoredUsers();
     const owner = users.find(u => u.id === ownerId);
 
     if (owner) {
@@ -318,8 +362,7 @@ export const api = {
   // Get users (actual registered users)
   async getUsers(): Promise<User[]> {
     await delay(500);
-    const usersJson = localStorage.getItem('estuarriendo_users');
-    const users: User[] = usersJson ? JSON.parse(usersJson) : [];
+    const users = getStoredUsers();
 
     // Calculate stats for each user based on current properties
     const properties = getStoredProperties();
@@ -352,7 +395,12 @@ export const api = {
     // Get from localStorage or create default
     const stored = localStorage.getItem('estuarriendo_activity_log');
     if (stored) {
-      return JSON.parse(stored);
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error('Error parsing activity log:', e);
+        return [];
+      }
     }
 
     // Create initial activity log based on properties
@@ -392,7 +440,12 @@ export const api = {
 
     const stored = localStorage.getItem('estuarriendo_system_config');
     if (stored) {
-      return JSON.parse(stored);
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error('Error parsing system config:', e);
+        // Fallback to default
+      }
     }
 
     const defaultConfig: SystemConfig = {
@@ -435,32 +488,62 @@ export const api = {
   // Payment Requests
   async createPaymentRequest(request: Omit<PaymentRequest, 'id' | 'status' | 'createdAt'>): Promise<boolean> {
     await delay(500);
-    const requests = getStoredPaymentRequests();
-    const newRequest: PaymentRequest = {
-      id: Date.now().toString(),
-      ...request,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-    requests.push(newRequest);
-    savePaymentRequests(requests);
 
-    // Update user with paymentRequestId
-    const users = JSON.parse(localStorage.getItem('estuarriendo_users') || '[]');
-    const userIndex = users.findIndex((u: any) => u.id === request.userId);
-    if (userIndex !== -1) {
-      users[userIndex].paymentRequestId = newRequest.id;
-      localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+    try {
+      const requests = getStoredPaymentRequests();
 
-      // Update current user if needed
-      const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
-      if (currentUser.id === request.userId) {
-        currentUser.paymentRequestId = newRequest.id;
-        localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+      // Handle large images to prevent QuotaExceededError
+      let proofImage = request.proofImage;
+      if (proofImage && proofImage.length > 100 * 1024) { // > 100KB
+        console.warn('Image too large for localStorage, using placeholder');
+        // Use a placeholder or just keep the reference without the image data if it's too big
+        proofImage = 'https://ui-avatars.com/api/?name=Comprobante&background=0D8ABC&color=fff&size=200';
       }
-    }
 
-    return true;
+      const newRequest: PaymentRequest = {
+        id: Date.now().toString(),
+        ...request,
+        proofImage,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        requests.push(newRequest);
+        savePaymentRequests(requests);
+      } catch (e) {
+        console.error('Storage quota exceeded, retrying without image', e);
+        newRequest.proofImage = '';
+        requests.pop();
+        requests.push(newRequest);
+        savePaymentRequests(requests);
+      }
+
+      // Update user with paymentRequestId
+      try {
+        const users = getStoredUsers();
+        const userIndex = users.findIndex((u: any) => u.id === request.userId);
+        if (userIndex !== -1) {
+          users[userIndex].paymentRequestId = newRequest.id;
+          saveStoredUsers(users);
+
+          // Update current user if needed
+          const currentUser = getStoredCurrentUser();
+          if (currentUser && currentUser.id === request.userId) {
+            currentUser.paymentRequestId = newRequest.id;
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+          }
+        }
+      } catch (e) {
+        console.error('Error updating user with payment request:', e);
+        // Do not throw here, as the payment request was already saved
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error creating payment request:', error);
+      throw error;
+    }
   },
 
   async getPaymentRequests(): Promise<PaymentRequest[]> {
@@ -480,23 +563,27 @@ export const api = {
 
       // Upgrade user to premium
       const userId = requests[index].userId;
-      const users = JSON.parse(localStorage.getItem('estuarriendo_users') || '[]');
-      const userIndex = users.findIndex((u: any) => u.id === userId);
+      try {
+        const users = getStoredUsers();
+        const userIndex = users.findIndex((u: any) => u.id === userId);
 
-      if (userIndex !== -1) {
-        users[userIndex].plan = 'premium';
-        users[userIndex].paymentRequestId = undefined; // Clear request id
-        users[userIndex].premiumSince = new Date().toISOString(); // Set premium date
-        localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+        if (userIndex !== -1) {
+          users[userIndex].plan = 'premium';
+          users[userIndex].paymentRequestId = undefined; // Clear request id
+          users[userIndex].premiumSince = new Date().toISOString(); // Set premium date
+          saveStoredUsers(users);
 
-        // Update current user if needed
-        const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
-        if (currentUser.id === userId) {
-          currentUser.plan = 'premium';
-          currentUser.paymentRequestId = undefined;
-          currentUser.premiumSince = users[userIndex].premiumSince;
-          localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+          // Update current user if needed
+          const currentUser = getStoredCurrentUser();
+          if (currentUser && currentUser.id === userId) {
+            currentUser.plan = 'premium';
+            currentUser.paymentRequestId = undefined;
+            currentUser.premiumSince = users[userIndex].premiumSince;
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+          }
         }
+      } catch (e) {
+        console.error('Error upgrading user:', e);
       }
 
       return true;
@@ -516,19 +603,23 @@ export const api = {
 
       // Clear paymentRequestId from user so they can try again
       const userId = requests[index].userId;
-      const users = JSON.parse(localStorage.getItem('estuarriendo_users') || '[]');
-      const userIndex = users.findIndex((u: any) => u.id === userId);
+      try {
+        const users = getStoredUsers();
+        const userIndex = users.findIndex((u: any) => u.id === userId);
 
-      if (userIndex !== -1) {
-        users[userIndex].paymentRequestId = undefined;
-        localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+        if (userIndex !== -1) {
+          users[userIndex].paymentRequestId = undefined;
+          saveStoredUsers(users);
 
-        // Update current user if needed
-        const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
-        if (currentUser.id === userId) {
-          currentUser.paymentRequestId = undefined;
-          localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+          // Update current user if needed
+          const currentUser = getStoredCurrentUser();
+          if (currentUser && currentUser.id === userId) {
+            currentUser.paymentRequestId = undefined;
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+          }
         }
+      } catch (e) {
+        console.error('Error clearing user payment request:', e);
       }
 
       return true;
@@ -539,24 +630,25 @@ export const api = {
   // Update user details
   async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
     await delay(500);
-    const usersJson = localStorage.getItem('estuarriendo_users');
-    if (!usersJson) return false;
+    try {
+      const users = getStoredUsers();
+      const index = users.findIndex(u => u.id === userId);
 
-    const users: User[] = JSON.parse(usersJson);
-    const index = users.findIndex(u => u.id === userId);
+      if (index !== -1) {
+        users[index] = { ...users[index], ...updates };
+        saveStoredUsers(users);
 
-    if (index !== -1) {
-      users[index] = { ...users[index], ...updates };
-      localStorage.setItem('estuarriendo_users', JSON.stringify(users));
+        // Update current user if it matches
+        const currentUser = getStoredCurrentUser();
+        if (currentUser && currentUser.id === userId) {
+          const updatedCurrentUser = { ...currentUser, ...updates };
+          localStorage.setItem('estuarriendo_current_user', JSON.stringify(updatedCurrentUser));
+        }
 
-      // Update current user if it matches
-      const currentUser = JSON.parse(localStorage.getItem('estuarriendo_current_user') || '{}');
-      if (currentUser.id === userId) {
-        const updatedCurrentUser = { ...currentUser, ...updates };
-        localStorage.setItem('estuarriendo_current_user', JSON.stringify(updatedCurrentUser));
+        return true;
       }
-
-      return true;
+    } catch (e) {
+      console.error('Error updating user:', e);
     }
     return false;
   },
@@ -650,7 +742,15 @@ export const api = {
 // Helper for student requests
 const getStoredStudentRequests = (): StudentRequest[] => {
   const stored = localStorage.getItem('estuarriendo_student_requests');
-  return stored ? JSON.parse(stored) : [];
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored student requests:', e);
+      return [];
+    }
+  }
+  return [];
 };
 
 const saveStudentRequests = (requests: StudentRequest[]) => {
