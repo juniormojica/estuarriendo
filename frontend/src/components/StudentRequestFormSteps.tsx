@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, DollarSign, Home, MapPin, Clock, FileText, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';
+import { iconMap } from '../lib/icons';
 
 interface FormData {
     universityTarget: string;
@@ -274,20 +275,25 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
             <p className="text-gray-600 mb-4">Selecciona las comodidades que son importantes para ti</p>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {mockAmenities.map(amenity => (
-                    <button
-                        key={amenity.id}
-                        type="button"
-                        onClick={() => toggleAmenity(amenity.id)}
-                        className={`p-4 rounded-lg border-2 transition-all text-center ${formData.requiredAmenities.includes(amenity.id)
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300'
-                            }`}
-                    >
-                        <span className="text-3xl mb-2 block">{amenity.icon}</span>
-                        <span className="text-sm font-medium block">{amenity.name}</span>
-                    </button>
-                ))}
+                {mockAmenities.map(amenity => {
+                    const IconComponent = iconMap[amenity.icon] || iconMap.default;
+                    return (
+                        <button
+                            key={amenity.id}
+                            type="button"
+                            onClick={() => toggleAmenity(amenity.id)}
+                            className={`p-4 rounded-lg border-2 transition-all text-center ${formData.requiredAmenities.includes(amenity.id)
+                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300'
+                                }`}
+                        >
+                            <span className="text-3xl mb-2 block flex justify-center">
+                                <IconComponent size={32} />
+                            </span>
+                            <span className="text-sm font-medium block">{amenity.name}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {formData.requiredAmenities.length === 0 && (

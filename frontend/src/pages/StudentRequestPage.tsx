@@ -5,6 +5,7 @@ import { authService } from '../services/authService';
 import { StudentRequest } from '../types';
 import { Calendar, DollarSign, Home, MapPin, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';
+import { iconMap } from '../lib/icons';
 import StudentRequestFormSteps from '../components/StudentRequestFormSteps';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -217,9 +218,12 @@ const StudentRequestPage: React.FC = () => {
                                     <div className="flex flex-wrap gap-2">
                                         {existingRequest.requiredAmenities.map(amenityId => {
                                             const amenity = mockAmenities.find(a => a.id === amenityId);
+                                            const IconComponent = amenity ? (iconMap[amenity.icon] || iconMap.default) : null;
                                             return amenity ? (
                                                 <span key={amenityId} className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm flex items-center">
-                                                    <span className="mr-1">{amenity.icon}</span>
+                                                    <span className="mr-1">
+                                                        {IconComponent && <IconComponent size={14} />}
+                                                    </span>
                                                     {amenity.name}
                                                 </span>
                                             ) : null;

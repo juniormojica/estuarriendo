@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck,
-  Wifi, Car, Waves, Dumbbell, Shirt, Shield, ArrowUp, Home, Sofa, Snowflake, Flame, ChefHat,
-  DoorOpen, Fan, Monitor, AppWindow, Tv, Lock
+  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock
 } from 'lucide-react';
 import { Property, Amenity, User } from '../types';
 import { api } from '../services/api';
@@ -15,29 +13,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { Badge } from '../components/ui/Badge';
 import { cn } from '../lib/utils';
 import RelatedProperties from '../components/RelatedProperties';
-
-// Icon mapping
-const iconMap: Record<string, React.ElementType> = {
-  wifi: Wifi,
-  car: Car,
-  waves: Waves,
-  dumbbell: Dumbbell,
-  shirt: Shirt,
-  shield: Shield,
-  'arrow-up': ArrowUp,
-  home: Home,
-  sofa: Sofa,
-  snowflake: Snowflake,
-  flame: Flame,
-  'chef-hat': ChefHat,
-  bath: Bath,
-  cabinet: DoorOpen, // Fallback for closet
-  fan: Fan,
-  desk: Monitor, // Fallback for desk
-  window: AppWindow,
-  bed: Bed,
-  tv: Tv
-};
+import { iconMap } from '../lib/icons';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

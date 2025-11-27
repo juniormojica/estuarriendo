@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SystemConfig, Amenity } from '../../types';
 import { Save, Plus, Trash2 } from 'lucide-react';
+import { iconMap } from '../../lib/icons';
 
 interface AdminConfigProps {
     config: SystemConfig;
@@ -154,10 +155,10 @@ const AdminConfig: React.FC<AdminConfigProps> = ({
                         />
                         <input
                             type="text"
-                            placeholder="Emoji o ícono"
+                            placeholder="Clave del ícono (ej. wifi)"
                             value={newAmenityIcon}
                             onChange={(e) => setNewAmenityIcon(e.target.value)}
-                            className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         <button
                             onClick={handleAddAmenity}
@@ -171,24 +172,29 @@ const AdminConfig: React.FC<AdminConfigProps> = ({
 
                 {/* Amenities List */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {amenities.map((amenity) => (
-                        <div
-                            key={amenity.id}
-                            className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className="text-xl">{amenity.icon}</span>
-                                <span className="text-sm font-medium text-gray-900">{amenity.name}</span>
-                            </div>
-                            <button
-                                onClick={() => onDeleteAmenity(amenity.id)}
-                                className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                title="Eliminar amenidad"
+                    {amenities.map((amenity) => {
+                        const IconComponent = iconMap[amenity.icon] || iconMap.default;
+                        return (
+                            <div
+                                key={amenity.id}
+                                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
                             >
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                    ))}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-gray-600">
+                                        <IconComponent size={20} />
+                                    </span>
+                                    <span className="text-sm font-medium text-gray-900">{amenity.name}</span>
+                                </div>
+                                <button
+                                    onClick={() => onDeleteAmenity(amenity.id)}
+                                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    title="Eliminar amenidad"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
