@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, IdType, PaymentMethod, PaymentRequest } from '../types';
+import { useLocation } from 'react-router-dom';
+import { User, PaymentRequest } from '../types';
 import { authService } from '../services/authService';
 import { api } from '../services/api';
 import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock } from 'lucide-react';
@@ -12,16 +13,25 @@ const UserProfile: React.FC = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing'>('profile');
     const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
+    const [initialPlan, setInitialPlan] = useState<string | null>(null);
 
     // Form states
     const [formData, setFormData] = useState<Partial<User>>({});
 
+    const location = useLocation();
+
     useEffect(() => {
         // Handle tab parameter
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(location.search);
         const tabParam = params.get('tab');
+        const planParam = params.get('plan');
+
         if (tabParam === 'billing' || tabParam === 'security' || tabParam === 'profile') {
             setActiveTab(tabParam);
+        }
+
+        if (planParam) {
+            setInitialPlan(planParam);
         }
 
         const loadUserAndPayment = async () => {
@@ -41,7 +51,7 @@ const UserProfile: React.FC = () => {
             setLoading(false);
         };
         loadUserAndPayment();
-    }, []);
+    }, [location.search]);
 
     const handleInputChange = (field: keyof User, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -301,7 +311,7 @@ const UserProfile: React.FC = () => {
                                                         Tu último pago fue rechazado. Por favor intenta nuevamente o contacta a soporte.
                                                     </p>
                                                 </div>
-                                                <PaymentUploadForm user={user} onSuccess={handlePaymentSuccess} />
+                                                <PaymentUploadForm user={user} onSuccess={handlePaymentSuccess} initialPlan={initialPlan} />
                                             </div>
                                         ) : (
                                             <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
@@ -321,7 +331,7 @@ const UserProfile: React.FC = () => {
                                                 </ul>
 
                                                 <div className="border-t border-gray-200 pt-6">
-                                                    <PaymentUploadForm user={user} onSuccess={handlePaymentSuccess} />
+                                                    <PaymentUploadForm user={user} onSuccess={handlePaymentSuccess} initialPlan={initialPlan} />
                                                 </div>
                                             </div>
                                         )}
@@ -337,3 +347,4 @@ const UserProfile: React.FC = () => {
 };
 
 export default UserProfile;
+

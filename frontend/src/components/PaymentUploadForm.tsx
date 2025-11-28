@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Copy, Check, AlertCircle, FileText, X } from 'lucide-react';
 import { api } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
@@ -6,15 +6,29 @@ import LoadingSpinner from './LoadingSpinner';
 interface PaymentUploadFormProps {
     user: any;
     onSuccess: () => void;
+    initialPlan?: string | null;
 }
 
-const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }) => {
+const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, initialPlan }) => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState<string | null>(null);
     const [error, setError] = useState('');
-    const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'quarterly'>('monthly');
+
+    const getValidPlan = (plan: string | null | undefined): 'weekly' | 'monthly' | 'quarterly' => {
+        if (plan === 'weekly' || plan === 'monthly' || plan === 'quarterly') return plan;
+        return 'monthly';
+    };
+
+    const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'quarterly'>(getValidPlan(initialPlan));
+    const instructionsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (initialPlan && instructionsRef.current) {
+            instructionsRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [initialPlan]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const referenceCode = `ESTU-P-${user.id.substring(0, 4).toUpperCase()}-${Date.now().toString().substring(9)}`;
@@ -89,7 +103,7 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess }
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-emerald-600 p-6 text-white">
+            <div ref={instructionsRef} className="bg-emerald-600 p-6 text-white">
                 <h3 className="text-lg font-bold mb-2">Instrucciones de Pago</h3>
                 <p className="text-emerald-100 text-sm">
                     Realiza la transferencia y sube el comprobante para activar tu Plan Premium.
