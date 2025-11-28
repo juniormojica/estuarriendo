@@ -203,9 +203,14 @@ export const api = {
     const newId = (properties.length + 1).toString();
 
     // Convert images to array of strings (base64 or URLs)
-    const imageStrings = formData.images.map(img =>
-      typeof img === 'string' ? img : 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg'
-    );
+    // Check for large images upfront to avoid obvious quota issues
+    const imageStrings = formData.images.map(img => {
+      if (typeof img === 'string' && img.length > 500000) { // > ~500KB
+        console.warn('Image too large for localStorage, using placeholder');
+        return 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg';
+      }
+      return typeof img === 'string' ? img : 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg';
+    });
 
     const newProperty: Property = {
       id: newId,
@@ -225,8 +230,35 @@ export const api = {
       ownerId: formData.ownerId
     };
 
+    // Try to save with original images (or slightly filtered ones)
     properties.unshift(newProperty);
-    saveProperties(properties);
+
+    try {
+      saveProperties(properties);
+    } catch (e) {
+      console.warn('Storage quota exceeded, retrying with placeholder images', e);
+
+      // Remove the failed property attempt
+      properties.shift();
+
+      // Create a fallback property with ALL placeholder images to ensure it saves
+      const fallbackProperty: Property = {
+        ...newProperty,
+        images: ['https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg']
+      };
+
+      properties.unshift(fallbackProperty);
+
+      try {
+        saveProperties(properties);
+      } catch (retryError) {
+        console.error('Failed to save property even with placeholders', retryError);
+        return {
+          success: false,
+          message: 'Error de almacenamiento: Tu navegador no tiene espacio suficiente. Intenta borrar datos de navegación.'
+        };
+      }
+    }
 
     return {
       success: true,
