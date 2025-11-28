@@ -13,6 +13,7 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import UserProfile from './pages/UserProfile';
 import StudentRequestPage from './pages/StudentRequestPage';
 import OpportunitiesPage from './pages/OpportunitiesPage';
+import PlansPage from './pages/PlansPage';
 import { FavoritesProvider } from './context/FavoritesContext';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -27,6 +28,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/propiedad/:id" element={<PropertyDetail />} />
             <Route path="/favoritos" element={<FavoritesPage />} />
+            <Route path="/planes" element={<PlansPage />} />
             <Route path="/publicar" element={<PropertySubmission />} />
             <Route path="/editar-propiedad/:id" element={<PropertySubmission />} />
             <Route path="/registro" element={<RegistrationPage />} />

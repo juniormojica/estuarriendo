@@ -42,6 +42,15 @@ const Header: React.FC = () => {
               Favoritos
             </Link>
             <Link
+              to="/planes"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/planes'
+                ? 'bg-primary-100 text-primary-700'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+            >
+              Planes
+            </Link>
+            <Link
               to="/publicar"
               className={`flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/publicar'
                 ? 'bg-primary-100 text-primary-700'
