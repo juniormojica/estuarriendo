@@ -54,8 +54,8 @@ const PlansPage: React.FC = () => {
                     {/* Plan Mensual (Destacado) */}
                     <div className="bg-white rounded-xl shadow-xl border-2 border-emerald-500 overflow-hidden transform scale-105 z-10 flex flex-col relative">
                         <div className="absolute top-0 inset-x-0 bg-emerald-500 h-1.5"></div>
-                        <div className="absolute top-0 right-0 w-24 h-24 overflow-hidden z-20">
-                            <div className="bg-yellow-400 text-xs font-bold px-8 py-1 transform rotate-45 translate-x-8 translate-y-4 shadow-sm text-center">
+                        <div className="absolute top-0 right-0 w-28 h-28 overflow-hidden z-20">
+                            <div className="absolute top-6 -right-8 w-32 bg-yellow-400 text-xs font-bold py-1 transform rotate-45 text-center shadow-sm">
                                 POPULAR
                             </div>
                         </div>
