@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Property, SearchFilters } from '../types';
 import { api } from '../services/api';
 import SearchFiltersComponent from '../components/SearchFilters';
 import PropertyGrid from '../components/PropertyGrid';
 import WelcomeModal from '../components/WelcomeModal';
+import { ChevronDown } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -11,6 +12,7 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
+  const searchSectionRef = useRef<HTMLDivElement>(null);
 
   const loadProperties = async (filters?: SearchFilters) => {
     try {
@@ -49,12 +51,15 @@ const HomePage: React.FC = () => {
     loadProperties({ city });
   };
 
+  const scrollToSearch = () => {
+    searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Welcome Modal */}
       <WelcomeModal />
 
-      {/* Hero Section */}
       {/* Hero Section */}
       <div className="relative bg-gray-900 text-white">
         <div className="absolute inset-0">
@@ -73,12 +78,19 @@ const HomePage: React.FC = () => {
             <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-8 font-light">
               Apartamentos, habitaciones y pensiones cerca de tu universidad en Valledupar. Diseñado para estudiantes.
             </p>
+            <button
+              onClick={scrollToSearch}
+              className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+            >
+              <span>Ver Publicaciones Disponibles</span>
+              <ChevronDown className="h-5 w-5 animate-bounce" />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div ref={searchSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Available Cities Section */}
         {availableCities.length > 0 && (
           <div className="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">

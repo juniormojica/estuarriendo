@@ -1,43 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Copy, Check, AlertCircle, FileText, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, Copy, Check, AlertCircle, X } from 'lucide-react';
 import { api } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
 
 interface PaymentUploadFormProps {
     user: any;
     onSuccess: () => void;
-    initialPlan?: string | null;
+    selectedPlan: 'weekly' | 'monthly' | 'quarterly';
 }
 
-const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, initialPlan }) => {
+const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, selectedPlan }) => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copied, setCopied] = useState<string | null>(null);
     const [error, setError] = useState('');
 
-    const getValidPlan = (plan: string | null | undefined): 'weekly' | 'monthly' | 'quarterly' => {
-        if (plan === 'weekly' || plan === 'monthly' || plan === 'quarterly') return plan;
-        return 'monthly';
-    };
-
-    const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'quarterly'>(getValidPlan(initialPlan));
-    const instructionsRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (initialPlan && instructionsRef.current) {
-            instructionsRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [initialPlan]);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
     const referenceCode = `ESTU-P-${user.id.substring(0, 4).toUpperCase()}-${Date.now().toString().substring(9)}`;
 
-    const plans = [
-        { id: 'weekly' as const, name: 'Semanal', price: 12500, duration: 7, description: '7 días' },
-        { id: 'monthly' as const, name: 'Mensual', price: 20000, duration: 30, description: '30 días', recommended: true },
-        { id: 'quarterly' as const, name: 'Trimestral', price: 28000, duration: 90, description: '90 días', savings: 'Ahorra $32,000' }
-    ];
+    const plans = {
+        weekly: { name: 'Semanal', price: 12500, duration: 7 },
+        monthly: { name: 'Mensual', price: 20000, duration: 30 },
+        quarterly: { name: 'Trimestral', price: 28000, duration: 90 }
+    };
+
+    const selectedPlanData = plans[selectedPlan];
 
     const bankAccounts = [
         { name: 'Nequi', number: '3044736477', type: 'Ahorros', holder: 'Junior Armando Mojica Dominguez' },
@@ -63,7 +51,6 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
             setFile(selectedFile);
             setError('');
 
-            // Create preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result as string);
@@ -80,7 +67,6 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
         }
 
         setIsSubmitting(true);
-        const selectedPlanData = plans.find(p => p.id === selectedPlan)!;
 
         try {
             await api.createPaymentRequest({
@@ -103,174 +89,139 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div ref={instructionsRef} className="bg-emerald-600 p-6 text-white">
-                <h3 className="text-lg font-bold mb-2">Instrucciones de Pago</h3>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
+                <h3 className="text-xl font-bold mb-2">Instrucciones de Pago</h3>
                 <p className="text-emerald-100 text-sm">
-                    Realiza la transferencia y sube el comprobante para activar tu Plan Premium.
+                    Realiza la transferencia de <span className="font-bold">${selectedPlanData.price.toLocaleString('es-CO')} COP</span> ({selectedPlanData.name}) y sube el comprobante.
                 </p>
             </div>
 
             <div className="p-6 space-y-6">
-                {/* Plan Selection */}
-                <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Selecciona tu Plan</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {plans.map((plan) => (
-                            <button
-                                key={plan.id}
-                                type="button"
-                                onClick={() => setSelectedPlan(plan.id)}
-                                className={`relative p-4 rounded-lg border-2 transition-all text-left ${selectedPlan === plan.id
-                                    ? 'border-emerald-600 bg-emerald-50'
-                                    : 'border-gray-200 hover:border-emerald-300'
-                                    }`}
-                            >
-                                {plan.recommended && (
-                                    <span className="absolute -top-2 -right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full font-medium">
-                                        Recomendado
-                                    </span>
-                                )}
-                                <div className="text-center">
-                                    <p className="font-bold text-gray-900 text-lg">{plan.name}</p>
-                                    <p className="text-2xl font-bold text-emerald-600 mt-2">
-                                        ${plan.price.toLocaleString('es-CO')}
-                                    </p>
-                                    <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
-                                    {plan.savings && (
-                                        <p className="text-xs text-emerald-600 font-medium mt-2">{plan.savings}</p>
-                                    )}
-                                </div>
-                            </button>
-                        ))}
+                {/* Reference Code */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-blue-900 mb-1">Código de Referencia</p>
+                            <p className="text-lg font-mono font-bold text-blue-700">{referenceCode}</p>
+                            <p className="text-xs text-blue-600 mt-1">Incluye este código en la descripción de tu transferencia</p>
+                        </div>
+                        <button
+                            onClick={() => handleCopy(referenceCode, 'ref')}
+                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                        >
+                            {copied === 'ref' ? (
+                                <Check className="h-5 w-5 text-green-600" />
+                            ) : (
+                                <Copy className="h-5 w-5 text-blue-600" />
+                            )}
+                        </button>
                     </div>
-                </div>
-
-                {/* Amount */}
-                <div className="text-center pb-6 border-b border-gray-100">
-                    <p className="text-gray-500 text-sm mb-1">Total a Pagar</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                        ${plans.find(p => p.id === selectedPlan)!.price.toLocaleString('es-CO')} <span className="text-sm font-normal text-gray-500">COP</span>
-                    </p>
                 </div>
 
                 {/* Bank Accounts */}
-                <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Cuentas Bancarias</h4>
-                    <div className="grid grid-cols-1 gap-4">
+                <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Cuentas Disponibles</h4>
+                    <div className="space-y-3">
                         {bankAccounts.map((account, index) => (
-                            <div key={`${account.name}-${index}`} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <div className="flex justify-between items-start mb-2">
+                            <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-center justify-between mb-2">
                                     <span className="font-bold text-gray-900">{account.name}</span>
-                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">{account.type}</span>
+                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
+                                        {account.type}
+                                    </span>
                                 </div>
-                                <p className="text-xs text-gray-600 mb-2">{account.holder}</p>
-                                <div className="flex items-center justify-between bg-white p-2 rounded border border-gray-200">
-                                    <code className="text-emerald-600 font-mono font-medium">{account.number}</code>
+                                <div className="flex items-center justify-between">
+                                    <span className="font-mono text-gray-700">{account.number}</span>
                                     <button
-                                        onClick={() => handleCopy(account.number, `${account.name}-${index}`)}
-                                        className="text-gray-400 hover:text-emerald-600 transition-colors"
-                                        title="Copiar número"
+                                        onClick={() => handleCopy(account.number, `acc-${index}`)}
+                                        className="p-1.5 hover:bg-gray-200 rounded transition-colors"
                                     >
-                                        {copied === `${account.name}-${index}` ? <Check size={16} /> : <Copy size={16} />}
+                                        {copied === `acc-${index}` ? (
+                                            <Check className="h-4 w-4 text-green-600" />
+                                        ) : (
+                                            <Copy className="h-4 w-4 text-gray-600" />
+                                        )}
                                     </button>
                                 </div>
+                                <p className="text-xs text-gray-500 mt-1">{account.holder}</p>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Reference Code */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-start space-x-3">
-                        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                            <h4 className="text-sm font-bold text-blue-800 mb-1">Referencia de Pago</h4>
-                            <p className="text-sm text-blue-700 mb-3">
-                                Por favor incluye este código en la descripción de tu transferencia:
-                            </p>
-                            <div className="flex items-center justify-between bg-white p-2 rounded border border-blue-200">
-                                <code className="text-blue-800 font-mono font-bold">{referenceCode}</code>
+                {/* Upload Section */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <h4 className="font-semibold text-gray-900 mb-3">Sube tu Comprobante</h4>
+
+                        {!preview ? (
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-emerald-400 hover:bg-emerald-50 transition-all cursor-pointer"
+                            >
+                                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-700 font-medium mb-1">Haz clic para subir</p>
+                                <p className="text-sm text-gray-500">PNG, JPG o PDF (máx. 2MB)</p>
+                            </div>
+                        ) : (
+                            <div className="relative">
+                                <img
+                                    src={preview}
+                                    alt="Comprobante"
+                                    className="w-full h-64 object-contain bg-gray-100 rounded-lg border border-gray-200"
+                                />
                                 <button
-                                    onClick={() => handleCopy(referenceCode, 'ref')}
-                                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                                    type="button"
+                                    onClick={() => {
+                                        setFile(null);
+                                        setPreview(null);
+                                    }}
+                                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                                 >
-                                    {copied === 'ref' ? <Check size={16} /> : <Copy size={16} />}
+                                    <X className="h-4 w-4" />
                                 </button>
                             </div>
-                        </div>
+                        )}
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={handleFileChange}
+                            className="hidden"
+                        />
                     </div>
-                </div>
-
-                {/* Upload Form */}
-                <form onSubmit={handleSubmit} className="space-y-4 pt-4 border-t border-gray-100">
-                    <h4 className="font-medium text-gray-900">Subir Comprobante</h4>
-
-                    {!file ? (
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all"
-                        >
-                            <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                            <p className="text-sm text-gray-600 font-medium">
-                                Haz clic para subir imagen o PDF
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">Máximo 2MB</p>
-                        </div>
-                    ) : (
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                                <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
-                                    {file.type.startsWith('image/') ? (
-                                        <img src={preview || ''} alt="Preview" className="h-full w-full object-cover" />
-                                    ) : (
-                                        <FileText className="h-6 w-6 text-gray-500" />
-                                    )}
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">{file.name}</p>
-                                    <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => { setFile(null); setPreview(null); }}
-                                className="text-gray-400 hover:text-red-500"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-                    )}
-
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={handleFileChange}
-                        className="hidden"
-                    />
 
                     {error && (
-                        <p className="text-sm text-red-600 flex items-center">
-                            <AlertCircle size={16} className="mr-1" />
-                            {error}
-                        </p>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start space-x-2">
+                            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-red-700">{error}</p>
+                        </div>
                     )}
 
                     <button
                         type="submit"
                         disabled={!file || isSubmitting}
-                        className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-lg font-bold text-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     >
                         {isSubmitting ? (
-                            <>
-                                <LoadingSpinner size="sm" className="mr-2" />
-                                Enviando...
-                            </>
+                            <div className="flex items-center justify-center space-x-2">
+                                <LoadingSpinner size="sm" />
+                                <span>Enviando...</span>
+                            </div>
                         ) : (
                             'Enviar Comprobante'
                         )}
                     </button>
                 </form>
+
+                {/* Info */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800">
+                        <strong>Importante:</strong> Tu plan se activará en un máximo de 2 horas después de verificar tu pago.
+                    </p>
+                </div>
             </div>
         </div>
     );
