@@ -8,7 +8,7 @@ import {
   ActivityLog,
   SystemConfig,
   PaymentRequest,
-  StudentRequest,  Notification
+  StudentRequest, Notification
 } from '../types';
 import { mockProperties, mockAmenities } from '../data/mockData';
 
@@ -773,17 +773,17 @@ export const api = {
   // Notify owner of interest
   async notifyOwnerInterest(ownerId: string, propertyId: string, interestedUserId: string): Promise<boolean> {
     await delay(500);
-    
+
     // Get property and user details
     const properties = getStoredProperties();
     const users = getStoredUsers();
     const property = properties.find(p => p.id === propertyId);
     const interestedUser = users.find(u => u.id === interestedUserId);
-    
+
     if (!property || !interestedUser) {
       return false;
     }
-    
+
     // Create notification
     const notifications = getStoredNotifications();
     const newNotification: Notification = {
@@ -799,12 +799,21 @@ export const api = {
       read: false,
       createdAt: new Date().toISOString()
     };
-    
+
     notifications.push(newNotification);
     saveNotifications(notifications);
-    
+
     console.log(`Notification created for owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
     return true;
+  },
+
+  // Get interested users for a property
+  async getPropertyInterests(propertyId: string): Promise<Notification[]> {
+    await delay(300);
+    const notifications = getStoredNotifications();
+    return notifications
+      .filter(n => n.propertyId === propertyId && n.type === 'property_interest')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
   // Get notifications for a user
@@ -821,7 +830,7 @@ export const api = {
     await delay(200);
     const notifications = getStoredNotifications();
     const index = notifications.findIndex(n => n.id === notificationId);
-    
+
     if (index !== -1) {
       notifications[index].read = true;
       saveNotifications(notifications);
@@ -835,14 +844,14 @@ export const api = {
     await delay(300);
     const notifications = getStoredNotifications();
     let updated = false;
-    
+
     notifications.forEach(n => {
       if (n.userId === userId && !n.read) {
         n.read = true;
         updated = true;
       }
     });
-    
+
     if (updated) {
       saveNotifications(notifications);
     }

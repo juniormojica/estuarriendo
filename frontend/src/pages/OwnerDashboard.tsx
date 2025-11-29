@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle, Users } from 'lucide-react';
 import { Property } from '../types';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
 import LoadingSpinner from '../components/LoadingSpinner';
+import InterestedUsersModal from '../components/InterestedUsersModal';
 
 const OwnerDashboard: React.FC = () => {
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    // State for Interested Users Modal
+    const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+    const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>('');
+    const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchProperties = async () => {
@@ -45,6 +51,18 @@ const OwnerDashboard: React.FC = () => {
         } catch (err) {
             setError('Error al eliminar la propiedad.');
         }
+    };
+
+    const handleOpenInterests = (propertyId: string, propertyTitle: string) => {
+        setSelectedPropertyId(propertyId);
+        setSelectedPropertyTitle(propertyTitle);
+        setIsInterestModalOpen(true);
+    };
+
+    const handleCloseInterests = () => {
+        setIsInterestModalOpen(false);
+        setSelectedPropertyId(null);
+        setSelectedPropertyTitle('');
     };
 
     const getStatusBadge = (status: Property['status']) => {
@@ -166,6 +184,14 @@ const OwnerDashboard: React.FC = () => {
                                                 {getStatusBadge(property.status)}
 
                                                 <div className="flex items-center space-x-2">
+                                                    <button
+                                                        onClick={() => handleOpenInterests(property.id, property.title)}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                                                        title="Ver Interesados"
+                                                    >
+                                                        <Users className="h-5 w-5" />
+                                                    </button>
+
                                                     {/* Placeholder for Edit - could be implemented later */}
                                                     <Link
                                                         to={`/editar-propiedad/${property.id}`}
@@ -210,6 +236,16 @@ const OwnerDashboard: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Interested Users Modal */}
+            {selectedPropertyId && (
+                <InterestedUsersModal
+                    isOpen={isInterestModalOpen}
+                    onClose={handleCloseInterests}
+                    propertyId={selectedPropertyId}
+                    propertyTitle={selectedPropertyTitle}
+                />
+            )}
         </div>
     );
 };
