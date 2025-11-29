@@ -163,6 +163,7 @@ export interface StudentRequest {
   studentEmail: string;
   studentPhone: string;
   studentWhatsapp: string;
+  city: string;
   universityTarget: string;
   budgetMax: number;
   propertyTypeDesired: 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio';

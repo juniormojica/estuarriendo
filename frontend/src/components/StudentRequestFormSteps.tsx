@@ -4,6 +4,8 @@ import { mockAmenities } from '../data/mockData';
 import { iconMap } from '../lib/icons';
 
 interface FormData {
+    city: string;
+    isNearUniversity: boolean;
     universityTarget: string;
     budgetMax: string;
     propertyTypeDesired: '' | 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio';
@@ -42,6 +44,8 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState<FormData>({
+        city: initialData?.city || '',
+        isNearUniversity: !!initialData?.universityTarget,
         universityTarget: initialData?.universityTarget || '',
         budgetMax: initialData?.budgetMax || '',
         propertyTypeDesired: initialData?.propertyTypeDesired || '',
@@ -58,7 +62,10 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
         const newErrors: Record<string, string> = {};
 
         if (step === 1) {
-            if (!formData.universityTarget.trim()) {
+            if (!formData.city.trim()) {
+                newErrors.city = 'La ciudad es requerida';
+            }
+            if (formData.isNearUniversity && !formData.universityTarget.trim()) {
                 newErrors.universityTarget = 'Este campo es requerido';
             }
             if (!formData.budgetMax || parseFloat(formData.budgetMax) <= 0) {
@@ -160,21 +167,71 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                     <MapPin className="w-4 h-4 inline mr-2" />
-                    Universidad o Zona de Interés *
+                    Ciudad de Interés *
                 </label>
                 <input
                     type="text"
-                    value={formData.universityTarget}
-                    onChange={(e) => setFormData({ ...formData, universityTarget: e.target.value })}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.universityTarget ? 'border-red-500' : 'border-gray-300'
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
                         }`}
-                    placeholder="Ej: Universidad Popular del Cesar, Centro de Valledupar"
+                    placeholder="Ej: Valledupar"
                 />
-                {errors.universityTarget && (
+                {errors.city && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
                         <AlertCircle className="w-4 h-4 mr-1" />
-                        {errors.universityTarget}
+                        {errors.city}
                     </p>
+                )}
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                    ¿Buscas cerca de alguna universidad o corporación?
+                </label>
+                <div className="flex gap-4 mb-4">
+                    <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, isNearUniversity: true })}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${formData.isNearUniversity
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                    >
+                        Sí
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, isNearUniversity: false, universityTarget: '' })}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${!formData.isNearUniversity
+                            ? 'bg-gray-600 text-white border-gray-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                    >
+                        No
+                    </button>
+                </div>
+
+                {formData.isNearUniversity && (
+                    <div className="animate-fadeIn">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre de la Universidad o Corporación *
+                        </label>
+                        <input
+                            type="text"
+                            value={formData.universityTarget}
+                            onChange={(e) => setFormData({ ...formData, universityTarget: e.target.value })}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.universityTarget ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                            placeholder="Ej: Universidad Popular del Cesar"
+                        />
+                        {errors.universityTarget && (
+                            <p className="mt-1 text-sm text-red-600 flex items-center">
+                                <AlertCircle className="w-4 h-4 mr-1" />
+                                {errors.universityTarget}
+                            </p>
+                        )}
+                    </div>
                 )}
             </div>
 

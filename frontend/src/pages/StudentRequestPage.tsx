@@ -71,6 +71,7 @@ const StudentRequestPage: React.FC = () => {
             studentEmail: currentUser.email,
             studentPhone: currentUser.phone,
             studentWhatsapp: currentUser.whatsapp,
+            city: formData.city,
             universityTarget: formData.universityTarget,
             budgetMax: parseFloat(formData.budgetMax),
             propertyTypeDesired: formData.propertyTypeDesired as 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio',
@@ -167,6 +168,14 @@ const StudentRequestPage: React.FC = () => {
 
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="flex items-center text-gray-600 mb-2">
+                                    <MapPin className="w-5 h-5 mr-2" />
+                                    <span className="text-sm font-medium">Ciudad</span>
+                                </div>
+                                <p className="text-gray-900 font-semibold">{existingRequest.city}</p>
+                            </div>
+
+                            {existingRequest.universityTarget && (
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <div className="flex items-center text-gray-600 mb-2">
                                         <MapPin className="w-5 h-5 mr-2" />
@@ -174,126 +183,126 @@ const StudentRequestPage: React.FC = () => {
                                     </div>
                                     <p className="text-gray-900 font-semibold">{existingRequest.universityTarget}</p>
                                 </div>
+                            )}
 
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="flex items-center text-gray-600 mb-2">
-                                        <DollarSign className="w-5 h-5 mr-2" />
-                                        <span className="text-sm font-medium">Presupuesto Máximo</span>
-                                    </div>
-                                    <p className="text-gray-900 font-semibold">${existingRequest.budgetMax.toLocaleString('es-CO')}/mes</p>
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex items-center text-gray-600 mb-2">
+                                    <DollarSign className="w-5 h-5 mr-2" />
+                                    <span className="text-sm font-medium">Presupuesto Máximo</span>
                                 </div>
-
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="flex items-center text-gray-600 mb-2">
-                                        <Home className="w-5 h-5 mr-2" />
-                                        <span className="text-sm font-medium">Tipo de Inmueble</span>
-                                    </div>
-                                    <p className="text-gray-900 font-semibold capitalize">{existingRequest.propertyTypeDesired}</p>
-                                </div>
-
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="flex items-center text-gray-600 mb-2">
-                                        <Calendar className="w-5 h-5 mr-2" />
-                                        <span className="text-sm font-medium">Fecha de Mudanza</span>
-                                    </div>
-                                    <p className="text-gray-900 font-semibold">
-                                        {new Date(existingRequest.moveInDate).toLocaleDateString('es-CO')}
-                                    </p>
-                                </div>
-
-                                {existingRequest.contractDuration && (
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <div className="flex items-center text-gray-600 mb-2">
-                                            <Clock className="w-5 h-5 mr-2" />
-                                            <span className="text-sm font-medium">Duración del Contrato</span>
-                                        </div>
-                                        <p className="text-gray-900 font-semibold">{existingRequest.contractDuration} meses</p>
-                                    </div>
-                                )}
+                                <p className="text-gray-900 font-semibold">${existingRequest.budgetMax.toLocaleString('es-CO')}/mes</p>
                             </div>
 
-                            {existingRequest.requiredAmenities.length > 0 && (
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <h3 className="text-sm font-medium text-gray-600 mb-3">Comodidades Requeridas</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {existingRequest.requiredAmenities.map(amenityId => {
-                                            const amenity = mockAmenities.find(a => a.id === amenityId);
-                                            const IconComponent = amenity ? (iconMap[amenity.icon] || iconMap.default) : null;
-                                            return amenity ? (
-                                                <span key={amenityId} className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm flex items-center">
-                                                    <span className="mr-1">
-                                                        {IconComponent && <IconComponent size={14} />}
-                                                    </span>
-                                                    {amenity.name}
-                                                </span>
-                                            ) : null;
-                                        })}
-                                    </div>
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex items-center text-gray-600 mb-2">
+                                    <Home className="w-5 h-5 mr-2" />
+                                    <span className="text-sm font-medium">Tipo de Inmueble</span>
                                 </div>
-                            )}
+                                <p className="text-gray-900 font-semibold capitalize">{existingRequest.propertyTypeDesired}</p>
+                            </div>
 
-                            {existingRequest.dealBreakers && existingRequest.dealBreakers.length > 0 && (
-                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                    <h3 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
-                                        <AlertCircle className="w-4 h-4 mr-2" />
-                                        Preferencias Personales
-                                    </h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {existingRequest.dealBreakers.map(dealBreakerId => {
-                                            const dealBreaker = dealBreakerOptions.find(d => d.id === dealBreakerId);
-                                            return dealBreaker ? (
-                                                <span key={dealBreakerId} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center">
-                                                    <span className="mr-1">{dealBreaker.icon}</span>
-                                                    {dealBreaker.name}
-                                                </span>
-                                            ) : null;
-                                        })}
-                                    </div>
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex items-center text-gray-600 mb-2">
+                                    <Calendar className="w-5 h-5 mr-2" />
+                                    <span className="text-sm font-medium">Fecha de Mudanza</span>
                                 </div>
-                            )}
-
-                            {existingRequest.additionalNotes && (
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="flex items-center text-gray-600 mb-2">
-                                        <FileText className="w-5 h-5 mr-2" />
-                                        <span className="text-sm font-medium">Notas Adicionales</span>
-                                    </div>
-                                    <p className="text-gray-700">{existingRequest.additionalNotes}</p>
-                                </div>
-                            )}
-
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <p className="text-blue-800 text-sm">
-                                    <strong>Nota:</strong> Los propietarios con plan Premium pueden ver tu información de contacto y enviarte ofertas directamente.
+                                <p className="text-gray-900 font-semibold">
+                                    {new Date(existingRequest.moveInDate).toLocaleDateString('es-CO')}
                                 </p>
                             </div>
+
+                            {existingRequest.contractDuration && (
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <Clock className="w-5 h-5 mr-2" />
+                                        <span className="text-sm font-medium">Duración del Contrato</span>
+                                    </div>
+                                    <p className="text-gray-900 font-semibold">{existingRequest.contractDuration} meses</p>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="flex gap-4 mt-8">
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors"
-                            >
-                                Editar Solicitud
-                            </button>
-                            <button
-                                onClick={handleCloseRequest}
-                                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
-                            >
-                                Cerrar Solicitud
-                            </button>
+                        {existingRequest.requiredAmenities.length > 0 && (
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-600 mb-3">Comodidades Requeridas</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {existingRequest.requiredAmenities.map(amenityId => {
+                                        const amenity = mockAmenities.find(a => a.id === amenityId);
+                                        const IconComponent = amenity ? (iconMap[amenity.icon] || iconMap.default) : null;
+                                        return amenity ? (
+                                            <span key={amenityId} className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm flex items-center">
+                                                <span className="mr-1">
+                                                    {IconComponent && <IconComponent size={14} />}
+                                                </span>
+                                                {amenity.name}
+                                            </span>
+                                        ) : null;
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {existingRequest.dealBreakers && existingRequest.dealBreakers.length > 0 && (
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <h3 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
+                                    <AlertCircle className="w-4 h-4 mr-2" />
+                                    Preferencias Personales
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {existingRequest.dealBreakers.map(dealBreakerId => {
+                                        const dealBreaker = dealBreakerOptions.find(d => d.id === dealBreakerId);
+                                        return dealBreaker ? (
+                                            <span key={dealBreakerId} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center">
+                                                <span className="mr-1">{dealBreaker.icon}</span>
+                                                {dealBreaker.name}
+                                            </span>
+                                        ) : null;
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {existingRequest.additionalNotes && (
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex items-center text-gray-600 mb-2">
+                                    <FileText className="w-5 h-5 mr-2" />
+                                    <span className="text-sm font-medium">Notas Adicionales</span>
+                                </div>
+                                <p className="text-gray-700">{existingRequest.additionalNotes}</p>
+                            </div>
+                        )}
+
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-blue-800 text-sm">
+                                <strong>Nota:</strong> Los propietarios con plan Premium pueden ver tu información de contacto y enviarte ofertas directamente.
+                            </p>
                         </div>
                     </div>
 
-                    <ConfirmModal
-                        isOpen={showModal}
-                        onClose={() => setShowModal(false)}
-                        onConfirm={modalConfig.onConfirm || (() => { })}
-                        title={modalConfig.title}
-                        message={modalConfig.message}
-                        type={modalConfig.type}
-                    />
+                    <div className="flex gap-4 mt-8">
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors"
+                        >
+                            Editar Solicitud
+                        </button>
+                        <button
+                            onClick={handleCloseRequest}
+                            className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                        >
+                            Cerrar Solicitud
+                        </button>
+                    </div>
                 </div>
+
+                <ConfirmModal
+                    isOpen={showModal}
+                    onClose={() => setShowModal(false)}
+                    onConfirm={modalConfig.onConfirm || (() => { })}
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    type={modalConfig.type}
+                />
             </div>
         );
     }
@@ -312,6 +321,7 @@ const StudentRequestPage: React.FC = () => {
 
                     <StudentRequestFormSteps
                         initialData={existingRequest ? {
+                            city: existingRequest.city,
                             universityTarget: existingRequest.universityTarget,
                             budgetMax: existingRequest.budgetMax.toString(),
                             propertyTypeDesired: existingRequest.propertyTypeDesired,

@@ -201,7 +201,8 @@ const OpportunitiesPage: React.FC = () => {
                                             </h3>
                                             <div className="flex items-center text-gray-600 text-sm">
                                                 <MapPin className="w-4 h-4 mr-1" />
-                                                {opportunity.universityTarget}
+                                                {opportunity.city}
+                                                {opportunity.universityTarget && ` • ${opportunity.universityTarget}`}
                                             </div>
                                         </div>
                                         <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
