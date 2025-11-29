@@ -335,7 +335,7 @@ const PropertyDetail: React.FC = () => {
                       )
                     ) : (
                       <p className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                        El plan del propietario es premium y el usuario lo puede contactar de forma gratuita.
+                        El plan de <span className="font-semibold">{ownerDetails?.name || 'el propietario'}</span> es premium y lo puedes contactar de forma gratuita.
                       </p>
                     )}
                   </div>
