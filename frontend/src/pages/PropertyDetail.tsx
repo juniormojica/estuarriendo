@@ -138,6 +138,7 @@ const PropertyDetail: React.FC = () => {
   };
 
   const handleInterest = async () => {
+    console.log('Button clicked! property:', property, 'currentUser:', currentUser, 'ownerDetails:', ownerDetails);
     if (!property || !currentUser || !ownerDetails) return;
     try {
       await api.notifyOwnerInterest(property.ownerId, property.id, currentUser.id);

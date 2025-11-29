@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { authService } from '../services/authService';
+import NotificationBell from './NotificationBell';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -107,6 +108,9 @@ const Header: React.FC = () => {
             </Link>
 
             <div className="h-6 w-px bg-gray-300 mx-2"></div>
+
+            {/* Notification Bell - Only for logged in users */}
+            {currentUser && <NotificationBell />}
 
             {currentUser ? (
               <div className="flex items-center space-x-4">

@@ -8,7 +8,7 @@ import {
   ActivityLog,
   SystemConfig,
   PaymentRequest,
-  StudentRequest
+  StudentRequest,  Notification
 } from '../types';
 import { mockProperties, mockAmenities } from '../data/mockData';
 
@@ -773,10 +773,82 @@ export const api = {
   // Notify owner of interest
   async notifyOwnerInterest(ownerId: string, propertyId: string, interestedUserId: string): Promise<boolean> {
     await delay(500);
-    // In a real app, this would send an email or push notification to the owner
-    console.log(`Notification sent to owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
+    
+    // Get property and user details
+    const properties = getStoredProperties();
+    const users = getStoredUsers();
+    const property = properties.find(p => p.id === propertyId);
+    const interestedUser = users.find(u => u.id === interestedUserId);
+    
+    if (!property || !interestedUser) {
+      return false;
+    }
+    
+    // Create notification
+    const notifications = getStoredNotifications();
+    const newNotification: Notification = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: ownerId,
+      type: 'property_interest',
+      title: 'Nuevo interés en tu propiedad',
+      message: `${interestedUser.name} está interesado en "${property.title}"`,
+      propertyId: propertyId,
+      propertyTitle: property.title,
+      interestedUserId: interestedUserId,
+      interestedUserName: interestedUser.name,
+      read: false,
+      createdAt: new Date().toISOString()
+    };
+    
+    notifications.push(newNotification);
+    saveNotifications(notifications);
+    
+    console.log(`Notification created for owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
     return true;
+  },
+
+  // Get notifications for a user
+  async getNotifications(userId: string): Promise<Notification[]> {
+    await delay(300);
+    const notifications = getStoredNotifications();
+    return notifications
+      .filter(n => n.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  // Mark notification as read
+  async markNotificationAsRead(notificationId: string): Promise<boolean> {
+    await delay(200);
+    const notifications = getStoredNotifications();
+    const index = notifications.findIndex(n => n.id === notificationId);
+    
+    if (index !== -1) {
+      notifications[index].read = true;
+      saveNotifications(notifications);
+      return true;
+    }
+    return false;
+  },
+
+  // Mark all notifications as read for a user
+  async markAllNotificationsAsRead(userId: string): Promise<boolean> {
+    await delay(300);
+    const notifications = getStoredNotifications();
+    let updated = false;
+    
+    notifications.forEach(n => {
+      if (n.userId === userId && !n.read) {
+        n.read = true;
+        updated = true;
+      }
+    });
+    
+    if (updated) {
+      saveNotifications(notifications);
+    }
+    return updated;
   }
+
 };
 
 // Helper for student requests
@@ -796,3 +868,23 @@ const getStoredStudentRequests = (): StudentRequest[] => {
 const saveStudentRequests = (requests: StudentRequest[]) => {
   localStorage.setItem('estuarriendo_student_requests', JSON.stringify(requests));
 };
+
+
+// Helper for notifications
+const getStoredNotifications = (): Notification[] => {
+  const stored = localStorage.getItem('estuarriendo_notifications');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored notifications:', e);
+      return [];
+    }
+  }
+  return [];
+};
+
+const saveNotifications = (notifications: Notification[]) => {
+  localStorage.setItem('estuarriendo_notifications', JSON.stringify(notifications));
+};
+

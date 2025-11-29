@@ -174,3 +174,16 @@ export interface StudentRequest {
   createdAt: string;
   updatedAt: string;
 }
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'property_interest' | 'payment_verified' | 'property_approved' | 'property_rejected';
+  title: string;
+  message: string;
+  propertyId?: string;
+  propertyTitle?: string;
+  interestedUserId?: string;
+  interestedUserName?: string;
+  read: boolean;
+  createdAt: string;
+}
