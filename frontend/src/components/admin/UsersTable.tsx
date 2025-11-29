@@ -67,7 +67,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onViewDetails }) => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {paginatedUsers.map((user) => (
-                            <tr key={user.id} className="hover:bg-gray-50">
+                            <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${user.isActive === false ? 'bg-gray-100 opacity-75' : ''}`}>
                                 <td className="px-4 py-4">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
@@ -90,15 +90,22 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onViewDetails }) => {
                                     </div>
                                 </td>
                                 <td className="px-4 py-4">
-                                    {user.isVerified ? (
-                                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            Verificado
-                                        </span>
-                                    ) : (
-                                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                            No Verificado
-                                        </span>
-                                    )}
+                                    <div className="flex flex-col gap-1 items-start">
+                                        {user.isActive === false && (
+                                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Inactivo
+                                            </span>
+                                        )}
+                                        {user.isVerified ? (
+                                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                Verificado
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                No Verificado
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-4 py-4">
                                     <div className="text-sm text-gray-900">
