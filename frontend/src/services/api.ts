@@ -203,12 +203,8 @@ export const api = {
     const newId = (properties.length + 1).toString();
 
     // Convert images to array of strings (base64 or URLs)
-    // Check for large images upfront to avoid obvious quota issues
+    // We trust the browser's quota management to handle errors if it's too big
     const imageStrings = formData.images.map(img => {
-      if (typeof img === 'string' && img.length > 500000) { // > ~500KB
-        console.warn('Image too large for localStorage, using placeholder');
-        return 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg';
-      }
       return typeof img === 'string' ? img : 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg';
     });
 
