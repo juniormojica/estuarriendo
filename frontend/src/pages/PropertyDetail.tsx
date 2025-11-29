@@ -137,7 +137,22 @@ const PropertyDetail: React.FC = () => {
     return amenities.find(a => a.id === amenityId);
   };
 
-  const canContact = ownerDetails?.plan === 'premium' || currentUser?.plan === 'premium';
+  const handleInterest = async () => {
+    if (!property || !currentUser || !ownerDetails) return;
+    try {
+      await api.notifyOwnerInterest(property.ownerId, property.id, currentUser.id);
+      alert('Se ha notificado al propietario de tu interés.');
+    } catch (error) {
+      console.error('Error notifying owner:', error);
+      alert('Hubo un error al notificar al propietario.');
+    }
+  };
+
+  // Logic for contact permissions
+  const isOwnerFree = ownerDetails?.plan === 'free';
+  const isUserPremium = currentUser?.plan === 'premium';
+  // Can contact if owner is premium OR user is premium
+  const canContact = !isOwnerFree || isUserPremium;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -304,10 +319,39 @@ const PropertyDetail: React.FC = () => {
                     <span className="text-4xl font-bold">{formatPrice(property.price)}</span>
                   </div>
                   <p className="text-gray-500 mt-1">/ mes</p>
+
+                  {/* Owner Plan Message */}
+                  <div className="mt-4 px-2">
+                    {isOwnerFree ? (
+                      !canContact ? (
+                        <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-100">
+                          El propietario tiene plan gratis, no puedes contactarlo por WhatsApp. Haciendo click en 'Me interesa' hazle saber que quieres alquilar su publicación.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                          Como eres usuario Premium, puedes contactar a este propietario directamente.
+                        </p>
+                      )
+                    ) : (
+                      <p className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                        El plan del propietario es premium y el usuario lo puede contactar de forma gratuita.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Actions */}
                 <div className="space-y-3">
+                  {isOwnerFree && (
+                    <button
+                      onClick={handleInterest}
+                      className="w-full bg-blue-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center space-x-2"
+                    >
+                      <Heart className="h-5 w-5" />
+                      <span>Me interesa</span>
+                    </button>
+                  )}
+
                   {canContact ? (
                     <a
                       href={`https://wa.me/${ownerDetails?.whatsapp}?text=Hola, estoy interesado en la propiedad: ${property.title} (ID: ${property.id})`}

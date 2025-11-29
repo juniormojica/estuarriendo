@@ -768,6 +768,14 @@ export const api = {
       return true;
     }
     return false;
+  },
+
+  // Notify owner of interest
+  async notifyOwnerInterest(ownerId: string, propertyId: string, interestedUserId: string): Promise<boolean> {
+    await delay(500);
+    // In a real app, this would send an email or push notification to the owner
+    console.log(`Notification sent to owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
+    return true;
   }
 };
 
