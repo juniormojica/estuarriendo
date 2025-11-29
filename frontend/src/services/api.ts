@@ -681,6 +681,32 @@ export const api = {
     return false;
   },
 
+  // Soft delete user (logical delete)
+  async softDeleteUser(userId: string, isActive: boolean): Promise<boolean> {
+    await delay(500);
+    try {
+      const users = getStoredUsers();
+      const index = users.findIndex(u => u.id === userId);
+
+      if (index !== -1) {
+        users[index].isActive = isActive;
+        saveStoredUsers(users);
+
+        // Update current user if it matches
+        const currentUser = getStoredCurrentUser();
+        if (currentUser && currentUser.id === userId) {
+          currentUser.isActive = isActive;
+          localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+        }
+
+        return true;
+      }
+    } catch (e) {
+      console.error('Error toggling user active status:', e);
+    }
+    return false;
+  },
+
   // Student Request Methods
   async createStudentRequest(request: Omit<StudentRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<{ success: boolean; message: string; id?: string }> {
     await delay(500);

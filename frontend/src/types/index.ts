@@ -139,6 +139,7 @@ export interface User {
   planExpiresAt?: string;
   paymentRequestId?: string;
   premiumSince?: string;
+  isActive?: boolean;
 }
 
 export interface PaymentRequest {
