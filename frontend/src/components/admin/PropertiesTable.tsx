@@ -35,12 +35,20 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
     // Get unique cities from properties
     const cities = Array.from(new Set(properties.map(p => p.address.city))).sort();
 
+    const getOwnerName = (ownerId?: string) => {
+        if (!ownerId) return 'Desconocido';
+        const user = users.find(u => u.id === ownerId);
+        return user ? user.name : 'Desconocido';
+    };
+
     // Filter properties
     const filteredProperties = properties.filter(property => {
+        const ownerName = getOwnerName(property.ownerId);
         const matchesSearch =
             property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             property.address.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.type.toLowerCase().includes(searchTerm.toLowerCase());
+            property.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ownerName.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatus = filterStatus === 'all' || property.status === filterStatus;
 
@@ -86,7 +94,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input
                             type="text"
-                            placeholder="Buscar por título, ciudad o tipo..."
+                            placeholder="Buscar por título, ciudad, tipo o propietario..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -148,6 +156,9 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                 Propiedad
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Propietario
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Ubicación
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -190,6 +201,10 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                             <div className="text-sm text-gray-500">ID: {property.id}</div>
                                         </div>
                                     </div>
+                                </td>
+                                <td className="px-4 py-4 text-sm text-gray-900">
+                                    <div className="font-medium">{getOwnerName(property.ownerId)}</div>
+                                    <div className="text-xs text-gray-500">ID: {property.ownerId || 'N/A'}</div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900">
                                     {property.address.city}, {property.address.department}
@@ -249,8 +264,8 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                                     onToggleFeatured(property.id);
                                                 }}
                                                 className={`p-2 rounded-lg transition-colors ${property.featured
-                                                        ? 'text-yellow-600 hover:bg-yellow-50'
-                                                        : 'text-gray-400 hover:bg-gray-50'
+                                                    ? 'text-yellow-600 hover:bg-yellow-50'
+                                                    : 'text-gray-400 hover:bg-gray-50'
                                                     }`}
                                                 title={property.featured ? 'Quitar destacado' : 'Destacar'}
                                             >
