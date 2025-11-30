@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
 import { StudentRequest } from '../types';
-import { Search, Filter, MapPin, DollarSign, Home, Lock, Crown } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Home, Lock, Crown, X, Phone, Mail, MessageCircle, User } from 'lucide-react';
+import { mockAmenities } from '../data/mockData';
 
 const OpportunitiesPage: React.FC = () => {
     const navigate = useNavigate();
@@ -12,7 +13,9 @@ const OpportunitiesPage: React.FC = () => {
     const [filteredOpportunities, setFilteredOpportunities] = useState<StudentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [showPremiumModal, setShowPremiumModal] = useState(false);
+    const [showContactModal, setShowContactModal] = useState(false);
     const [selectedOpportunity, setSelectedOpportunity] = useState<StudentRequest | null>(null);
+    const [contactOpportunity, setContactOpportunity] = useState<StudentRequest | null>(null);
 
     const [filters, setFilters] = useState({
         universityTarget: '',
@@ -37,6 +40,17 @@ const OpportunitiesPage: React.FC = () => {
     useEffect(() => {
         applyFilters();
     }, [opportunities, filters]);
+
+    useEffect(() => {
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setShowContactModal(false);
+                setShowPremiumModal(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
 
     const loadOpportunities = async () => {
         setLoading(true);
@@ -70,8 +84,8 @@ const OpportunitiesPage: React.FC = () => {
             setSelectedOpportunity(opportunity);
             setShowPremiumModal(true);
         } else {
-            // Show contact info
-            alert(`Contacto:\nNombre: ${opportunity.studentName}\nEmail: ${opportunity.studentEmail}\nTeléfono: ${opportunity.studentPhone}\nWhatsApp: ${opportunity.studentWhatsapp}`);
+            setContactOpportunity(opportunity);
+            setShowContactModal(true);
         }
     };
 
@@ -240,11 +254,14 @@ const OpportunitiesPage: React.FC = () => {
                                         <div className="mb-4">
                                             <p className="text-xs text-gray-500 mb-2">Requiere:</p>
                                             <div className="flex flex-wrap gap-1">
-                                                {opportunity.requiredAmenities.slice(0, 3).map((amenityId, idx) => (
-                                                    <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                                                        {amenityId}
-                                                    </span>
-                                                ))}
+                                                {opportunity.requiredAmenities.slice(0, 3).map((amenityId, idx) => {
+                                                    const amenity = mockAmenities.find(a => a.id === amenityId);
+                                                    return (
+                                                        <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                                                            {amenity ? amenity.name : amenityId}
+                                                        </span>
+                                                    );
+                                                })}
                                                 {opportunity.requiredAmenities.length > 3 && (
                                                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
                                                         +{opportunity.requiredAmenities.length - 3}
@@ -321,6 +338,73 @@ const OpportunitiesPage: React.FC = () => {
                                         Actualizar
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Contact Modal */}
+                {showContactModal && contactOpportunity && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scaleIn relative">
+                            <button
+                                onClick={() => setShowContactModal(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <User className="w-8 h-8 text-emerald-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900">Contacto del Estudiante</h2>
+                                <p className="text-gray-600">Información de contacto directa</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
+                                    <User className="w-5 h-5 text-gray-500 mr-3" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">Nombre</p>
+                                        <p className="font-medium text-gray-900">{contactOpportunity.studentName}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
+                                    <Mail className="w-5 h-5 text-gray-500 mr-3" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">Email</p>
+                                        <p className="font-medium text-gray-900">{contactOpportunity.studentEmail}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
+                                    <Phone className="w-5 h-5 text-gray-500 mr-3" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">Teléfono</p>
+                                        <p className="font-medium text-gray-900">{contactOpportunity.studentPhone}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
+                                    <MessageCircle className="w-5 h-5 text-gray-500 mr-3" />
+                                    <div>
+                                        <p className="text-xs text-gray-500">WhatsApp</p>
+                                        <p className="font-medium text-gray-900">
+                                            {contactOpportunity.studentWhatsapp || 'No disponible'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-8">
+                                <button
+                                    onClick={() => setShowContactModal(false)}
+                                    className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                                >
+                                    Cerrar
+                                </button>
                             </div>
                         </div>
                     </div>
