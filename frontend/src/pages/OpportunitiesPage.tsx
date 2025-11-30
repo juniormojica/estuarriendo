@@ -346,62 +346,76 @@ const OpportunitiesPage: React.FC = () => {
                 {/* Contact Modal */}
                 {showContactModal && contactOpportunity && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scaleIn relative">
+                        <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 max-w-sm w-full p-4 animate-scaleIn relative max-h-[90vh] overflow-y-auto">
                             <button
                                 onClick={() => setShowContactModal(false)}
-                                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
                             >
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5" />
                             </button>
 
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <User className="w-8 h-8 text-emerald-600" />
+                            <div className="text-center mb-4">
+                                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <User className="w-6 h-6 text-emerald-600" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-900">Contacto del Estudiante</h2>
-                                <p className="text-gray-600">Información de contacto directa</p>
+                                <h2 className="text-lg font-bold text-gray-900">Contacto del Estudiante</h2>
+                                <p className="text-xs text-gray-600">Información de contacto directa</p>
                             </div>
 
-                            <div className="space-y-4">
-                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
-                                    <User className="w-5 h-5 text-gray-500 mr-3" />
-                                    <div>
+                            <div className="space-y-2">
+                                <div className="bg-gray-50 p-2.5 rounded-lg flex items-center">
+                                    <User className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
                                         <p className="text-xs text-gray-500">Nombre</p>
-                                        <p className="font-medium text-gray-900">{contactOpportunity.studentName}</p>
+                                        <p className="font-medium text-gray-900 text-sm truncate">{contactOpportunity.studentName}</p>
                                     </div>
                                 </div>
 
-                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
-                                    <Mail className="w-5 h-5 text-gray-500 mr-3" />
-                                    <div>
+                                <div className="bg-gray-50 p-2.5 rounded-lg flex items-center">
+                                    <Mail className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
                                         <p className="text-xs text-gray-500">Email</p>
-                                        <p className="font-medium text-gray-900">{contactOpportunity.studentEmail}</p>
+                                        <p className="font-medium text-gray-900 text-sm truncate">{contactOpportunity.studentEmail}</p>
                                     </div>
                                 </div>
 
-                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
-                                    <Phone className="w-5 h-5 text-gray-500 mr-3" />
-                                    <div>
+                                <div className="bg-gray-50 p-2.5 rounded-lg flex items-center">
+                                    <Phone className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
                                         <p className="text-xs text-gray-500">Teléfono</p>
-                                        <p className="font-medium text-gray-900">{contactOpportunity.studentPhone}</p>
+                                        <p className="font-medium text-gray-900 text-sm">{contactOpportunity.studentPhone}</p>
                                     </div>
                                 </div>
 
-                                <div className="bg-gray-50 p-4 rounded-lg flex items-center">
-                                    <MessageCircle className="w-5 h-5 text-gray-500 mr-3" />
-                                    <div>
+                                <div className="bg-gray-50 p-2.5 rounded-lg flex items-center">
+                                    <MessageCircle className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
                                         <p className="text-xs text-gray-500">WhatsApp</p>
-                                        <p className="font-medium text-gray-900">
+                                        <p className="font-medium text-gray-900 text-sm">
                                             {contactOpportunity.studentWhatsapp || 'No disponible'}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-8">
+                            <div className="mt-4 space-y-2">
+                                {(contactOpportunity.studentWhatsapp || contactOpportunity.studentPhone) && (
+                                    <button
+                                        onClick={() => {
+                                            const message = `Hola, mi nombre es ${currentUser?.name || 'un propietario'}, te escribo porque vi tu publicación activa en la página de EstuArriendo y me gustaría ofrecerte algo que se adecua a tus necesidades.`;
+                                            const phoneNumber = (contactOpportunity.studentWhatsapp || contactOpportunity.studentPhone).replace(/\D/g, '');
+                                            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                                            window.open(whatsappUrl, '_blank');
+                                        }}
+                                        className="w-full py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors flex items-center justify-center text-sm"
+                                    >
+                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                        Contactar por WhatsApp
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => setShowContactModal(false)}
-                                    className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                                    className="w-full py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors text-sm"
                                 >
                                     Cerrar
                                 </button>
