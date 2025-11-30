@@ -1,6 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Property } from '../types';
 import { mockAmenities } from '../data/mockData';
@@ -8,6 +8,8 @@ import { useFavorites } from '../context/FavoritesContext';
 import { Badge } from './ui/Badge';
 import { cn } from '../lib/utils';
 import { iconMap } from '../lib/icons';
+import { authService } from '../services/authService';
+import { api } from '../services/api';
 
 interface PropertyCardProps {
   property: Property;
@@ -15,8 +17,25 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
+  const navigate = useNavigate();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = isFavorite(property.id);
+  const [ownerPlan, setOwnerPlan] = useState<'free' | 'premium' | null>(null);
+  const currentUser = authService.getCurrentUser();
+
+  useEffect(() => {
+    const fetchOwnerPlan = async () => {
+      if (property.ownerId) {
+        try {
+          const owner = await api.getOwnerContactDetails(property.ownerId);
+          setOwnerPlan(owner.plan);
+        } catch (error) {
+          console.error('Error fetching owner plan:', error);
+        }
+      }
+    };
+    fetchOwnerPlan();
+  }, [property.ownerId]);
 
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -55,6 +74,24 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
     const IconComponent = iconMap[amenity.icon] || iconMap.default;
 
     return <IconComponent {...iconProps} />;
+  };
+
+  // Premium logic - same as PropertyDetail
+  const isOwnerFree = ownerPlan === 'free';
+  const isUserPremium = currentUser?.plan === 'premium';
+  const canContact = !isOwnerFree || isUserPremium;
+
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!canContact) {
+      // Redirect to premium upgrade page
+      navigate('/perfil?tab=billing');
+    } else {
+      // Navigate to property detail where they can contact
+      navigate(`/propiedad/${property.id}`);
+    }
   };
 
   return (
@@ -172,16 +209,22 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
           </div>
 
           <div className="flex gap-2">
-            <a
-              href={`https://wa.me/573000000000?text=Hola, estoy interesado en la propiedad: ${property.title}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
-              title="Contactar por WhatsApp"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              onClick={handleWhatsAppClick}
+              className={cn(
+                "p-2.5 rounded-lg transition-colors",
+                canContact
+                  ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                  : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+              )}
+              title={canContact ? "Contactar por WhatsApp" : "Requiere plan Premium"}
             >
-              <MessageCircle className="h-5 w-5" />
-            </a>
+              {canContact ? (
+                <MessageCircle className="h-5 w-5" />
+              ) : (
+                <Lock className="h-5 w-5" />
+              )}
+            </button>
           </div>
         </div>
       </div>
