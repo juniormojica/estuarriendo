@@ -89,14 +89,14 @@ const WelcomeModal: React.FC = () => {
                                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16" />
 
                                 <div className="relative pt-8">
-                                    <motion.div
+                                    {/* <motion.div
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         transition={{ delay: 0.2, type: 'spring' }}
                                         className="inline-flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl mb-3"
                                     >
                                         <Sparkles className="h-6 w-6" />
-                                    </motion.div>
+                                    </motion.div> */}
 
                                     <h2 className="text-2xl font-bold mb-2">
                                         ¡Bienvenido a EstuArriendo! 🏠
