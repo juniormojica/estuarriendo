@@ -34,6 +34,12 @@ const OpportunitiesPage: React.FC = () => {
             return;
         }
 
+        // Update last viewed timestamp
+        localStorage.setItem(
+            `estuarriendo_opportunities_last_viewed_${currentUser.id}`,
+            Date.now().toString()
+        );
+
         loadOpportunities();
     }, []);
 

@@ -1,13 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { authService } from '../services/authService';
+import { api } from '../services/api';
 import NotificationBell from './NotificationBell';
 
 const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
+  const [newOpportunitiesCount, setNewOpportunitiesCount] = useState(0);
+
+  useEffect(() => {
+    const loadNewOpportunitiesCount = async () => {
+      if (currentUser?.userType === 'owner') {
+        try {
+          const requests = await api.getStudentRequests();
+          const lastViewed = localStorage.getItem(`estuarriendo_opportunities_last_viewed_${currentUser.id}`);
+          const lastViewedTimestamp = lastViewed ? parseInt(lastViewed) : 0;
+
+          const newCount = requests.filter(request => {
+            const requestTime = new Date(request.createdAt).getTime();
+            return requestTime > lastViewedTimestamp;
+          }).length;
+
+          setNewOpportunitiesCount(newCount);
+        } catch (error) {
+          console.error('Error loading opportunities count:', error);
+        }
+      }
+    };
+
+    loadNewOpportunitiesCount();
+  }, [currentUser]);
 
   const handleLogout = () => {
     authService.logout();
@@ -69,12 +94,17 @@ const Header: React.FC = () => {
                   <>
                     <Link
                       to="/oportunidades"
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/oportunidades'
+                      className={`relative px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/oportunidades'
                         ? 'bg-primary-100 text-primary-700'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                         }`}
                     >
                       Oportunidades
+                      {newOpportunitiesCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                          {newOpportunitiesCount > 99 ? '99+' : newOpportunitiesCount}
+                        </span>
+                      )}
                     </Link>
                     <Link
                       to="/mis-propiedades"
