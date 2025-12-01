@@ -14,7 +14,7 @@ import { Badge } from '../components/ui/Badge';
 import { cn } from '../lib/utils';
 import RelatedProperties from '../components/RelatedProperties';
 import { iconMap } from '../lib/icons';
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 
 const containerStyle = {
   width: '100%',
@@ -29,6 +29,7 @@ const PropertyDetail: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = property ? isFavorite(property.id) : false;
@@ -287,11 +288,28 @@ const PropertyDetail: React.FC = () => {
             </div>
 
             {/* Map Section - Moved to main content */}
+            {/* Map Section - Moved to main content */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <MapPin className="h-6 w-6 mr-2 text-emerald-600" />
-                Ubicación en el Mapa
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                  <MapPin className="h-6 w-6 mr-2 text-emerald-600" />
+                  Ubicación en el Mapa
+                </h2>
+
+                {/* Map Legend */}
+                <div className="flex items-center space-x-4 text-sm bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500 border border-red-600"></div>
+                    <span className="text-gray-700 font-medium">Esta Propiedad</span>
+                  </div>
+                  <div className="w-px h-4 bg-gray-300"></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500 border border-blue-600"></div>
+                    <span className="text-gray-700 font-medium">Universidades</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="rounded-xl overflow-hidden border border-gray-200 h-96 bg-gray-50 relative">
                 {property.coordinates && property.coordinates.lat !== 0 && property.coordinates.lng !== 0 ? (
                   isLoaded ? (
@@ -302,6 +320,7 @@ const PropertyDetail: React.FC = () => {
                         lng: Number(property.coordinates.lng)
                       }}
                       zoom={15}
+                      onClick={() => setActiveMarker(null)}
                     >
                       {/* Property Marker */}
                       <MarkerF
@@ -309,7 +328,17 @@ const PropertyDetail: React.FC = () => {
                           lat: Number(property.coordinates.lat),
                           lng: Number(property.coordinates.lng)
                         }}
-                      />
+                        onClick={() => setActiveMarker('property')}
+                      >
+                        {activeMarker === 'property' && (
+                          <InfoWindowF onCloseClick={() => setActiveMarker(null)}>
+                            <div className="p-2 min-w-[150px]">
+                              <h3 className="font-bold text-gray-900 text-sm mb-1">{property.title}</h3>
+                              <p className="text-xs text-gray-600">Ubicación exacta de la propiedad</p>
+                            </div>
+                          </InfoWindowF>
+                        )}
+                      </MarkerF>
 
                       {/* University Markers */}
                       {property.nearbyUniversities?.map(uniId => {
@@ -326,8 +355,17 @@ const PropertyDetail: React.FC = () => {
                                 url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
                                 scaledSize: new window.google.maps.Size(40, 40)
                               }}
-                              title={university.name}
-                            />
+                              onClick={() => setActiveMarker(university.id)}
+                            >
+                              {activeMarker === university.id && (
+                                <InfoWindowF onCloseClick={() => setActiveMarker(null)}>
+                                  <div className="p-2 min-w-[150px]">
+                                    <h3 className="font-bold text-gray-900 text-sm mb-1">{university.name}</h3>
+                                    <p className="text-xs text-gray-600">Universidad cercana</p>
+                                  </div>
+                                </InfoWindowF>
+                              )}
+                            </MarkerF>
                           );
                         }
                         return null;
