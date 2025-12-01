@@ -286,6 +286,48 @@ const PropertyDetail: React.FC = () => {
               )}
             </div>
 
+            {/* Map Section - Moved to main content */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <MapPin className="h-6 w-6 mr-2 text-emerald-600" />
+                Ubicación en el Mapa
+              </h2>
+              <div className="rounded-xl overflow-hidden border border-gray-200 h-96 bg-gray-50 relative">
+                {property.coordinates && property.coordinates.lat !== 0 && property.coordinates.lng !== 0 ? (
+                  isLoaded ? (
+                    <GoogleMap
+                      mapContainerStyle={containerStyle}
+                      center={{
+                        lat: Number(property.coordinates.lat),
+                        lng: Number(property.coordinates.lng)
+                      }}
+                      zoom={15}
+                    >
+                      <MarkerF
+                        position={{
+                          lat: Number(property.coordinates.lat),
+                          lng: Number(property.coordinates.lng)
+                        }}
+                      />
+                    </GoogleMap>
+
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <LoadingSpinner text="Cargando mapa..." />
+                    </div>
+                  )
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
+                    <div className="bg-gray-100 p-3 rounded-full mb-3">
+                      <MapPin className="h-8 w-8 text-gray-300" />
+                    </div>
+                    <p className="font-medium text-gray-500">Mapa Interactivo no disponible</p>
+                    <p className="text-xs mt-1">El propietario no ha proporcionado las coordenadas exactas.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Nearby Universities */}
             {property.nearbyUniversities && property.nearbyUniversities.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
@@ -430,42 +472,7 @@ const PropertyDetail: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Map Section */}
-                {console.log(property.coordinates)}
-                <div className="rounded-xl overflow-hidden border border-gray-200 h-64 bg-gray-50 relative">
-                  {property.coordinates && property.coordinates.lat !== 0 && property.coordinates.lng !== 0 ? (
-                    isLoaded ? (
-                      <GoogleMap
-                        mapContainerStyle={containerStyle}
-                        center={{
-                          lat: Number(property.coordinates.lat),
-                          lng: Number(property.coordinates.lng)
-                        }}
-                        zoom={15}
-                      >
-                        <MarkerF
-                          position={{
-                            lat: Number(property.coordinates.lat),
-                            lng: Number(property.coordinates.lng)
-                          }}
-                        />
-                      </GoogleMap>
 
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <LoadingSpinner text="Cargando mapa..." />
-                      </div>
-                    )
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
-                      <div className="bg-gray-100 p-3 rounded-full mb-3">
-                        <MapPin className="h-8 w-8 text-gray-300" />
-                      </div>
-                      <p className="font-medium text-gray-500">Mapa Interactivo no disponible</p>
-                      <p className="text-xs mt-1">El propietario no ha proporcionado las coordenadas exactas.</p>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
