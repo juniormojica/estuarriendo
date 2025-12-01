@@ -99,7 +99,7 @@ export interface SystemConfig {
   autoApprovalEnabled: boolean;
 }
 
-export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity' | 'payments';
+export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity' | 'payments' | 'verifications';
 
 export type IdType = 'CC' | 'NIT' | 'CE';
 export type OwnerRole = 'individual' | 'agency';

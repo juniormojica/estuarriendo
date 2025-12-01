@@ -21,20 +21,28 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = isFavorite(property.id);
   const [ownerPlan, setOwnerPlan] = useState<'free' | 'premium' | null>(null);
+  const [isOwnerVerified, setIsOwnerVerified] = useState(false);
   const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
-    const fetchOwnerPlan = async () => {
+    const fetchOwnerDetails = async () => {
       if (property.ownerId) {
         try {
           const owner = await api.getOwnerContactDetails(property.ownerId);
           setOwnerPlan(owner.plan);
+
+          // Get full user details to check verification status
+          const users = await api.getUsers();
+          const ownerUser = users.find(u => u.id === property.ownerId);
+          if (ownerUser && ownerUser.verificationStatus === 'verified') {
+            setIsOwnerVerified(true);
+          }
         } catch (error) {
-          console.error('Error fetching owner plan:', error);
+          console.error('Error fetching owner details:', error);
         }
       }
     };
-    fetchOwnerPlan();
+    fetchOwnerDetails();
   }, [property.ownerId]);
 
   const toggleFavorite = (e: React.MouseEvent) => {
@@ -117,10 +125,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
               Destacado
             </Badge>
           )}
-          {property.isVerified && (
+          {isOwnerVerified && (
             <Badge variant="success" className="shadow-sm">
               <ShieldCheck className="h-3 w-3 mr-1" />
-              Verificado
+              Propietario Verificado
             </Badge>
           )}
         </div>

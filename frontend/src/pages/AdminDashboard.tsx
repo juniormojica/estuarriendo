@@ -33,6 +33,7 @@ const AdminDashboard = () => {
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [amenities, setAmenities] = useState<Amenity[]>([]);
     const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
+    const [pendingVerifications, setPendingVerifications] = useState<User[]>([]);
 
     // UI states
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -48,7 +49,7 @@ const AdminDashboard = () => {
     const loadInitialData = async () => {
         try {
             setLoading(true);
-            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, amenitiesData, paymentsData] = await Promise.all([
+            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, amenitiesData, paymentsData, verificationsData] = await Promise.all([
                 api.getPropertyStats(),
                 api.getPendingProperties(),
                 api.getAllPropertiesAdmin(),
@@ -56,7 +57,8 @@ const AdminDashboard = () => {
                 api.getActivityLog(),
                 api.getSystemConfig(),
                 api.getAmenities(),
-                api.getPaymentRequests()
+                api.getPaymentRequests(),
+                api.getPendingVerifications()
             ]);
 
             setStats(statsData);
@@ -67,6 +69,7 @@ const AdminDashboard = () => {
             setSystemConfig(configData);
             setAmenities(amenitiesData);
             setPaymentRequests(paymentsData);
+            setPendingVerifications(verificationsData);
         } catch (error) {
             console.error('Error loading admin data:', error);
         } finally {
@@ -88,6 +91,10 @@ const AdminDashboard = () => {
         setAllProperties(allPropsData);
         setUsers(usersData);
         setPaymentRequests(paymentsData);
+
+        // Refresh pending verifications
+        const verificationsData = await api.getPendingVerifications();
+        setPendingVerifications(verificationsData);
     };
 
     const handleApprove = async (id: string) => {
@@ -267,6 +274,33 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleApproveVerification = async (userId: string) => {
+        if (window.confirm('¿Estás seguro de aprobar esta verificación?')) {
+            try {
+                const success = await api.updateVerificationStatus(userId, 'verified');
+                if (success) {
+                    await refreshData();
+                }
+            } catch (error) {
+                console.error('Error approving verification:', error);
+            }
+        }
+    };
+
+    const handleRejectVerification = async (userId: string) => {
+        const reason = window.prompt('Por favor ingresa la razón del rechazo:');
+        if (reason) {
+            try {
+                const success = await api.updateVerificationStatus(userId, 'rejected', reason);
+                if (success) {
+                    await refreshData();
+                }
+            } catch (error) {
+                console.error('Error rejecting verification:', error);
+            }
+        }
+    };
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -396,6 +430,94 @@ const AdminDashboard = () => {
                         )}
                     </div>
                 );
+            case 'verifications':
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Verificaciones Pendientes</h2>
+                        {pendingVerifications.length === 0 ? (
+                            <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
+                                No hay verificaciones pendientes.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {pendingVerifications.map((user) => (
+                                    <div key={user.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                        <div className="mb-4">
+                                            <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
+                                            <p className="text-sm text-gray-500">{user.email}</p>
+                                            {user.verificationSubmittedAt && (
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    Enviado: {new Date(user.verificationSubmittedAt).toLocaleDateString('es-CO')}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {user.verificationDocuments && (
+                                            <div className="space-y-3 mb-4">
+                                                <h4 className="text-sm font-medium text-gray-700">Documentos:</h4>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <a
+                                                        href={user.verificationDocuments.idFront}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
+                                                    >
+                                                        <FileText className="w-3 h-3 mr-1" />
+                                                        Cédula Frente
+                                                    </a>
+                                                    <a
+                                                        href={user.verificationDocuments.idBack}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
+                                                    >
+                                                        <FileText className="w-3 h-3 mr-1" />
+                                                        Cédula Reverso
+                                                    </a>
+                                                    <a
+                                                        href={user.verificationDocuments.selfie}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
+                                                    >
+                                                        <FileText className="w-3 h-3 mr-1" />
+                                                        Selfie
+                                                    </a>
+                                                    <a
+                                                        href={user.verificationDocuments.utilityBill}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
+                                                    >
+                                                        <FileText className="w-3 h-3 mr-1" />
+                                                        Recibo
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleApproveVerification(user.id)}
+                                                className="flex-1 flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                                            >
+                                                <CheckCircle className="w-4 h-4 mr-1" />
+                                                Aprobar
+                                            </button>
+                                            <button
+                                                onClick={() => handleRejectVerification(user.id)}
+                                                className="flex-1 flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                                            >
+                                                <XCircle className="w-4 h-4 mr-1" />
+                                                Rechazar
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
             case 'all-properties':
                 return (
                     <div className="space-y-6">
@@ -456,6 +578,7 @@ const AdminDashboard = () => {
                 onSectionChange={setCurrentSection}
                 pendingCount={stats.pending}
                 paymentCount={paymentRequests.filter(r => r.status === 'pending').length}
+                verificationCount={pendingVerifications.length}
             />
 
             <div className="flex-1 overflow-auto">

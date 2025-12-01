@@ -1,15 +1,16 @@
 import React from 'react';
 import { AdminSection } from '../../types';
-import { LayoutDashboard, Clock, Home, Users, Settings, Activity, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Clock, Home, Users, Settings, Activity, CreditCard, ShieldCheck } from 'lucide-react';
 
 interface AdminSidebarProps {
     currentSection: AdminSection;
     onSectionChange: (section: AdminSection) => void;
     pendingCount: number;
     paymentCount?: number;
+    verificationCount?: number;
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionChange, pendingCount, paymentCount = 0 }) => {
+const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionChange, pendingCount, paymentCount = 0, verificationCount = 0 }) => {
     const menuItems = [
         {
             id: 'dashboard' as AdminSection,
@@ -28,6 +29,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionCh
             label: 'Pagos',
             icon: CreditCard,
             badge: paymentCount > 0 ? paymentCount : null
+        },
+        {
+            id: 'verifications' as AdminSection,
+            label: 'Verificaciones',
+            icon: ShieldCheck,
+            badge: verificationCount > 0 ? verificationCount : null
         },
         {
             id: 'all-properties' as AdminSection,
