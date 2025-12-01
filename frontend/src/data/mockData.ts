@@ -24,10 +24,10 @@ export const mockAmenities: Amenity[] = [
 ];
 
 export const universities = [
-  { id: 'upc', name: 'Universidad Popular del Cesar - Sabanas' },
-  { id: 'udes', name: 'Universidad de Santander - UDES' },
-  { id: 'areandina', name: 'Fundación Universitaria del Área Andina' },
-  { id: 'unad', name: 'Universidad Nacional Abierta y a Distancia - UNAD' },
+  { id: 'upc', name: 'Universidad Popular del Cesar - Sabanas', lat: 10.4594, lng: -73.2625 },
+  { id: 'udes', name: 'Universidad de Santander - UDES', lat: 10.4851, lng: -73.2438 },
+  { id: 'areandina', name: 'Fundación Universitaria del Área Andina', lat: 10.4792, lng: -73.2456 },
+  { id: 'unad', name: 'Universidad Nacional Abierta y a Distancia - UNAD', lat: 10.4631, lng: -73.2532 },
 ];
 
 export const mockProperties: Property[] = [

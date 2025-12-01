@@ -303,12 +303,35 @@ const PropertyDetail: React.FC = () => {
                       }}
                       zoom={15}
                     >
+                      {/* Property Marker */}
                       <MarkerF
                         position={{
                           lat: Number(property.coordinates.lat),
                           lng: Number(property.coordinates.lng)
                         }}
                       />
+
+                      {/* University Markers */}
+                      {property.nearbyUniversities?.map(uniId => {
+                        const university = universities.find(u => u.id === uniId);
+                        if (university && university.lat && university.lng) {
+                          return (
+                            <MarkerF
+                              key={university.id}
+                              position={{
+                                lat: university.lat,
+                                lng: university.lng
+                              }}
+                              icon={{
+                                url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                                scaledSize: new window.google.maps.Size(40, 40)
+                              }}
+                              title={university.name}
+                            />
+                          );
+                        }
+                        return null;
+                      })}
                     </GoogleMap>
 
                   ) : (
