@@ -3,16 +3,17 @@ import { useLocation } from 'react-router-dom';
 import { User, PaymentRequest } from '../types';
 import { authService } from '../services/authService';
 import { api } from '../services/api';
-import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock } from 'lucide-react';
+import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock, ShieldCheck, XCircle } from 'lucide-react';
 import PaymentUploadForm from '../components/PaymentUploadForm';
 import PlanComparisonCards from '../components/PlanComparisonCards';
+import VerificationForm from '../components/VerificationForm';
 
 const UserProfile: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing' | 'verification'>('profile');
     const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
     const [initialPlan, setInitialPlan] = useState<string | null>(null);
 
@@ -27,7 +28,7 @@ const UserProfile: React.FC = () => {
         const tabParam = params.get('tab');
         const planParam = params.get('plan');
 
-        if (tabParam === 'billing' || tabParam === 'security' || tabParam === 'profile') {
+        if (tabParam === 'billing' || tabParam === 'security' || tabParam === 'profile' || tabParam === 'verification') {
             setActiveTab(tabParam);
         }
 
@@ -93,6 +94,16 @@ const UserProfile: React.FC = () => {
         window.scrollTo(0, 0);
     };
 
+    const handleVerificationSuccess = () => {
+        // Reload user to get updated verification status
+        const currentUser = authService.getCurrentUser();
+        if (currentUser) {
+            setUser(currentUser);
+        }
+        setMessage({ type: 'success', text: 'Documentos enviados correctamente. Tu verificación será revisada pronto.' });
+        window.scrollTo(0, 0);
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -136,6 +147,20 @@ const UserProfile: React.FC = () => {
                                 >
                                     <CreditCard className="w-5 h-5" />
                                     <span>Plan y Facturación</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('verification')}
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'verification' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <ShieldCheck className="w-5 h-5" />
+                                    <span>Verificación</span>
+                                    {user.verificationStatus === 'verified' && (
+                                        <span className="ml-auto w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                    )}
+                                    {user.verificationStatus === 'pending' && (
+                                        <span className="ml-auto w-2 h-2 bg-yellow-500 rounded-full"></span>
+                                    )}
                                 </button>
                             </nav>
                         </div>
@@ -339,6 +364,125 @@ const UserProfile: React.FC = () => {
                                                     )}
                                                 </>
                                             )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'verification' && (
+                                <div className="space-y-6 animate-fadeIn">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-medium text-gray-900">Verificación de Identidad</h2>
+                                        {user.verificationStatus === 'verified' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+                                                <CheckCircle className="w-4 h-4 mr-1" />
+                                                Verificado
+                                            </span>
+                                        )}
+                                        {user.verificationStatus === 'pending' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                <Clock className="w-4 h-4 mr-1" />
+                                                En Revisión
+                                            </span>
+                                        )}
+                                        {user.verificationStatus === 'rejected' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                <XCircle className="w-4 h-4 mr-1" />
+                                                Rechazado
+                                            </span>
+                                        )}
+                                        {(!user.verificationStatus || user.verificationStatus === 'not_submitted') && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                                <AlertCircle className="w-4 h-4 mr-1" />
+                                                No Verificado
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Benefits of Verification */}
+                                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6">
+                                        <h3 className="text-sm font-semibold text-emerald-900 mb-3 flex items-center">
+                                            <ShieldCheck className="w-5 h-5 mr-2" />
+                                            Beneficios de la Verificación
+                                        </h3>
+                                        <ul className="space-y-2 text-sm text-emerald-800">
+                                            <li className="flex items-start">
+                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                <span>Aumenta la confianza de los estudiantes en tus propiedades</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                <span>Badge de "Propietario Verificado" en todas tus publicaciones</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                <span>Mayor visibilidad en los resultados de búsqueda</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                <span>Ayuda a prevenir fraudes y estafas en la plataforma</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Verification Status Content */}
+                                    {user.verificationStatus === 'verified' && (
+                                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6">
+                                            <div className="flex items-center space-x-3 mb-2">
+                                                <CheckCircle className="w-6 h-6 text-emerald-600" />
+                                                <h3 className="text-lg font-semibold text-emerald-900">¡Identidad Verificada!</h3>
+                                            </div>
+                                            <p className="text-sm text-emerald-800">
+                                                Tu identidad ha sido verificada exitosamente. Ahora tus propiedades mostrarán el badge de "Propietario Verificado".
+                                            </p>
+                                            {user.verificationProcessedAt && (
+                                                <p className="text-xs text-emerald-700 mt-2">
+                                                    Verificado el {new Date(user.verificationProcessedAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {user.verificationStatus === 'pending' && (
+                                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                                            <div className="flex items-center space-x-3 mb-2">
+                                                <Clock className="w-6 h-6 text-yellow-600" />
+                                                <h3 className="text-lg font-semibold text-yellow-900">Verificación en Proceso</h3>
+                                            </div>
+                                            <p className="text-sm text-yellow-800">
+                                                Hemos recibido tus documentos y están siendo revisados. El proceso de verificación puede tomar hasta 24 horas.
+                                            </p>
+                                            {user.verificationSubmittedAt && (
+                                                <p className="text-xs text-yellow-700 mt-2">
+                                                    Enviado el {new Date(user.verificationSubmittedAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {user.verificationStatus === 'rejected' && (
+                                        <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+                                            <div className="flex items-center space-x-3 mb-2">
+                                                <XCircle className="w-6 h-6 text-red-600" />
+                                                <h3 className="text-lg font-semibold text-red-900">Verificación Rechazada</h3>
+                                            </div>
+                                            <p className="text-sm text-red-800 mb-2">
+                                                Tu solicitud de verificación fue rechazada. Por favor revisa la razón y vuelve a intentarlo.
+                                            </p>
+                                            {user.verificationRejectionReason && (
+                                                <div className="bg-red-100 rounded-lg p-3 mt-3">
+                                                    <p className="text-xs font-semibold text-red-900 mb-1">Razón del rechazo:</p>
+                                                    <p className="text-sm text-red-800">{user.verificationRejectionReason}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Show form for not_submitted or rejected status */}
+                                    {(!user.verificationStatus || user.verificationStatus === 'not_submitted' || user.verificationStatus === 'rejected') && (
+                                        <div>
+                                            <h3 className="text-md font-semibold text-gray-900 mb-4">Documentos Requeridos</h3>
+                                            <VerificationForm userId={user.id} onSuccess={handleVerificationSuccess} />
                                         </div>
                                     )}
                                 </div>

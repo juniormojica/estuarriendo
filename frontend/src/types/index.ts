@@ -118,6 +118,13 @@ export interface BillingDetails {
   city: string;
 }
 
+export interface VerificationDocuments {
+  idFront: string;  // base64
+  idBack: string;   // base64
+  selfie: string;   // base64
+  utilityBill: string; // base64
+}
+
 export interface User {
   id: string;
   name: string;
@@ -131,7 +138,11 @@ export interface User {
   password?: string;
   confirmPassword?: string;
   isVerified?: boolean;
-  verificationDocuments?: string[];
+  verificationStatus?: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+  verificationDocuments?: VerificationDocuments;
+  verificationSubmittedAt?: string;
+  verificationProcessedAt?: string;
+  verificationRejectionReason?: string;
   availableForVisit?: boolean;
   paymentPreference?: PaymentMethod;
   bankDetails?: BankDetails;

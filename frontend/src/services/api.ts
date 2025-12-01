@@ -8,7 +8,9 @@ import {
   ActivityLog,
   SystemConfig,
   PaymentRequest,
-  StudentRequest, Notification
+  StudentRequest,
+  Notification,
+  VerificationDocuments
 } from '../types';
 import { mockProperties, mockAmenities } from '../data/mockData';
 
@@ -879,9 +881,106 @@ export const api = {
       saveNotifications(notifications);
     }
     return updated;
+  },
+
+  // Verification Methods
+  async submitVerification(userId: string, documents: VerificationDocuments): Promise<{ success: boolean; message: string }> {
+    await delay(500);
+
+    try {
+      const users = getStoredUsers();
+      const userIndex = users.findIndex(u => u.id === userId);
+
+      if (userIndex === -1) {
+        return { success: false, message: 'Usuario no encontrado.' };
+      }
+
+      // Update user with verification documents and status
+      users[userIndex] = {
+        ...users[userIndex],
+        verificationDocuments: documents,
+        verificationStatus: 'pending',
+        verificationSubmittedAt: new Date().toISOString(),
+        verificationProcessedAt: undefined,
+        verificationRejectionReason: undefined
+      };
+
+      saveStoredUsers(users);
+
+      // Update current user if it matches
+      const currentUser = getStoredCurrentUser();
+      if (currentUser && currentUser.id === userId) {
+        currentUser.verificationDocuments = documents;
+        currentUser.verificationStatus = 'pending';
+        currentUser.verificationSubmittedAt = new Date().toISOString();
+        currentUser.verificationProcessedAt = undefined;
+        currentUser.verificationRejectionReason = undefined;
+        localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+      }
+
+      return { success: true, message: 'Documentos enviados correctamente. Tu verificación será revisada pronto.' };
+    } catch (error) {
+      console.error('Error submitting verification:', error);
+      return { success: false, message: 'Error al enviar los documentos. Por favor intenta nuevamente.' };
+    }
+  },
+
+  async getVerificationStatus(userId: string): Promise<User['verificationStatus']> {
+    await delay(200);
+    const users = getStoredUsers();
+    const user = users.find(u => u.id === userId);
+    return user?.verificationStatus || 'not_submitted';
+  },
+
+  async updateVerificationStatus(
+    userId: string,
+    status: 'verified' | 'rejected',
+    reason?: string
+  ): Promise<{ success: boolean }> {
+    await delay(500);
+
+    try {
+      const users = getStoredUsers();
+      const userIndex = users.findIndex(u => u.id === userId);
+
+      if (userIndex === -1) {
+        return { success: false };
+      }
+
+      users[userIndex] = {
+        ...users[userIndex],
+        verificationStatus: status,
+        isVerified: status === 'verified',
+        verificationProcessedAt: new Date().toISOString(),
+        verificationRejectionReason: status === 'rejected' ? reason : undefined
+      };
+
+      saveStoredUsers(users);
+
+      // Update current user if it matches
+      const currentUser = getStoredCurrentUser();
+      if (currentUser && currentUser.id === userId) {
+        currentUser.verificationStatus = status;
+        currentUser.isVerified = status === 'verified';
+        currentUser.verificationProcessedAt = new Date().toISOString();
+        currentUser.verificationRejectionReason = status === 'rejected' ? reason : undefined;
+        localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating verification status:', error);
+      return { success: false };
+    }
+  },
+
+  async getPendingVerifications(): Promise<User[]> {
+    await delay(300);
+    const users = getStoredUsers();
+    return users.filter(u => u.verificationStatus === 'pending');
   }
 
-};
+}
 
 // Helper for student requests
 const getStoredStudentRequests = (): StudentRequest[] => {
