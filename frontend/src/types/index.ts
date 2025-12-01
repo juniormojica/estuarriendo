@@ -23,6 +23,10 @@ export interface Property {
   isVerified?: boolean;
   status: 'pending' | 'approved' | 'rejected';
   ownerId?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface Amenity {
@@ -62,6 +66,10 @@ export interface PropertyFormData {
   amenities: string[];
   nearbyUniversities?: string[];
   ownerId?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface PropertyStats {

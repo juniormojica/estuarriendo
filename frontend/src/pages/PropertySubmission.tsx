@@ -22,6 +22,7 @@ const PropertySubmission: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [coordStrings, setCoordStrings] = useState({ lat: '', lng: '' });
 
   const maxImages = user?.plan === 'premium' ? 10 : 3;
 
@@ -42,7 +43,11 @@ const PropertySubmission: React.FC = () => {
     bathrooms: undefined,
     area: undefined,
     amenities: [],
-    images: []
+    images: [],
+    coordinates: {
+      lat: 0,
+      lng: 0
+    }
   });
 
   useEffect(() => {
@@ -76,7 +81,12 @@ const PropertySubmission: React.FC = () => {
           area: property.area,
           amenities: property.amenities,
           images: property.images,
-          ownerId: property.ownerId
+          ownerId: property.ownerId,
+          coordinates: property.coordinates || { lat: 0, lng: 0 }
+        });
+        setCoordStrings({
+          lat: property.coordinates?.lat?.toString() || '',
+          lng: property.coordinates?.lng?.toString() || ''
         });
 
         // Load available cities for the department
@@ -134,6 +144,22 @@ const PropertySubmission: React.FC = () => {
         }));
       }
     }
+  };
+
+  const handleCoordChange = (field: 'lat' | 'lng', value: string) => {
+    setCoordStrings(prev => ({ ...prev, [field]: value }));
+
+    // Handle comma as decimal separator
+    const normalizedValue = value.replace(',', '.');
+    const numberValue = parseFloat(normalizedValue);
+
+    setFormData(prev => ({
+      ...prev,
+      coordinates: {
+        ...prev.coordinates!,
+        [field]: isNaN(numberValue) ? 0 : numberValue
+      }
+    }));
   };
 
   const handleAmenityToggle = (amenityId: string) => {
@@ -259,9 +285,14 @@ const PropertySubmission: React.FC = () => {
                     bathrooms: undefined,
                     area: undefined,
                     amenities: [],
-                    images: []
+                    images: [],
+                    coordinates: {
+                      lat: 0,
+                      lng: 0
+                    }
                   });
                   setAvailableCities([]);
+                  setCoordStrings({ lat: '', lng: '' });
                 }}
                 className="block w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
               >
@@ -447,6 +478,29 @@ const PropertySubmission: React.FC = () => {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       placeholder="Ej: 110221"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Latitud (Opcional)</label>
+                      <input
+                        type="text"
+                        value={coordStrings.lat}
+                        onChange={(e) => handleCoordChange('lat', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        placeholder="Ej: 10.46314"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Longitud (Opcional)</label>
+                      <input
+                        type="text"
+                        value={coordStrings.lng}
+                        onChange={(e) => handleCoordChange('lng', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        placeholder="Ej: -73.25322"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

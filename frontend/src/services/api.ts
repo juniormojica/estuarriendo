@@ -223,7 +223,8 @@ export const api = {
       amenities: formData.amenities,
       createdAt: new Date().toISOString().split('T')[0],
       status: 'pending',
-      ownerId: formData.ownerId
+      ownerId: formData.ownerId,
+      coordinates: formData.coordinates
     };
 
     // Try to save with original images (or slightly filtered ones)

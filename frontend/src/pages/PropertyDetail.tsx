@@ -14,6 +14,12 @@ import { Badge } from '../components/ui/Badge';
 import { cn } from '../lib/utils';
 import RelatedProperties from '../components/RelatedProperties';
 import { iconMap } from '../lib/icons';
+import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+
+const containerStyle = {
+  width: '100%',
+  height: '100%'
+};
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +32,11 @@ const PropertyDetail: React.FC = () => {
 
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = property ? isFavorite(property.id) : false;
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: "AIzaSyBK9lXY8QpKhA5nTFhc8q-ieL6LTxDTkjk"
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -139,7 +150,7 @@ const PropertyDetail: React.FC = () => {
 
   const handleInterest = async () => {
     console.log('Button clicked! property:', property, 'currentUser:', currentUser, 'ownerDetails:', ownerDetails);
-    if (!property || !currentUser || !ownerDetails) return;
+    if (!property || !currentUser || !currentUser.id || !ownerDetails) return;
     try {
       await api.notifyOwnerInterest(property.ownerId, property.id, currentUser.id);
       alert('Se ha notificado al propietario de tu interés.');
@@ -404,7 +415,7 @@ const PropertyDetail: React.FC = () => {
               {/* Location Summary */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Ubicación</h3>
-                <div className="space-y-3 text-sm">
+                <div className="space-y-3 text-sm mb-6">
                   <div className="flex justify-between py-2 border-b border-gray-50">
                     <span className="text-gray-500">Ciudad</span>
                     <span className="font-medium text-gray-900">{property.address.city}</span>
@@ -417,6 +428,43 @@ const PropertyDetail: React.FC = () => {
                     <span className="text-gray-500">Departamento</span>
                     <span className="font-medium text-gray-900">{property.address.department}</span>
                   </div>
+                </div>
+
+                {/* Map Section */}
+                {console.log(property.coordinates)}
+                <div className="rounded-xl overflow-hidden border border-gray-200 h-64 bg-gray-50 relative">
+                  {property.coordinates && property.coordinates.lat !== 0 && property.coordinates.lng !== 0 ? (
+                    isLoaded ? (
+                      <GoogleMap
+                        mapContainerStyle={containerStyle}
+                        center={{
+                          lat: Number(property.coordinates.lat),
+                          lng: Number(property.coordinates.lng)
+                        }}
+                        zoom={15}
+                      >
+                        <MarkerF
+                          position={{
+                            lat: Number(property.coordinates.lat),
+                            lng: Number(property.coordinates.lng)
+                          }}
+                        />
+                      </GoogleMap>
+
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <LoadingSpinner text="Cargando mapa..." />
+                      </div>
+                    )
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
+                      <div className="bg-gray-100 p-3 rounded-full mb-3">
+                        <MapPin className="h-8 w-8 text-gray-300" />
+                      </div>
+                      <p className="font-medium text-gray-500">Mapa Interactivo no disponible</p>
+                      <p className="text-xs mt-1">El propietario no ha proporcionado las coordenadas exactas.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
