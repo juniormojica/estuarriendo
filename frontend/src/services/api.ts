@@ -96,7 +96,7 @@ export const api = {
 
     // Default to showing only approved properties unless specified otherwise
     // For now, public search only shows approved properties
-    filteredProperties = filteredProperties.filter(p => p.status === 'approved');
+    filteredProperties = filteredProperties.filter(p => !p.is_rented && p.status === 'approved');
 
     if (filters) {
       if (filters.city) {
@@ -454,6 +454,19 @@ export const api = {
       return true;
     }
 
+    return false;
+  },
+
+  // Toggle rental status
+  async togglePropertyRentalStatus(id: string): Promise<boolean> {
+    await delay(300);
+    const properties = getStoredProperties();
+    const property = properties.find(p => p.id === id);
+    if (property) {
+      property.is_rented = !property.is_rented;
+      saveProperties(properties);
+      return true;
+    }
     return false;
   },
 

@@ -29,6 +29,7 @@ export interface Property {
     lng: number;
   };
   rejectionReason?: string;
+  is_rented?: boolean;
 }
 
 export interface Amenity {

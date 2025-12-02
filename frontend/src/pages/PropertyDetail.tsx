@@ -209,6 +209,10 @@ const PropertyDetail: React.FC = () => {
                         Verificado
                       </Badge>
                     )}
+                    {/* Rental Status Badge */}
+                    <Badge variant={property.is_rented ? "default" : "success"}>
+                      {property.is_rented ? 'Rentada' : 'Disponible'}
+                    </Badge>
                   </div>
 
                   <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">{property.title}</h1>
@@ -319,7 +323,7 @@ const PropertyDetail: React.FC = () => {
                         lat: Number(property.coordinates.lat),
                         lng: Number(property.coordinates.lng)
                       }}
-                      zoom={15}
+                      zoom={16}
                       onClick={() => setActiveMarker(null)}
                     >
                       {/* Property Marker */}

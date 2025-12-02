@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle, Users } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle, Users, CheckSquare, Square } from 'lucide-react';
 import { Property } from '../types';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
@@ -50,6 +50,22 @@ const OwnerDashboard: React.FC = () => {
             }
         } catch (err) {
             setError('Error al eliminar la propiedad.');
+        }
+    };
+
+    const handleToggleRented = async (id: string) => {
+        try {
+            const success = await api.togglePropertyRentalStatus(id);
+            if (success) {
+                // Update local state
+                setProperties(properties.map(p =>
+                    p.id === id ? { ...p, is_rented: !p.is_rented } : p
+                ));
+            } else {
+                setError('No se pudo actualizar el estado de renta.');
+            }
+        } catch (err) {
+            setError('Error al actualizar el estado de renta.');
         }
     };
 
@@ -192,6 +208,30 @@ const OwnerDashboard: React.FC = () => {
                                             </div>
                                             <div className="flex items-center space-x-4 ml-4">
                                                 {getStatusBadge(property.status)}
+
+                                                {/* Rental Status Toggle */}
+                                                {property.status === 'approved' && (
+                                                    <button
+                                                        onClick={() => handleToggleRented(property.id)}
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${property.is_rented
+                                                                ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                                                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                                            }`}
+                                                        title={property.is_rented ? 'Marcar como disponible' : 'Marcar como rentada'}
+                                                    >
+                                                        {property.is_rented ? (
+                                                            <>
+                                                                <CheckSquare className="w-3 h-3 mr-1" />
+                                                                Rentada
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Square className="w-3 h-3 mr-1" />
+                                                                Disponible
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                )}
 
                                                 <div className="flex items-center space-x-2">
                                                     <button
