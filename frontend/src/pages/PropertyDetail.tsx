@@ -524,9 +524,15 @@ const PropertyDetail: React.FC = () => {
                     <span className="font-medium text-gray-900">{property.address.city}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-50">
-                    <span className="text-gray-500">Barrio/Sector</span>
+                    <span className="text-gray-500">Dirección</span>
                     <span className="font-medium text-gray-900">{property.address.street}</span>
                   </div>
+                  {property.address.neighborhood && (
+                    <div className="flex justify-between py-2 border-b border-gray-50">
+                      <span className="text-gray-500">Barrio</span>
+                      <span className="font-medium text-gray-900">{property.address.neighborhood}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-2">
                     <span className="text-gray-500">Departamento</span>
                     <span className="font-medium text-gray-900">{property.address.department}</span>

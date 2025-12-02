@@ -11,6 +11,7 @@ export interface Property {
     city: string;
     street: string;
     postalCode: string;
+    neighborhood?: string;
   };
   rooms?: number;
   bathrooms?: number;
@@ -59,6 +60,7 @@ export interface PropertyFormData {
     city: string;
     street: string;
     postalCode: string;
+    neighborhood?: string;
   };
   rooms?: number;
   bathrooms?: number;

@@ -44,7 +44,7 @@ const RelatedProperties: React.FC<RelatedPropertiesProps> = ({ currentPropertyId
     return (
         <div className="mt-12 border-t border-gray-200 pt-12">
             <div className="flex items-center space-x-2 mb-6">
-                <Sparkles className="h-6 w-6 text-emerald-600" />
+
                 <h2 className="text-2xl font-bold text-gray-900">Propiedades Similares</h2>
             </div>
 

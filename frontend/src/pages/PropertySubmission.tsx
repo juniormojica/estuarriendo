@@ -37,7 +37,8 @@ const PropertySubmission: React.FC = () => {
       department: '',
       city: '',
       street: '',
-      postalCode: ''
+      postalCode: '',
+      neighborhood: ''
     },
     rooms: undefined,
     bathrooms: undefined,
@@ -75,7 +76,10 @@ const PropertySubmission: React.FC = () => {
           type: property.type,
           price: property.price,
           currency: property.currency,
-          address: property.address,
+          address: {
+            ...property.address,
+            neighborhood: property.address.neighborhood || ''
+          },
           rooms: property.rooms,
           bathrooms: property.bathrooms,
           area: property.area,
@@ -279,7 +283,8 @@ const PropertySubmission: React.FC = () => {
                       department: '',
                       city: '',
                       street: '',
-                      postalCode: ''
+                      postalCode: '',
+                      neighborhood: ''
                     },
                     rooms: undefined,
                     bathrooms: undefined,
@@ -466,6 +471,17 @@ const PropertySubmission: React.FC = () => {
                       onChange={(e) => handleInputChange('address.street', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       placeholder="Ej: Carrera 13 #85-32"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Barrio (Opcional)</label>
+                    <input
+                      type="text"
+                      value={formData.address.neighborhood || ''}
+                      onChange={(e) => handleInputChange('address.neighborhood', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="Ej: El Chicó"
                     />
                   </div>
 
