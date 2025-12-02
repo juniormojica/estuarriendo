@@ -129,13 +129,15 @@ const Header: React.FC = () => {
               </>
             )}
 
-            <Link
-              to="/publicar"
-              className="flex items-center space-x-1 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-            >
-              <Plus className="h-4 w-4 text-white" />
-              <span>Publicar</span>
-            </Link>
+            {(!currentUser || currentUser.userType === 'owner') && (
+              <Link
+                to="/publicar"
+                className="flex items-center space-x-1 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <Plus className="h-4 w-4 text-white" />
+                <span>Publicar</span>
+              </Link>
+            )}
 
             <div className="h-6 w-px bg-gray-300 mx-2"></div>
 
