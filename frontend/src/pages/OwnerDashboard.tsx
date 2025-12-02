@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle, Users, CheckSquare, Square } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle, Users, CheckSquare, Square, Eye } from 'lucide-react';
 import { Property } from '../types';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
@@ -214,8 +214,8 @@ const OwnerDashboard: React.FC = () => {
                                                     <button
                                                         onClick={() => handleToggleRented(property.id)}
                                                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${property.is_rented
-                                                                ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                                                                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                                            ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                                            : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                                             }`}
                                                         title={property.is_rented ? 'Marcar como disponible' : 'Marcar como rentada'}
                                                     >
@@ -234,6 +234,15 @@ const OwnerDashboard: React.FC = () => {
                                                 )}
 
                                                 <div className="flex items-center space-x-2">
+                                                    {/* View Property Button */}
+                                                    <Link
+                                                        to={`/propiedad/${property.id}`}
+                                                        className="p-2 text-gray-400 hover:text-emerald-600 transition-colors"
+                                                        title="Ver Propiedad"
+                                                    >
+                                                        <Eye className="h-5 w-5" />
+                                                    </Link>
+
                                                     <button
                                                         onClick={() => handleOpenInterests(property.id, property.title)}
                                                         className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
