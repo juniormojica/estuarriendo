@@ -27,6 +27,7 @@ export interface Property {
     lat: number;
     lng: number;
   };
+  rejectionReason?: string;
 }
 
 export interface Amenity {

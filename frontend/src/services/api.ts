@@ -280,18 +280,79 @@ export const api = {
     if (property) {
       property.status = 'approved';
       saveProperties(properties);
+
+      // Create notification for owner
+      const ownerId = property.ownerId;
+      if (ownerId) {
+        const notifications = localStorage.getItem('estuarriendo_notifications');
+        let parsedNotifications: Notification[] = [];
+        if (notifications) {
+          try {
+            parsedNotifications = JSON.parse(notifications);
+          } catch (e) {
+            console.error('Error parsing notifications', e);
+          }
+        }
+
+        const newNotification: Notification = {
+          id: Date.now().toString(),
+          userId: ownerId,
+          type: 'property_approved',
+          title: 'Propiedad Aprobada',
+          message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para los estudiantes.`,
+          propertyId: id,
+          propertyTitle: property.title,
+          read: false,
+          createdAt: new Date().toISOString()
+        };
+
+        parsedNotifications.unshift(newNotification);
+        localStorage.setItem('estuarriendo_notifications', JSON.stringify(parsedNotifications));
+      }
+
       return true;
     }
     return false;
   },
 
-  async rejectProperty(id: string): Promise<boolean> {
+  async rejectProperty(id: string, reason: string): Promise<boolean> {
     await delay(500);
     const properties = getStoredProperties();
     const index = properties.findIndex(p => p.id === id);
     if (index !== -1) {
       properties[index].status = 'rejected';
+      properties[index].rejectionReason = reason;
       saveProperties(properties);
+
+      // Create notification for owner
+      const ownerId = properties[index].ownerId;
+      if (ownerId) {
+        const notifications = localStorage.getItem('estuarriendo_notifications');
+        let parsedNotifications: Notification[] = [];
+        if (notifications) {
+          try {
+            parsedNotifications = JSON.parse(notifications);
+          } catch (e) {
+            console.error('Error parsing notifications', e);
+          }
+        }
+
+        const newNotification: Notification = {
+          id: Date.now().toString(),
+          userId: ownerId,
+          type: 'property_rejected',
+          title: 'Propiedad Rechazada',
+          message: `Tu propiedad "${properties[index].title}" ha sido rechazada. Razón: ${reason}`,
+          propertyId: id,
+          propertyTitle: properties[index].title,
+          read: false,
+          createdAt: new Date().toISOString()
+        };
+
+        parsedNotifications.unshift(newNotification);
+        localStorage.setItem('estuarriendo_notifications', JSON.stringify(parsedNotifications));
+      }
+
       return true;
     }
     return false;
@@ -352,6 +413,12 @@ export const api = {
     const index = properties.findIndex(p => p.id === id);
 
     if (index !== -1) {
+      // If property was rejected and is being updated, reset to pending
+      if (properties[index].status === 'rejected') {
+        updates.status = 'pending';
+        updates.rejectionReason = undefined;
+      }
+
       properties[index] = { ...properties[index], ...updates };
       saveProperties(properties);
       return true;

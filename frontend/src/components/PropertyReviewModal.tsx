@@ -6,7 +6,7 @@ interface PropertyReviewModalProps {
     property: Property;
     onClose: () => void;
     onApprove: (id: string) => Promise<void>;
-    onReject: (id: string) => Promise<void>;
+    onReject: (id: string, reason: string) => Promise<void>;
     onDeleteImage: (propertyId: string, imageIndex: number) => Promise<void>;
 }
 
@@ -21,16 +21,23 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const [localImages, setLocalImages] = useState(property.images);
 
+    const [showRejectionInput, setShowRejectionInput] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState('');
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                onClose();
+                if (showRejectionInput) {
+                    setShowRejectionInput(false);
+                } else {
+                    onClose();
+                }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
+    }, [onClose, showRejectionInput]);
 
     const handleApprove = async () => {
         setIsProcessing(true);
@@ -44,12 +51,19 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
         }
     };
 
-    const handleReject = async () => {
-        if (!confirm('¿Estás seguro de que deseas rechazar esta propiedad?')) return;
+    const handleRejectClick = () => {
+        setShowRejectionInput(true);
+    };
+
+    const handleConfirmReject = async () => {
+        if (!rejectionReason.trim()) {
+            alert('Por favor ingresa una razón para el rechazo.');
+            return;
+        }
 
         setIsProcessing(true);
         try {
-            await onReject(property.id);
+            await onReject(property.id, rejectionReason);
             onClose();
         } catch (error) {
             console.error('Error rejecting property:', error);
@@ -89,7 +103,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
                     <h2 className="text-2xl font-bold text-gray-900">Revisar Propiedad</h2>
                     <button
                         onClick={onClose}
@@ -302,37 +316,71 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                         </div>
                     </div>
 
+                    {/* Rejection Input Section */}
+                    {showRejectionInput && (
+                        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                            <h4 className="text-md font-semibold text-red-800 mb-2">Razón del Rechazo</h4>
+                            <p className="text-sm text-red-600 mb-3">
+                                Por favor indica por qué se rechaza esta propiedad. Esta información será enviada al propietario.
+                            </p>
+                            <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                className="w-full p-3 border border-red-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                                rows={3}
+                                placeholder="Ej: Las fotos no son claras, la dirección es incorrecta..."
+                            />
+                            <div className="flex justify-end gap-3 mt-3">
+                                <button
+                                    onClick={() => setShowRejectionInput(false)}
+                                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleConfirmReject}
+                                    disabled={isProcessing || !rejectionReason.trim()}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+                                >
+                                    {isProcessing ? 'Rechazando...' : 'Confirmar Rechazo'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Action Buttons */}
-                    <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4">
-                        <button
-                            onClick={handleApprove}
-                            disabled={isProcessing || localImages.length === 0}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isProcessing ? (
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            ) : (
-                                <>
-                                    <Check size={20} />
-                                    Aprobar Propiedad
-                                </>
-                            )}
-                        </button>
-                        <button
-                            onClick={handleReject}
-                            disabled={isProcessing}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isProcessing ? (
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            ) : (
-                                <>
-                                    <X size={20} />
-                                    Rechazar Propiedad
-                                </>
-                            )}
-                        </button>
-                    </div>
+                    {!showRejectionInput && (
+                        <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4">
+                            <button
+                                onClick={handleApprove}
+                                disabled={isProcessing || localImages.length === 0}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isProcessing ? (
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                ) : (
+                                    <>
+                                        <Check size={20} />
+                                        Aprobar Propiedad
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={handleRejectClick}
+                                disabled={isProcessing}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isProcessing ? (
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                ) : (
+                                    <>
+                                        <X size={20} />
+                                        Rechazar Propiedad
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
 
                     {localImages.length === 0 && (
                         <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">

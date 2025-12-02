@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { Notification } from '../types';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
 
 const NotificationBell: React.FC = () => {
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(false);
@@ -122,7 +124,16 @@ const NotificationBell: React.FC = () => {
                                     {notifications.map((notification) => (
                                         <div
                                             key={notification.id}
-                                            onClick={() => !notification.read && handleMarkAsRead(notification.id)}
+                                            onClick={() => {
+                                                if (!notification.read) {
+                                                    handleMarkAsRead(notification.id);
+                                                }
+                                                // Navigate if it's a property approval or rejection
+                                                if (notification.type === 'property_approved' || notification.type === 'property_rejected') {
+                                                    navigate('/mis-propiedades');
+                                                    setIsOpen(false);
+                                                }
+                                            }}
                                             className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!notification.read ? 'bg-blue-50' : ''
                                                 }`}
                                         >

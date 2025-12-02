@@ -169,6 +169,16 @@ const OwnerDashboard: React.FC = () => {
                                                                 {property.address.city}, {property.address.department}
                                                             </span>
                                                         </p>
+                                                        {property.status === 'rejected' && property.rejectionReason && (
+                                                            <div className="mt-2 p-2 bg-red-50 rounded-md border border-red-100">
+                                                                <p className="text-xs text-red-700 font-medium">
+                                                                    Razón de rechazo:
+                                                                </p>
+                                                                <p className="text-xs text-red-600 mt-1">
+                                                                    {property.rejectionReason}
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div className="hidden md:block">
                                                         <div className="flex items-center text-sm text-gray-500">

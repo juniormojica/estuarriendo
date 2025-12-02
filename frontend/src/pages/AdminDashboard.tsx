@@ -109,9 +109,16 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleReject = async (id: string) => {
+    const handleReject = async (id: string, reason?: string) => {
+        let finalReason = reason;
+        if (!finalReason) {
+            const promptResult = window.prompt('Por favor ingresa la razón del rechazo:');
+            if (!promptResult) return;
+            finalReason = promptResult;
+        }
+
         try {
-            const success = await api.rejectProperty(id);
+            const success = await api.rejectProperty(id, finalReason);
             if (success) {
                 await refreshData();
                 setSelectedProperty(null);
@@ -591,11 +598,10 @@ const AdminDashboard = () => {
             {selectedProperty && (
                 <PropertyReviewModal
                     property={selectedProperty}
-                    isOpen={!!selectedProperty}
                     onClose={() => setSelectedProperty(null)}
                     onApprove={() => handleApprove(selectedProperty.id)}
-                    onReject={() => handleReject(selectedProperty.id)}
-                    onDeleteImage={(index) => handleDeleteImage(selectedProperty.id, index)}
+                    onReject={(id, reason) => handleReject(id, reason)}
+                    onDeleteImage={handleDeleteImage}
                 />
             )}
 
