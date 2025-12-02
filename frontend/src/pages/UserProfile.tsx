@@ -482,7 +482,7 @@ const UserProfile: React.FC = () => {
                                     {(!user.verificationStatus || user.verificationStatus === 'not_submitted' || user.verificationStatus === 'rejected') && (
                                         <div>
                                             <h3 className="text-md font-semibold text-gray-900 mb-4">Documentos Requeridos</h3>
-                                            <VerificationForm userId={user.id} onSuccess={handleVerificationSuccess} />
+                                            <VerificationForm userId={user.id} userRole="owner" onSuccess={handleVerificationSuccess} />
                                         </div>
                                     )}
                                 </div>

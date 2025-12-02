@@ -424,6 +424,76 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                         </div>
                     )}
 
+                    {/* Verification Management */}
+                    {!isEditing && displayUser.verificationStatus && displayUser.verificationStatus !== 'not_submitted' && (
+                        <div className="border-t border-gray-200 pt-4">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                                <Shield className="w-5 h-5 mr-2 text-gray-500" />
+                                Gestión de Verificación
+                            </h3>
+
+                            <div className="bg-gray-50 p-4 rounded-lg mb-3">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-gray-700">Estado de Verificación:</span>
+                                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${displayUser.verificationStatus === 'verified' ? 'bg-green-100 text-green-700' :
+                                            displayUser.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-red-100 text-red-700'
+                                        }`}>
+                                        {displayUser.verificationStatus === 'verified' ? '✓ Verificado' :
+                                            displayUser.verificationStatus === 'pending' ? '⏳ Pendiente' :
+                                                '✗ Rechazado'}
+                                    </span>
+                                </div>
+
+                                {displayUser.verificationSubmittedAt && (
+                                    <p className="text-xs text-gray-600">
+                                        Enviado: {new Date(displayUser.verificationSubmittedAt).toLocaleDateString('es-CO')}
+                                    </p>
+                                )}
+
+                                {displayUser.verificationProcessedAt && (
+                                    <p className="text-xs text-gray-600">
+                                        Procesado: {new Date(displayUser.verificationProcessedAt).toLocaleDateString('es-CO')}
+                                    </p>
+                                )}
+
+                                {displayUser.verificationRejectionReason && (
+                                    <p className="text-xs text-red-600 mt-2">
+                                        Razón de rechazo: {displayUser.verificationRejectionReason}
+                                    </p>
+                                )}
+                            </div>
+
+                            {displayUser.verificationStatus === 'verified' && (
+                                <button
+                                    onClick={async () => {
+                                        if (window.confirm('¿Estás seguro de revocar la verificación de este usuario?')) {
+                                            setIsSaving(true);
+                                            try {
+                                                const success = await api.updateVerificationStatus(displayUser.id, 'rejected', 'Verificación revocada por administrador');
+                                                if (success) {
+                                                    if (onUpdate) onUpdate();
+                                                } else {
+                                                    alert('Error al revocar la verificación');
+                                                }
+                                            } catch (error) {
+                                                console.error('Error revoking verification:', error);
+                                                alert('Error al revocar la verificación');
+                                            } finally {
+                                                setIsSaving(false);
+                                            }
+                                        }
+                                    }}
+                                    disabled={isSaving}
+                                    className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex items-center justify-center disabled:opacity-50"
+                                >
+                                    <XCircle className="w-5 h-5 mr-2" />
+                                    {isSaving ? 'Revocando...' : 'Revocar Verificación'}
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                     {/* Account Actions */}
                     {!isEditing && (
                         <div className="border-t border-gray-200 pt-4">

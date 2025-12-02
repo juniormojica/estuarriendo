@@ -5,10 +5,11 @@ import { api } from '../services/api';
 
 interface VerificationFormProps {
     userId: string;
+    userRole: 'student' | 'owner';
     onSuccess: () => void;
 }
 
-const VerificationForm: React.FC<VerificationFormProps> = ({ userId, onSuccess }) => {
+const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, onSuccess }) => {
     const [documents, setDocuments] = useState<Partial<VerificationDocuments>>({});
     const [previews, setPreviews] = useState<Partial<Record<keyof VerificationDocuments, string>>>({});
     const [loading, setLoading] = useState(false);
@@ -61,7 +62,8 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, onSuccess }
                 idFront: documents.idFront || placeholderImage,
                 idBack: documents.idBack || placeholderImage,
                 selfie: documents.selfie || placeholderImage,
-                utilityBill: documents.utilityBill || placeholderImage
+                // Only require utility bill for owners, students get placeholder
+                utilityBill: userRole === 'owner' ? (documents.utilityBill || placeholderImage) : placeholderImage
             };
 
             const result = await api.submitVerification(userId, documentsToSubmit);
@@ -148,6 +150,9 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, onSuccess }
                             <li>Tamaño máximo por archivo: 2MB</li>
                             <li>Formatos aceptados: JPG, PNG</li>
                             <li>Los documentos serán revisados en un máximo de 24 horas</li>
+                            {userRole === 'student' && (
+                                <li className="text-emerald-700 font-semibold">Como estudiante solo necesitas cédula y selfie</li>
+                            )}
                             <li className="text-emerald-700 font-semibold">Puedes enviar sin documentos para probar el flujo (temporal)</li>
                         </ul>
                     </div>
@@ -183,12 +188,14 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, onSuccess }
                     description="Foto tuya sosteniendo tu cédula junto a tu rostro"
                 />
 
-                <DocumentUploadField
-                    field="utilityBill"
-                    label="Recibo de Servicios"
-                    icon={Receipt}
-                    description="Recibo de servicios públicos de la propiedad (máx. 3 meses)"
-                />
+                {userRole === 'owner' && (
+                    <DocumentUploadField
+                        field="utilityBill"
+                        label="Recibo de Servicios"
+                        icon={Receipt}
+                        description="Recibo de servicios públicos de la propiedad (máx. 3 meses)"
+                    />
+                )}
             </div>
 
             <div className="flex justify-end pt-4 border-t border-gray-200">
