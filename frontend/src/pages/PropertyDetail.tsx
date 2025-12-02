@@ -393,6 +393,34 @@ const PropertyDetail: React.FC = () => {
               </div>
             </div>
 
+            {/* Location Information - Moved here for better visibility */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <MapPin className="h-6 w-6 mr-2 text-emerald-600" />
+                Información de Ubicación
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                  <p className="text-sm text-gray-500 mb-1">Ciudad</p>
+                  <p className="font-semibold text-gray-900">{property.address.city}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                  <p className="text-sm text-gray-500 mb-1">Departamento</p>
+                  <p className="font-semibold text-gray-900">{property.address.department}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                  <p className="text-sm text-gray-500 mb-1">Dirección</p>
+                  <p className="font-semibold text-gray-900">{property.address.street}</p>
+                </div>
+                {property.address.neighborhood && (
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                    <p className="text-sm text-gray-500 mb-1">Barrio</p>
+                    <p className="font-semibold text-gray-900">{property.address.neighborhood}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Nearby Universities */}
             {property.nearbyUniversities && property.nearbyUniversities.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
@@ -519,32 +547,7 @@ const PropertyDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Location Summary */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Ubicación</h3>
-                <div className="space-y-3 text-sm mb-6">
-                  <div className="flex justify-between py-2 border-b border-gray-50">
-                    <span className="text-gray-500">Ciudad</span>
-                    <span className="font-medium text-gray-900">{property.address.city}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-gray-50">
-                    <span className="text-gray-500">Dirección</span>
-                    <span className="font-medium text-gray-900">{property.address.street}</span>
-                  </div>
-                  {property.address.neighborhood && (
-                    <div className="flex justify-between py-2 border-b border-gray-50">
-                      <span className="text-gray-500">Barrio</span>
-                      <span className="font-medium text-gray-900">{property.address.neighborhood}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-500">Departamento</span>
-                    <span className="font-medium text-gray-900">{property.address.department}</span>
-                  </div>
-                </div>
 
-
-              </div>
             </div>
           </div>
         </div>
