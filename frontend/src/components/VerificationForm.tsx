@@ -51,16 +51,20 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, onSuccess }
         e.preventDefault();
         setError('');
 
-        // Validate all documents are uploaded
-        if (!documents.idFront || !documents.idBack || !documents.selfie || !documents.utilityBill) {
-            setError('Por favor sube todos los documentos requeridos.');
-            return;
-        }
-
         setLoading(true);
 
         try {
-            const result = await api.submitVerification(userId, documents as VerificationDocuments);
+            // Use placeholder images if no documents are uploaded (temporary for testing)
+            const placeholderImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+            const documentsToSubmit: VerificationDocuments = {
+                idFront: documents.idFront || placeholderImage,
+                idBack: documents.idBack || placeholderImage,
+                selfie: documents.selfie || placeholderImage,
+                utilityBill: documents.utilityBill || placeholderImage
+            };
+
+            const result = await api.submitVerification(userId, documentsToSubmit);
 
             if (result.success) {
                 onSuccess();
@@ -144,6 +148,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, onSuccess }
                             <li>Tamaño máximo por archivo: 2MB</li>
                             <li>Formatos aceptados: JPG, PNG</li>
                             <li>Los documentos serán revisados en un máximo de 24 horas</li>
+                            <li className="text-emerald-700 font-semibold">Puedes enviar sin documentos para probar el flujo (temporal)</li>
                         </ul>
                     </div>
                 </div>
@@ -189,7 +194,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, onSuccess }
             <div className="flex justify-end pt-4 border-t border-gray-200">
                 <button
                     type="submit"
-                    disabled={loading || !documents.idFront || !documents.idBack || !documents.selfie || !documents.utilityBill}
+                    disabled={loading}
                     className="flex items-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                     {loading ? (
