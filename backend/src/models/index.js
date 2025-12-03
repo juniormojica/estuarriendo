@@ -1,7 +1,7 @@
-const { sequelize } = require('../config/database');
+import { sequelize } from '../config/database.js';
 
 // Import models
-const User = require('./User');
+import User from './User.js';
 // const Property = require('./Property');
 // const StudentRequest = require('./StudentRequest');
 
@@ -16,4 +16,4 @@ const models = {
     sequelize
 };
 
-module.exports = models;
+export default models;

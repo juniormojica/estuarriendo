@@ -1,4 +1,4 @@
-const User = require('../models/User');
+import User from '../models/User.js';
 
 /**
  * Example User Controller
@@ -6,7 +6,7 @@ const User = require('../models/User');
  */
 
 // Get all users
-exports.getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll({
             attributes: { exclude: ['password'] }
@@ -25,7 +25,7 @@ exports.getAllUsers = async (req, res) => {
 };
 
 // Get user by ID
-exports.getUserById = async (req, res) => {
+export const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findByPk(id, {
@@ -52,7 +52,7 @@ exports.getUserById = async (req, res) => {
 };
 
 // Create user
-exports.createUser = async (req, res) => {
+export const createUser = async (req, res) => {
     try {
         const user = await User.create(req.body);
 
@@ -73,7 +73,7 @@ exports.createUser = async (req, res) => {
 };
 
 // Update user
-exports.updateUser = async (req, res) => {
+export const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findByPk(id);
@@ -103,7 +103,7 @@ exports.updateUser = async (req, res) => {
 };
 
 // Delete user
-exports.deleteUser = async (req, res) => {
+export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findByPk(id);

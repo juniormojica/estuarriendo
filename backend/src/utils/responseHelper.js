@@ -5,7 +5,7 @@
 /**
  * Send success response
  */
-exports.successResponse = (res, data, message = 'Success', statusCode = 200) => {
+export const successResponse = (res, data, message = 'Success', statusCode = 200) => {
     return res.status(statusCode).json({
         success: true,
         message,
@@ -16,7 +16,7 @@ exports.successResponse = (res, data, message = 'Success', statusCode = 200) => 
 /**
  * Send error response
  */
-exports.errorResponse = (res, error, statusCode = 500) => {
+export const errorResponse = (res, error, statusCode = 500) => {
     return res.status(statusCode).json({
         success: false,
         error: error.message || error
@@ -26,15 +26,15 @@ exports.errorResponse = (res, error, statusCode = 500) => {
 /**
  * Convert snake_case object keys to camelCase
  */
-exports.toCamelCase = (obj) => {
+export const toCamelCase = (obj) => {
     if (Array.isArray(obj)) {
-        return obj.map(item => exports.toCamelCase(item));
+        return obj.map(item => toCamelCase(item));
     }
 
     if (obj !== null && typeof obj === 'object') {
         return Object.keys(obj).reduce((result, key) => {
             const camelKey = key.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
-            result[camelKey] = exports.toCamelCase(obj[key]);
+            result[camelKey] = toCamelCase(obj[key]);
             return result;
         }, {});
     }
@@ -45,15 +45,15 @@ exports.toCamelCase = (obj) => {
 /**
  * Convert camelCase object keys to snake_case
  */
-exports.toSnakeCase = (obj) => {
+export const toSnakeCase = (obj) => {
     if (Array.isArray(obj)) {
-        return obj.map(item => exports.toSnakeCase(item));
+        return obj.map(item => toSnakeCase(item));
     }
 
     if (obj !== null && typeof obj === 'object') {
         return Object.keys(obj).reduce((result, key) => {
             const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-            result[snakeKey] = exports.toSnakeCase(obj[key]);
+            result[snakeKey] = toSnakeCase(obj[key]);
             return result;
         }, {});
     }

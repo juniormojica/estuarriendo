@@ -1,8 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const { sequelize, testConnection } = require('./config/database');
+import { sequelize, testConnection } from './config/database.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,7 +24,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes will be imported here
-app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/users', userRoutes);
 // app.use('/api/properties', require('./routes/propertyRoutes'));
 
 // Error handling middleware
@@ -58,4 +60,4 @@ const startServer = async () => {
 
 startServer();
 
-module.exports = app;
+export default app;
