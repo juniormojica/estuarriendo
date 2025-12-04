@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User } from '../types';
+import { UserRegistrationPayload, User } from '../types';
 import { CheckCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const OwnerRegistration = () => {
@@ -9,19 +9,23 @@ const OwnerRegistration = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
 
-    const [formData, setFormData] = useState<Partial<User>>({
+    const [formData, setFormData] = useState<Partial<UserRegistrationPayload>>({
+        userType: 'owner',
         role: 'individual',
         idType: 'CC',
         paymentPreference: 'PSE',
+        password: '',
+        confirmPassword: '',
         bankDetails: {
             bankName: '',
             accountType: 'savings',
             accountNumber: '',
-            accountHolder: ''
+            holderName: ''
         },
         billingDetails: {
-            address: '',
-            rut: ''
+            billingAddress: '',
+            taxId: '',
+            city: ''
         }
     });
 
@@ -55,14 +59,26 @@ const OwnerRegistration = () => {
         if (validatePhase1()) {
             // Save basic profile immediately
             const newUser: User = {
-                ...formData as User,
                 id: crypto.randomUUID(),
+                name: formData.name!,
+                email: formData.email!,
+                phone: formData.phone!,
+                whatsapp: formData.phone!,
+                userType: 'owner',
+                idType: formData.idType,
+                idNumber: formData.idNumber,
+                role: formData.role,
+                isActive: true,
                 joinedAt: new Date().toISOString(),
+                verificationStatus: 'not_submitted',
                 propertiesCount: 0,
                 approvedCount: 0,
                 pendingCount: 0,
                 rejectedCount: 0,
-                isVerified: false // Pending verification
+                isVerified: false,
+                paymentPreference: formData.paymentPreference,
+                bankDetails: formData.bankDetails,
+                billingDetails: formData.billingDetails
             };
 
             // Save to localStorage for mock auth

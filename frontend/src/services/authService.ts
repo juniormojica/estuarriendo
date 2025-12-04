@@ -1,7 +1,8 @@
-import { User } from '../types';
+import { User, UserRegistrationPayload } from '../types';
 
 // Storage keys
 const USERS_KEY = 'estuarriendo_users';
+const PASSWORDS_KEY = 'estuarriendo_passwords'; // Separate storage for passwords
 const CURRENT_USER_KEY = 'estuarriendo_current_user';
 
 // Response types (mimicking backend API responses)
@@ -26,8 +27,19 @@ class AuthService {
         localStorage.setItem(USERS_KEY, JSON.stringify(users));
     }
 
+    // Get passwords map (userId -> password)
+    private getPasswords(): Record<string, string> {
+        const passwordsJson = localStorage.getItem(PASSWORDS_KEY);
+        return passwordsJson ? JSON.parse(passwordsJson) : {};
+    }
+
+    // Save passwords map
+    private savePasswords(passwords: Record<string, string>): void {
+        localStorage.setItem(PASSWORDS_KEY, JSON.stringify(passwords));
+    }
+
     // Register a new user
-    async register(userData: Partial<User>): Promise<AuthResponse> {
+    async register(userData: UserRegistrationPayload | Partial<User>): Promise<AuthResponse> {
         await mockDelay();
 
         try {
@@ -42,21 +54,40 @@ class AuthService {
                 };
             }
 
-            // Create new user
+            // Create new user from registration payload
             const newUser: User = {
-                ...userData as User,
                 id: crypto.randomUUID(),
+                name: userData.name!,
+                email: userData.email!,
+                phone: userData.phone!,
+                whatsapp: userData.whatsapp || userData.phone!,
+                userType: (userData as UserRegistrationPayload).userType || 'tenant',
+                idType: userData.idType,
+                idNumber: userData.idNumber,
+                role: userData.role,
+                isActive: true,
                 joinedAt: new Date().toISOString(),
+                verificationStatus: 'not_submitted',
                 propertiesCount: 0,
                 approvedCount: 0,
                 pendingCount: 0,
                 rejectedCount: 0,
-                isVerified: false
+                isVerified: false,
+                paymentPreference: userData.paymentPreference,
+                bankDetails: userData.bankDetails,
+                billingDetails: userData.billingDetails
             };
 
             // Add to users array
             users.push(newUser);
             this.saveUsers(users);
+
+            // Store password separately (if provided in registration payload)
+            if ('password' in userData && userData.password) {
+                const passwords = this.getPasswords();
+                passwords[newUser.id] = userData.password;
+                this.savePasswords(passwords);
+            }
 
             // Set as current user (auto-login after registration)
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
@@ -92,7 +123,10 @@ class AuthService {
             }
 
             // Validate password
-            if (user.password !== password) {
+            const passwords = this.getPasswords();
+            const storedPassword = passwords[user.id];
+
+            if (!storedPassword || storedPassword !== password) {
                 return {
                     success: false,
                     message: 'Contraseña incorrecta.'

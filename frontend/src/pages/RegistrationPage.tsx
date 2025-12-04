@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User } from '../types';
+import { UserRegistrationPayload } from '../types';
 import { CheckCircle, Eye, EyeOff, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
 import { authService } from '../services/authService';
 
@@ -11,19 +11,23 @@ const RegistrationPage = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
 
-    const [formData, setFormData] = useState<Partial<User>>({
+    const [formData, setFormData] = useState<Partial<UserRegistrationPayload>>({
+        userType: 'owner',
         role: 'individual', // Default for owner, will be overwritten or ignored for tenant
         idType: 'CC',
         paymentPreference: 'PSE',
+        password: '',
+        confirmPassword: '',
         bankDetails: {
             bankName: '',
             accountType: 'savings',
             accountNumber: '',
-            accountHolder: ''
+            holderName: ''
         },
         billingDetails: {
-            address: '',
-            rut: ''
+            billingAddress: '',
+            taxId: '',
+            city: ''
         }
     });
 
@@ -65,10 +69,15 @@ const RegistrationPage = () => {
         e.preventDefault();
         if (validateForm()) {
             // Prepare user data
-            const userData: Partial<User> = {
+            const userData: UserRegistrationPayload = {
                 ...formData,
-                // Add userType field to distinguish between owners and tenants
-                userType: userType as any
+                userType: userType,
+                password: formData.password!,
+                confirmPassword: formData.confirmPassword!,
+                name: formData.name!,
+                email: formData.email!,
+                phone: formData.phone!,
+                whatsapp: formData.phone // Use phone as whatsapp by default
             };
 
             // Register user via authService
