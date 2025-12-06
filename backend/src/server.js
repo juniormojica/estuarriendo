@@ -4,28 +4,46 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { sequelize, testConnection } from './config/database.js';
+
+// Import all routes
 import userRoutes from './routes/userRoutes.js';
+import verificationRoutes from './routes/verificationRoutes.js';
+import amenityRoutes from './routes/amenityRoutes.js';
+import propertyRoutes from './routes/propertyRoutes.js';
+import paymentRequestRoutes from './routes/paymentRequestRoutes.js';
+import studentRequestRoutes from './routes/studentRequestRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import activityLogRoutes from './routes/activityLogRoutes.js';
+import systemConfigRoutes from './routes/systemConfigRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Health check route
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'OK',
         message: 'EstuArriendo API is running',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        version: '2.0.0'
     });
 });
 
-// Routes will be imported here
+// API Routes
 app.use('/api/users', userRoutes);
-// app.use('/api/properties', require('./routes/propertyRoutes'));
+app.use('/api/verification', verificationRoutes);
+app.use('/api/amenities', amenityRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/payment-requests', paymentRequestRoutes);
+app.use('/api/student-requests', studentRequestRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/activity-logs', activityLogRoutes);
+app.use('/api/system-config', systemConfigRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -45,12 +63,28 @@ app.use((req, res) => {
 const startServer = async () => {
     try {
         await testConnection();
-        await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+
+        // Sync database (alter in development, no sync in production)
+        if (process.env.NODE_ENV === 'development') {
+            await sequelize.sync({ alter: true });
+            console.log('✅ Database models synchronized');
+        }
 
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on port ${PORT}`);
-            console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+            console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
             console.log(`🗄️  Database: ${process.env.DB_NAME}`);
+            console.log(`\n📋 Available routes:`);
+            console.log(`   - GET  /api/health`);
+            console.log(`   - *    /api/users`);
+            console.log(`   - *    /api/verification`);
+            console.log(`   - *    /api/amenities`);
+            console.log(`   - *    /api/properties`);
+            console.log(`   - *    /api/payment-requests`);
+            console.log(`   - *    /api/student-requests`);
+            console.log(`   - *    /api/notifications`);
+            console.log(`   - *    /api/activity-logs`);
+            console.log(`   - *    /api/system-config`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);
