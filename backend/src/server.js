@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { sequelize, testConnection } from './config/database.js';
+import { seedEnums } from './config/seedEnums.js';
 
 // Import all routes
 import userRoutes from './routes/userRoutes.js';
@@ -63,6 +64,9 @@ app.use((req, res) => {
 const startServer = async () => {
     try {
         await testConnection();
+
+        // Seed ENUM types before syncing models
+        await seedEnums();
 
         // Sync database (alter in development, no sync in production)
         if (process.env.NODE_ENV === 'development') {
