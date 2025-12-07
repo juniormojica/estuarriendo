@@ -1,239 +1,151 @@
-import { User, UserVerificationDocuments } from '../models/index.js';
-import { UserType, VerificationStatus } from '../utils/enums.js';
+import * as userService from '../services/userService.js';
 
 /**
  * User Controller
- * Handles all user-related operations
+ * Handles HTTP requests and responses for user operations
+ * Delegates business logic to userService
  */
 
-// Get all users
+/**
+ * Handle errors and send appropriate HTTP response
+ * @param {Object} res - Express response object
+ * @param {Error} error - Error object
+ */
+const handleError = (res, error) => {
+    console.error('Controller error:', error);
+
+    // Handle custom service errors
+    if (error.statusCode) {
+        return res.status(error.statusCode).json({
+            error: error.message
+        });
+    }
+
+    // Handle unexpected errors
+    res.status(500).json({
+        error: 'Internal server error',
+        message: error.message
+    });
+};
+
+/**
+ * Get all users
+ * GET /api/users
+ */
 export const getAllUsers = async (req, res) => {
     try {
-        const users = await User.findAll({
-            attributes: { exclude: ['password'] },
-            include: [
-                {
-                    model: UserVerificationDocuments,
-                    as: 'verificationDocuments',
-                    attributes: ['submittedAt', 'processedAt']
-                }
-            ]
-        });
+        const users = await userService.getAllUsers();
         res.json(users);
     } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users', message: error.message });
+        handleError(res, error);
     }
 };
 
-// Get user by ID
+/**
+ * Get user by ID
+ * GET /api/users/:id
+ */
 export const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findByPk(id, {
-            attributes: { exclude: ['password'] },
-            include: [
-                {
-                    model: UserVerificationDocuments,
-                    as: 'verificationDocuments',
-                    attributes: ['submittedAt', 'processedAt']
-                }
-            ]
-        });
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
+        const user = await userService.getUserById(id);
         res.json(user);
     } catch (error) {
-        console.error('Error fetching user:', error);
-        res.status(500).json({ error: 'Failed to fetch user', message: error.message });
+        handleError(res, error);
     }
 };
 
-// Create new user
+/**
+ * Create new user
+ * POST /api/users
+ */
 export const createUser = async (req, res) => {
     try {
         const userData = req.body;
-
-        // Validate required fields
-        if (!userData.id || !userData.name || !userData.email || !userData.phone || !userData.userType) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-
-        // Check if user already exists
-        const existingUser = await User.findByPk(userData.id);
-        if (existingUser) {
-            return res.status(409).json({ error: 'User already exists' });
-        }
-
-        // Set default values
-        const newUserData = {
-            ...userData,
-            joinedAt: new Date(),
-            isActive: true,
-            isVerified: false,
-            verificationStatus: VerificationStatus.NOT_SUBMITTED,
-            propertiesCount: 0,
-            approvedCount: 0,
-            pendingCount: 0,
-            rejectedCount: 0,
-            plan: 'free'
-        };
-
-        const user = await User.create(newUserData);
-
-        // Remove sensitive data from response
-        const userResponse = user.toJSON();
-        delete userResponse.password;
-
-        res.status(201).json(userResponse);
+        const user = await userService.createUser(userData);
+        res.status(201).json(user);
     } catch (error) {
-        console.error('Error creating user:', error);
-        res.status(500).json({ error: 'Failed to create user', message: error.message });
+        handleError(res, error);
     }
 };
 
-// Update user
+/**
+ * Update user
+ * PUT /api/users/:id
+ */
 export const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
-
-        const user = await User.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Update timestamp
-        updates.updatedAt = new Date();
-
-        await user.update(updates);
-
-        const userResponse = user.toJSON();
-        delete userResponse.password;
-
-        res.json(userResponse);
+        const user = await userService.updateUser(id, updates);
+        res.json(user);
     } catch (error) {
-        console.error('Error updating user:', error);
-        res.status(500).json({ error: 'Failed to update user', message: error.message });
+        handleError(res, error);
     }
 };
 
-// Delete user
+/**
+ * Delete user
+ * DELETE /api/users/:id
+ */
 export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const user = await User.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        await user.destroy();
-        res.json({ message: 'User deleted successfully' });
+        const result = await userService.deleteUser(id);
+        res.json(result);
     } catch (error) {
-        console.error('Error deleting user:', error);
-        res.status(500).json({ error: 'Failed to delete user', message: error.message });
+        handleError(res, error);
     }
 };
 
-// Update user verification status
+/**
+ * Update user verification status
+ * PATCH /api/users/:id/verification
+ */
 export const updateVerificationStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { verificationStatus, verificationRejectionReason } = req.body;
 
-        const user = await User.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        const updates = {
+        const user = await userService.updateVerificationStatus(
+            id,
             verificationStatus,
-            updatedAt: new Date()
-        };
-
-        if (verificationStatus === VerificationStatus.VERIFIED) {
-            updates.isVerified = true;
-        } else if (verificationStatus === VerificationStatus.REJECTED) {
-            updates.verificationRejectionReason = verificationRejectionReason;
-            updates.isVerified = false;
-        }
-
-        await user.update(updates);
-
-        const userResponse = user.toJSON();
-        delete userResponse.password;
-
-        res.json(userResponse);
-    } catch (error) {
-        console.error('Error updating verification status:', error);
-        res.status(500).json({ error: 'Failed to update verification status', message: error.message });
-    }
-};
-
-// Update user plan
-export const updateUserPlan = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { plan, planType, planDuration } = req.body;
-
-        const user = await User.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        const now = new Date();
-        const expiresAt = new Date(now);
-
-        // Calculate expiration based on plan duration (in days)
-        if (planDuration) {
-            expiresAt.setDate(expiresAt.getDate() + planDuration);
-        }
-
-        const updates = {
-            plan,
-            planType,
-            planStartedAt: now,
-            planExpiresAt: expiresAt,
-            updatedAt: now
-        };
-
-        if (plan === 'premium' && !user.premiumSince) {
-            updates.premiumSince = now;
-        }
-
-        await user.update(updates);
-
-        const userResponse = user.toJSON();
-        delete userResponse.password;
-
-        res.json(userResponse);
-    } catch (error) {
-        console.error('Error updating user plan:', error);
-        res.status(500).json({ error: 'Failed to update user plan', message: error.message });
-    }
-};
-
-// Get user statistics
-export const getUserStatistics = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const user = await User.findByPk(id, {
-            attributes: ['id', 'name', 'propertiesCount', 'approvedCount', 'pendingCount', 'rejectedCount', 'plan', 'planExpiresAt']
-        });
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
+            verificationRejectionReason
+        );
 
         res.json(user);
     } catch (error) {
-        console.error('Error fetching user statistics:', error);
-        res.status(500).json({ error: 'Failed to fetch user statistics', message: error.message });
+        handleError(res, error);
+    }
+};
+
+/**
+ * Update user plan
+ * PATCH /api/users/:id/plan
+ */
+export const updateUserPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const planData = req.body;
+
+        const user = await userService.updateUserPlan(id, planData);
+        res.json(user);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+/**
+ * Get user statistics
+ * GET /api/users/:id/statistics
+ */
+export const getUserStatistics = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const stats = await userService.getUserStatistics(id);
+        res.json(stats);
+    } catch (error) {
+        handleError(res, error);
     }
 };
 
