@@ -68,9 +68,13 @@ const startServer = async () => {
         // Seed ENUM types before syncing models
         await seedEnums();
 
-        // Sync database (alter in development, no sync in production)
+        // Sync database
+        // Note: We use sync() without alter to avoid ENUM recreation conflicts
+        // ENUMs are managed separately via seedEnums()
         if (process.env.NODE_ENV === 'development') {
-            await sequelize.sync({ alter: true });
+            // Only create tables if they don't exist, don't alter existing ones
+            // This prevents Sequelize from trying to recreate ENUMs
+            await sequelize.sync({ force: false, alter: false });
             console.log('✅ Database models synchronized');
         }
 
