@@ -28,7 +28,7 @@ const PaymentRequest = sequelize.define('PaymentRequest', {
         field: 'user_name'
     },
     amount: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(15, 0),
         allowNull: false
     },
     planType: {

@@ -52,7 +52,7 @@ const StudentRequest = sequelize.define('StudentRequest', {
         field: 'university_target'
     },
     budgetMax: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(15, 0),
         allowNull: false,
         field: 'budget_max'
     },

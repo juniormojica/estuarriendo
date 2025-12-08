@@ -26,7 +26,7 @@ const SystemConfig = sequelize.define('SystemConfig', {
         comment: 'Commission rate as decimal (e.g., 0.05 for 5%)'
     },
     featuredPropertyPrice: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(15, 0),
         allowNull: false,
         field: 'featured_property_price'
     },
@@ -36,12 +36,12 @@ const SystemConfig = sequelize.define('SystemConfig', {
         field: 'max_images_per_property'
     },
     minPropertyPrice: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(15, 0),
         allowNull: false,
         field: 'min_property_price'
     },
     maxPropertyPrice: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(15, 0),
         allowNull: false,
         field: 'max_property_price'
     },
