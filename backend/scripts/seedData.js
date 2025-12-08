@@ -37,9 +37,6 @@ import {
     StudentRequestStatus
 } from '../src/utils/enums.js';
 
-// Configure Faker to use Spanish locale
-faker.locale = 'es';
-
 /**
  * Clear all data from the database
  */
@@ -345,18 +342,23 @@ const seedPaymentRequests = async (owners) => {
                 PaymentRequestStatus.REJECTED
             ]);
 
+            // Calculate plan duration based on subscription type
+            const planDuration = owner.planType === SubscriptionType.WEEKLY ? 7 :
+                owner.planType === SubscriptionType.MONTHLY ? 30 : 90;
+
             paymentRequests.push({
                 userId: owner.id,
+                userName: owner.name,
                 planType: owner.planType,
+                planDuration: planDuration,
                 amount: owner.planType === SubscriptionType.WEEKLY ? 15000 :
                     owner.planType === SubscriptionType.MONTHLY ? 50000 : 120000,
+                referenceCode: `PAY-${faker.string.alphanumeric(10).toUpperCase()}`,
                 proofImage: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==`,
                 status: status,
-                submittedAt: submittedAt,
-                reviewedAt: status !== PaymentRequestStatus.PENDING ?
-                    faker.date.between({ from: submittedAt, to: new Date() }) : null,
-                rejectionReason: status === PaymentRequestStatus.REJECTED ?
-                    'El comprobante de pago no es legible' : null
+                createdAt: submittedAt,
+                processedAt: status !== PaymentRequestStatus.PENDING ?
+                    faker.date.between({ from: submittedAt, to: new Date() }) : null
             });
         }
     }
@@ -382,24 +384,37 @@ const seedStudentRequests = async (tenants) => {
 
         studentRequests.push({
             studentId: tenant.id,
+            studentName: tenant.name,
+            studentEmail: tenant.email,
+            studentPhone: tenant.phone,
+            studentWhatsapp: tenant.whatsapp,
+            city: 'Bogotá',
+            universityTarget: faker.helpers.arrayElement([
+                'Universidad Nacional',
+                'Universidad de los Andes',
+                'Universidad Javeriana',
+                'Universidad del Rosario',
+                'Universidad Externado'
+            ]),
+            budgetMax: faker.number.int({ min: 500000, max: 1500000 }),
             propertyTypeDesired: faker.helpers.arrayElement([
                 PropertyType.PENSION,
                 PropertyType.HABITACION,
                 PropertyType.APARTAMENTO,
                 PropertyType.APARTA_ESTUDIO
             ]),
-            maxBudget: faker.number.int({ min: 500000, max: 1500000 }),
-            desiredNeighborhoods: faker.helpers.arrayElements([
-                'Chapinero', 'Usaquén', 'Teusaquillo', 'La Candelaria'
-            ], faker.number.int({ min: 1, max: 3 })),
+            requiredAmenities: faker.helpers.arrayElements([
+                'WiFi', 'Cocina Equipada', 'Lavadora', 'Amoblado'
+            ], faker.number.int({ min: 0, max: 3 })),
+            dealBreakers: faker.helpers.arrayElements([
+                'No mascotas', 'Fumadores'
+            ], faker.number.int({ min: 0, max: 2 })),
             moveInDate: faker.date.future({ months: 3 }),
-            additionalRequirements: faker.lorem.sentence(),
-            contactName: tenant.name,
-            contactPhone: tenant.phone,
-            contactEmail: tenant.email,
+            contractDuration: faker.number.int({ min: 6, max: 12 }),
+            additionalNotes: faker.lorem.sentence(),
             status: faker.helpers.arrayElement([StudentRequestStatus.OPEN, StudentRequestStatus.CLOSED]),
             createdAt: createdAt,
-            viewsCount: faker.number.int({ min: 0, max: 100 })
+            updatedAt: createdAt
         });
     }
 
@@ -429,10 +444,12 @@ const seedNotifications = async (users, properties) => {
         notifications.push({
             userId: owner.id,
             type: NotificationType.PROPERTY_INTEREST,
+            title: 'Nuevo interés en tu propiedad',
             message: `${tenant.name} está interesado en tu propiedad "${property.title}"`,
             propertyId: property.id,
+            propertyTitle: property.title,
             interestedUserId: tenant.id,
-            isRead: faker.datatype.boolean(),
+            read: faker.datatype.boolean(),
             createdAt: faker.date.recent({ days: 30 })
         });
     }
@@ -444,9 +461,11 @@ const seedNotifications = async (users, properties) => {
         notifications.push({
             userId: owner.id,
             type: NotificationType.PROPERTY_APPROVED,
+            title: 'Propiedad aprobada',
             message: `Tu propiedad "${property.title}" ha sido aprobada`,
             propertyId: property.id,
-            isRead: faker.datatype.boolean(),
+            propertyTitle: property.title,
+            read: faker.datatype.boolean(),
             createdAt: property.reviewedAt
         });
     }
@@ -458,9 +477,11 @@ const seedNotifications = async (users, properties) => {
         notifications.push({
             userId: owner.id,
             type: NotificationType.PROPERTY_REJECTED,
+            title: 'Propiedad rechazada',
             message: `Tu propiedad "${property.title}" ha sido rechazada`,
             propertyId: property.id,
-            isRead: faker.datatype.boolean(),
+            propertyTitle: property.title,
+            read: faker.datatype.boolean(),
             createdAt: property.reviewedAt
         });
     }
@@ -496,11 +517,9 @@ const seedActivityLogs = async (users, properties) => {
         const property = action.includes('property') ? faker.helpers.arrayElement(properties) : null;
 
         activityLogs.push({
+            type: action,
+            message: faker.lorem.sentence(),
             userId: user.id,
-            action: action,
-            details: faker.lorem.sentence(),
-            ipAddress: faker.internet.ipv4(),
-            userAgent: faker.internet.userAgent(),
             propertyId: property?.id || null,
             timestamp: faker.date.past({ years: 1 })
         });

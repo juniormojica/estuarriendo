@@ -33,18 +33,18 @@ const PaymentRequest = sequelize.define('PaymentRequest', {
     },
     planType: {
         type: DataTypes.ENUM(...getEnumValues(SubscriptionType)),
-        allowNull: false,
+        allowNull: true,
         field: 'plan_type'
     },
     planDuration: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         field: 'plan_duration',
         comment: 'Duration in days'
     },
     referenceCode: {
         type: DataTypes.STRING(100),
-        allowNull: false,
+        allowNull: true,
         field: 'reference_code'
     },
     proofImage: {
