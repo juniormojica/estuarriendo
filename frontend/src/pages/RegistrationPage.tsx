@@ -34,12 +34,12 @@ const RegistrationPage = () => {
         }
     });
 
-    // Clear error when inputs change
+    // Clear error when component unmounts
     useEffect(() => {
-        if (error) {
+        return () => {
             dispatch(clearError());
-        }
-    }, [formData, dispatch, error]);
+        };
+    }, [dispatch]);
 
     // Redirect after successful registration
     useEffect(() => {

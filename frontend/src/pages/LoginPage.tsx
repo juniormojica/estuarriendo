@@ -12,18 +12,12 @@ const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    // Clear error when component unmounts or when inputs change
+    // Clear error when component unmounts
     useEffect(() => {
         return () => {
             dispatch(clearError());
         };
     }, [dispatch]);
-
-    useEffect(() => {
-        if (error) {
-            dispatch(clearError());
-        }
-    }, [email, password, dispatch, error]);
 
     // Redirect if already logged in
     useEffect(() => {
