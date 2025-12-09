@@ -34,6 +34,11 @@ const User = sequelize.define('User', {
             isEmail: true
         }
     },
+    password: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        comment: 'Hashed password for authentication'
+    },
     phone: {
         type: DataTypes.STRING(50),
         allowNull: false
@@ -188,7 +193,15 @@ const User = sequelize.define('User', {
 }, {
     tableName: 'users',
     underscored: true,
-    timestamps: false // We're managing timestamps manually
+    timestamps: false, // We're managing timestamps manually
+    defaultScope: {
+        attributes: { exclude: ['password'] }
+    },
+    scopes: {
+        withPassword: {
+            attributes: { include: ['password'] }
+        }
+    }
 });
 
 export default User;

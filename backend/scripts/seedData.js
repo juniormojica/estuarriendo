@@ -36,6 +36,7 @@ import {
     NotificationType,
     StudentRequestStatus
 } from '../src/utils/enums.js';
+import { hashPassword } from '../src/utils/passwordUtils.js';
 
 /**
  * Clear all data from the database
@@ -64,11 +65,15 @@ const seedUsers = async () => {
 
     const users = [];
 
+    // Default password for all test users
+    const defaultPassword = await hashPassword('password123');
+
     // Create 1 Super Admin
     users.push({
         id: 'superadmin-001',
         name: 'Super Administrador',
         email: 'superadmin@estuarriendo.com',
+        password: defaultPassword,
         phone: '+57 300 123 4567',
         whatsapp: '+57 300 123 4567',
         userType: UserType.SUPER_ADMIN,
@@ -85,6 +90,7 @@ const seedUsers = async () => {
             id: `admin-00${i}`,
             name: faker.person.fullName(),
             email: `admin${i}@estuarriendo.com`,
+            password: defaultPassword,
             phone: faker.phone.number('+57 3## ### ####'),
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.ADMIN,
@@ -106,6 +112,7 @@ const seedUsers = async () => {
             id: `owner-${String(i).padStart(3, '0')}`,
             name: isAgency ? faker.company.name() : faker.person.fullName(),
             email: `owner${i}@example.com`,
+            password: defaultPassword,
             phone: faker.phone.number('+57 3## ### ####'),
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.OWNER,
@@ -152,6 +159,7 @@ const seedUsers = async () => {
             id: `tenant-${String(i).padStart(3, '0')}`,
             name: faker.person.fullName(),
             email: `student${i}@example.com`,
+            password: defaultPassword,
             phone: faker.phone.number('+57 3## ### ####'),
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.TENANT,
@@ -165,6 +173,7 @@ const seedUsers = async () => {
 
     await User.bulkCreate(users);
     console.log(`  ✅ Created ${users.length} users`);
+    console.log(`  🔑 Default password for all users: password123`);
 
     return users;
 };

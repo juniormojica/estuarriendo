@@ -7,6 +7,7 @@ import { sequelize, testConnection } from './config/database.js';
 import { seedEnums } from './config/seedEnums.js';
 
 // Import all routes
+import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import verificationRoutes from './routes/verificationRoutes.js';
 import amenityRoutes from './routes/amenityRoutes.js';
@@ -36,6 +37,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/verification', verificationRoutes);
 app.use('/api/amenities', amenityRoutes);
@@ -84,6 +86,7 @@ const startServer = async () => {
             console.log(`🗄️  Database: ${process.env.DB_NAME}`);
             console.log(`\n📋 Available routes:`);
             console.log(`   - GET  /api/health`);
+            console.log(`   - *    /api/auth`);
             console.log(`   - *    /api/users`);
             console.log(`   - *    /api/verification`);
             console.log(`   - *    /api/amenities`);

@@ -1,22 +1,34 @@
+import { verifyToken } from '../utils/jwtUtils.js';
+
 /**
- * Example Authentication Middleware
- * Placeholder for JWT authentication
+ * Authentication Middleware
+ * Verifies JWT token and attaches user ID to request
  */
-
 const authMiddleware = (req, res, next) => {
-    // TODO: Implement JWT verification
-    const token = req.headers.authorization?.split(' ')[1];
+    try {
+        // Extract token from Authorization header
+        const authHeader = req.headers.authorization;
 
-    if (!token) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                error: 'No token provided. Authorization header must be in format: Bearer <token>'
+            });
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        // Verify token
+        const decoded = verifyToken(token);
+
+        // Attach user ID to request
+        req.userId = decoded.userId;
+
+        next();
+    } catch (error) {
         return res.status(401).json({
-            success: false,
-            error: 'No token provided'
+            error: error.message || 'Invalid or expired token'
         });
     }
-
-    // Verify token here
-    // For now, just pass through
-    next();
 };
 
 export default authMiddleware;

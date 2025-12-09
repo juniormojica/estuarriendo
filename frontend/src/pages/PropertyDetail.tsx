@@ -16,6 +16,8 @@ import RelatedProperties from '../components/RelatedProperties';
 import { iconMap } from '../lib/icons';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 
+const mapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 const containerStyle = {
   width: '100%',
   height: '100%'
@@ -36,7 +38,7 @@ const PropertyDetail: React.FC = () => {
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: "AIzaSyBK9lXY8QpKhA5nTFhc8q-ieL6LTxDTkjk"
+    googleMapsApiKey: mapsApiKey
   });
 
   useEffect(() => {
