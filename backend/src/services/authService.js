@@ -2,6 +2,12 @@ import { randomUUID } from 'crypto';
 import User from '../models/User.js';
 import { hashPassword, comparePassword } from '../utils/passwordUtils.js';
 import { generateToken } from '../utils/jwtUtils.js';
+import {
+    generateResetToken,
+    hashToken,
+    generateTokenExpiration,
+    isTokenExpired
+} from '../utils/tokenUtils.js';
 
 /**
  * Authentication Service
@@ -111,8 +117,133 @@ export const getUserById = async (userId) => {
     return user;
 };
 
+/**
+ * Request password reset
+ * @param {string} email - User email
+ * @returns {Promise<Object>} Reset token (in production, send via email)
+ */
+export const requestPasswordReset = async (email) => {
+    // Find user by email
+    const user = await User.findOne({ where: { email } });
+
+    // Don't reveal if user exists (security best practice)
+    if (!user) {
+        // Return success message anyway to prevent email enumeration
+        return {
+            message: 'Si el email existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña',
+            token: null // In production, don't return token
+        };
+    }
+
+    // Generate reset token
+    const { rawToken, hashedToken } = generateResetToken();
+    const expirationTime = generateTokenExpiration();
+
+    // Save hashed token and expiration to database
+    await user.update({
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: expirationTime
+    });
+
+    // In production, send rawToken via email
+    // For development/testing, we return it
+    return {
+        message: 'Si el email existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña',
+        token: rawToken, // Remove this in production
+        email: user.email // Remove this in production
+    };
+};
+
+/**
+ * Verify reset token
+ * @param {string} token - Reset token
+ * @returns {Promise<Object>} Token validity and user info
+ */
+export const verifyResetToken = async (token) => {
+    // Hash the provided token
+    const hashedToken = hashToken(token);
+
+    // Find user with this token
+    const user = await User.findOne({
+        where: {
+            resetPasswordToken: hashedToken
+        }
+    });
+
+    if (!user) {
+        const error = new Error('Token inválido o expirado');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // Check if token has expired
+    if (isTokenExpired(user.resetPasswordExpires)) {
+        const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // Return masked email for security
+    const emailParts = user.email.split('@');
+    const maskedEmail = emailParts[0].substring(0, 2) + '***@' + emailParts[1];
+
+    return {
+        valid: true,
+        email: maskedEmail,
+        userId: user.id
+    };
+};
+
+/**
+ * Reset password with token
+ * @param {string} token - Reset token
+ * @param {string} newPassword - New password
+ * @returns {Promise<Object>} Success message
+ */
+export const resetPassword = async (token, newPassword) => {
+    // Hash the provided token
+    const hashedToken = hashToken(token);
+
+    // Find user with this token
+    const user = await User.scope('withPassword').findOne({
+        where: {
+            resetPasswordToken: hashedToken
+        }
+    });
+
+    if (!user) {
+        const error = new Error('Token inválido o expirado');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // Check if token has expired
+    if (isTokenExpired(user.resetPasswordExpires)) {
+        const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password and clear reset token fields
+    await user.update({
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
+    });
+
+    return {
+        message: 'Contraseña actualizada exitosamente'
+    };
+};
+
 export default {
     register,
     login,
-    getUserById
+    getUserById,
+    requestPasswordReset,
+    verifyResetToken,
+    resetPassword
 };

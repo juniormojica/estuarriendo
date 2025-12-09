@@ -88,8 +88,83 @@ export const getCurrentUser = async (req, res) => {
     }
 };
 
+/**
+ * Request password reset
+ * POST /api/auth/forgot-password
+ */
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Validate email
+        if (!email) {
+            return res.status(400).json({
+                error: 'Email es requerido'
+            });
+        }
+
+        const result = await authService.requestPasswordReset(email);
+        res.json(result);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+/**
+ * Verify reset token
+ * GET /api/auth/reset-password/:token
+ */
+export const verifyResetToken = async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        if (!token) {
+            return res.status(400).json({
+                error: 'Token es requerido'
+            });
+        }
+
+        const result = await authService.verifyResetToken(token);
+        res.json(result);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+/**
+ * Reset password
+ * POST /api/auth/reset-password
+ */
+export const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        // Validate required fields
+        if (!token || !newPassword) {
+            return res.status(400).json({
+                error: 'Token y nueva contraseña son requeridos'
+            });
+        }
+
+        // Validate password length
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                error: 'La contraseña debe tener al menos 6 caracteres'
+            });
+        }
+
+        const result = await authService.resetPassword(token, newPassword);
+        res.json(result);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
 export default {
     register,
     login,
-    getCurrentUser
+    getCurrentUser,
+    forgotPassword,
+    verifyResetToken,
+    resetPassword
 };
