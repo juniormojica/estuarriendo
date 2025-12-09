@@ -33,13 +33,16 @@ apiClient.interceptors.response.use(
     (error) => {
         // Handle 401 Unauthorized (token expired or invalid)
         if (error.response?.status === 401) {
-            // Clear token and redirect to login
+            // Clear token
             localStorage.removeItem('estuarriendo_token');
             localStorage.removeItem('estuarriendo_current_user');
 
-            // Only redirect if not already on login/register pages
+            // Only redirect if on a protected page
             const currentPath = window.location.pathname;
-            if (!currentPath.includes('/login') && !currentPath.includes('/registro')) {
+            const publicPaths = ['/', '/login', '/registro', '/forgot-password', '/reset-password', '/planes', '/favoritos'];
+            const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith('/propiedad/'));
+
+            if (!isPublicPath) {
                 window.location.href = '/login';
             }
         }

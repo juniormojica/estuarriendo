@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { authService } from '../services/authService';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { logout } from '../store/slices/authSlice';
 import { api } from '../services/api';
 import NotificationBell from './NotificationBell';
 
 const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = authService.getCurrentUser();
+  const dispatch = useAppDispatch();
+  const { user: currentUser } = useAppSelector((state) => state.auth);
   const [newOpportunitiesCount, setNewOpportunitiesCount] = useState(0);
 
   useEffect(() => {
@@ -35,9 +37,8 @@ const Header: React.FC = () => {
   }, [currentUser]);
 
   const handleLogout = () => {
-    authService.logout();
+    dispatch(logout());
     navigate('/');
-    window.location.reload();
   };
 
   return (
