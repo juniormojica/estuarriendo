@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserRegistrationPayload } from '../types';
 import { CheckCircle, Eye, EyeOff, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
-import { authService } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 
 const RegistrationPage = () => {
     const navigate = useNavigate();
+    const { register } = useAuth();
     const [userType, setUserType] = useState<'owner' | 'tenant'>('owner');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState<Partial<UserRegistrationPayload>>({
         userType: 'owner',
@@ -67,33 +69,38 @@ const RegistrationPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (validateForm()) {
-            // Prepare user data
-            const userData: UserRegistrationPayload = {
-                ...formData,
-                userType: userType,
-                password: formData.password!,
-                confirmPassword: formData.confirmPassword!,
+
+        if (!validateForm()) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            // Prepare registration data for backend
+            const registrationData = {
                 name: formData.name!,
                 email: formData.email!,
+                password: formData.password!,
                 phone: formData.phone!,
+                userType: userType,
                 whatsapp: formData.phone // Use phone as whatsapp by default
             };
 
-            // Register user via authService
-            const response = await authService.register(userData);
+            // Register user via AuthContext
+            const response = await register(registrationData);
 
-            if (response.success) {
-                // Redirect based on user type
-                if (userType === 'owner') {
-                    navigate('/publicar');
-                } else {
-                    navigate('/'); // Tenants go to home to search
-                }
+            // Redirect based on user type
+            if (response.user.userType === 'owner') {
+                navigate('/dashboard');
             } else {
-                // Show error message from service
-                setError(response.message || 'Error al registrar usuario.');
+                navigate('/'); // Tenants go to home to search
             }
+        } catch (err: any) {
+            setError(err.message || 'Error al registrar usuario.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -276,9 +283,10 @@ const RegistrationPage = () => {
                         <div className="flex justify-end pt-4">
                             <button
                                 type="submit"
-                                className="flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                disabled={loading}
+                                className="flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Registrarse
+                                {loading ? 'Registrando...' : 'Registrarse'}
                                 <CheckCircle className="ml-2 h-5 w-5" />
                             </button>
                         </div>
