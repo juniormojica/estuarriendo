@@ -1,209 +1,145 @@
-import { User, UserRegistrationPayload } from '../types';
+import apiClient from '../lib/axios';
+import { User } from '../types';
 
-// Storage keys
-const USERS_KEY = 'estuarriendo_users';
-const PASSWORDS_KEY = 'estuarriendo_passwords'; // Separate storage for passwords
-const CURRENT_USER_KEY = 'estuarriendo_current_user';
-
-// Response types (mimicking backend API responses)
-interface AuthResponse {
-    success: boolean;
-    user?: User;
-    message?: string;
+export interface LoginCredentials {
+    email: string;
+    password: string;
 }
 
-// Mock delay to simulate API call
-const mockDelay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, ms));
+export interface RegisterData {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+    userType: 'owner' | 'tenant';
+    whatsapp?: string;
+}
 
-class AuthService {
-    // Get all registered users from storage
-    private getUsers(): User[] {
-        const usersJson = localStorage.getItem(USERS_KEY);
-        return usersJson ? JSON.parse(usersJson) : [];
-    }
+export interface AuthResponse {
+    user: User;
+    token: string;
+}
 
-    // Save users array to storage
-    private saveUsers(users: User[]): void {
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    }
+export interface ForgotPasswordResponse {
+    message: string;
+    token?: string; // Only in development
+    email?: string; // Only in development
+}
 
-    // Get passwords map (userId -> password)
-    private getPasswords(): Record<string, string> {
-        const passwordsJson = localStorage.getItem(PASSWORDS_KEY);
-        return passwordsJson ? JSON.parse(passwordsJson) : {};
-    }
+export interface ResetPasswordData {
+    token: string;
+    newPassword: string;
+}
 
-    // Save passwords map
-    private savePasswords(passwords: Record<string, string>): void {
-        localStorage.setItem(PASSWORDS_KEY, JSON.stringify(passwords));
-    }
+/**
+ * Authentication Service
+ * Handles all authentication-related API calls to the backend
+ */
+export const authService = {
+    /**
+     * Register a new user
+     */
+    async register(data: RegisterData): Promise<AuthResponse> {
+        const response = await apiClient.post<AuthResponse>('/auth/register', data);
 
-    // Register a new user
-    async register(userData: UserRegistrationPayload | Partial<User>): Promise<AuthResponse> {
-        await mockDelay();
-
-        try {
-            const users = this.getUsers();
-
-            // Check if email already exists
-            const existingUser = users.find(u => u.email === userData.email);
-            if (existingUser) {
-                return {
-                    success: false,
-                    message: 'Este correo electrónico ya está registrado.'
-                };
-            }
-
-            // Create new user from registration payload
-            const newUser: User = {
-                id: crypto.randomUUID(),
-                name: userData.name!,
-                email: userData.email!,
-                phone: userData.phone!,
-                whatsapp: userData.whatsapp || userData.phone!,
-                userType: (userData as UserRegistrationPayload).userType || 'tenant',
-                idType: userData.idType,
-                idNumber: userData.idNumber,
-                role: userData.role,
-                isActive: true,
-                joinedAt: new Date().toISOString(),
-                verificationStatus: 'not_submitted',
-                propertiesCount: 0,
-                approvedCount: 0,
-                pendingCount: 0,
-                rejectedCount: 0,
-                isVerified: false,
-                paymentPreference: userData.paymentPreference,
-                bankDetails: userData.bankDetails,
-                billingDetails: userData.billingDetails
-            };
-
-            // Add to users array
-            users.push(newUser);
-            this.saveUsers(users);
-
-            // Store password separately (if provided in registration payload)
-            if ('password' in userData && userData.password) {
-                const passwords = this.getPasswords();
-                passwords[newUser.id] = userData.password;
-                this.savePasswords(passwords);
-            }
-
-            // Set as current user (auto-login after registration)
-            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-
-            return {
-                success: true,
-                user: newUser,
-                message: 'Registro exitoso.'
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: 'Error al registrar usuario.'
-            };
+        // Save token and user to localStorage
+        if (response.data.token) {
+            localStorage.setItem('estuarriendo_token', response.data.token);
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(response.data.user));
         }
-    }
 
-    // Login with email and password
-    async login(email: string, password: string): Promise<AuthResponse> {
-        await mockDelay();
+        return response.data;
+    },
 
-        try {
-            const users = this.getUsers();
+    /**
+     * Login user
+     */
+    async login(credentials: LoginCredentials): Promise<AuthResponse> {
+        const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
 
-            // Find user by email
-            const user = users.find(u => u.email === email);
-
-            if (!user) {
-                return {
-                    success: false,
-                    message: 'Correo electrónico no encontrado.'
-                };
-            }
-
-            // Validate password
-            const passwords = this.getPasswords();
-            const storedPassword = passwords[user.id];
-
-            if (!storedPassword || storedPassword !== password) {
-                return {
-                    success: false,
-                    message: 'Contraseña incorrecta.'
-                };
-            }
-
-            // Set as current user
-            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-
-            return {
-                success: true,
-                user: user,
-                message: 'Inicio de sesión exitoso.'
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: 'Error al iniciar sesión.'
-            };
+        // Save token and user to localStorage
+        if (response.data.token) {
+            localStorage.setItem('estuarriendo_token', response.data.token);
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(response.data.user));
         }
-    }
 
-    // Logout current user
+        return response.data;
+    },
+
+    /**
+     * Get current authenticated user
+     */
+    async getCurrentUser(): Promise<User> {
+        const response = await apiClient.get<User>('/auth/me');
+
+        // Update user in localStorage
+        localStorage.setItem('estuarriendo_current_user', JSON.stringify(response.data));
+
+        return response.data;
+    },
+
+    /**
+     * Logout user
+     */
     logout(): void {
-        localStorage.removeItem(CURRENT_USER_KEY);
-    }
+        localStorage.removeItem('estuarriendo_token');
+        localStorage.removeItem('estuarriendo_current_user');
+    },
 
-    // Get current logged-in user
-    getCurrentUser(): User | null {
-        const userJson = localStorage.getItem(CURRENT_USER_KEY);
-        return userJson ? JSON.parse(userJson) : null;
-    }
+    /**
+     * Request password reset
+     */
+    async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+        const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', { email });
+        return response.data;
+    },
 
-    // Check if user is authenticated
+    /**
+     * Verify reset token
+     */
+    async verifyResetToken(token: string): Promise<{ valid: boolean; email: string }> {
+        const response = await apiClient.get(`/auth/reset-password/${token}`);
+        return response.data;
+    },
+
+    /**
+     * Reset password with token
+     */
+    async resetPassword(data: ResetPasswordData): Promise<{ message: string }> {
+        const response = await apiClient.post('/auth/reset-password', data);
+        return response.data;
+    },
+
+    /**
+     * Check if user is authenticated
+     */
     isAuthenticated(): boolean {
-        return this.getCurrentUser() !== null;
-    }
+        const token = localStorage.getItem('estuarriendo_token');
+        return !!token;
+    },
 
-    // Update current user data (for future use)
-    async updateUser(userId: string, updates: Partial<User>): Promise<AuthResponse> {
-        await mockDelay();
+    /**
+     * Get stored token
+     */
+    getToken(): string | null {
+        return localStorage.getItem('estuarriendo_token');
+    },
 
-        try {
-            const users = this.getUsers();
-            const userIndex = users.findIndex(u => u.id === userId);
-
-            if (userIndex === -1) {
-                return {
-                    success: false,
-                    message: 'Usuario no encontrado.'
-                };
+    /**
+     * Get stored user
+     */
+    getStoredUser(): User | null {
+        const stored = localStorage.getItem('estuarriendo_current_user');
+        if (stored) {
+            try {
+                return JSON.parse(stored);
+            } catch (e) {
+                console.error('Error parsing stored user:', e);
+                return null;
             }
-
-            // Update user in array
-            users[userIndex] = { ...users[userIndex], ...updates };
-            this.saveUsers(users);
-
-            // Update current user if it's the same user
-            const currentUser = this.getCurrentUser();
-            if (currentUser && currentUser.id === userId) {
-                localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(users[userIndex]));
-            }
-
-            return {
-                success: true,
-                user: users[userIndex],
-                message: 'Usuario actualizado exitosamente.'
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: 'Error al actualizar usuario.'
-            };
         }
+        return null;
     }
-}
+};
 
-// Export singleton instance
-export const authService = new AuthService();
-export type { AuthResponse };
+export default authService;

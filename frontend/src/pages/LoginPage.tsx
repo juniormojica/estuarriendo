@@ -1,42 +1,36 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, AlertCircle } from 'lucide-react';
-import { authService } from '../services/authService';
-import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
 
-        // Login via authService
-        const response = await authService.login(email, password);
+        try {
+            const response = await login({ email, password });
 
-        if (response.success && response.user) {
             // Redirect based on user type
             if (response.user.userType === 'owner') {
-                try {
-                    const userProperties = await api.getUserProperties(response.user.id);
-                    if (userProperties.length > 0) {
-                        navigate('/mis-propiedades');
-                    } else {
-                        navigate('/publicar');
-                    }
-                } catch (error) {
-                    // Fallback to default behavior on error
-                    console.error('Error checking properties:', error);
-                    navigate('/publicar');
-                }
+                navigate('/dashboard');
+            } else if (response.user.userType === 'admin' || response.user.userType === 'superAdmin') {
+                navigate('/admin');
             } else {
                 navigate('/'); // Tenants go to home
             }
-        } else {
-            setError(response.message || 'Error al iniciar sesión.');
+        } catch (err: any) {
+            setError(err.message || 'Error al iniciar sesión');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -108,9 +102,10 @@ const LoginPage = () => {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                disabled={loading}
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Iniciar Sesión
+                                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                             </button>
                         </div>
                     </form>
