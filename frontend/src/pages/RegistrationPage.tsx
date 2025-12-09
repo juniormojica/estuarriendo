@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserRegistrationPayload } from '../types';
 import { CheckCircle, Eye, EyeOff, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { registerUser, clearError } from '../store/slices/authSlice';
 
 const RegistrationPage = () => {
     const navigate = useNavigate();
-    const { register } = useAuth();
+    const dispatch = useAppDispatch();
+    const { user, loading, error } = useAppSelector((state) => state.auth);
+
     const [userType, setUserType] = useState<'owner' | 'tenant'>('owner');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState<Partial<UserRegistrationPayload>>({
         userType: 'owner',
@@ -33,75 +34,75 @@ const RegistrationPage = () => {
         }
     });
 
+    // Clear error when inputs change
+    useEffect(() => {
+        if (error) {
+            dispatch(clearError());
+        }
+    }, [formData, dispatch, error]);
+
+    // Redirect after successful registration
+    useEffect(() => {
+        if (user) {
+            if (user.userType === 'owner') {
+                navigate('/dashboard');
+            } else {
+                navigate('/');
+            }
+        }
+    }, [user, navigate]);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        if (error) setError('');
     };
 
-    const validateForm = () => {
+    const validateForm = (): string | null => {
         // Common validation
         if (!formData.name || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
-            setError('Por favor completa todos los campos obligatorios.');
-            return false;
+            return 'Por favor completa todos los campos obligatorios.';
         }
 
         // Owner specific validation
         if (userType === 'owner') {
             if (!formData.idNumber) {
-                setError('Por favor ingresa tu número de documento.');
-                return false;
+                return 'Por favor ingresa tu número de documento.';
             }
         }
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Las contraseñas no coinciden.');
-            return false;
+            return 'Las contraseñas no coinciden.';
         }
 
         if (formData.password.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres.');
-            return false;
+            return 'La contraseña debe tener al menos 6 caracteres.';
         }
 
-        return true;
+        return null;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateForm()) {
+        const validationError = validateForm();
+        if (validationError) {
+            // Validation errors will be shown via Redux error state if needed
+            // For now, just return without submitting
             return;
         }
 
-        setLoading(true);
-        setError('');
+        // Prepare registration data for backend
+        const registrationData = {
+            name: formData.name!,
+            email: formData.email!,
+            password: formData.password!,
+            phone: formData.phone!,
+            userType: userType,
+            whatsapp: formData.phone // Use phone as whatsapp by default
+        };
 
-        try {
-            // Prepare registration data for backend
-            const registrationData = {
-                name: formData.name!,
-                email: formData.email!,
-                password: formData.password!,
-                phone: formData.phone!,
-                userType: userType,
-                whatsapp: formData.phone // Use phone as whatsapp by default
-            };
-
-            // Register user via AuthContext
-            const response = await register(registrationData);
-
-            // Redirect based on user type
-            if (response.user.userType === 'owner') {
-                navigate('/dashboard');
-            } else {
-                navigate('/'); // Tenants go to home to search
-            }
-        } catch (err: any) {
-            setError(err.message || 'Error al registrar usuario.');
-        } finally {
-            setLoading(false);
-        }
+        // Register user via Redux
+        await dispatch(registerUser(registrationData));
     };
 
     return (

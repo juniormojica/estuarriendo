@@ -1,37 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, AlertCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { loginUser, clearError } from '../store/slices/authSlice';
 
 const LoginPage = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const dispatch = useAppDispatch();
+    const { user, loading, error } = useAppSelector((state) => state.auth);
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
+    // Clear error when component unmounts or when inputs change
+    useEffect(() => {
+        return () => {
+            dispatch(clearError());
+        };
+    }, [dispatch]);
 
-        try {
-            const response = await login({ email, password });
+    useEffect(() => {
+        if (error) {
+            dispatch(clearError());
+        }
+    }, [email, password, dispatch, error]);
 
-            // Redirect based on user type
-            if (response.user.userType === 'owner') {
+    // Redirect if already logged in
+    useEffect(() => {
+        if (user) {
+            if (user.userType === 'owner') {
                 navigate('/dashboard');
-            } else if (response.user.userType === 'admin' || response.user.userType === 'superAdmin') {
+            } else if (user.userType === 'admin' || user.userType === 'superAdmin') {
                 navigate('/admin');
             } else {
-                navigate('/'); // Tenants go to home
+                navigate('/');
             }
-        } catch (err: any) {
-            setError(err.message || 'Error al iniciar sesión');
-        } finally {
-            setLoading(false);
         }
+    }, [user, navigate]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await dispatch(loginUser({ email, password }));
     };
 
     return (
@@ -55,7 +64,7 @@ const LoginPage = () => {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                    <form className="space-y-6" onSubmit={handleLogin}>
+                    <form className="space-y-6" onSubmit={handleSubmit}>
                         {error && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700 text-sm">
                                 <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
@@ -96,6 +105,14 @@ const LoginPage = () => {
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div className="text-sm">
+                                <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
                             </div>
                         </div>
 

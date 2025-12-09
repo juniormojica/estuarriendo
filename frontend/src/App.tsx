@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -17,13 +19,12 @@ import StudentRequestPage from './pages/StudentRequestPage';
 import OpportunitiesPage from './pages/OpportunitiesPage';
 import PlansPage from './pages/PlansPage';
 import { FavoritesProvider } from './context/FavoritesContext';
-import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
-    <AuthProvider>
+    <Provider store={store}>
       <FavoritesProvider>
         <Router>
           <ScrollToTop />
@@ -110,7 +111,7 @@ function App() {
           </div>
         </Router>
       </FavoritesProvider>
-    </AuthProvider>
+    </Provider>
   );
 }
 

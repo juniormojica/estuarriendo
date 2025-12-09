@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { User, PaymentRequest } from '../types';
-import { useAuth } from '../context/AuthContext';
+import { useAppSelector } from '../store/hooks';
 import { api } from '../services/api';
 import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock, ShieldCheck, XCircle } from 'lucide-react';
 import PaymentUploadForm from '../components/PaymentUploadForm';
@@ -9,7 +9,7 @@ import PlanComparisonCards from '../components/PlanComparisonCards';
 import VerificationForm from '../components/VerificationForm';
 
 const UserProfile: React.FC = () => {
-    const { user: authUser, loading: authLoading } = useAuth();
+    const { user: authUser, loading: authLoading } = useAppSelector((state) => state.auth);
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
