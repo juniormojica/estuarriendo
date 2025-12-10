@@ -80,6 +80,19 @@ const Header: React.FC = () => {
 
             {currentUser && (
               <>
+                {/* Admin Panel Link - Only for admin and superAdmin */}
+                {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
+                  <Link
+                    to="/admin"
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/admin'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      }`}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+
                 {currentUser.userType === 'tenant' && (
                   <Link
                     to="/busco-inmueble"
