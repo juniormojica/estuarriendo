@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle, Users, CheckSquare, Square, Eye } from 'lucide-react';
 import { Property } from '../types';
-import { api } from '../services/api';
 import { authService } from '../services/authService';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchUserProperties, deleteProperty, toggleRented } from '../store/slices/propertiesSlice';
 import LoadingSpinner from '../components/LoadingSpinner';
 import InterestedUsersModal from '../components/InterestedUsersModal';
 
 const OwnerDashboard: React.FC = () => {
-    const [properties, setProperties] = useState<Property[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const dispatch = useAppDispatch();
+    const { items: properties, loading, error: reduxError } = useAppSelector((state) => state.properties);
+
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
     // State for Interested Users Modal
@@ -19,53 +20,33 @@ const OwnerDashboard: React.FC = () => {
     const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
 
     useEffect(() => {
-        const fetchProperties = async () => {
-            try {
-                const user = authService.getCurrentUser();
-                if (!user) {
-                    window.location.href = '/login';
-                    return;
-                }
+        const user = authService.getCurrentUser();
+        if (!user) {
+            window.location.href = '/login';
+            return;
+        }
 
-                const userProperties = await api.getUserProperties(user.id);
-                setProperties(userProperties);
-            } catch (err) {
-                setError('Error al cargar tus propiedades.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProperties();
-    }, []);
+        // Fetch user's properties
+        dispatch(fetchUserProperties(user.id));
+    }, [dispatch]);
 
     const handleDelete = async (id: string) => {
         try {
-            const success = await api.deleteProperty(id);
-            if (success) {
-                setProperties(properties.filter(p => p.id !== id));
+            const resultAction = await dispatch(deleteProperty(id));
+
+            if (deleteProperty.fulfilled.match(resultAction)) {
                 setDeleteId(null);
-            } else {
-                setError('No se pudo eliminar la propiedad.');
             }
         } catch (err) {
-            setError('Error al eliminar la propiedad.');
+            console.error('Error deleting property:', err);
         }
     };
 
     const handleToggleRented = async (id: string) => {
         try {
-            const success = await api.togglePropertyRentalStatus(id);
-            if (success) {
-                // Update local state
-                setProperties(properties.map(p =>
-                    p.id === id ? { ...p, is_rented: !p.is_rented } : p
-                ));
-            } else {
-                setError('No se pudo actualizar el estado de renta.');
-            }
+            await dispatch(toggleRented(id));
         } catch (err) {
-            setError('Error al actualizar el estado de renta.');
+            console.error('Error toggling rented status:', err);
         }
     };
 
@@ -136,10 +117,10 @@ const OwnerDashboard: React.FC = () => {
                     </Link>
                 </div>
 
-                {error && (
+                {reduxError && (
                     <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4 flex items-center">
                         <AlertCircle className="h-5 w-5 text-red-400 mr-3" />
-                        <span className="text-red-700">{error}</span>
+                        <span className="text-red-700">{reduxError}</span>
                     </div>
                 )}
 

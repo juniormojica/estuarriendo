@@ -68,6 +68,22 @@ export const fetchPropertyById = createAsyncThunk(
 );
 
 /**
+ * Fetch properties by user/owner ID
+ * GET /api/properties/user/:userId
+ */
+export const fetchUserProperties = createAsyncThunk(
+    'properties/fetchUserProperties',
+    async (userId: string, { rejectWithValue }) => {
+        try {
+            const response = await axios.get(`/properties/user/${userId}`);
+            return response.data.data as Property[];
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch user properties');
+        }
+    }
+);
+
+/**
  * Create a new property
  * POST /api/properties
  */
@@ -227,6 +243,21 @@ const propertiesSlice = createSlice({
                 state.currentProperty = action.payload;
             })
             .addCase(fetchPropertyById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
+
+        // Fetch User Properties
+        builder
+            .addCase(fetchUserProperties.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchUserProperties.fulfilled, (state, action) => {
+                state.loading = false;
+                state.items = action.payload;
+            })
+            .addCase(fetchUserProperties.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });
