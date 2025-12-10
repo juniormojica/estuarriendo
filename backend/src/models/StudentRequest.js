@@ -1,10 +1,11 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
-import { PropertyType, StudentRequestStatus, getEnumValues } from '../utils/enums.js';
+import { StudentRequestStatus, getEnumValues } from '../utils/enums.js';
 
 /**
- * StudentRequest Model
+ * StudentRequest Model (Normalized)
  * Student housing requests for bidirectional marketplace
+ * Contact information fetched from User table via JOIN
  */
 const StudentRequest = sequelize.define('StudentRequest', {
     id: {
@@ -14,33 +15,13 @@ const StudentRequest = sequelize.define('StudentRequest', {
     },
     studentId: {
         type: DataTypes.STRING(255),
-        allowNull: true,
+        allowNull: false,  // Changed from true - student must be a registered user
         field: 'student_id',
         references: {
             model: 'users',
             key: 'id'
         },
-        onDelete: 'SET NULL'
-    },
-    studentName: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-        field: 'student_name'
-    },
-    studentEmail: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-        field: 'student_email'
-    },
-    studentPhone: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-        field: 'student_phone'
-    },
-    studentWhatsapp: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-        field: 'student_whatsapp'
+        onDelete: 'CASCADE'  // Changed from SET NULL - delete request if user deleted
     },
     city: {
         type: DataTypes.STRING(100),
@@ -57,9 +38,10 @@ const StudentRequest = sequelize.define('StudentRequest', {
         field: 'budget_max'
     },
     propertyTypeDesired: {
-        type: DataTypes.ENUM(...getEnumValues(PropertyType)),
+        type: DataTypes.STRING(50),
         allowNull: false,
-        field: 'property_type_desired'
+        field: 'property_type_desired',
+        comment: 'Desired property type: pension, habitacion, apartamento, aparta-estudio'
     },
     requiredAmenities: {
         type: DataTypes.ARRAY(DataTypes.TEXT),

@@ -571,10 +571,6 @@ const seedStudentRequests = async (tenants) => {
 
         studentRequests.push({
             studentId: tenant.id,
-            studentName: tenant.name,
-            studentEmail: tenant.email,
-            studentPhone: tenant.phone,
-            studentWhatsapp: tenant.whatsapp,
             city: 'Bogotá',
             universityTarget: faker.helpers.arrayElement([
                 'Universidad Nacional',

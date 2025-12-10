@@ -202,6 +202,17 @@ Amenity.belongsToMany(Property, {
     as: 'properties'
 });
 
+// StudentRequest <-> User (Many-to-One)
+StudentRequest.belongsTo(User, {
+    foreignKey: 'studentId',
+    as: 'student'
+});
+User.hasMany(StudentRequest, {
+    foreignKey: 'studentId',
+    as: 'studentRequests',
+    onDelete: 'CASCADE'
+});
+
 // User <-> PaymentRequest (One-to-Many)
 User.hasMany(PaymentRequest, {
     foreignKey: 'userId',
@@ -211,17 +222,6 @@ User.hasMany(PaymentRequest, {
 PaymentRequest.belongsTo(User, {
     foreignKey: 'userId',
     as: 'user'
-});
-
-// User <-> StudentRequest (One-to-Many, nullable)
-User.hasMany(StudentRequest, {
-    foreignKey: 'studentId',
-    as: 'studentRequests',
-    onDelete: 'SET NULL'
-});
-StudentRequest.belongsTo(User, {
-    foreignKey: 'studentId',
-    as: 'student'
 });
 
 // User <-> Notification (One-to-Many)
