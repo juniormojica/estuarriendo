@@ -10,6 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ImageUploader from '../components/ImageUploader';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import { departments, getCitiesByDepartment } from '../data/colombiaLocations';
+import { transformPropertyForBackend, transformPropertyFromBackend } from '../utils/propertyTransform';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
@@ -35,7 +36,7 @@ const PropertySubmission: React.FC = () => {
     title: '',
     description: '',
     type: 'apartamento',
-    price: 0,
+    monthlyRent: 0,
     currency: 'COP',
     address: {
       country: 'Colombia',
@@ -45,7 +46,7 @@ const PropertySubmission: React.FC = () => {
       postalCode: '',
       neighborhood: ''
     },
-    rooms: undefined,
+    bedrooms: undefined,
     bathrooms: undefined,
     area: undefined,
     amenities: [],
@@ -77,31 +78,15 @@ const PropertySubmission: React.FC = () => {
 
       if (fetchPropertyById.fulfilled.match(resultAction)) {
         const property = resultAction.payload;
-        setFormData({
-          title: property.title,
-          description: property.description,
-          type: property.type,
-          price: property.price,
-          currency: property.currency,
-          address: {
-            ...property.address,
-            neighborhood: property.address.neighborhood || ''
-          },
-          rooms: property.rooms,
-          bathrooms: property.bathrooms,
-          area: property.area,
-          amenities: property.amenities,
-          images: property.images,
-          ownerId: property.ownerId,
-          coordinates: property.coordinates || { lat: 0, lng: 0 }
-        });
+        const transformedData = transformPropertyFromBackend(property);
+        setFormData(transformedData);
         setCoordStrings({
-          lat: property.coordinates?.lat?.toString() || '',
-          lng: property.coordinates?.lng?.toString() || ''
+          lat: transformedData.coordinates?.lat?.toString() || '',
+          lng: transformedData.coordinates?.lng?.toString() || ''
         });
 
         // Load available cities for the department
-        const dept = departments.find(d => d.name === property.address.department);
+        const dept = departments.find(d => d.name === transformedData.address.department);
         if (dept) {
           const cities = getCitiesByDepartment(dept.id);
           setAvailableCities(cities.map(c => c.name));
@@ -145,7 +130,7 @@ const PropertySubmission: React.FC = () => {
         setFormData(prev => ({
           ...prev,
           [field]: value,
-          rooms: value === 'habitacion' ? 1 : undefined,
+          bedrooms: value === 'habitacion' ? 1 : undefined,
           bathrooms: value === 'habitacion' ? undefined : prev.bathrooms
         }));
       } else {
@@ -192,7 +177,7 @@ const PropertySubmission: React.FC = () => {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 0: // Basic Info
-        return !!(formData.title && formData.description && formData.price > 0 && formData.type);
+        return !!(formData.title && formData.description && (formData.monthlyRent || formData.price) && (formData.monthlyRent || formData.price) > 0 && formData.type);
       case 1: // Location
         return !!(formData.address.department && formData.address.city && formData.address.street);
       case 2: // Details
@@ -228,14 +213,12 @@ const PropertySubmission: React.FC = () => {
     setError('');
 
     try {
-      const submissionData = {
-        ...formData,
-        ownerId: user?.id
-      };
+      // Transform form data to backend format
+      const backendData = transformPropertyForBackend(formData, user);
 
       if (isEditing && id) {
         // Update existing property
-        const resultAction = await dispatch(updateProperty({ id, data: submissionData }));
+        const resultAction = await dispatch(updateProperty({ id, data: backendData }));
 
         if (updateProperty.fulfilled.match(resultAction)) {
           setSubmitted(true);
@@ -245,7 +228,7 @@ const PropertySubmission: React.FC = () => {
         }
       } else {
         // Create new property
-        const resultAction = await dispatch(createProperty(submissionData));
+        const resultAction = await dispatch(createProperty(backendData));
 
         if (createProperty.fulfilled.match(resultAction)) {
           setSubmitted(true);
@@ -290,7 +273,7 @@ const PropertySubmission: React.FC = () => {
                     title: '',
                     description: '',
                     type: 'apartamento',
-                    price: 0,
+                    monthlyRent: 0,
                     currency: 'COP',
                     address: {
                       country: 'Colombia',
@@ -300,7 +283,7 @@ const PropertySubmission: React.FC = () => {
                       postalCode: '',
                       neighborhood: ''
                     },
-                    rooms: undefined,
+                    bedrooms: undefined,
                     bathrooms: undefined,
                     area: undefined,
                     amenities: [],
@@ -420,8 +403,8 @@ const PropertySubmission: React.FC = () => {
                       <input
                         type="number"
                         min="0"
-                        value={formData.price || ''}
-                        onChange={(e) => handleInputChange('price', parseInt(e.target.value) || 0)}
+                        value={formData.monthlyRent || ''}
+                        onChange={(e) => handleInputChange('monthlyRent', parseInt(e.target.value) || 0)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         placeholder="Ej: 2800000"
                       />
@@ -547,8 +530,8 @@ const PropertySubmission: React.FC = () => {
                       <input
                         type="number"
                         min="0"
-                        value={formData.rooms || ''}
-                        onChange={(e) => handleInputChange('rooms', e.target.value ? parseInt(e.target.value) : undefined)}
+                        value={formData.bedrooms || ''}
+                        onChange={(e) => handleInputChange('bedrooms', e.target.value ? parseInt(e.target.value) : undefined)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       />
                     </div>

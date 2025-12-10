@@ -363,20 +363,36 @@ export interface SearchFilters {
 }
 
 export interface PropertyFormData {
+  // Basic info
   title: string;
   description: string;
   type: PropertyType;
-  price: number;
+
+  // Pricing (support both old and new names)
+  monthlyRent?: number;
+  price?: number; // Deprecated, use monthlyRent
+  deposit?: number;
   currency: string;
+
+  // Location
   address: Address;
-  rooms?: number;
+  coordinates?: Coordinates;
+
+  // Characteristics (support both old and new names)
+  bedrooms?: number;
+  rooms?: number; // Deprecated, use bedrooms
   bathrooms?: number;
   area?: number;
-  images: (string | File)[]; // Permite URLs o objetos File
-  amenities: string[];
+  floor?: number;
+
+  // Relations
+  amenities: (string | number)[];
+  images: (string | File)[];
   nearbyUniversities?: string[];
+
+  // Optional
   ownerId?: string;
-  coordinates?: Coordinates;
+  availableFrom?: string;
 }
 
 export interface PropertyStats {
