@@ -3,6 +3,7 @@ import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection,
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities, createAmenity, updateAmenity, deleteAmenity } from '../store/slices/amenitiesSlice';
+import { approveProperty, rejectProperty, deleteProperty, toggleFeatured } from '../store/slices/propertiesSlice';
 import PropertyReviewModal from '../components/PropertyReviewModal';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminStats from '../components/admin/AdminStats';
@@ -104,8 +105,9 @@ const AdminDashboard = () => {
 
     const handleApprove = async (id: string) => {
         try {
-            const success = await api.approveProperty(id);
-            if (success) {
+            const resultAction = await dispatch(approveProperty(id));
+
+            if (approveProperty.fulfilled.match(resultAction)) {
                 await refreshData();
                 setSelectedProperty(null);
             }
@@ -123,8 +125,9 @@ const AdminDashboard = () => {
         }
 
         try {
-            const success = await api.rejectProperty(id, finalReason);
-            if (success) {
+            const resultAction = await dispatch(rejectProperty({ id, reason: finalReason }));
+
+            if (rejectProperty.fulfilled.match(resultAction)) {
                 await refreshData();
                 setSelectedProperty(null);
             }
