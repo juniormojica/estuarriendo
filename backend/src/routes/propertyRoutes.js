@@ -2,6 +2,7 @@ import express from 'express';
 import {
     getAllProperties,
     getPropertyById,
+    getUserProperties,
     createProperty,
     updateProperty,
     deleteProperty,
@@ -15,6 +16,7 @@ const router = express.Router();
 
 // Property CRUD routes
 router.get('/', getAllProperties);
+router.get('/user/:userId', getUserProperties); // Get properties by owner
 router.get('/:id', getPropertyById);
 router.post('/', createProperty);
 router.put('/:id', updateProperty);

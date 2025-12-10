@@ -5,6 +5,7 @@ import { PropertyFormData } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
+import { createProperty, updateProperty, fetchPropertyById } from '../store/slices/propertiesSlice';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ImageUploader from '../components/ImageUploader';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
@@ -72,8 +73,10 @@ const PropertySubmission: React.FC = () => {
 
   const loadProperty = async (propertyId: string) => {
     try {
-      const property = await api.getProperty(propertyId);
-      if (property) {
+      const resultAction = await dispatch(fetchPropertyById(propertyId));
+
+      if (fetchPropertyById.fulfilled.match(resultAction)) {
+        const property = resultAction.payload;
         setFormData({
           title: property.title,
           description: property.description,
@@ -230,19 +233,26 @@ const PropertySubmission: React.FC = () => {
         ownerId: user?.id
       };
 
-      let result;
       if (isEditing && id) {
-        const success = await api.updateProperty(id, submissionData);
-        result = { success, message: success ? 'Propiedad actualizada exitosamente' : 'Error al actualizar' };
-      } else {
-        result = await api.submitProperty(submissionData);
-      }
+        // Update existing property
+        const resultAction = await dispatch(updateProperty({ id, data: submissionData }));
 
-      if (result.success) {
-        setSubmitted(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (updateProperty.fulfilled.match(resultAction)) {
+          setSubmitted(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          setError(resultAction.payload as string || 'Error al actualizar la propiedad');
+        }
       } else {
-        setError(result.message || 'Error al enviar la propiedad');
+        // Create new property
+        const resultAction = await dispatch(createProperty(submissionData));
+
+        if (createProperty.fulfilled.match(resultAction)) {
+          setSubmitted(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          setError(resultAction.payload as string || 'Error al crear la propiedad');
+        }
       }
     } catch (err) {
       setError('Error inesperado. Por favor, intenta nuevamente.');

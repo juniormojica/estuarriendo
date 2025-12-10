@@ -101,6 +101,37 @@ export const getPropertyById = async (req, res) => {
     }
 };
 
+// Get properties by owner ID
+export const getUserProperties = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const properties = await Property.findAll({
+            where: { ownerId: userId },
+            include: [
+                {
+                    model: Amenity,
+                    as: 'amenities',
+                    through: { attributes: [] }
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json({
+            success: true,
+            data: properties
+        });
+    } catch (error) {
+        console.error('Error fetching user properties:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch user properties',
+            error: error.message
+        });
+    }
+};
+
 // Create new property
 export const createProperty = async (req, res) => {
     try {
@@ -387,6 +418,7 @@ export const toggleRentedStatus = async (req, res) => {
 export default {
     getAllProperties,
     getPropertyById,
+    getUserProperties,
     createProperty,
     updateProperty,
     deleteProperty,
