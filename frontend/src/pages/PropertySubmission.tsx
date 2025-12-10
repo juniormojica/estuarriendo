@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
-import { PropertyFormData, Amenity } from '../types';
+import { PropertyFormData } from '../types';
 import { api } from '../services/api';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ImageUploader from '../components/ImageUploader';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
@@ -13,8 +15,10 @@ const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 const PropertySubmission: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { items: amenities } = useAppSelector((state) => state.amenities);
+
   const [currentStep, setCurrentStep] = useState(0);
-  const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>('');
@@ -58,13 +62,13 @@ const PropertySubmission: React.FC = () => {
       return;
     }
     setUser(JSON.parse(storedUser));
-    api.getAmenities().then(setAmenities);
+    dispatch(fetchAmenities());
 
     if (id) {
       setIsEditing(true);
       loadProperty(id);
     }
-  }, [id]);
+  }, [id, dispatch]);
 
   const loadProperty = async (propertyId: string) => {
     try {

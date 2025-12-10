@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, Amenity, PaymentRequest } from '../types';
+import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, PaymentRequest } from '../types';
 import { api } from '../services/api';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchAmenities, createAmenity, updateAmenity, deleteAmenity } from '../store/slices/amenitiesSlice';
 import PropertyReviewModal from '../components/PropertyReviewModal';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminStats from '../components/admin/AdminStats';
@@ -14,6 +16,9 @@ import UserDetailsModal from '../components/admin/UserDetailsModal';
 import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 
 const AdminDashboard = () => {
+    const dispatch = useAppDispatch();
+    const { items: amenities } = useAppSelector((state) => state.amenities);
+
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
     const [loading, setLoading] = useState(true);
 
@@ -31,7 +36,6 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [activities, setActivities] = useState<ActivityLog[]>([]);
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
-    const [amenities, setAmenities] = useState<Amenity[]>([]);
     const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
     const [pendingVerifications, setPendingVerifications] = useState<User[]>([]);
 
@@ -49,14 +53,16 @@ const AdminDashboard = () => {
     const loadInitialData = async () => {
         try {
             setLoading(true);
-            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, amenitiesData, paymentsData, verificationsData] = await Promise.all([
+            // Fetch amenities from Redux
+            dispatch(fetchAmenities());
+
+            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, paymentsData, verificationsData] = await Promise.all([
                 api.getPropertyStats(),
                 api.getPendingProperties(),
                 api.getAllPropertiesAdmin(),
                 api.getUsers(),
                 api.getActivityLog(),
                 api.getSystemConfig(),
-                api.getAmenities(),
                 api.getPaymentRequests(),
                 api.getPendingVerifications()
             ]);
@@ -67,7 +73,6 @@ const AdminDashboard = () => {
             setUsers(usersData);
             setActivities(activitiesData);
             setSystemConfig(configData);
-            setAmenities(amenitiesData);
             setPaymentRequests(paymentsData);
             setPendingVerifications(verificationsData);
         } catch (error) {
@@ -230,27 +235,31 @@ const AdminDashboard = () => {
 
     const handleAddAmenity = async (amenity: Omit<Amenity, 'id'>) => {
         try {
-            const success = await api.addAmenity(amenity);
-            if (success) {
-                alert('Amenidad agregada exitosamente');
-                const updatedAmenities = await api.getAmenities();
-                setAmenities(updatedAmenities);
-            }
+            await dispatch(createAmenity(amenity)).unwrap();
+            alert('Amenidad agregada exitosamente');
         } catch (error) {
             console.error('Error adding amenity:', error);
+            alert('Error al agregar amenidad');
+        }
+    };
+
+    const handleUpdateAmenity = async (id: string, data: Partial<Amenity>) => {
+        try {
+            await dispatch(updateAmenity({ id, data })).unwrap();
+            alert('Amenidad actualizada exitosamente');
+        } catch (error) {
+            console.error('Error updating amenity:', error);
+            alert('Error al actualizar amenidad');
         }
     };
 
     const handleDeleteAmenity = async (id: string) => {
         if (window.confirm('¿Estás seguro de eliminar esta amenidad?')) {
             try {
-                const success = await api.deleteAmenity();
-                if (success) {
-                    const updatedAmenities = await api.getAmenities();
-                    setAmenities(updatedAmenities);
-                }
+                await dispatch(deleteAmenity(id)).unwrap();
             } catch (error) {
                 console.error('Error deleting amenity:', error);
+                alert('Error al eliminar amenidad');
             }
         }
     };
@@ -565,9 +574,10 @@ const AdminDashboard = () => {
                         {systemConfig && (
                             <AdminConfig
                                 config={systemConfig}
-                                onSave={handleSaveConfig}
+                                onSaveConfig={handleSaveConfig}
                                 amenities={amenities}
                                 onAddAmenity={handleAddAmenity}
+                                onUpdateAmenity={handleUpdateAmenity}
                                 onDeleteAmenity={handleDeleteAmenity}
                             />
                         )}

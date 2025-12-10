@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import { Property, Amenity } from '../../types';
+import { Property } from '../../types';
 import { api } from '../../services/api';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { fetchAmenities } from '../../store/slices/amenitiesSlice';
 import ImageUploader from '../ImageUploader';
 import { departments, getCitiesByDepartment } from '../../data/colombiaLocations';
 import LoadingSpinner from '../LoadingSpinner';
@@ -19,8 +21,10 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     onClose,
     onSave
 }) => {
+    const dispatch = useAppDispatch();
+    const { items: amenities } = useAppSelector((state) => state.amenities);
+
     const [formData, setFormData] = useState<Property>(property);
-    const [amenities, setAmenities] = useState<Amenity[]>([]);
     const [availableCities, setAvailableCities] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string>('');
@@ -28,7 +32,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setFormData(property);
-            api.getAmenities().then(setAmenities);
+            dispatch(fetchAmenities());
 
             // Initialize available cities based on current department
             const dept = departments.find(d => d.name === property.address.department);
@@ -37,7 +41,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 setAvailableCities(cities.map(c => c.name));
             }
         }
-    }, [isOpen, property]);
+    }, [isOpen, property, dispatch]);
 
     const handleInputChange = (field: string, value: any) => {
         if (field.startsWith('address.')) {

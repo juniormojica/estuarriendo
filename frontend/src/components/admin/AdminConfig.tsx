@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SystemConfig, Amenity } from '../../types';
-import { Save, Plus, Trash2 } from 'lucide-react';
+import { Save, Plus, Trash2, Edit2, X, Check } from 'lucide-react';
 import { iconMap } from '../../lib/icons';
 
 interface AdminConfigProps {
@@ -8,6 +8,7 @@ interface AdminConfigProps {
     amenities: Amenity[];
     onSaveConfig: (config: SystemConfig) => void;
     onAddAmenity: (amenity: Omit<Amenity, 'id'>) => void;
+    onUpdateAmenity: (id: string, data: Partial<Amenity>) => void;
     onDeleteAmenity: (id: string) => void;
 }
 
@@ -16,11 +17,15 @@ const AdminConfig: React.FC<AdminConfigProps> = ({
     amenities,
     onSaveConfig,
     onAddAmenity,
+    onUpdateAmenity,
     onDeleteAmenity
 }) => {
     const [editedConfig, setEditedConfig] = useState<SystemConfig>(config);
     const [newAmenityName, setNewAmenityName] = useState('');
     const [newAmenityIcon, setNewAmenityIcon] = useState('');
+    const [editingAmenityId, setEditingAmenityId] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState('');
+    const [editingIcon, setEditingIcon] = useState('');
 
     const handleSaveConfig = () => {
         onSaveConfig(editedConfig);
@@ -32,6 +37,27 @@ const AdminConfig: React.FC<AdminConfigProps> = ({
             setNewAmenityName('');
             setNewAmenityIcon('');
         }
+    };
+
+    const handleStartEdit = (amenity: Amenity) => {
+        setEditingAmenityId(amenity.id);
+        setEditingName(amenity.name);
+        setEditingIcon(amenity.icon);
+    };
+
+    const handleSaveEdit = () => {
+        if (editingAmenityId && editingName && editingIcon) {
+            onUpdateAmenity(editingAmenityId, { name: editingName, icon: editingIcon });
+            setEditingAmenityId(null);
+            setEditingName('');
+            setEditingIcon('');
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingAmenityId(null);
+        setEditingName('');
+        setEditingIcon('');
     };
 
     return (
@@ -162,7 +188,8 @@ const AdminConfig: React.FC<AdminConfigProps> = ({
                         />
                         <button
                             onClick={handleAddAmenity}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            disabled={!newAmenityName || !newAmenityIcon}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Plus size={20} />
                             Agregar
@@ -171,30 +198,88 @@ const AdminConfig: React.FC<AdminConfigProps> = ({
                 </div>
 
                 {/* Amenities List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {amenities.map((amenity) => {
-                        const IconComponent = iconMap[amenity.icon] || iconMap.default;
-                        return (
-                            <div
-                                key={amenity.id}
-                                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <span className="text-gray-600">
-                                        <IconComponent size={20} />
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">{amenity.name}</span>
-                                </div>
-                                <button
-                                    onClick={() => onDeleteAmenity(amenity.id)}
-                                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                    title="Eliminar amenidad"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        );
-                    })}
+                <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
+                        Amenidades Existentes ({amenities.length})
+                    </h4>
+                    {amenities.length === 0 ? (
+                        <p className="text-gray-500 text-center py-8">No hay amenidades creadas</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {amenities.map((amenity) => {
+                                const IconComponent = iconMap[amenity.icon] || iconMap.default;
+                                const isEditing = editingAmenityId === amenity.id;
+
+                                return (
+                                    <div
+                                        key={amenity.id}
+                                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                                    >
+                                        {isEditing ? (
+                                            <div className="flex-1 flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editingName}
+                                                    onChange={(e) => setEditingName(e.target.value)}
+                                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                                    placeholder="Nombre"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={editingIcon}
+                                                    onChange={(e) => setEditingIcon(e.target.value)}
+                                                    className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                                    placeholder="Ícono"
+                                                />
+                                                <div className="flex gap-1">
+                                                    <button
+                                                        onClick={handleSaveEdit}
+                                                        className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                                        title="Guardar"
+                                                    >
+                                                        <Check size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={handleCancelEdit}
+                                                        className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                                        title="Cancelar"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-600">
+                                                        <IconComponent size={20} />
+                                                    </span>
+                                                    <span className="text-sm font-medium text-gray-900">{amenity.name}</span>
+                                                    <span className="text-xs text-gray-400">({amenity.icon})</span>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <button
+                                                        onClick={() => handleStartEdit(amenity)}
+                                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                        title="Editar amenidad"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => onDeleteAmenity(amenity.id)}
+                                                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                        title="Eliminar amenidad"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

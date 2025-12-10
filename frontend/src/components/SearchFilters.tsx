@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
-import { SearchFilters as SearchFiltersType, Amenity } from '../types';
-import { api } from '../services/api';
+import { SearchFilters as SearchFiltersType } from '../types';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { universities } from '../data/mockData';
 import { getAllCityNames } from '../data/colombiaLocations';
 
@@ -11,16 +12,18 @@ interface SearchFiltersProps {
 }
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoading }) => {
+  const dispatch = useAppDispatch();
+  const { items: amenities } = useAppSelector((state) => state.amenities);
+
   const [showFilters, setShowFilters] = useState(false);
-  const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [filters, setFilters] = useState<SearchFiltersType>({
     priceMin: undefined,
     priceMax: undefined
   });
 
   useEffect(() => {
-    api.getAmenities().then(setAmenities);
-  }, []);
+    dispatch(fetchAmenities());
+  }, [dispatch]);
 
   const handleFilterChange = (key: keyof SearchFiltersType, value: any) => {
     const newFilters = { ...filters, [key]: value };

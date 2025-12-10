@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock
 } from 'lucide-react';
-import { Property, Amenity, User } from '../types';
+import { Property, User } from '../types';
 import { api } from '../services/api';
-import { authService } from '../services/authService';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { universities } from '../data/mockData';
 import ImageGallery from '../components/ImageGallery';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -25,8 +26,10 @@ const containerStyle = {
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const dispatch = useAppDispatch();
+  const { items: amenities } = useAppSelector((state) => state.amenities);
+
   const [property, setProperty] = useState<Property | null>(null);
-  const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [ownerDetails, setOwnerDetails] = useState<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,10 +51,12 @@ const PropertyDetail: React.FC = () => {
       try {
         setIsLoading(true);
         setError('');
-        const [propertyData, amenitiesData] = await Promise.all([
-          api.getProperty(id),
-          api.getAmenities()
-        ]);
+
+        // Fetch amenities from Redux
+        dispatch(fetchAmenities());
+
+        // Fetch property data
+        const propertyData = await api.getProperty(id);
 
         if (!propertyData) {
           setError('Propiedad no encontrada');
@@ -59,7 +64,6 @@ const PropertyDetail: React.FC = () => {
         }
 
         setProperty(propertyData);
-        setAmenities(amenitiesData);
 
         // Fetch owner details
         if (propertyData.ownerId) {
@@ -67,9 +71,11 @@ const PropertyDetail: React.FC = () => {
           setOwnerDetails(owner);
         }
 
-        // Get current user
-        const user = authService.getCurrentUser();
-        setCurrentUser(user);
+        // Get current user from Redux
+        const storedUser = localStorage.getItem('estuarriendo_current_user');
+        if (storedUser) {
+          setCurrentUser(JSON.parse(storedUser));
+        }
 
       } catch (err) {
         setError('Error al cargar la propiedad');
@@ -79,7 +85,7 @@ const PropertyDetail: React.FC = () => {
     };
 
     loadData();
-  }, [id]);
+  }, [id, dispatch]);
 
   // Scroll to top when component mounts or ID changes
   useEffect(() => {
