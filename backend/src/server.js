@@ -17,6 +17,7 @@ import studentRequestRoutes from './routes/studentRequestRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
 import systemConfigRoutes from './routes/systemConfigRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -47,6 +48,7 @@ app.use('/api/student-requests', studentRequestRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/system-config', systemConfigRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
