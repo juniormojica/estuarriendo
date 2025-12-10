@@ -1,31 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Property, SearchFilters } from '../types';
+import { SearchFilters } from '../types';
 import { api } from '../services/api';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchProperties, setFilters } from '../store/slices/propertiesSlice';
 import SearchFiltersComponent from '../components/SearchFilters';
 import PropertyGrid from '../components/PropertyGrid';
 import WelcomeModal from '../components/WelcomeModal';
 import { ChevronDown } from 'lucide-react';
 
 const HomePage: React.FC = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const dispatch = useAppDispatch();
+  const { items: properties, loading: isLoading, error } = useAppSelector((state) => state.properties);
+
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
   const searchSectionRef = useRef<HTMLDivElement>(null);
-
-  const loadProperties = async (filters?: SearchFilters) => {
-    try {
-      setIsLoading(true);
-      setError('');
-      const data = await api.getProperties(filters);
-      setProperties(data);
-    } catch (err) {
-      setError('Error al cargar las propiedades. Por favor, intenta nuevamente.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const loadAvailableCities = async () => {
     try {
@@ -37,18 +26,21 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadProperties();
+    dispatch(fetchProperties());
     loadAvailableCities();
-  }, []);
+  }, [dispatch]);
 
   const handleFiltersChange = (filters: SearchFilters) => {
     setSelectedCity(filters.city);
-    loadProperties(filters);
+    dispatch(setFilters(filters));
+    dispatch(fetchProperties(filters));
   };
 
   const handleCityClick = (city: string) => {
     setSelectedCity(city);
-    loadProperties({ city });
+    const filters = { city };
+    dispatch(setFilters(filters));
+    dispatch(fetchProperties(filters));
   };
 
   const scrollToSearch = () => {
@@ -112,7 +104,8 @@ const HomePage: React.FC = () => {
                 <button
                   onClick={() => {
                     setSelectedCity(undefined);
-                    loadProperties();
+                    dispatch(setFilters({}));
+                    dispatch(fetchProperties());
                   }}
                   className="px-4 py-2 rounded-full font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-all"
                 >
@@ -130,7 +123,7 @@ const HomePage: React.FC = () => {
         <PropertyGrid
           properties={properties}
           isLoading={isLoading}
-          error={error}
+          error={error || undefined}
         />
       </div>
     </div>
