@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
-import { PropertyType, PropertyStatus, getEnumValues } from '../utils/enums.js';
+import { PropertyStatus, getEnumValues } from '../utils/enums.js';
 
 /**
  * Property Model
@@ -22,9 +22,25 @@ const Property = sequelize.define('Property', {
         },
         onDelete: 'CASCADE'
     },
-    type: {
-        type: DataTypes.ENUM(...getEnumValues(PropertyType)),
-        allowNull: false
+    typeId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: 'type_id',
+        references: {
+            model: 'property_types',
+            key: 'id'
+        },
+        comment: 'Foreign key to property_types table'
+    },
+    locationId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: 'location_id',
+        references: {
+            model: 'locations',
+            key: 'id'
+        },
+        comment: 'Foreign key to locations table'
     },
     title: {
         type: DataTypes.STRING(255),
@@ -53,45 +69,6 @@ const Property = sequelize.define('Property', {
         defaultValue: 'COP'
     },
 
-    // Address fields (simplified from JSONB)
-    street: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-        comment: 'Street address'
-    },
-    neighborhood: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        comment: 'Neighborhood/locality'
-    },
-    city: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        defaultValue: 'Bogotá'
-    },
-    department: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-        defaultValue: 'Cundinamarca'
-    },
-    zipCode: {
-        type: DataTypes.STRING(20),
-        allowNull: true,
-        field: 'zip_code'
-    },
-
-    // Coordinates (simplified from JSONB)
-    latitude: {
-        type: DataTypes.DECIMAL(10, 8),
-        allowNull: true,
-        comment: 'Latitude coordinate'
-    },
-    longitude: {
-        type: DataTypes.DECIMAL(11, 8),
-        allowNull: true,
-        comment: 'Longitude coordinate'
-    },
-
     // Property characteristics
     bedrooms: {
         type: DataTypes.SMALLINT,
@@ -112,64 +89,6 @@ const Property = sequelize.define('Property', {
         type: DataTypes.SMALLINT,
         allowNull: true,
         comment: 'Floor number'
-    },
-
-    // Amenities/Features
-    allowsPets: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-        field: 'allows_pets'
-    },
-    isFurnished: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-        field: 'is_furnished'
-    },
-    hasParking: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-        field: 'has_parking'
-    },
-
-    // Media
-    images: {
-        type: DataTypes.ARRAY(DataTypes.TEXT),
-        allowNull: false,
-        defaultValue: [],
-        comment: 'Array of image URLs'
-    },
-
-    // Nearby universities
-    nearbyUniversities: {
-        type: DataTypes.ARRAY(DataTypes.TEXT),
-        allowNull: true,
-        field: 'nearby_universities',
-        comment: 'Array of nearby university names'
-    },
-
-    // Contact information
-    contactName: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-        field: 'contact_name'
-    },
-    contactPhone: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-        field: 'contact_phone'
-    },
-    contactEmail: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-        field: 'contact_email'
-    },
-    contactWhatsapp: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-        field: 'contact_whatsapp'
     },
 
     // Availability
@@ -257,5 +176,6 @@ const Property = sequelize.define('Property', {
     underscored: true,
     timestamps: false
 });
+
 
 export default Property;

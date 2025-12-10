@@ -1,6 +1,7 @@
-import { Property, User, Amenity, PropertyAmenity } from '../models/index.js';
+import { Property, User, Amenity } from '../models/index.js';
 import { PropertyStatus } from '../utils/enums.js';
 import { Op } from 'sequelize';
+import * as propertyService from '../services/propertyService.js';
 
 /**
  * Property Controller
@@ -12,7 +13,7 @@ export const getAllProperties = async (req, res) => {
     try {
         const {
             status,
-            type,
+            typeId,
             city,
             minPrice,
             maxPrice,
@@ -23,47 +24,35 @@ export const getAllProperties = async (req, res) => {
             offset = 0
         } = req.query;
 
-        const where = {};
+        const filters = {
+            status,
+            typeId: typeId ? parseInt(typeId) : undefined,
+            city,
+            minRent: minPrice ? parseFloat(minPrice) : undefined,
+            maxRent: maxPrice ? parseFloat(maxPrice) : undefined,
+            ownerId,
+            isFeatured: isFeatured !== undefined ? isFeatured === 'true' : undefined,
+            isRented: isRented !== undefined ? isRented === 'true' : undefined
+        };
 
-        if (status) where.status = status;
-        if (type) where.type = type;
-        if (ownerId) where.ownerId = ownerId;
-        if (isFeatured !== undefined) where.isFeatured = isFeatured === 'true';
-        if (isRented !== undefined) where.isRented = isRented === 'true';
-
-        if (minPrice || maxPrice) {
-            where.price = {};
-            if (minPrice) where.price[Op.gte] = parseFloat(minPrice);
-            if (maxPrice) where.price[Op.lte] = parseFloat(maxPrice);
-        }
-
-        if (city) {
-            where['address.city'] = city;
-        }
-
-        const properties = await Property.findAll({
-            where,
-            include: [
-                {
-                    model: User,
-                    as: 'owner',
-                    attributes: ['id', 'name', 'email', 'phone', 'whatsapp', 'isVerified']
-                },
-                {
-                    model: Amenity,
-                    as: 'amenities',
-                    through: { attributes: [] }
-                }
-            ],
+        const options = {
             limit: parseInt(limit),
             offset: parseInt(offset),
             order: [
                 ['isFeatured', 'DESC'],
                 ['createdAt', 'DESC']
             ]
-        });
+        };
 
-        res.json(properties);
+        const result = await propertyService.findPropertiesWithAssociations(filters, options);
+
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.count,
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
     } catch (error) {
         console.error('Error fetching properties:', error);
         res.status(500).json({ error: 'Failed to fetch properties', message: error.message });
@@ -75,24 +64,14 @@ export const getPropertyById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const property = await Property.findByPk(id, {
-            include: [
-                {
-                    model: User,
-                    as: 'owner',
-                    attributes: ['id', 'name', 'email', 'phone', 'whatsapp', 'isVerified', 'plan']
-                },
-                {
-                    model: Amenity,
-                    as: 'amenities',
-                    through: { attributes: [] }
-                }
-            ]
-        });
+        const property = await propertyService.findPropertyWithAssociations(id);
 
         if (!property) {
             return res.status(404).json({ error: 'Property not found' });
         }
+
+        // Increment views count
+        await property.increment('viewsCount');
 
         res.json(property);
     } catch (error) {
@@ -106,21 +85,14 @@ export const getUserProperties = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        const properties = await Property.findAll({
-            where: { ownerId: userId },
-            include: [
-                {
-                    model: Amenity,
-                    as: 'amenities',
-                    through: { attributes: [] }
-                }
-            ],
-            order: [['createdAt', 'DESC']]
-        });
+        const result = await propertyService.findPropertiesWithAssociations(
+            { ownerId: userId },
+            { order: [['createdAt', 'DESC']] }
+        );
 
         res.json({
             success: true,
-            data: properties
+            data: result.rows
         });
     } catch (error) {
         console.error('Error fetching user properties:', error);
@@ -143,20 +115,20 @@ export const createProperty = async (req, res) => {
             return res.status(404).json({ error: 'Owner not found' });
         }
 
-        // Create property
-        const property = await Property.create({
+        // Create property with all associations
+        const property = await propertyService.createPropertyWithAssociations({
             ...propertyData,
             ownerId,
             status: PropertyStatus.PENDING,
             createdAt: new Date()
         });
 
-        // Add amenities if provided
+        // Add amenities if provided (separate N:M relationship)
         if (amenityIds && Array.isArray(amenityIds) && amenityIds.length > 0) {
             const amenities = await Amenity.findAll({
                 where: { id: amenityIds }
             });
-            await property.setAmenities(amenities);
+            await Property.findByPk(property.id).then(p => p.setAmenities(amenities));
         }
 
         // Update owner's property count
@@ -165,20 +137,8 @@ export const createProperty = async (req, res) => {
             pendingCount: owner.pendingCount + 1
         });
 
-        // Fetch complete property with associations
-        const completeProperty = await Property.findByPk(property.id, {
-            include: [
-                {
-                    model: User,
-                    as: 'owner',
-                    attributes: ['id', 'name', 'email']
-                },
-                {
-                    model: Amenity,
-                    as: 'amenities'
-                }
-            ]
-        });
+        // Fetch complete property with all associations
+        const completeProperty = await propertyService.findPropertyWithAssociations(property.id);
 
         res.status(201).json(completeProperty);
     } catch (error) {
@@ -198,32 +158,21 @@ export const updateProperty = async (req, res) => {
             return res.status(404).json({ error: 'Property not found' });
         }
 
-        await property.update(updates);
+        // Update property with all associations
+        const updatedProperty = await propertyService.updatePropertyWithAssociations(id, updates);
 
-        // Update amenities if provided
+        // Update amenities if provided (separate N:M relationship)
         if (amenityIds && Array.isArray(amenityIds)) {
             const amenities = await Amenity.findAll({
                 where: { id: amenityIds }
             });
-            await property.setAmenities(amenities);
+            await Property.findByPk(id).then(p => p.setAmenities(amenities));
         }
 
-        // Fetch updated property with associations
-        const updatedProperty = await Property.findByPk(id, {
-            include: [
-                {
-                    model: User,
-                    as: 'owner',
-                    attributes: ['id', 'name', 'email']
-                },
-                {
-                    model: Amenity,
-                    as: 'amenities'
-                }
-            ]
-        });
+        // Fetch updated property with all associations
+        const completeProperty = await propertyService.findPropertyWithAssociations(id);
 
-        res.json(updatedProperty);
+        res.json(completeProperty);
     } catch (error) {
         console.error('Error updating property:', error);
         res.status(500).json({ error: 'Failed to update property', message: error.message });
@@ -243,7 +192,7 @@ export const deleteProperty = async (req, res) => {
         const ownerId = property.ownerId;
         const status = property.status;
 
-        await property.destroy();
+        await propertyService.deleteProperty(id);
 
         // Update owner's property counts
         const owner = await User.findByPk(ownerId);
@@ -285,6 +234,7 @@ export const approveProperty = async (req, res) => {
         await property.update({
             status: PropertyStatus.APPROVED,
             isVerified: true,
+            reviewedAt: new Date(),
             rejectionReason: null
         });
 
@@ -336,6 +286,7 @@ export const rejectProperty = async (req, res) => {
         await property.update({
             status: PropertyStatus.REJECTED,
             isVerified: false,
+            reviewedAt: new Date(),
             rejectionReason: reason
         });
 

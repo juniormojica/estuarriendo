@@ -20,7 +20,22 @@ import {
     PaymentRequest,
     StudentRequest,
     Notification,
-    ActivityLog
+    ActivityLog,
+    // Property normalized models
+    Location,
+    Contact,
+    PropertyFeature,
+    PropertyImage,
+    PropertyType,
+    Institution,
+    PropertyInstitution,
+    // User normalized models
+    UserIdentificationDetails,
+    UserVerification,
+    UserPasswordReset,
+    UserBillingDetails,
+    Subscription,
+    UserStats
 } from '../src/models/index.js';
 import {
     IdType,
@@ -30,13 +45,13 @@ import {
     VerificationStatus,
     PlanType,
     SubscriptionType,
-    PropertyType,
     PropertyStatus,
     PaymentRequestStatus,
     NotificationType,
     StudentRequestStatus
 } from '../src/utils/enums.js';
 import { hashPassword } from '../src/utils/passwordUtils.js';
+import * as propertyService from '../src/services/propertyService.js';
 
 /**
  * Clear all data from the database
@@ -48,9 +63,22 @@ const clearDatabase = async () => {
     await Notification.destroy({ where: {}, truncate: true, cascade: true });
     await StudentRequest.destroy({ where: {}, truncate: true, cascade: true });
     await PaymentRequest.destroy({ where: {}, truncate: true, cascade: true });
+    await Subscription.destroy({ where: {}, truncate: true, cascade: true });
+    await PropertyInstitution.destroy({ where: {}, truncate: true, cascade: true });
     await PropertyAmenity.destroy({ where: {}, truncate: true, cascade: true });
+    await PropertyImage.destroy({ where: {}, truncate: true, cascade: true });
+    await PropertyFeature.destroy({ where: {}, truncate: true, cascade: true });
+    await Contact.destroy({ where: {}, truncate: true, cascade: true });
     await Property.destroy({ where: {}, truncate: true, cascade: true });
+    await Location.destroy({ where: {}, truncate: true, cascade: true });
+    await Institution.destroy({ where: {}, truncate: true, cascade: true });
+    await PropertyType.destroy({ where: {}, truncate: true, cascade: true });
     await Amenity.destroy({ where: {}, truncate: true, cascade: true });
+    await UserStats.destroy({ where: {}, truncate: true, cascade: true });
+    await UserBillingDetails.destroy({ where: {}, truncate: true, cascade: true });
+    await UserPasswordReset.destroy({ where: {}, truncate: true, cascade: true });
+    await UserVerification.destroy({ where: {}, truncate: true, cascade: true });
+    await UserIdentificationDetails.destroy({ where: {}, truncate: true, cascade: true });
     await UserVerificationDocuments.destroy({ where: {}, truncate: true, cascade: true });
     await User.destroy({ where: {}, truncate: true, cascade: true });
 
@@ -63,13 +91,13 @@ const clearDatabase = async () => {
 const seedUsers = async () => {
     console.log('👥 Seeding users...');
 
-    const users = [];
+    const createdUsers = [];
 
     // Default password for all test users
     const defaultPassword = await hashPassword('password123');
 
     // Create 1 Super Admin
-    users.push({
+    const superAdmin = await User.create({
         id: 'superadmin-001',
         name: 'Super Administrador',
         email: 'superadmin@estuarriendo.com',
@@ -78,15 +106,28 @@ const seedUsers = async () => {
         whatsapp: '+57 300 123 4567',
         userType: UserType.SUPER_ADMIN,
         isActive: true,
-        joinedAt: new Date('2024-01-01'),
+        joinedAt: new Date('2024-01-01')
+    });
+
+    await UserVerification.create({
+        userId: superAdmin.id,
         isVerified: true,
         verificationStatus: VerificationStatus.VERIFIED,
-        plan: PlanType.FREE
+        verifiedAt: new Date('2024-01-01')
     });
+
+    await Subscription.create({
+        userId: superAdmin.id,
+        plan: PlanType.FREE,
+        startedAt: new Date('2024-01-01'),
+        status: 'active'
+    });
+
+    createdUsers.push(superAdmin);
 
     // Create 2 Admins
     for (let i = 1; i <= 2; i++) {
-        users.push({
+        const admin = await User.create({
             id: `admin-00${i}`,
             name: faker.person.fullName(),
             email: `admin${i}@estuarriendo.com`,
@@ -95,20 +136,33 @@ const seedUsers = async () => {
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.ADMIN,
             isActive: true,
-            joinedAt: faker.date.past({ years: 1 }),
+            joinedAt: faker.date.past({ years: 1 })
+        });
+
+        await UserVerification.create({
+            userId: admin.id,
             isVerified: true,
             verificationStatus: VerificationStatus.VERIFIED,
-            plan: PlanType.FREE
+            verifiedAt: faker.date.past({ months: 6 })
         });
+
+        await Subscription.create({
+            userId: admin.id,
+            plan: PlanType.FREE,
+            startedAt: admin.joinedAt,
+            status: 'active'
+        });
+
+        createdUsers.push(admin);
     }
 
     // Create 10 Owners (5 individual, 5 agency)
     for (let i = 1; i <= 10; i++) {
         const isAgency = i > 5;
         const isPremium = i <= 3;
-        const planStarted = isPremium ? faker.date.recent({ days: 30 }) : null;
+        const joinedAt = faker.date.past({ years: 2 });
 
-        users.push({
+        const owner = await User.create({
             id: `owner-${String(i).padStart(3, '0')}`,
             name: isAgency ? faker.company.name() : faker.person.fullName(),
             email: `owner${i}@example.com`,
@@ -117,14 +171,32 @@ const seedUsers = async () => {
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.OWNER,
             isActive: true,
-            joinedAt: faker.date.past({ years: 2 }),
+            joinedAt
+        });
+
+        // Create identification details
+        await UserIdentificationDetails.create({
+            userId: owner.id,
             idType: faker.helpers.arrayElement([IdType.CC, IdType.NIT, IdType.CE]),
             idNumber: faker.number.int({ min: 10000000, max: 99999999 }).toString(),
-            ownerRole: isAgency ? OwnerRole.AGENCY : OwnerRole.INDIVIDUAL,
-            isVerified: i <= 7,
+            ownerRole: isAgency ? OwnerRole.AGENCY : OwnerRole.INDIVIDUAL
+        });
+
+        // Create verification record
+        const isVerified = i <= 7;
+        await UserVerification.create({
+            userId: owner.id,
+            isVerified,
             verificationStatus: i <= 7 ? VerificationStatus.VERIFIED :
                 i <= 9 ? VerificationStatus.PENDING :
                     VerificationStatus.NOT_SUBMITTED,
+            availableForVisit: faker.datatype.boolean(),
+            verifiedAt: isVerified ? faker.date.past({ months: 6 }) : null
+        });
+
+        // Create billing details
+        await UserBillingDetails.create({
+            userId: owner.id,
             paymentPreference: faker.helpers.arrayElement([
                 PaymentMethod.PSE,
                 PaymentMethod.BANK_TRANSFER,
@@ -135,27 +207,54 @@ const seedUsers = async () => {
                 accountNumber: faker.finance.accountNumber(),
                 accountType: faker.helpers.arrayElement(['Ahorros', 'Corriente']),
                 accountHolderName: isAgency ? faker.company.name() : faker.person.fullName()
-            },
-            availableForVisit: faker.datatype.boolean(),
-            plan: isPremium ? PlanType.PREMIUM : PlanType.FREE,
-            planType: isPremium ? faker.helpers.arrayElement([
+            }
+        });
+
+        // Create subscription
+        if (isPremium) {
+            const planStarted = faker.date.recent({ days: 30 });
+            const planType = faker.helpers.arrayElement([
                 SubscriptionType.WEEKLY,
                 SubscriptionType.MONTHLY,
                 SubscriptionType.QUARTERLY
-            ]) : null,
-            planStartedAt: planStarted,
-            planExpiresAt: isPremium ? new Date(planStarted.getTime() + 30 * 24 * 60 * 60 * 1000) : null,
-            premiumSince: isPremium ? planStarted : null,
+            ]);
+            const duration = planType === SubscriptionType.WEEKLY ? 7 :
+                planType === SubscriptionType.MONTHLY ? 30 : 90;
+
+            await Subscription.create({
+                userId: owner.id,
+                plan: PlanType.PREMIUM,
+                planType,
+                startedAt: planStarted,
+                expiresAt: new Date(planStarted.getTime() + duration * 24 * 60 * 60 * 1000),
+                status: 'active'
+            });
+        } else {
+            await Subscription.create({
+                userId: owner.id,
+                plan: PlanType.FREE,
+                startedAt: joinedAt,
+                status: 'active'
+            });
+        }
+
+        // Create stats (initialized to 0)
+        await UserStats.create({
+            userId: owner.id,
             propertiesCount: 0,
             approvedCount: 0,
             pendingCount: 0,
             rejectedCount: 0
         });
+
+        createdUsers.push(owner);
     }
 
     // Create 15 Tenants (students)
     for (let i = 1; i <= 15; i++) {
-        users.push({
+        const joinedAt = faker.date.past({ years: 1 });
+
+        const tenant = await User.create({
             id: `tenant-${String(i).padStart(3, '0')}`,
             name: faker.person.fullName(),
             email: `student${i}@example.com`,
@@ -164,18 +263,31 @@ const seedUsers = async () => {
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.TENANT,
             isActive: true,
-            joinedAt: faker.date.past({ years: 1 }),
-            isVerified: false,
-            verificationStatus: VerificationStatus.NOT_SUBMITTED,
-            plan: PlanType.FREE
+            joinedAt
         });
+
+        // Create verification record (not verified)
+        await UserVerification.create({
+            userId: tenant.id,
+            isVerified: false,
+            verificationStatus: VerificationStatus.NOT_SUBMITTED
+        });
+
+        // Create free subscription
+        await Subscription.create({
+            userId: tenant.id,
+            plan: PlanType.FREE,
+            startedAt: joinedAt,
+            status: 'active'
+        });
+
+        createdUsers.push(tenant);
     }
 
-    await User.bulkCreate(users);
-    console.log(`  ✅ Created ${users.length} users`);
+    console.log(`  ✅ Created ${createdUsers.length} users with all associations`);
     console.log(`  🔑 Default password for all users: password123`);
 
-    return users;
+    return createdUsers;
 };
 
 /**
@@ -214,12 +326,61 @@ const seedAmenities = async () => {
 };
 
 /**
+ * Seed Property Types
+ */
+const seedPropertyTypes = async () => {
+    console.log('🏠 Seeding property types...');
+
+    const propertyTypes = [
+        { name: 'pension', description: 'Pensión estudiantil con servicios compartidos' },
+        { name: 'habitacion', description: 'Habitación individual o compartida' },
+        { name: 'apartamento', description: 'Apartamento completo' },
+        { name: 'aparta-estudio', description: 'Apartaestudio tipo loft' }
+    ];
+
+    const createdTypes = await PropertyType.bulkCreate(propertyTypes);
+    console.log(`  ✅ Created ${createdTypes.length} property types`);
+
+    return createdTypes;
+};
+
+/**
+ * Seed Institutions
+ */
+const seedInstitutions = async () => {
+    console.log('🎓 Seeding institutions...');
+
+    const institutions = [
+        // Universities in Bogotá
+        { name: 'Universidad Nacional de Colombia', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad de los Andes', city: 'Bogotá', type: 'universidad' },
+        { name: 'Pontificia Universidad Javeriana', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad del Rosario', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad Externado de Colombia', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad de La Salle', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad Santo Tomás', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad Central', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad Pedagógica Nacional', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad Distrital Francisco José de Caldas', city: 'Bogotá', type: 'universidad' },
+        // Corporations
+        { name: 'SENA', city: 'Bogotá', type: 'corporacion' },
+        { name: 'Corporación Universitaria Minuto de Dios', city: 'Bogotá', type: 'corporacion' },
+        // Institutes
+        { name: 'Instituto Tecnológico Pascual Bravo', city: 'Bogotá', type: 'instituto' }
+    ];
+
+    const createdInstitutions = await Institution.bulkCreate(institutions);
+    console.log(`  ✅ Created ${createdInstitutions.length} institutions`);
+
+    return createdInstitutions;
+};
+
+/**
  * Seed Properties
  */
-const seedProperties = async (owners, amenities) => {
+const seedProperties = async (owners, amenities, propertyTypes, institutions) => {
     console.log('🏘️  Seeding properties...');
 
-    const properties = [];
     const ownerUsers = owners.filter(u => u.userType === UserType.OWNER);
 
     const neighborhoods = [
@@ -227,15 +388,12 @@ const seedProperties = async (owners, amenities) => {
         'Suba', 'Fontibón', 'Kennedy', 'Puente Aranda', 'Ciudad Bolívar'
     ];
 
+    const createdProperties = [];
+
     // Create 30 properties
     for (let i = 1; i <= 30; i++) {
         const owner = faker.helpers.arrayElement(ownerUsers);
-        const propertyType = faker.helpers.arrayElement([
-            PropertyType.PENSION,
-            PropertyType.HABITACION,
-            PropertyType.APARTAMENTO,
-            PropertyType.APARTA_ESTUDIO
-        ]);
+        const propertyType = faker.helpers.arrayElement(propertyTypes);
 
         const statusRandom = Math.random();
         const status = statusRandom < 0.6 ? PropertyStatus.APPROVED :
@@ -245,44 +403,58 @@ const seedProperties = async (owners, amenities) => {
         const neighborhood = faker.helpers.arrayElement(neighborhoods);
         const submittedAt = faker.date.past({ years: 1 });
 
-        properties.push({
+        // Prepare property data with nested associations
+        const propertyData = {
             ownerId: owner.id,
-            type: propertyType,
-            title: `${propertyType} en ${neighborhood}`,
+            typeId: propertyType.id,
+            title: `${propertyType.name} en ${neighborhood}`,
             description: faker.lorem.paragraph(3),
             monthlyRent: faker.number.int({ min: 500000, max: 2500000 }),
             deposit: faker.number.int({ min: 500000, max: 2500000 }),
             currency: 'COP',
-            street: faker.location.streetAddress(),
-            neighborhood: neighborhood,
-            city: 'Bogotá',
-            department: 'Cundinamarca',
-            zipCode: faker.location.zipCode('#####'),
-            latitude: faker.location.latitude({ min: 4.5, max: 4.8 }),
-            longitude: faker.location.longitude({ min: -74.2, max: -74.0 }),
-            bedrooms: propertyType === PropertyType.HABITACION ? 1 : faker.number.int({ min: 1, max: 4 }),
+
+            // Location data (will create or find existing location)
+            location: {
+                street: faker.location.streetAddress(),
+                neighborhood: neighborhood,
+                city: 'Bogotá',
+                department: 'Cundinamarca',
+                zipCode: faker.location.zipCode('#####'),
+                latitude: faker.location.latitude({ min: 4.5, max: 4.8 }),
+                longitude: faker.location.longitude({ min: -74.2, max: -74.0 })
+            },
+
+            // Contact data
+            contact: {
+                contactName: owner.name,
+                contactPhone: owner.phone,
+                contactEmail: owner.email,
+                contactWhatsapp: owner.whatsapp
+            },
+
+            // Features data
+            features: {
+                isFurnished: faker.datatype.boolean(),
+                hasParking: faker.datatype.boolean(),
+                allowsPets: faker.datatype.boolean()
+            },
+
+            // Images data
+            images: [
+                { url: `https://picsum.photos/seed/${i}-1/800/600`, isFeatured: true, orderPosition: 0 },
+                { url: `https://picsum.photos/seed/${i}-2/800/600`, isFeatured: false, orderPosition: 1 },
+                { url: `https://picsum.photos/seed/${i}-3/800/600`, isFeatured: false, orderPosition: 2 }
+            ],
+
+            // Institutions (nearby universities)
+            institutions: faker.helpers.arrayElements(institutions, faker.number.int({ min: 1, max: 3 }))
+                .map(inst => ({ id: inst.id, distance: faker.number.int({ min: 500, max: 5000 }) })),
+
+            // Property characteristics
+            bedrooms: propertyType.name === 'habitacion' ? 1 : faker.number.int({ min: 1, max: 4 }),
             bathrooms: faker.number.int({ min: 1, max: 3 }),
             area: faker.number.int({ min: 20, max: 120 }),
             floor: faker.number.int({ min: 1, max: 15 }),
-            allowsPets: faker.datatype.boolean(),
-            isFurnished: faker.datatype.boolean(),
-            hasParking: faker.datatype.boolean(),
-            images: [
-                `https://picsum.photos/seed/${i}-1/800/600`,
-                `https://picsum.photos/seed/${i}-2/800/600`,
-                `https://picsum.photos/seed/${i}-3/800/600`
-            ],
-            nearbyUniversities: faker.helpers.arrayElements([
-                'Universidad Nacional',
-                'Universidad de los Andes',
-                'Universidad Javeriana',
-                'Universidad del Rosario',
-                'Universidad Externado'
-            ], faker.number.int({ min: 1, max: 3 })),
-            contactName: owner.name,
-            contactPhone: owner.phone,
-            contactEmail: owner.email,
-            contactWhatsapp: owner.whatsapp,
             availableFrom: faker.date.future({ years: 0.5 }),
             status: status,
             isFeatured: faker.datatype.boolean({ probability: 0.2 }),
@@ -296,37 +468,43 @@ const seedProperties = async (owners, amenities) => {
             viewsCount: status === PropertyStatus.APPROVED ? faker.number.int({ min: 0, max: 500 }) : 0,
             interestsCount: status === PropertyStatus.APPROVED ? faker.number.int({ min: 0, max: 50 }) : 0,
             createdAt: submittedAt
-        });
+        };
+
+        try {
+            const property = await propertyService.createPropertyWithAssociations(propertyData);
+            createdProperties.push(property);
+
+            // Add amenities (separate N:M relationship)
+            const numAmenities = faker.number.int({ min: 3, max: 10 });
+            const selectedAmenities = faker.helpers.arrayElements(amenities, numAmenities);
+            const propertyInstance = await Property.findByPk(property.id);
+            await propertyInstance.addAmenities(selectedAmenities);
+
+        } catch (error) {
+            console.error(`  ❌ Error creating property ${i}:`, error.message);
+        }
     }
 
-    const createdProperties = await Property.bulkCreate(properties);
-    console.log(`  ✅ Created ${createdProperties.length} properties`);
+    console.log(`  ✅ Created ${createdProperties.length} properties with all associations`);
 
-    // Assign random amenities to properties
-    console.log('🔗 Linking amenities to properties...');
-    for (const property of createdProperties) {
-        const numAmenities = faker.number.int({ min: 3, max: 10 });
-        const selectedAmenities = faker.helpers.arrayElements(amenities, numAmenities);
-        await property.addAmenities(selectedAmenities);
-    }
-    console.log('  ✅ Amenities linked');
-
-    // Update owner property counts
+    // Update owner property counts in UserStats table
     for (const owner of ownerUsers) {
         const ownerProperties = createdProperties.filter(p => p.ownerId === owner.id);
         const approved = ownerProperties.filter(p => p.status === PropertyStatus.APPROVED).length;
         const pending = ownerProperties.filter(p => p.status === PropertyStatus.PENDING).length;
         const rejected = ownerProperties.filter(p => p.status === PropertyStatus.REJECTED).length;
 
-        await User.update({
+        await UserStats.update({
             propertiesCount: ownerProperties.length,
             approvedCount: approved,
             pendingCount: pending,
-            rejectedCount: rejected
+            rejectedCount: rejected,
+            lastUpdatedAt: new Date()
         }, {
-            where: { id: owner.id }
+            where: { userId: owner.id }
         });
     }
+
 
     return createdProperties;
 };
@@ -407,10 +585,10 @@ const seedStudentRequests = async (tenants) => {
             ]),
             budgetMax: faker.number.int({ min: 500000, max: 1500000 }),
             propertyTypeDesired: faker.helpers.arrayElement([
-                PropertyType.PENSION,
-                PropertyType.HABITACION,
-                PropertyType.APARTAMENTO,
-                PropertyType.APARTA_ESTUDIO
+                'pension',
+                'habitacion',
+                'apartamento',
+                'aparta-estudio'
             ]),
             requiredAmenities: faker.helpers.arrayElements([
                 'WiFi', 'Cocina Equipada', 'Lavadora', 'Amoblado'
@@ -552,7 +730,9 @@ const seedDatabase = async () => {
 
         const users = await seedUsers();
         const amenities = await seedAmenities();
-        const properties = await seedProperties(users, amenities);
+        const propertyTypes = await seedPropertyTypes();
+        const institutions = await seedInstitutions();
+        const properties = await seedProperties(users, amenities, propertyTypes, institutions);
         const paymentRequests = await seedPaymentRequests(users);
         const studentRequests = await seedStudentRequests(users);
         const notifications = await seedNotifications(users, properties);
@@ -562,6 +742,8 @@ const seedDatabase = async () => {
         console.log('\n📊 Summary:');
         console.log(`   - Users: ${users.length}`);
         console.log(`   - Amenities: ${amenities.length}`);
+        console.log(`   - Property Types: ${propertyTypes.length}`);
+        console.log(`   - Institutions: ${institutions.length}`);
         console.log(`   - Properties: ${properties.length}`);
         console.log(`   - Payment Requests: ${paymentRequests.length}`);
         console.log(`   - Student Requests: ${studentRequests.length}`);
