@@ -3,7 +3,7 @@ import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection,
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities, createAmenity, updateAmenity, deleteAmenity } from '../store/slices/amenitiesSlice';
-import { approveProperty, rejectProperty, deleteProperty, toggleFeatured } from '../store/slices/propertiesSlice';
+import { fetchProperties, approveProperty, rejectProperty, deleteProperty, toggleFeatured } from '../store/slices/propertiesSlice';
 import PropertyReviewModal from '../components/PropertyReviewModal';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminStats from '../components/admin/AdminStats';
@@ -19,6 +19,7 @@ import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 const AdminDashboard = () => {
     const dispatch = useAppDispatch();
     const { items: amenities } = useAppSelector((state) => state.amenities);
+    const { items: properties, loading: propertiesLoading } = useAppSelector((state) => state.properties);
 
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
     const [loading, setLoading] = useState(true);
@@ -32,13 +33,17 @@ const AdminDashboard = () => {
         featured: 0,
         totalRevenue: 0
     });
-    const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
-    const [allProperties, setAllProperties] = useState<Property[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [activities, setActivities] = useState<ActivityLog[]>([]);
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
     const [pendingVerifications, setPendingVerifications] = useState<User[]>([]);
+
+    // Calculate filtered properties from Redux
+    const pendingProperties = properties.filter(p => p.status === 'pending');
+    const approvedProperties = properties.filter(p => p.status === 'approved');
+    const rejectedProperties = properties.filter(p => p.status === 'rejected');
+    const allProperties = properties;
 
     // UI states
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -54,13 +59,16 @@ const AdminDashboard = () => {
     const loadInitialData = async () => {
         try {
             setLoading(true);
+
+            // Fetch all properties from Redux
+            await dispatch(fetchProperties({}));
+
             // Fetch amenities from Redux
             dispatch(fetchAmenities());
 
-            const [statsData, pendingData, allPropsData, usersData, activitiesData, configData, paymentsData, verificationsData] = await Promise.all([
-                api.getPropertyStats(),
-                api.getPendingProperties(),
-                api.getAllPropertiesAdmin(),
+            // Fetch other data that still uses api methods
+            // TODO: These should also be migrated to Redux eventually
+            const [usersData, activitiesData, configData, paymentsData, verificationsData] = await Promise.all([
                 api.getUsers(),
                 api.getActivityLog(),
                 api.getSystemConfig(),
@@ -68,9 +76,6 @@ const AdminDashboard = () => {
                 api.getPendingVerifications()
             ]);
 
-            setStats(statsData);
-            setPendingProperties(pendingData);
-            setAllProperties(allPropsData);
             setUsers(usersData);
             setActivities(activitiesData);
             setSystemConfig(configData);
@@ -83,23 +88,32 @@ const AdminDashboard = () => {
         }
     };
 
+    // Calculate stats from Redux properties
+    useEffect(() => {
+        const calculatedStats: PropertyStats = {
+            total: properties.length,
+            pending: pendingProperties.length,
+            approved: approvedProperties.length,
+            rejected: rejectedProperties.length,
+            featured: properties.filter(p => p.isFeatured).length,
+            totalRevenue: 0 // TODO: Calculate if needed
+        };
+        setStats(calculatedStats);
+    }, [properties, pendingProperties, approvedProperties, rejectedProperties]);
+
     const refreshData = async () => {
-        const [statsData, pendingData, allPropsData, usersData, paymentsData] = await Promise.all([
-            api.getPropertyStats(),
-            api.getPendingProperties(),
-            api.getAllPropertiesAdmin(),
+        // Refresh properties from Redux
+        await dispatch(fetchProperties({}));
+
+        // Refresh other data
+        const [usersData, paymentsData, verificationsData] = await Promise.all([
             api.getUsers(),
-            api.getPaymentRequests()
+            api.getPaymentRequests(),
+            api.getPendingVerifications()
         ]);
 
-        setStats(statsData);
-        setPendingProperties(pendingData);
-        setAllProperties(allPropsData);
         setUsers(usersData);
         setPaymentRequests(paymentsData);
-
-        // Refresh pending verifications
-        const verificationsData = await api.getPendingVerifications();
         setPendingVerifications(verificationsData);
     };
 
