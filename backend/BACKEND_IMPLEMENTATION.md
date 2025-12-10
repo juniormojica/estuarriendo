@@ -172,17 +172,9 @@ PUT    /api/properties/:id/toggle-rented    - Toggle rented
 
 ### Steps:
 
-1. **Create database:**
-   ```sql
-   CREATE DATABASE estuarriendo_db;
-   ```
 
-2. **Run enum initialization:**
-   ```bash
-   psql -U your_username -d estuarriendo_db -f backend/database/init-enums.sql
-   ```
 
-3. **Configure `.env`:**
+1. **Configure `.env`:**
    ```env
    DB_HOST=localhost
    DB_PORT=5432
@@ -193,7 +185,7 @@ PUT    /api/properties/:id/toggle-rented    - Toggle rented
    PORT=3001
    ```
 
-4. **Start server:**
+2. **Start server:**
    ```bash
    cd backend
    npm run dev
