@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SearchFilters } from '../types';
-import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchProperties, setFilters } from '../store/slices/propertiesSlice';
 import SearchFiltersComponent from '../components/SearchFilters';
@@ -12,22 +11,18 @@ const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { items: properties, loading: isLoading, error } = useAppSelector((state) => state.properties);
 
-  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
   const searchSectionRef = useRef<HTMLDivElement>(null);
 
-  const loadAvailableCities = async () => {
-    try {
-      const cities = await api.getAvailableCities();
-      setAvailableCities(cities);
-    } catch (err) {
-      console.error('Error loading available cities:', err);
-    }
-  };
+  // Extract available cities from properties
+  const availableCities = Array.from(new Set(
+    properties
+      .filter(p => p.location?.city)
+      .map(p => p.location!.city)
+  )).sort();
 
   useEffect(() => {
     dispatch(fetchProperties());
-    loadAvailableCities();
   }, [dispatch]);
 
   const handleFiltersChange = (filters: SearchFilters) => {

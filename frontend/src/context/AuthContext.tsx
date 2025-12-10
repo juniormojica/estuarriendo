@@ -34,20 +34,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Check for existing session on mount
     useEffect(() => {
-        const initAuth = async () => {
+        const initAuth = () => {
             const token = authService.getToken();
             const storedUser = authService.getStoredUser();
 
+            // Only use stored user, don't verify with backend on initial load
+            // This prevents unnecessary 401 errors on public pages
+            // The token will be verified when the user actually tries to access protected resources
             if (token && storedUser) {
-                try {
-                    // Verify token is still valid by fetching current user
-                    const currentUser = await authService.getCurrentUser();
-                    setUser(currentUser);
-                } catch (err) {
-                    // Token is invalid, clear storage
-                    authService.logout();
-                    setUser(null);
-                }
+                setUser(storedUser);
             }
 
             setLoading(false);

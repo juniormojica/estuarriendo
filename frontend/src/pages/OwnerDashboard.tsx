@@ -20,7 +20,7 @@ const OwnerDashboard: React.FC = () => {
     const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
 
     useEffect(() => {
-        const user = authService.getCurrentUser();
+        const user = authService.getStoredUser();
         if (!user) {
             window.location.href = '/login';
             return;
@@ -30,9 +30,9 @@ const OwnerDashboard: React.FC = () => {
         dispatch(fetchUserProperties(user.id));
     }, [dispatch]);
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number | string) => {
         try {
-            const resultAction = await dispatch(deleteProperty(id));
+            const resultAction = await dispatch(deleteProperty(String(id)));
 
             if (deleteProperty.fulfilled.match(resultAction)) {
                 setDeleteId(null);
@@ -42,9 +42,9 @@ const OwnerDashboard: React.FC = () => {
         }
     };
 
-    const handleToggleRented = async (id: string) => {
+    const handleToggleRented = async (id: number | string) => {
         try {
-            await dispatch(toggleRented(id));
+            await dispatch(toggleRented(String(id)));
         } catch (err) {
             console.error('Error toggling rented status:', err);
         }
@@ -152,7 +152,7 @@ const OwnerDashboard: React.FC = () => {
                                                 <div className="flex-shrink-0 h-16 w-16 rounded-lg overflow-hidden bg-gray-100">
                                                     <img
                                                         className="h-16 w-16 object-cover"
-                                                        src={property.images[0]}
+                                                        src={(property.images && property.images.length > 0) ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0]?.url) : 'https://via.placeholder.com/64x64'}
                                                         alt={property.title}
                                                     />
                                                 </div>
@@ -163,7 +163,7 @@ const OwnerDashboard: React.FC = () => {
                                                         </p>
                                                         <p className="mt-1 flex items-center text-sm text-gray-500">
                                                             <span className="truncate">
-                                                                {property.address.city}, {property.address.department}
+                                                                {property.location?.city}, {property.location?.department}
                                                             </span>
                                                         </p>
                                                         {property.status === 'rejected' && property.rejectionReason && (
@@ -179,7 +179,7 @@ const OwnerDashboard: React.FC = () => {
                                                     </div>
                                                     <div className="hidden md:block">
                                                         <div className="flex items-center text-sm text-gray-500">
-                                                            Precio: ${property.price.toLocaleString()} {property.currency}
+                                                            Precio: ${property.monthlyRent.toLocaleString()} {property.currency}
                                                         </div>
                                                         <div className="mt-1 flex items-center text-sm text-gray-500">
                                                             Publicado: {new Date(property.createdAt).toLocaleDateString()}
@@ -198,9 +198,9 @@ const OwnerDashboard: React.FC = () => {
                                                             ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                                                             : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                                             }`}
-                                                        title={property.is_rented ? 'Marcar como disponible' : 'Marcar como rentada'}
+                                                        title={property.isRented ? 'Marcar como disponible' : 'Marcar como rentada'}
                                                     >
-                                                        {property.is_rented ? (
+                                                        {property.isRented ? (
                                                             <>
                                                                 <CheckSquare className="w-3 h-3 mr-1" />
                                                                 Rentada
@@ -225,7 +225,7 @@ const OwnerDashboard: React.FC = () => {
                                                     </Link>
 
                                                     <button
-                                                        onClick={() => handleOpenInterests(property.id, property.title)}
+                                                        onClick={() => handleOpenInterests(String(property.id), property.title)}
                                                         className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                                                         title="Ver Interesados"
                                                     >
@@ -241,7 +241,7 @@ const OwnerDashboard: React.FC = () => {
                                                         <Edit className="h-5 w-5" />
                                                     </Link>
 
-                                                    {deleteId === property.id ? (
+                                                    {deleteId === String(property.id) ? (
                                                         <div className="flex items-center space-x-2 animate-fadeIn">
                                                             <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
                                                             <button
@@ -259,7 +259,7 @@ const OwnerDashboard: React.FC = () => {
                                                         </div>
                                                     ) : (
                                                         <button
-                                                            onClick={() => setDeleteId(property.id)}
+                                                            onClick={() => setDeleteId(String(property.id))}
                                                             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
                                                             title="Eliminar"
                                                         >

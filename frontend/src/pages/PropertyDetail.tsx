@@ -37,7 +37,7 @@ const PropertyDetail: React.FC = () => {
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
-  const isFav = property ? isFavorite(property.id) : false;
+  const isFav = property ? isFavorite(String(property.id)) : false;
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -95,9 +95,9 @@ const PropertyDetail: React.FC = () => {
   const toggleFavorite = () => {
     if (!property) return;
     if (isFav) {
-      removeFavorite(property.id);
+      removeFavorite(String(property.id));
     } else {
-      addFavorite(property.id);
+      addFavorite(String(property.id));
     }
   };
 
@@ -135,14 +135,14 @@ const PropertyDetail: React.FC = () => {
     }).format(price);
   };
 
-  const getTypeLabel = (type: Property['type']) => {
-    const labels = {
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
       'apartamento': 'Apartamento',
       'habitacion': 'Habitación',
       'pension': 'Pensión',
       'aparta-estudio': 'Aparta-estudio'
     };
-    return labels[type];
+    return labels[type] || 'Propiedad';
   };
 
   const formatDate = (dateString: string) => {
@@ -153,8 +153,8 @@ const PropertyDetail: React.FC = () => {
     });
   };
 
-  const getAmenityDetails = (amenityId: string) => {
-    return amenities.find(a => a.id === amenityId);
+  const getAmenityDetails = (amenityId: string | number) => {
+    return amenities.find(a => String(a.id) === String(amenityId));
   };
 
   const handleInterest = async () => {
@@ -194,7 +194,7 @@ const PropertyDetail: React.FC = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* Image Gallery */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-              <ImageGallery images={property.images} alt={property.title} />
+              <ImageGallery images={(property.images || []).map(img => typeof img === 'string' ? img : img.url)} alt={property.title} />
             </div>
 
             {/* Property Info */}
@@ -203,9 +203,9 @@ const PropertyDetail: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">
-                      {getTypeLabel(property.type)}
+                      {getTypeLabel(property.type?.name || 'apartamento')}
                     </Badge>
-                    {property.featured && (
+                    {property.isFeatured && (
                       <Badge variant="warning">
                         <Star className="h-3 w-3 mr-1 fill-current" />
                         Destacado
@@ -218,8 +218,8 @@ const PropertyDetail: React.FC = () => {
                       </Badge>
                     )}
                     {/* Rental Status Badge */}
-                    <Badge variant={property.is_rented ? "default" : "success"}>
-                      {property.is_rented ? 'Rentada' : 'Disponible'}
+                    <Badge variant={property.isRented ? "default" : "success"}>
+                      {property.isRented ? 'Rentada' : 'Disponible'}
                     </Badge>
                   </div>
 
@@ -227,18 +227,18 @@ const PropertyDetail: React.FC = () => {
 
                   <div className="flex items-center text-gray-600">
                     <MapPin className="h-5 w-5 mr-2 text-emerald-500" />
-                    <span className="text-lg">{property.address.street}, {property.address.city}, {property.address.department}</span>
+                    <span className="text-lg">{property.location?.street}, {property.location?.city}, {property.location?.department}</span>
                   </div>
                 </div>
               </div>
 
               {/* Key Stats Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {property.rooms && property.type !== 'habitacion' && (
+                {property.bedrooms && property.type?.name !== 'habitacion' && (
                   <div className="bg-gray-50 p-4 rounded-xl text-center">
                     <Bed className="h-6 w-6 mx-auto text-emerald-600 mb-2" />
                     <p className="text-sm text-gray-500 mb-1">Habitaciones</p>
-                    <p className="font-bold text-gray-900">{property.rooms}</p>
+                    <p className="font-bold text-gray-900">{property.bedrooms}</p>
                   </div>
                 )}
                 {property.bathrooms && (
@@ -271,18 +271,19 @@ const PropertyDetail: React.FC = () => {
               </div>
 
               {/* Amenities */}
-              {property.amenities.length > 0 && (
+              {(property.amenities && property.amenities.length > 0) && (
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 mb-4">
-                    {property.type === 'habitacion' ? 'Características' : 'Comodidades'}
+                    {property.type?.name === 'habitacion' ? 'Características' : 'Comodidades'}
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {property.amenities.map(amenityId => {
-                      const amenity = getAmenityDetails(amenityId);
-                      const IconComponent = amenity ? iconMap[amenity.icon] : null;
+                    {property.amenities.map(amenity => {
+                      const amenityId = typeof amenity === 'string' ? amenity : amenity.id;
+                      const amenityDetails = typeof amenity === 'string' ? getAmenityDetails(amenity) : amenity;
+                      const IconComponent = amenityDetails ? iconMap[amenityDetails.icon] : null;
 
-                      return amenity ? (
-                        <div key={amenityId} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      return amenityDetails ? (
+                        <div key={String(amenityId)} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                           <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-600">
                             {IconComponent ? (
                               <IconComponent className="h-4 w-4" />
@@ -290,7 +291,7 @@ const PropertyDetail: React.FC = () => {
                               <div className="h-2 w-2 rounded-full bg-emerald-500" />
                             )}
                           </div>
-                          <span className="text-sm font-medium text-gray-700">{amenity.name}</span>
+                          <span className="text-sm font-medium text-gray-700">{amenityDetails.name}</span>
                         </div>
                       ) : null;
                     })}
@@ -323,13 +324,13 @@ const PropertyDetail: React.FC = () => {
               </div>
 
               <div className="rounded-xl overflow-hidden border border-gray-200 h-96 bg-gray-50 relative">
-                {property.coordinates && property.coordinates.lat !== 0 && property.coordinates.lng !== 0 ? (
+                {property.location?.latitude && property.location?.longitude && property.location.latitude !== 0 && property.location.longitude !== 0 ? (
                   isLoaded ? (
                     <GoogleMap
                       mapContainerStyle={containerStyle}
                       center={{
-                        lat: Number(property.coordinates.lat),
-                        lng: Number(property.coordinates.lng)
+                        lat: Number(property.location.latitude),
+                        lng: Number(property.location.longitude)
                       }}
                       zoom={16}
                       onClick={() => setActiveMarker(null)}
@@ -337,8 +338,8 @@ const PropertyDetail: React.FC = () => {
                       {/* Property Marker */}
                       <MarkerF
                         position={{
-                          lat: Number(property.coordinates.lat),
-                          lng: Number(property.coordinates.lng)
+                          lat: Number(property.location.latitude),
+                          lng: Number(property.location.longitude)
                         }}
                         onClick={() => setActiveMarker('property')}
                       >
@@ -353,26 +354,25 @@ const PropertyDetail: React.FC = () => {
                       </MarkerF>
 
                       {/* University Markers */}
-                      {property.nearbyUniversities?.map(uniId => {
-                        const university = universities.find(u => u.id === uniId);
-                        if (university && university.lat && university.lng) {
+                      {property.institutions?.map(institution => {
+                        if (institution && institution.latitude && institution.longitude) {
                           return (
                             <MarkerF
-                              key={university.id}
+                              key={institution.id}
                               position={{
-                                lat: university.lat,
-                                lng: university.lng
+                                lat: institution.latitude,
+                                lng: institution.longitude
                               }}
                               icon={{
                                 url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
                                 scaledSize: new window.google.maps.Size(40, 40)
                               }}
-                              onClick={() => setActiveMarker(university.id)}
+                              onClick={() => setActiveMarker(String(institution.id))}
                             >
-                              {activeMarker === university.id && (
+                              {activeMarker === String(institution.id) && (
                                 <InfoWindowF onCloseClick={() => setActiveMarker(null)}>
                                   <div className="p-2 min-w-[150px]">
-                                    <h3 className="font-bold text-gray-900 text-sm mb-1">{university.name}</h3>
+                                    <h3 className="font-bold text-gray-900 text-sm mb-1">{institution.name}</h3>
                                     <p className="text-xs text-gray-600">Universidad cercana</p>
                                   </div>
                                 </InfoWindowF>
@@ -410,42 +410,41 @@ const PropertyDetail: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Ciudad</p>
-                  <p className="font-semibold text-gray-900">{property.address.city}</p>
+                  <p className="font-semibold text-gray-900">{property.location?.city}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Departamento</p>
-                  <p className="font-semibold text-gray-900">{property.address.department}</p>
+                  <p className="font-semibold text-gray-900">{property.location?.department}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Dirección</p>
-                  <p className="font-semibold text-gray-900">{property.address.street}</p>
+                  <p className="font-semibold text-gray-900">{property.location?.street}</p>
                 </div>
-                {property.address.neighborhood && (
+                {property.location?.neighborhood && (
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                     <p className="text-sm text-gray-500 mb-1">Barrio</p>
-                    <p className="font-semibold text-gray-900">{property.address.neighborhood}</p>
+                    <p className="font-semibold text-gray-900">{property.location.neighborhood}</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Nearby Universities */}
-            {property.nearbyUniversities && property.nearbyUniversities.length > 0 && (
+            {property.institutions && property.institutions.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                   <GraduationCap className="h-6 w-6 mr-2 text-emerald-600" />
                   Universidades Cercanas
                 </h2>
                 <div className="grid grid-cols-1 gap-3">
-                  {property.nearbyUniversities.map(uniId => {
-                    const university = universities.find(u => u.id === uniId);
-                    return university ? (
-                      <div key={uniId} className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                  {property.institutions.map(institution => {
+                    return institution ? (
+                      <div key={institution.id} className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 bg-white rounded-lg shadow-sm">
                             <GraduationCap className="h-5 w-5 text-emerald-600" />
                           </div>
-                          <span className="font-medium text-gray-900">{university.name}</span>
+                          <span className="font-medium text-gray-900">{institution.name}</span>
                         </div>
                         {/* Could add distance here if available */}
                       </div>
@@ -457,9 +456,9 @@ const PropertyDetail: React.FC = () => {
 
             {/* Related Properties */}
             <RelatedProperties
-              currentPropertyId={property.id}
-              city={property.address.city}
-              type={property.type}
+              currentPropertyId={String(property.id)}
+              city={property.location?.city || ''}
+              type={property.type?.name || 'apartamento'}
             />
           </div>
 
@@ -471,7 +470,7 @@ const PropertyDetail: React.FC = () => {
                 <div className="text-center mb-8 pb-8 border-b border-gray-100">
                   <p className="text-sm text-gray-500 mb-1">Precio de alquiler</p>
                   <div className="flex items-center justify-center text-emerald-600">
-                    <span className="text-4xl font-bold">{formatPrice(property.price)}</span>
+                    <span className="text-4xl font-bold">{formatPrice(property.monthlyRent)}</span>
                   </div>
                   <p className="text-gray-500 mt-1">/ mes</p>
 

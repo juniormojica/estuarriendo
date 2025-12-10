@@ -26,7 +26,7 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
     useEffect(() => {
         if (isOpen && propertyId) {
             loadInterests();
-            const user = authService.getCurrentUser();
+            const user = authService.getStoredUser();
             setCurrentUser(user);
         }
     }, [isOpen, propertyId]);
@@ -39,7 +39,7 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
 
             // If user is premium, we could pre-fetch contact details if they aren't fully in the notification
             // But for now, we'll rely on what we can get or fetch on demand
-            if (authService.getCurrentUser()?.plan === 'premium') {
+            if (authService.getStoredUser()?.plan === 'premium') {
                 fetchContactDetails(data);
             }
         } catch (error) {

@@ -22,7 +22,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
   const isFav = isFavorite(property.id);
   const [ownerPlan, setOwnerPlan] = useState<'free' | 'premium' | null>(null);
   const [isOwnerVerified, setIsOwnerVerified] = useState(false);
-  const currentUser = authService.getCurrentUser();
+  const currentUser = authService.getStoredUser();
 
   useEffect(() => {
     const fetchOwnerDetails = async () => {
@@ -64,14 +64,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
     }).format(price);
   };
 
-  const getTypeLabel = (type: Property['type']) => {
-    const labels = {
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
       'apartamento': 'Apartamento',
       'habitacion': 'Habitación',
       'pension': 'Pensión',
       'aparta-estudio': 'Aparta-estudio'
     };
-    return labels[type];
+    return labels[type] || 'Propiedad';
   };
 
   const getAmenityIcon = (amenityId: string) => {
@@ -112,7 +112,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
       <Link to={`/propiedad/${property.id}`} className="relative block overflow-hidden">
         <div className="aspect-[4/3] w-full overflow-hidden">
           <img
-            src={property.images[0]}
+            src={(property.images && property.images.length > 0) ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0]?.url) : 'https://via.placeholder.com/400x300'}
             alt={property.title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
@@ -135,7 +135,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
 
         <div className="absolute top-3 right-3 flex gap-2">
           <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm shadow-sm">
-            {getTypeLabel(property.type)}
+            {getTypeLabel(property.type?.name || 'apartamento')}
           </Badge>
         </div>
 
@@ -162,19 +162,19 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
 
           <div className="flex items-center text-gray-500 text-sm mb-3">
             <MapPin className="h-4 w-4 mr-1 text-emerald-500" />
-            <span className="line-clamp-1">{property.address.city}, {property.address.department}</span>
+            <span className="line-clamp-1">{property.location?.city}, {property.location?.department}</span>
           </div>
 
           {/* Amenities Icons */}
           <div className="flex gap-3 mb-3 overflow-hidden">
-            {property.amenities.slice(0, 5).map(amenityId => (
-              <div key={amenityId} title={mockAmenities.find(a => a.id === amenityId)?.name} className="bg-gray-50 p-1.5 rounded-md">
-                {getAmenityIcon(amenityId)}
+            {property.amenities?.slice(0, 5).map(amenity => (
+              <div key={typeof amenity === 'string' ? amenity : amenity.id} title={typeof amenity === 'string' ? mockAmenities.find(a => a.id === amenity)?.name : amenity.name} className="bg-gray-50 p-1.5 rounded-md">
+                {getAmenityIcon(typeof amenity === 'string' ? amenity : String(amenity.id))}
               </div>
             ))}
-            {property.amenities.length > 5 && (
+            {(property.amenities?.length || 0) > 5 && (
               <div className="bg-gray-50 p-1.5 rounded-md text-xs text-gray-500 font-medium flex items-center justify-center w-7 h-7">
-                +{property.amenities.length - 5}
+                +{(property.amenities?.length || 0) - 5}
               </div>
             )}
           </div>
@@ -185,10 +185,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
         </Link>
 
         <div className="flex items-center gap-4 text-sm text-gray-500 mb-4 pb-4 border-b border-gray-50">
-          {property.rooms && property.type !== 'habitacion' && (
+          {property.bedrooms && property.type?.name !== 'habitacion' && (
             <div className="flex items-center" title="Habitaciones">
               <Bed className="h-4 w-4 mr-1.5" />
-              <span>{property.rooms}</span>
+              <span>{property.bedrooms}</span>
             </div>
           )}
           {property.bathrooms && (
@@ -210,7 +210,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
             <span className="text-xs text-gray-400 font-medium">Precio</span>
             <div className="flex items-baseline">
               <span className="text-xl font-bold text-emerald-600">
-                {formatPrice(property.price)}
+                {formatPrice(property.monthlyRent)}
               </span>
               <span className="text-xs text-gray-500 ml-1">/mes</span>
             </div>

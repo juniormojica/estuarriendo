@@ -28,7 +28,9 @@ const Header: React.FC = () => {
 
           setNewOpportunitiesCount(newCount);
         } catch (error) {
+          // Silently fail if not authenticated or error occurs
           console.error('Error loading opportunities count:', error);
+          setNewOpportunitiesCount(0);
         }
       }
     };
@@ -85,8 +87,8 @@ const Header: React.FC = () => {
                   <Link
                     to="/admin"
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/admin'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                       }`}
                   >
                     Admin Panel

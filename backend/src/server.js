@@ -78,7 +78,7 @@ const startServer = async () => {
         if (process.env.NODE_ENV === 'development') {
             // Only create tables if they don't exist, don't alter existing ones
             // This prevents Sequelize from trying to recreate ENUMs
-            await sequelize.sync({ force: false, alter: true });
+            await sequelize.sync({ force: false, alter: false });
             console.log('✅ Database models synchronized');
         }
 

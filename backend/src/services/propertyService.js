@@ -7,6 +7,7 @@ import {
     PropertyType,
     Institution,
     PropertyInstitution,
+    Amenity,
     User,
     sequelize
 } from '../models/index.js';
@@ -264,6 +265,13 @@ export const findPropertyWithAssociations = async (propertyId) => {
                 through: {
                     attributes: ['distance']
                 }
+            },
+            {
+                model: Amenity,
+                as: 'amenities',
+                through: {
+                    attributes: []
+                }
             }
         ]
     });
@@ -332,6 +340,13 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
             as: 'institutions',
             through: {
                 attributes: ['distance']
+            }
+        },
+        {
+            model: Amenity,
+            as: 'amenities',
+            through: {
+                attributes: [] // Don't need junction table fields
             }
         }
     ];

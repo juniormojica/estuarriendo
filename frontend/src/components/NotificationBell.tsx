@@ -12,7 +12,7 @@ const NotificationBell: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     const loadNotifications = async () => {
-        const currentUser = authService.getCurrentUser();
+        const currentUser = authService.getStoredUser();
         if (!currentUser) return;
 
         setLoading(true);
@@ -46,7 +46,7 @@ const NotificationBell: React.FC = () => {
     };
 
     const handleMarkAllAsRead = async () => {
-        const currentUser = authService.getCurrentUser();
+        const currentUser = authService.getStoredUser();
         if (!currentUser) return;
 
         await api.markAllNotificationsAsRead(currentUser.id);

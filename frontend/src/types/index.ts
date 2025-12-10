@@ -96,6 +96,77 @@ export interface VerificationDocuments {
   utilityBill: string; // base64
 }
 
+/**
+ * =================================================================================
+ * B2. INTERFACES FOR NORMALIZED PROPERTY STRUCTURE
+ * =================================================================================
+ */
+
+// Location (normalized from address)
+export interface Location {
+  id: number;
+  city: string;
+  department: string;
+  street: string;
+  neighborhood?: string;
+  postalCode?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+// PropertyType entity (normalized from string type)
+export interface PropertyTypeEntity {
+  id: number;
+  name: string; // 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio'
+}
+
+// Property Contact information
+export interface PropertyContact {
+  id: number;
+  propertyId: number;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  availableHours?: string;
+}
+
+// Property Features
+export interface PropertyFeatures {
+  id: number;
+  propertyId: number;
+  furnished: boolean;
+  petsAllowed: boolean;
+  smokingAllowed: boolean;
+  parking: boolean;
+  elevator: boolean;
+  security: boolean;
+  gym: boolean;
+  pool: boolean;
+  laundry: boolean;
+  storage: boolean;
+  balcony: boolean;
+  terrace: boolean;
+  garden: boolean;
+}
+
+// Property Image
+export interface PropertyImage {
+  id: number;
+  propertyId: number;
+  url: string;
+  caption?: string;
+  displayOrder: number;
+  isPrimary: boolean;
+}
+
+// Institution (universities)
+export interface Institution {
+  id: number;
+  name: string;
+  type: string;
+  city: string;
+}
+
 
 /**
  * =================================================================================
@@ -104,27 +175,50 @@ export interface VerificationDocuments {
  */
 
 export interface Property {
-  id: string;
+  // Core fields
+  id: number; // Changed from string to number
+  ownerId: string;
   title: string;
   description: string;
-  type: PropertyType;
-  price: number;
+
+  // Pricing
+  monthlyRent: number; // Renamed from price
+  deposit?: number;
   currency: string;
-  address: Address;
-  rooms?: number;
+
+  // Characteristics
+  bedrooms?: number; // Renamed from rooms
   bathrooms?: number;
   area?: number;
-  images: string[];
-  amenities: string[];
-  nearbyUniversities?: string[];
-  createdAt: string;
-  featured?: boolean;
-  isVerified?: boolean;
+  floor?: number;
+
+  // Status
   status: PropertyStatus;
-  ownerId: string;
-  coordinates?: Coordinates;
+  isFeatured: boolean; // Renamed from featured
+  isVerified: boolean;
+  isRented: boolean; // Renamed from is_rented
+
+  // Metrics
+  viewsCount: number;
+  interestsCount: number;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
   rejectionReason?: string;
-  is_rented?: boolean;
+  availableFrom?: string;
+
+  // Relations (populated by backend includes)
+  location?: Location;
+  type?: PropertyTypeEntity;
+  contact?: PropertyContact;
+  features?: PropertyFeatures;
+  images?: PropertyImage[];
+  institutions?: Institution[];
+  amenities?: Amenity[];
+  owner?: User; // If included
 }
 
 export interface User {

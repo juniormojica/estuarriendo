@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from '../lib/axios';
+import axios from '../../lib/axios';
 import { Property, SearchFilters } from '../types';
 
 // State interface
