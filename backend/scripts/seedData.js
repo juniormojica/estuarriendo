@@ -296,33 +296,34 @@ const seedUsers = async () => {
 const seedAmenities = async () => {
     console.log('🏠 Seeding amenities...');
 
+    // Amenities matching frontend mockData
     const amenities = [
         { name: 'WiFi', icon: 'wifi' },
-        { name: 'Aire Acondicionado', icon: 'ac_unit' },
-        { name: 'Calefacción', icon: 'whatshot' },
-        { name: 'Cocina Equipada', icon: 'kitchen' },
-        { name: 'Lavadora', icon: 'local_laundry_service' },
-        { name: 'Secadora', icon: 'dry' },
-        { name: 'Parqueadero', icon: 'local_parking' },
-        { name: 'Gimnasio', icon: 'fitness_center' },
+        { name: 'Parqueadero', icon: 'parking' },
         { name: 'Piscina', icon: 'pool' },
-        { name: 'Zona BBQ', icon: 'outdoor_grill' },
-        { name: 'Seguridad 24/7', icon: 'security' },
+        { name: 'Gimnasio', icon: 'gym' },
+        { name: 'Lavandería', icon: 'laundry' },
+        { name: 'Seguridad 24h', icon: 'security' },
         { name: 'Ascensor', icon: 'elevator' },
         { name: 'Balcón', icon: 'balcony' },
-        { name: 'Terraza', icon: 'deck' },
-        { name: 'Amoblado', icon: 'weekend' },
-        { name: 'Mascotas Permitidas', icon: 'pets' },
-        { name: 'Zona de Estudio', icon: 'menu_book' },
-        { name: 'Sala de Juegos', icon: 'sports_esports' },
-        { name: 'Portería', icon: 'meeting_room' },
-        { name: 'Zona Verde', icon: 'park' }
+        { name: 'Amoblado', icon: 'furnished' },
+        { name: 'Aire Acondicionado', icon: 'ac' },
+        { name: 'Calefacción', icon: 'heating' },
+        { name: 'Cocina Equipada', icon: 'kitchen' },
+        // Room-specific amenities
+        { name: 'Baño Interno', icon: 'private-bathroom' },
+        { name: 'Closet', icon: 'closet' },
+        { name: 'Abanico', icon: 'fan' },
+        { name: 'Escritorio', icon: 'desk' },
+        { name: 'Ventana Exterior', icon: 'window' },
+        { name: 'Cama Incluida', icon: 'bed' },
+        { name: 'TV', icon: 'tv' }
     ];
 
-    const createdAmenities = await Amenity.bulkCreate(amenities);
-    console.log(`  ✅ Created ${createdAmenities.length} amenities`);
+    const created = await Amenity.bulkCreate(amenities);
+    console.log(`  ✅ Created ${created.length} amenities`);
 
-    return createdAmenities;
+    return created;
 };
 
 /**
