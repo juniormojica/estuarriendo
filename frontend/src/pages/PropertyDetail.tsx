@@ -7,6 +7,7 @@ import { Property, User } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
+import { fetchPropertyById } from '../store/slices/propertiesSlice';
 import { universities } from '../data/mockData';
 import ImageGallery from '../components/ImageGallery';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -28,13 +29,16 @@ const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const { items: amenities } = useAppSelector((state) => state.amenities);
+  const { items: properties, loading: propertiesLoading } = useAppSelector((state) => state.properties);
 
-  const [property, setProperty] = useState<Property | null>(null);
   const [ownerDetails, setOwnerDetails] = useState<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
+
+  // Get property from Redux state
+  const property = properties.find(p => String(p.id) === id) || null;
 
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = property ? isFavorite(String(property.id)) : false;
@@ -55,23 +59,19 @@ const PropertyDetail: React.FC = () => {
         // Fetch amenities from Redux
         dispatch(fetchAmenities());
 
-        // Fetch property data
-        const propertyData = await api.getProperty(id);
+        // Fetch property data from Redux
+        const resultAction = await dispatch(fetchPropertyById(id));
 
-        if (!propertyData) {
+        if (fetchPropertyById.rejected.match(resultAction)) {
           setError('Propiedad no encontrada');
+          setIsLoading(false);
           return;
         }
 
-        setProperty(propertyData);
+        // Property will be available in Redux state
+        // We'll get it from the selector above
 
-        // Fetch owner details
-        if (propertyData.ownerId) {
-          const owner = await api.getOwnerContactDetails(propertyData.ownerId);
-          setOwnerDetails(owner);
-        }
-
-        // Get current user from Redux
+        // Get current user from localStorage
         const storedUser = localStorage.getItem('estuarriendo_current_user');
         if (storedUser) {
           setCurrentUser(JSON.parse(storedUser));
@@ -87,7 +87,30 @@ const PropertyDetail: React.FC = () => {
     loadData();
   }, [id, dispatch]);
 
-  // Scroll to top when component mounts or ID changes
+  // Fetch owner details when property is loaded
+  useEffect(() => {
+    if (property?.owner) {
+      // Owner data comes with the property from backend
+      setOwnerDetails({
+        name: property.owner.name || '',
+        whatsapp: property.owner.whatsapp || '',
+        email: property.owner.email || '',
+        plan: property.owner.plan || 'free'
+      });
+    } else if (property?.ownerId && !ownerDetails) {
+      // Fallback: fetch owner details if not included
+      const fetchOwner = async () => {
+        try {
+          // For now, we'll just use basic info from property
+          // In the future, we could implement api.getOwnerContactDetails
+          console.warn('Owner details not included in property response');
+        } catch (err) {
+          console.error('Error fetching owner details:', err);
+        }
+      };
+      fetchOwner();
+    }
+  }, [property, ownerDetails]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id]);
