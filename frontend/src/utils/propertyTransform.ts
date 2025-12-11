@@ -1,41 +1,32 @@
-import { PropertyFormData, Property, User } from '../types';
-
-/**
- * Property Type mapping
- * Maps property type names to their IDs (actual IDs from database)
- * Note: IDs are 5-8 because seed was run multiple times
- */
-const PROPERTY_TYPE_MAP: Record<string, number> = {
-    'pension': 5,
-    'habitacion': 6,
-    'apartamento': 7,
-    'aparta-estudio': 8
-};
-
-const PROPERTY_TYPE_REVERSE_MAP: Record<number, string> = {
-    5: 'pension',
-    6: 'habitacion',
-    7: 'apartamento',
-    8: 'aparta-estudio'
-};
+import { PropertyFormData, Property, User, PropertyTypeEntity } from '../types';
 
 /**
  * Transform form data to backend format for property creation/update
+ * @param formData - Form data from the property form
+ * @param user - Current user object
+ * @param propertyTypes - Array of property types from the backend
  */
 export const transformPropertyForBackend = (
     formData: PropertyFormData,
-    user: User
+    user: User,
+    propertyTypes: PropertyTypeEntity[]
 ): any => {
-    // Get typeId from type name
-    const typeId = PROPERTY_TYPE_MAP[formData.type];
-    if (!typeId) {
-        throw new Error(`Invalid property type: ${formData.type}`);
+    // Get typeId from type name by looking it up in the provided array
+    const propertyType = propertyTypes.find(
+        pt => pt.name.toLowerCase() === formData.type.toLowerCase()
+    );
+
+    if (!propertyType) {
+        throw new Error(
+            `Tipo de propiedad no válido: ${formData.type}. ` +
+            `Los tipos válidos son: ${propertyTypes.map(pt => pt.name).join(', ')}`
+        );
     }
 
     return {
         // Core property fields
         ownerId: formData.ownerId || user.id,
-        typeId,
+        typeId: propertyType.id,
         title: formData.title,
         description: formData.description,
         monthlyRent: formData.monthlyRent || formData.price || 0,
@@ -113,7 +104,7 @@ export const transformPropertyFromBackend = (property: Property): PropertyFormDa
     return {
         title: property.title,
         description: property.description,
-        type: property.type?.name || PROPERTY_TYPE_REVERSE_MAP[property.typeId as any] || 'apartamento',
+        type: property.type?.name || 'apartamento',
         monthlyRent: property.monthlyRent,
         price: property.monthlyRent, // Keep for backwards compatibility
         deposit: property.deposit,

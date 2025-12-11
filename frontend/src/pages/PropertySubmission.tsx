@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
-import { PropertyFormData } from '../types';
+import { PropertyFormData, PropertyTypeEntity } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -11,6 +11,7 @@ import ImageUploader from '../components/ImageUploader';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import { departments, getCitiesByDepartment } from '../data/colombiaLocations';
 import { transformPropertyForBackend, transformPropertyFromBackend } from '../utils/propertyTransform';
+import { fetchPropertyTypes } from '../services/propertyTypeService';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
@@ -29,6 +30,7 @@ const PropertySubmission: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [coordStrings, setCoordStrings] = useState({ lat: '', lng: '' });
+  const [propertyTypes, setPropertyTypes] = useState<PropertyTypeEntity[]>([]);
 
   const maxImages = user?.plan === 'premium' ? 10 : 3;
 
@@ -65,6 +67,24 @@ const PropertySubmission: React.FC = () => {
     }
     setUser(JSON.parse(storedUser));
     dispatch(fetchAmenities());
+
+    // Fetch property types
+    const loadPropertyTypes = async () => {
+      try {
+        const types = await fetchPropertyTypes();
+        setPropertyTypes(types);
+      } catch (err) {
+        console.error('Error loading property types:', err);
+        // Use fallback types if fetch fails
+        setPropertyTypes([
+          { id: 1, name: 'apartamento' },
+          { id: 2, name: 'habitacion' },
+          { id: 3, name: 'pension' },
+          { id: 4, name: 'aparta-estudio' }
+        ]);
+      }
+    };
+    loadPropertyTypes();
 
     if (id) {
       setIsEditing(true);
@@ -213,8 +233,15 @@ const PropertySubmission: React.FC = () => {
     setError('');
 
     try {
+      // Check if property types are loaded
+      if (propertyTypes.length === 0) {
+        setError('Cargando tipos de propiedad...');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Transform form data to backend format
-      const backendData = transformPropertyForBackend(formData, user);
+      const backendData = transformPropertyForBackend(formData, user, propertyTypes);
 
       if (isEditing && id) {
         // Update existing property

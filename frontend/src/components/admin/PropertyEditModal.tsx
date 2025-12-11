@@ -8,6 +8,7 @@ import { useToast } from '../ToastProvider';
 import ImageUploader from '../ImageUploader';
 import { departments, getCitiesByDepartment } from '../../data/colombiaLocations';
 import LoadingSpinner from '../LoadingSpinner';
+import { fetchPropertyTypes } from '../../services/propertyTypeService';
 
 interface PropertyEditModalProps {
     property: Property;
@@ -59,14 +60,33 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     const [availableCities, setAvailableCities] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string>('');
+    const [propertyTypes, setPropertyTypes] = useState<PropertyTypeEntity[]>([]);
+    const [isLoadingTypes, setIsLoadingTypes] = useState(true);
 
-    // Property types mapping
-    const propertyTypes: PropertyTypeEntity[] = [
-        { id: 1, name: 'apartamento' },
-        { id: 2, name: 'habitacion' },
-        { id: 3, name: 'pension' },
-        { id: 4, name: 'aparta-estudio' }
-    ];
+    // Fetch property types on mount
+    useEffect(() => {
+        const loadPropertyTypes = async () => {
+            try {
+                setIsLoadingTypes(true);
+                const types = await fetchPropertyTypes();
+                setPropertyTypes(types);
+            } catch (err) {
+                console.error('Error loading property types:', err);
+                toast.error('Error al cargar los tipos de propiedad');
+                // Fallback to default types if fetch fails
+                setPropertyTypes([
+                    { id: 1, name: 'apartamento' },
+                    { id: 2, name: 'habitacion' },
+                    { id: 3, name: 'pension' },
+                    { id: 4, name: 'aparta-estudio' }
+                ]);
+            } finally {
+                setIsLoadingTypes(false);
+            }
+        };
+
+        loadPropertyTypes();
+    }, [toast]);
 
     useEffect(() => {
         if (isOpen && property) {
