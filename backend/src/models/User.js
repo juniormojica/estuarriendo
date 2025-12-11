@@ -52,6 +52,19 @@ const User = sequelize.define('User', {
         field: 'is_active',
         comment: 'Whether user account is active'
     },
+    plan: {
+        type: DataTypes.ENUM('free', 'premium'),
+        allowNull: false,
+        defaultValue: 'free',
+        comment: 'Current user plan (denormalized from subscriptions)'
+    },
+    verificationStatus: {
+        type: DataTypes.ENUM('not_submitted', 'pending', 'verified', 'rejected'),
+        allowNull: false,
+        defaultValue: 'not_submitted',
+        field: 'verification_status',
+        comment: 'User verification status'
+    },
     joinedAt: {
         type: DataTypes.DATE,
         allowNull: false,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -9,7 +9,6 @@ import { Badge } from './ui/Badge';
 import { cn } from '../lib/utils';
 import { iconMap } from '../lib/icons';
 import { authService } from '../services/authService';
-import { api } from '../services/api';
 
 interface PropertyCardProps {
   property: Property;
@@ -20,30 +19,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
   const navigate = useNavigate();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = isFavorite(property.id);
-  const [ownerPlan, setOwnerPlan] = useState<'free' | 'premium' | null>(null);
-  const [isOwnerVerified, setIsOwnerVerified] = useState(false);
   const currentUser = authService.getStoredUser();
 
-  useEffect(() => {
-    const fetchOwnerDetails = async () => {
-      if (property.ownerId) {
-        try {
-          const owner = await api.getOwnerContactDetails(property.ownerId);
-          setOwnerPlan(owner.plan);
-
-          // Get full user details to check verification status
-          const users = await api.getUsers();
-          const ownerUser = users.find(u => u.id === property.ownerId);
-          if (ownerUser && ownerUser.verificationStatus === 'verified') {
-            setIsOwnerVerified(true);
-          }
-        } catch (error) {
-          console.error('Error fetching owner details:', error);
-        }
-      }
-    };
-    fetchOwnerDetails();
-  }, [property.ownerId]);
+  // Get owner info from property object (included by backend)
+  const ownerPlan = property.owner?.plan || 'free';
+  const isOwnerVerified = property.owner?.verificationStatus === 'verified';
 
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();

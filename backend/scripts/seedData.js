@@ -106,6 +106,8 @@ const seedUsers = async () => {
         whatsapp: '+57 300 123 4567',
         userType: UserType.SUPER_ADMIN,
         isActive: true,
+        plan: PlanType.FREE,
+        verificationStatus: VerificationStatus.VERIFIED,
         joinedAt: new Date('2024-01-01')
     });
 
@@ -136,6 +138,8 @@ const seedUsers = async () => {
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.ADMIN,
             isActive: true,
+            plan: PlanType.FREE,
+            verificationStatus: VerificationStatus.VERIFIED,
             joinedAt: faker.date.past({ years: 1 })
         });
 
@@ -171,6 +175,10 @@ const seedUsers = async () => {
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.OWNER,
             isActive: true,
+            plan: isPremium ? PlanType.PREMIUM : PlanType.FREE,
+            verificationStatus: i <= 7 ? VerificationStatus.VERIFIED :
+                i <= 9 ? VerificationStatus.PENDING :
+                    VerificationStatus.NOT_SUBMITTED,
             joinedAt
         });
 
@@ -263,6 +271,8 @@ const seedUsers = async () => {
             whatsapp: faker.phone.number('+57 3## ### ####'),
             userType: UserType.TENANT,
             isActive: true,
+            plan: PlanType.FREE,
+            verificationStatus: VerificationStatus.NOT_SUBMITTED,
             joinedAt
         });
 

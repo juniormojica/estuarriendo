@@ -236,7 +236,7 @@ export const findPropertyWithAssociations = async (propertyId) => {
             {
                 model: User,
                 as: 'owner',
-                attributes: ['id', 'email', 'name', 'userType']
+                attributes: ['id', 'email', 'name', 'userType', 'plan', 'verificationStatus']
             },
             {
                 model: Location,
@@ -312,7 +312,7 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         {
             model: User,
             as: 'owner',
-            attributes: ['id', 'email', 'name', 'userType']
+            attributes: ['id', 'email', 'name', 'userType', 'plan', 'verificationStatus']
         },
         {
             model: Location,
