@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize } from 'lucide-react';
 import { Property } from '../types';
+import ConfirmationModal from './ConfirmationModal';
 
 interface PropertyReviewModalProps {
     property: Property;
@@ -21,6 +22,12 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const [localImages, setLocalImages] = useState(property.images || []);
 
+    // Confirmation modals state
+    const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+    const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+    const [showDeleteImageConfirm, setShowDeleteImageConfirm] = useState(false);
+    const [imageToDelete, setImageToDelete] = useState<number | null>(null);
+
     const [showRejectionInput, setShowRejectionInput] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
 
@@ -29,6 +36,10 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
             if (event.key === 'Escape') {
                 if (showRejectionInput) {
                     setShowRejectionInput(false);
+                } else if (showApproveConfirm || showRejectConfirm || showDeleteImageConfirm) {
+                    setShowApproveConfirm(false);
+                    setShowRejectConfirm(false);
+                    setShowDeleteImageConfirm(false);
                 } else {
                     onClose();
                 }
@@ -37,16 +48,20 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onClose, showRejectionInput]);
+    }, [onClose, showRejectionInput, showApproveConfirm, showRejectConfirm, showDeleteImageConfirm]);
 
-    const handleApprove = async () => {
+    const handleApproveClick = () => {
+        setShowApproveConfirm(true);
+    };
+
+    const handleConfirmApprove = async () => {
         setIsProcessing(true);
         try {
             await onApprove(String(property.id));
+            setShowApproveConfirm(false);
             onClose();
         } catch (error) {
             console.error('Error approving property:', error);
-        } finally {
             setIsProcessing(false);
         }
     };
@@ -55,29 +70,38 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
         setShowRejectionInput(true);
     };
 
-    const handleConfirmReject = async () => {
+    const handleConfirmRejectClick = () => {
         if (!rejectionReason.trim()) {
-            alert('Por favor ingresa una razón para el rechazo.');
             return;
         }
+        setShowRejectConfirm(true);
+    };
 
+    const handleConfirmReject = async () => {
         setIsProcessing(true);
         try {
             await onReject(String(property.id), rejectionReason);
+            setShowRejectConfirm(false);
+            setShowRejectionInput(false);
             onClose();
         } catch (error) {
             console.error('Error rejecting property:', error);
-        } finally {
             setIsProcessing(false);
         }
     };
 
-    const handleDeleteImage = async (index: number) => {
-        if (!confirm('¿Eliminar esta imagen?')) return;
+    const handleDeleteImageClick = (index: number) => {
+        setImageToDelete(index);
+        setShowDeleteImageConfirm(true);
+    };
 
+    const handleConfirmDeleteImage = async () => {
+        if (imageToDelete === null) return;
+
+        setIsProcessing(true);
         try {
-            await onDeleteImage(String(property.id), index);
-            const newImages = localImages.filter((_, i) => i !== index);
+            await onDeleteImage(String(property.id), imageToDelete);
+            const newImages = localImages.filter((_, i) => i !== imageToDelete);
             setLocalImages(newImages);
 
             // Adjust current image index if necessary
@@ -86,8 +110,13 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
             } else if (newImages.length === 0) {
                 setCurrentImageIndex(0);
             }
+
+            setShowDeleteImageConfirm(false);
+            setImageToDelete(null);
         } catch (error) {
             console.error('Error deleting image:', error);
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -138,8 +167,9 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
 
                                         {/* Delete Current Image Button */}
                                         <button
-                                            onClick={() => handleDeleteImage(currentImageIndex)}
-                                            className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors"
+                                            onClick={() => handleDeleteImageClick(currentImageIndex)}
+                                            disabled={isProcessing}
+                                            className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors disabled:opacity-50"
                                             title="Eliminar esta imagen"
                                         >
                                             <Trash2 size={20} />
@@ -338,11 +368,11 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                     Cancelar
                                 </button>
                                 <button
-                                    onClick={handleConfirmReject}
+                                    onClick={handleConfirmRejectClick}
                                     disabled={isProcessing || !rejectionReason.trim()}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isProcessing ? 'Rechazando...' : 'Confirmar Rechazo'}
+                                    Continuar
                                 </button>
                             </div>
                         </div>
@@ -352,32 +382,20 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                     {!showRejectionInput && (
                         <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4">
                             <button
-                                onClick={handleApprove}
+                                onClick={handleApproveClick}
                                 disabled={isProcessing || localImages.length === 0}
                                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isProcessing ? (
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                ) : (
-                                    <>
-                                        <Check size={20} />
-                                        Aprobar Propiedad
-                                    </>
-                                )}
+                                <Check size={20} />
+                                Aprobar Propiedad
                             </button>
                             <button
                                 onClick={handleRejectClick}
                                 disabled={isProcessing}
                                 className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isProcessing ? (
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                ) : (
-                                    <>
-                                        <X size={20} />
-                                        Rechazar Propiedad
-                                    </>
-                                )}
+                                <X size={20} />
+                                Rechazar Propiedad
                             </button>
                         </div>
                     )}
@@ -391,6 +409,43 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* Confirmation Modals */}
+            <ConfirmationModal
+                isOpen={showApproveConfirm}
+                onClose={() => setShowApproveConfirm(false)}
+                onConfirm={handleConfirmApprove}
+                title="¿Aprobar esta propiedad?"
+                message={`Estás a punto de aprobar "${property.title}". La propiedad será visible públicamente en el sitio.`}
+                type="approve"
+                confirmText="Sí, Aprobar"
+                cancelText="Cancelar"
+                isProcessing={isProcessing}
+            />
+
+            <ConfirmationModal
+                isOpen={showRejectConfirm}
+                onClose={() => setShowRejectConfirm(false)}
+                onConfirm={handleConfirmReject}
+                title="¿Rechazar esta propiedad?"
+                message={`Estás a punto de rechazar "${property.title}". El propietario recibirá una notificación con la razón: "${rejectionReason}"`}
+                type="reject"
+                confirmText="Sí, Rechazar"
+                cancelText="Volver"
+                isProcessing={isProcessing}
+            />
+
+            <ConfirmationModal
+                isOpen={showDeleteImageConfirm}
+                onClose={() => setShowDeleteImageConfirm(false)}
+                onConfirm={handleConfirmDeleteImage}
+                title="¿Eliminar esta imagen?"
+                message="Esta acción no se puede deshacer. La imagen será eliminada permanentemente de la propiedad."
+                type="delete"
+                confirmText="Sí, Eliminar"
+                cancelText="Cancelar"
+                isProcessing={isProcessing}
+            />
         </div>
     );
 };

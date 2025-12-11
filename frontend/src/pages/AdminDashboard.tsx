@@ -15,9 +15,11 @@ import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal
 import PropertyEditModal from '../components/admin/PropertyEditModal';
 import UserDetailsModal from '../components/admin/UserDetailsModal';
 import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
+import { useToast } from '../components/ToastProvider';
 
 const AdminDashboard = () => {
     const dispatch = useAppDispatch();
+    const toast = useToast();
     const { items: amenities } = useAppSelector((state) => state.amenities);
     const { items: properties, loading: propertiesLoading } = useAppSelector((state) => state.properties);
 
@@ -122,11 +124,15 @@ const AdminDashboard = () => {
             const resultAction = await dispatch(approveProperty(id));
 
             if (approveProperty.fulfilled.match(resultAction)) {
+                toast.success('✅ Propiedad aprobada exitosamente');
                 await refreshData();
                 setSelectedProperty(null);
+            } else {
+                toast.error('❌ Error al aprobar la propiedad');
             }
         } catch (error) {
             console.error('Error approving property:', error);
+            toast.error('❌ Error al aprobar la propiedad');
         }
     };
 
@@ -142,11 +148,15 @@ const AdminDashboard = () => {
             const resultAction = await dispatch(rejectProperty({ id, reason: finalReason }));
 
             if (rejectProperty.fulfilled.match(resultAction)) {
+                toast.success('✅ Propiedad rechazada');
                 await refreshData();
                 setSelectedProperty(null);
+            } else {
+                toast.error('❌ Error al rechazar la propiedad');
             }
         } catch (error) {
             console.error('Error rejecting property:', error);
+            toast.error('❌ Error al rechazar la propiedad');
         }
     };
 
@@ -163,16 +173,17 @@ const AdminDashboard = () => {
             const resultAction = await dispatch(deleteProperty(propertyToDelete));
 
             if (deleteProperty.fulfilled.match(resultAction)) {
+                toast.success('✅ Propiedad eliminada exitosamente');
                 await refreshData();
                 setSelectedProperty(null);
                 setPropertyToDelete(null);
             } else {
                 console.error('Failed to delete property.');
-                alert('No se pudo eliminar la propiedad. Por favor intente nuevamente.');
+                toast.error('❌ No se pudo eliminar la propiedad');
             }
         } catch (error) {
             console.error('Error deleting property:', error);
-            alert('Ocurrió un error al eliminar la propiedad.');
+            toast.error('❌ Ocurrió un error al eliminar la propiedad');
         } finally {
             setIsDeleting(false);
         }
@@ -192,10 +203,18 @@ const AdminDashboard = () => {
             const resultAction = await dispatch(toggleFeatured(id));
 
             if (toggleFeatured.fulfilled.match(resultAction)) {
+                const property = properties.find(p => String(p.id) === id);
+                const message = property?.isFeatured
+                    ? '⭐ Propiedad destacada'
+                    : '✅ Destacado removido';
+                toast.success(message);
                 await refreshData();
+            } else {
+                toast.error('❌ Error al cambiar estado destacado');
             }
         } catch (error) {
             console.error('Error toggling featured status:', error);
+            toast.error('❌ Error al cambiar estado destacado');
         }
     };
 

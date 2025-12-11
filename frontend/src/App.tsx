@@ -19,98 +19,101 @@ import StudentRequestPage from './pages/StudentRequestPage';
 import OpportunitiesPage from './pages/OpportunitiesPage';
 import PlansPage from './pages/PlansPage';
 import { FavoritesProvider } from './context/FavoritesContext';
+import { ToastProvider } from './components/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
     <Provider store={store}>
-      <FavoritesProvider>
-        <Router>
-          <ScrollToTop />
-          <div className="min-h-screen bg-gray-50">
-            <Header />
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/propiedad/:id" element={<PropertyDetail />} />
-              <Route path="/favoritos" element={<FavoritesPage />} />
-              <Route path="/planes" element={<PlansPage />} />
-              <Route path="/registro" element={<RegistrationPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <ToastProvider>
+        <FavoritesProvider>
+          <Router>
+            <ScrollToTop />
+            <div className="min-h-screen bg-gray-50">
+              <Header />
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/propiedad/:id" element={<PropertyDetail />} />
+                <Route path="/favoritos" element={<FavoritesPage />} />
+                <Route path="/planes" element={<PlansPage />} />
+                <Route path="/registro" element={<RegistrationPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-              {/* Protected routes - require authentication */}
-              <Route
-                path="/publicar"
-                element={
-                  <ProtectedRoute>
-                    <PropertySubmission />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/editar-propiedad/:id"
-                element={
-                  <ProtectedRoute>
-                    <PropertySubmission />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute allowedUserTypes={['owner']}>
-                    <OwnerDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mis-propiedades"
-                element={
-                  <ProtectedRoute allowedUserTypes={['owner']}>
-                    <OwnerDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/perfil"
-                element={
-                  <ProtectedRoute>
-                    <UserProfile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/busco-inmueble"
-                element={
-                  <ProtectedRoute>
-                    <StudentRequestPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/oportunidades"
-                element={
-                  <ProtectedRoute allowedUserTypes={['owner']}>
-                    <OpportunitiesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute allowedUserTypes={['admin', 'superAdmin']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-            <Footer />
-          </div>
-        </Router>
-      </FavoritesProvider>
+                {/* Protected routes - require authentication */}
+                <Route
+                  path="/publicar"
+                  element={
+                    <ProtectedRoute>
+                      <PropertySubmission />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/editar-propiedad/:id"
+                  element={
+                    <ProtectedRoute>
+                      <PropertySubmission />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute allowedUserTypes={['owner']}>
+                      <OwnerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/mis-propiedades"
+                  element={
+                    <ProtectedRoute allowedUserTypes={['owner']}>
+                      <OwnerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/perfil"
+                  element={
+                    <ProtectedRoute>
+                      <UserProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/busco-inmueble"
+                  element={
+                    <ProtectedRoute>
+                      <StudentRequestPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/oportunidades"
+                  element={
+                    <ProtectedRoute allowedUserTypes={['owner']}>
+                      <OpportunitiesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute allowedUserTypes={['admin', 'superAdmin']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+              <Footer />
+            </div>
+          </Router>
+        </FavoritesProvider>
+      </ToastProvider>
     </Provider>
   );
 }

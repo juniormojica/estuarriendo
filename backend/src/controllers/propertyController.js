@@ -256,13 +256,21 @@ export const approveProperty = async (req, res) => {
             }
         }
 
+        // Fetch complete property with all associations
+        const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
         res.json({
+            success: true,
             message: 'Property approved successfully',
-            property
+            data: completeProperty
         });
     } catch (error) {
         console.error('Error approving property:', error);
-        res.status(500).json({ error: 'Failed to approve property', message: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to approve property',
+            message: error.message
+        });
     }
 };
 
@@ -308,13 +316,21 @@ export const rejectProperty = async (req, res) => {
             }
         }
 
+        // Fetch complete property with all associations
+        const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
         res.json({
+            success: true,
             message: 'Property rejected',
-            property
+            data: completeProperty
         });
     } catch (error) {
         console.error('Error rejecting property:', error);
-        res.status(500).json({ error: 'Failed to reject property', message: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to reject property',
+            message: error.message
+        });
     }
 };
 
@@ -332,13 +348,21 @@ export const toggleFeatured = async (req, res) => {
             isFeatured: !property.isFeatured
         });
 
+        // Fetch complete property with all associations
+        const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
         res.json({
-            message: `Property ${property.isFeatured ? 'featured' : 'unfeatured'} successfully`,
-            property
+            success: true,
+            message: `Property ${completeProperty.isFeatured ? 'featured' : 'unfeatured'} successfully`,
+            data: completeProperty
         });
     } catch (error) {
         console.error('Error toggling featured status:', error);
-        res.status(500).json({ error: 'Failed to toggle featured status', message: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to toggle featured status',
+            message: error.message
+        });
     }
 };
 
@@ -356,13 +380,21 @@ export const toggleRentedStatus = async (req, res) => {
             isRented: !property.isRented
         });
 
+        // Fetch complete property with all associations
+        const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
         res.json({
-            message: `Property marked as ${property.isRented ? 'rented' : 'available'}`,
-            property
+            success: true,
+            message: `Property marked as ${completeProperty.isRented ? 'rented' : 'available'}`,
+            data: completeProperty
         });
     } catch (error) {
         console.error('Error toggling rented status:', error);
-        res.status(500).json({ error: 'Failed to toggle rented status', message: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to toggle rented status',
+            message: error.message
+        });
     }
 };
 
