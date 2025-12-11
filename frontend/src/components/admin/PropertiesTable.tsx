@@ -12,6 +12,7 @@ interface PropertiesTableProps {
     onToggleFeatured: (id: string) => void;
     showActions?: boolean;
     users?: User[];
+    defaultFilter?: 'all' | 'pending' | 'approved' | 'rejected';
 }
 
 const PropertiesTable: React.FC<PropertiesTableProps> = ({
@@ -23,10 +24,11 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
     onEdit,
     onToggleFeatured,
     showActions = true,
-    users = []
+    users = [],
+    defaultFilter = 'all'
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('approved');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>(defaultFilter);
     const [filterUser, setFilterUser] = useState<string>('all');
     const [filterCity, setFilterCity] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -265,10 +267,10 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                                 }}
                                                 disabled={property.status !== 'approved'}
                                                 className={`p-2 rounded-lg transition-colors ${property.status !== 'approved'
-                                                        ? 'text-gray-300 cursor-not-allowed'
-                                                        : property.isFeatured
-                                                            ? 'text-yellow-600 hover:bg-yellow-50'
-                                                            : 'text-gray-400 hover:bg-gray-50'
+                                                    ? 'text-gray-300 cursor-not-allowed'
+                                                    : property.isFeatured
+                                                        ? 'text-yellow-600 hover:bg-yellow-50'
+                                                        : 'text-gray-400 hover:bg-gray-50'
                                                     }`}
                                                 title={
                                                     property.status !== 'approved'

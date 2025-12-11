@@ -399,6 +399,7 @@ const AdminDashboard = () => {
                             onEdit={handleEdit}
                             onToggleFeatured={handleToggleFeatured}
                             users={users}
+                            defaultFilter="pending"
                         />
                     </div>
                 );
