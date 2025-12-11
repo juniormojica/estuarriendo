@@ -33,7 +33,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
     const itemsPerPage = 10;
 
     // Get unique cities from properties
-    const cities = Array.from(new Set(properties.map(p => p.address.city))).sort();
+    const cities = Array.from(new Set(properties.map(p => p.location?.city).filter(Boolean))).sort();
 
     const getOwnerName = (ownerId?: string) => {
         if (!ownerId) return 'Desconocido';
@@ -46,16 +46,16 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
         const ownerName = getOwnerName(property.ownerId);
         const matchesSearch =
             property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.address.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (property.location?.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (property.type?.name || property.type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             ownerName.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatus = filterStatus === 'all' || property.status === filterStatus;
 
-        const propertyUserId = `user-${property.id.substring(0, 3)}`;
+        const propertyUserId = `user-${String(property.id).substring(0, 3)}`;
         const matchesUser = filterUser === 'all' || propertyUserId === filterUser;
 
-        const matchesCity = filterCity === 'all' || property.address.city === filterCity;
+        const matchesCity = filterCity === 'all' || property.location?.city === filterCity;
 
         return matchesSearch && matchesStatus && matchesUser && matchesCity;
     });
@@ -187,14 +187,14 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                 <td className="px-4 py-4">
                                     <div className="flex items-center gap-3">
                                         <img
-                                            src={property.images[0]}
+                                            src={(property.images && property.images.length > 0) ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0]?.url) : 'https://via.placeholder.com/64x64'}
                                             alt={property.title}
                                             className="w-16 h-16 rounded-lg object-cover"
                                         />
                                         <div>
                                             <div className="font-medium text-gray-900 flex items-center gap-2">
                                                 {property.title}
-                                                {property.featured && (
+                                                {property.isFeatured && (
                                                     <Star size={16} className="text-yellow-500 fill-yellow-500" />
                                                 )}
                                             </div>
@@ -207,16 +207,16 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                     <div className="text-xs text-gray-500">ID: {property.ownerId || 'N/A'}</div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900">
-                                    {property.address.city}, {property.address.department}
+                                    {property.location?.city}, {property.location?.department}
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900 capitalize">
-                                    {property.type}
+                                    {property.type?.name || property.type}
                                 </td>
                                 <td className="px-4 py-4 text-sm font-medium text-gray-900">
                                     {new Intl.NumberFormat('es-CO', {
                                         style: 'currency',
                                         currency: property.currency
-                                    }).format(property.price)}
+                                    }).format(property.monthlyRent || property.price || 0)}
                                 </td>
                                 <td className="px-4 py-4">
                                     {getStatusBadge(property.status)}
@@ -239,7 +239,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            onApprove(property.id);
+                                                            onApprove(String(property.id));
                                                         }}
                                                         className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                                         title="Aprobar"
@@ -249,7 +249,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            onReject(property.id);
+                                                            onReject(String(property.id));
                                                         }}
                                                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                         title="Rechazar"
@@ -261,20 +261,20 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    onToggleFeatured(property.id);
+                                                    onToggleFeatured(String(property.id));
                                                 }}
                                                 className={`p-2 rounded-lg transition-colors ${property.featured
                                                     ? 'text-yellow-600 hover:bg-yellow-50'
                                                     : 'text-gray-400 hover:bg-gray-50'
                                                     }`}
-                                                title={property.featured ? 'Quitar destacado' : 'Destacar'}
+                                                title={property.isFeatured ? 'Quitar destacado' : 'Destacar'}
                                             >
-                                                <Star size={18} className={property.featured ? 'fill-yellow-600' : ''} />
+                                                <Star size={18} className={property.isFeatured ? 'fill-yellow-600' : ''} />
                                             </button>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    onDelete(property.id);
+                                                    onDelete(String(property.id));
                                                 }}
                                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                 title="Eliminar"

@@ -162,7 +162,7 @@ const Header: React.FC = () => {
 
             {currentUser ? (
               <div className="flex items-center space-x-4">
-                <span onClick={() => navigate('/perfil')} className="text-sm text-gray-700 font-medium hover:text-gray-900 hover:bg-gray-100 cursor-pointer">
+                <span onClick={() => navigate('/perfil')} className="text-sm text-gray-700 font-medium hover:text-gray-900 hover:bg-gray-100git  cursor-pointer">
                   Hola, {currentUser.name?.split(' ')[0]}
                 </span>
                 <button

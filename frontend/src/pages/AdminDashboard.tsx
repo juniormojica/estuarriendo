@@ -92,14 +92,14 @@ const AdminDashboard = () => {
     useEffect(() => {
         const calculatedStats: PropertyStats = {
             total: properties.length,
-            pending: pendingProperties.length,
-            approved: approvedProperties.length,
-            rejected: rejectedProperties.length,
+            pending: properties.filter(p => p.status === 'pending').length,
+            approved: properties.filter(p => p.status === 'approved').length,
+            rejected: properties.filter(p => p.status === 'rejected').length,
             featured: properties.filter(p => p.isFeatured).length,
             totalRevenue: 0 // TODO: Calculate if needed
         };
         setStats(calculatedStats);
-    }, [properties, pendingProperties, approvedProperties, rejectedProperties]);
+    }, [properties]); // Only depend on properties, not the filtered arrays
 
     const refreshData = async () => {
         // Refresh properties from Redux
