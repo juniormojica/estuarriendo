@@ -24,8 +24,12 @@ export const getAllProperties = async (req, res) => {
             offset = 0
         } = req.query;
 
+        // Default to 'approved' status for public endpoint
+        // This ensures only approved properties are shown on the homepage
+        // Admin can override by explicitly passing status parameter
+        // Use status='all' to fetch all properties regardless of status
         const filters = {
-            status,
+            status: status === 'all' ? undefined : (status || 'approved'),
             typeId: typeId ? parseInt(typeId) : undefined,
             city,
             minRent: minPrice ? parseFloat(minPrice) : undefined,

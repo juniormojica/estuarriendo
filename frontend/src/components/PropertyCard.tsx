@@ -119,7 +119,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
         </div>
 
         <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {property.featured && (
+          {property.isFeatured && (
             <Badge variant="warning" className="shadow-sm">
               <Star className="h-3 w-3 mr-1 fill-current" />
               Destacado
@@ -167,11 +167,22 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
 
           {/* Amenities Icons */}
           <div className="flex gap-3 mb-3 overflow-hidden">
-            {property.amenities?.slice(0, 5).map(amenity => (
-              <div key={typeof amenity === 'string' ? amenity : amenity.id} title={typeof amenity === 'string' ? mockAmenities.find(a => a.id === amenity)?.name : amenity.name} className="bg-gray-50 p-1.5 rounded-md">
-                {getAmenityIcon(typeof amenity === 'string' ? amenity : String(amenity.id))}
-              </div>
-            ))}
+            {property.amenities?.slice(0, 5).map((amenity, idx) => {
+              const amenityName = typeof amenity === 'string'
+                ? mockAmenities.find(a => a.id === amenity)?.name
+                : amenity.name;
+              const amenityIcon = typeof amenity === 'string'
+                ? mockAmenities.find(a => a.id === amenity)?.icon
+                : amenity.icon;
+
+              const IconComponent = amenityIcon ? iconMap[amenityIcon] || iconMap.default : iconMap.default;
+
+              return (
+                <div key={idx} title={amenityName} className="bg-gray-50 p-1.5 rounded-md">
+                  <IconComponent size={14} className="text-gray-500" />
+                </div>
+              );
+            })}
             {(property.amenities?.length || 0) > 5 && (
               <div className="bg-gray-50 p-1.5 rounded-md text-xs text-gray-500 font-medium flex items-center justify-center w-7 h-7">
                 +{(property.amenities?.length || 0) - 5}

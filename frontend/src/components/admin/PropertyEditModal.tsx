@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import { Property } from '../../types';
-import { api } from '../../services/api';
+import { Property, PropertyTypeEntity, Amenity, PropertyImage } from '../../types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchAmenities } from '../../store/slices/amenitiesSlice';
+import { updateProperty } from '../../store/slices/propertiesSlice';
+import { useToast } from '../ToastProvider';
 import ImageUploader from '../ImageUploader';
 import { departments, getCitiesByDepartment } from '../../data/colombiaLocations';
 import LoadingSpinner from '../LoadingSpinner';
@@ -15,6 +16,25 @@ interface PropertyEditModalProps {
     onSave: () => Promise<void>;
 }
 
+interface EditFormData {
+    title: string;
+    description: string;
+    typeId: number;
+    monthlyRent: number;
+    deposit?: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    area?: number;
+    floor?: number;
+    locationId?: number;
+    department: string;
+    city: string;
+    street: string;
+    neighborhood?: string;
+    amenityIds: number[];
+    imageUrls: string[];
+}
+
 const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     property,
     isOpen,
@@ -22,83 +42,116 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     onSave
 }) => {
     const dispatch = useAppDispatch();
+    const toast = useToast();
     const { items: amenities } = useAppSelector((state) => state.amenities);
 
-    const [formData, setFormData] = useState<Property>(property);
+    const [formData, setFormData] = useState<EditFormData>({
+        title: '',
+        description: '',
+        typeId: 1,
+        monthlyRent: 0,
+        department: '',
+        city: '',
+        street: '',
+        amenityIds: [],
+        imageUrls: []
+    });
     const [availableCities, setAvailableCities] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string>('');
 
+    // Property types mapping
+    const propertyTypes: PropertyTypeEntity[] = [
+        { id: 1, name: 'apartamento' },
+        { id: 2, name: 'habitacion' },
+        { id: 3, name: 'pension' },
+        { id: 4, name: 'aparta-estudio' }
+    ];
+
     useEffect(() => {
-        if (isOpen) {
-            setFormData(property);
+        if (isOpen && property) {
+            // Initialize form with property data
+            const amenityIds = property.amenities?.map(a =>
+                typeof a === 'object' ? Number(a.id) : Number(a)
+            ) || [];
+
+            const imageUrls = property.images?.map(img =>
+                typeof img === 'object' ? img.url : img
+            ) || [];
+
+            setFormData({
+                title: property.title || '',
+                description: property.description || '',
+                typeId: property.type?.id || 1,
+                monthlyRent: property.monthlyRent || 0,
+                deposit: property.deposit,
+                bedrooms: property.bedrooms,
+                bathrooms: property.bathrooms,
+                area: property.area,
+                floor: property.floor,
+                locationId: property.location?.id,
+                department: property.location?.department || '',
+                city: property.location?.city || '',
+                street: property.location?.street || '',
+                neighborhood: property.location?.neighborhood,
+                amenityIds,
+                imageUrls
+            });
+
             dispatch(fetchAmenities());
 
-            // Initialize available cities based on current department
-            const dept = departments.find(d => d.name === property.address.department);
-            if (dept) {
-                const cities = getCitiesByDepartment(dept.id);
-                setAvailableCities(cities.map(c => c.name));
+            // Initialize available cities
+            if (property.location?.department) {
+                const dept = departments.find(d => d.name === property.location?.department);
+                if (dept) {
+                    const cities = getCitiesByDepartment(dept.id);
+                    setAvailableCities(cities.map(c => c.name));
+                }
             }
         }
     }, [isOpen, property, dispatch]);
 
-    const handleInputChange = (field: string, value: any) => {
-        if (field.startsWith('address.')) {
-            const addressField = field.split('.')[1];
-
-            if (addressField === 'department') {
-                const dept = departments.find(d => d.id === value);
-                const deptName = dept ? dept.name : '';
-                const cities = getCitiesByDepartment(value);
-                setAvailableCities(cities.map(c => c.name));
-                setFormData(prev => ({
-                    ...prev,
-                    address: {
-                        ...prev.address,
-                        department: deptName,
-                        city: ''
-                    }
-                }));
-            } else {
-                setFormData(prev => ({
-                    ...prev,
-                    address: {
-                        ...prev.address,
-                        [addressField]: value
-                    }
-                }));
-            }
+    const handleInputChange = (field: keyof EditFormData, value: any) => {
+        if (field === 'department') {
+            const dept = departments.find(d => d.id === value);
+            const deptName = dept ? dept.name : '';
+            const cities = getCitiesByDepartment(value);
+            setAvailableCities(cities.map(c => c.name));
+            setFormData(prev => ({
+                ...prev,
+                department: deptName,
+                city: ''
+            }));
+        } else if (field === 'typeId') {
+            const typeId = Number(value);
+            const isRoom = propertyTypes.find(t => t.id === typeId)?.name === 'habitacion';
+            setFormData(prev => ({
+                ...prev,
+                typeId,
+                bedrooms: isRoom ? 1 : prev.bedrooms,
+                bathrooms: isRoom ? undefined : prev.bathrooms
+            }));
         } else {
-            if (field === 'type') {
-                setFormData(prev => ({
-                    ...prev,
-                    [field]: value,
-                    rooms: value === 'habitacion' ? 1 : undefined,
-                    bathrooms: value === 'habitacion' ? undefined : prev.bathrooms
-                }));
-            } else {
-                setFormData(prev => ({
-                    ...prev,
-                    [field]: value
-                }));
-            }
+            setFormData(prev => ({
+                ...prev,
+                [field]: value
+            }));
         }
     };
 
-    const handleAmenityToggle = (amenityId: string) => {
+    const handleAmenityToggle = (amenityId: number) => {
         setFormData(prev => ({
             ...prev,
-            amenities: prev.amenities.includes(amenityId)
-                ? prev.amenities.filter(id => id !== amenityId)
-                : [...prev.amenities, amenityId]
+            amenityIds: prev.amenityIds.includes(amenityId)
+                ? prev.amenityIds.filter(id => id !== amenityId)
+                : [...prev.amenityIds, amenityId]
         }));
     };
 
     const handleImagesChange = (images: string[]) => {
         setFormData(prev => ({
             ...prev,
-            images: images
+            imageUrls: images
         }));
     };
 
@@ -108,15 +161,56 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         setError('');
 
         try {
-            const success = await api.updateProperty(property.id, formData);
-            if (success) {
+            // Prepare update payload
+            const updateData: Partial<Property> = {
+                title: formData.title,
+                description: formData.description,
+                monthlyRent: formData.monthlyRent,
+                deposit: formData.deposit,
+                bedrooms: formData.bedrooms,
+                bathrooms: formData.bathrooms,
+                area: formData.area,
+                floor: formData.floor,
+                // Location data
+                location: {
+                    id: formData.locationId || 0,
+                    department: formData.department,
+                    city: formData.city,
+                    street: formData.street,
+                    neighborhood: formData.neighborhood
+                },
+                // Type data
+                type: propertyTypes.find(t => t.id === formData.typeId),
+                // Amenities - send as array of IDs
+                amenities: formData.amenityIds.map(id => ({ id: String(id) } as Amenity)),
+                // Images - convert URLs to PropertyImage format
+                images: formData.imageUrls.map((url, index) => ({
+                    id: index,
+                    propertyId: property.id,
+                    url,
+                    displayOrder: index,
+                    isPrimary: index === 0
+                } as PropertyImage))
+            };
+
+            const resultAction = await dispatch(updateProperty({
+                id: String(property.id),
+                data: updateData
+            }));
+
+            if (updateProperty.fulfilled.match(resultAction)) {
+                toast.success('✅ Propiedad actualizada exitosamente');
                 await onSave();
                 onClose();
             } else {
-                setError('No se pudo actualizar la propiedad');
+                const errorMessage = resultAction.payload as string || 'No se pudo actualizar la propiedad';
+                setError(errorMessage);
+                toast.error(`❌ ${errorMessage}`);
             }
         } catch (err) {
-            setError('Error al guardar los cambios');
+            const errorMsg = 'Error al guardar los cambios';
+            setError(errorMsg);
+            toast.error(`❌ ${errorMsg}`);
             console.error(err);
         } finally {
             setIsSaving(false);
@@ -124,6 +218,9 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     };
 
     if (!isOpen) return null;
+
+    const selectedType = propertyTypes.find(t => t.id === formData.typeId);
+    const isRoom = selectedType?.name === 'habitacion';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -160,24 +257,35 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                             <select
                                 required
-                                value={formData.type}
-                                onChange={(e) => handleInputChange('type', e.target.value)}
+                                value={formData.typeId}
+                                onChange={(e) => handleInputChange('typeId', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                             >
-                                <option value="apartamento">Apartamento</option>
-                                <option value="habitacion">Habitación</option>
-                                <option value="pension">Pensión</option>
-                                <option value="aparta-estudio">Aparta-estudio</option>
+                                {propertyTypes.map(type => (
+                                    <option key={type.id} value={type.id}>
+                                        {type.name.charAt(0).toUpperCase() + type.name.slice(1)}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Precio Mensual</label>
                             <input
                                 type="number"
                                 required
-                                value={formData.price}
-                                onChange={(e) => handleInputChange('price', Number(e.target.value))}
+                                value={formData.monthlyRent}
+                                onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Depósito (Opcional)</label>
+                            <input
+                                type="number"
+                                value={formData.deposit || ''}
+                                onChange={(e) => handleInputChange('deposit', e.target.value ? Number(e.target.value) : undefined)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                             />
                         </div>
@@ -202,8 +310,8 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
                                 <select
                                     required
-                                    value={departments.find(d => d.name === formData.address.department)?.id || ''}
-                                    onChange={(e) => handleInputChange('address.department', e.target.value)}
+                                    value={departments.find(d => d.name === formData.department)?.id || ''}
+                                    onChange={(e) => handleInputChange('department', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                                 >
                                     <option value="">Selecciona un departamento</option>
@@ -217,10 +325,10 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
                                 <select
                                     required
-                                    value={formData.address.city}
-                                    onChange={(e) => handleInputChange('address.city', e.target.value)}
+                                    value={formData.city}
+                                    onChange={(e) => handleInputChange('city', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                                    disabled={!formData.address.department}
+                                    disabled={!formData.department}
                                 >
                                     <option value="">Selecciona una ciudad</option>
                                     {availableCities.map(city => (
@@ -234,8 +342,18 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                                 <input
                                     type="text"
                                     required
-                                    value={formData.address.street}
-                                    onChange={(e) => handleInputChange('address.street', e.target.value)}
+                                    value={formData.street}
+                                    onChange={(e) => handleInputChange('street', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Barrio (Opcional)</label>
+                                <input
+                                    type="text"
+                                    value={formData.neighborhood || ''}
+                                    onChange={(e) => handleInputChange('neighborhood', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                                 />
                             </div>
@@ -246,14 +364,14 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {formData.type !== 'habitacion' && (
+                            {!isRoom && (
                                 <>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Habitaciones</label>
                                         <input
                                             type="number"
-                                            value={formData.rooms || ''}
-                                            onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                                            value={formData.bedrooms || ''}
+                                            onChange={(e) => handleInputChange('bedrooms', e.target.value ? Number(e.target.value) : undefined)}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                                         />
                                     </div>
@@ -262,7 +380,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                                         <input
                                             type="number"
                                             value={formData.bathrooms || ''}
-                                            onChange={(e) => handleInputChange('bathrooms', Number(e.target.value))}
+                                            onChange={(e) => handleInputChange('bathrooms', e.target.value ? Number(e.target.value) : undefined)}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                                         />
                                     </div>
@@ -273,7 +391,16 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                                 <input
                                     type="number"
                                     value={formData.area || ''}
-                                    onChange={(e) => handleInputChange('area', Number(e.target.value))}
+                                    onChange={(e) => handleInputChange('area', e.target.value ? Number(e.target.value) : undefined)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Piso (Opcional)</label>
+                                <input
+                                    type="number"
+                                    value={formData.floor || ''}
+                                    onChange={(e) => handleInputChange('floor', e.target.value ? Number(e.target.value) : undefined)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                                 />
                             </div>
@@ -283,15 +410,15 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     {/* Amenities */}
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">
-                            {formData.type === 'habitacion' ? 'Características' : 'Comodidades'}
+                            {isRoom ? 'Características' : 'Comodidades'}
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {amenities.map(amenity => (
                                 <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer p-2 border rounded hover:bg-gray-50">
                                     <input
                                         type="checkbox"
-                                        checked={formData.amenities.includes(amenity.id)}
-                                        onChange={() => handleAmenityToggle(amenity.id)}
+                                        checked={formData.amenityIds.includes(Number(amenity.id))}
+                                        onChange={() => handleAmenityToggle(Number(amenity.id))}
                                         className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                                     />
                                     <span className="text-sm text-gray-700">{amenity.name}</span>
@@ -304,7 +431,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Imágenes</h3>
                         <ImageUploader
-                            images={formData.images}
+                            images={formData.imageUrls}
                             onChange={handleImagesChange}
                             maxImages={10}
                             maxSizeMB={5}

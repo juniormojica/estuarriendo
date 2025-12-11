@@ -39,6 +39,7 @@ export const fetchProperties = createAsyncThunk(
             if (filters?.rooms) params.append('rooms', filters.rooms.toString());
             if (filters?.bathrooms) params.append('bathrooms', filters.bathrooms.toString());
             if (filters?.university) params.append('university', filters.university);
+            if (filters?.status) params.append('status', filters.status);
             if (filters?.amenities && filters.amenities.length > 0) {
                 params.append('amenities', filters.amenities.join(','));
             }

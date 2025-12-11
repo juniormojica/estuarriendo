@@ -62,8 +62,8 @@ const AdminDashboard = () => {
         try {
             setLoading(true);
 
-            // Fetch all properties from Redux
-            await dispatch(fetchProperties({}));
+            // Fetch all properties from Redux (including pending, approved, rejected)
+            await dispatch(fetchProperties({ status: 'all' }));
 
             // Fetch amenities from Redux
             dispatch(fetchAmenities());

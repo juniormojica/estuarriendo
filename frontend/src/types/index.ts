@@ -360,6 +360,7 @@ export interface SearchFilters {
   bathrooms?: number;
   university?: string;
   amenities?: string[];
+  status?: 'all' | 'pending' | 'approved' | 'rejected';
 }
 
 export interface PropertyFormData {
