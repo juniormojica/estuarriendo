@@ -19,7 +19,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
 }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [localImages, setLocalImages] = useState(property.images);
+    const [localImages, setLocalImages] = useState(property.images || []);
 
     const [showRejectionInput, setShowRejectionInput] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
@@ -42,7 +42,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
     const handleApprove = async () => {
         setIsProcessing(true);
         try {
-            await onApprove(property.id);
+            await onApprove(String(property.id));
             onClose();
         } catch (error) {
             console.error('Error approving property:', error);
@@ -63,7 +63,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
 
         setIsProcessing(true);
         try {
-            await onReject(property.id, rejectionReason);
+            await onReject(String(property.id), rejectionReason);
             onClose();
         } catch (error) {
             console.error('Error rejecting property:', error);
@@ -76,7 +76,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
         if (!confirm('¿Eliminar esta imagen?')) return;
 
         try {
-            await onDeleteImage(property.id, index);
+            await onDeleteImage(String(property.id), index);
             const newImages = localImages.filter((_, i) => i !== index);
             setLocalImages(newImages);
 
@@ -126,7 +126,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                     {/* Main Image */}
                                     <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video">
                                         <img
-                                            src={localImages[currentImageIndex]}
+                                            src={typeof localImages[currentImageIndex] === 'string' ? localImages[currentImageIndex] : localImages[currentImageIndex]?.url}
                                             alt={`${property.title} - ${currentImageIndex + 1}`}
                                             className="w-full h-full object-contain bg-black"
                                         />
@@ -177,7 +177,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                                         }`}
                                                 >
                                                     <img
-                                                        src={image}
+                                                        src={typeof image === 'string' ? image : image?.url}
                                                         alt={`Thumbnail ${index + 1}`}
                                                         className="w-full h-full object-cover"
                                                     />
@@ -211,7 +211,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                         {new Intl.NumberFormat('es-CO', {
                                             style: 'currency',
                                             currency: property.currency
-                                        }).format(property.price)}
+                                        }).format(property.monthlyRent || property.price || 0)}
                                         <span className="text-sm text-gray-500 font-normal"> / mes</span>
                                     </p>
                                 </div>
@@ -228,15 +228,15 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                         <label className="text-sm font-medium text-gray-500">Tipo</label>
                                         <div className="flex items-center gap-2 mt-1">
                                             <Home size={16} className="text-gray-400" />
-                                            <p className="text-gray-900 capitalize">{property.type}</p>
+                                            <p className="text-gray-900 capitalize">{property.type?.name || property.type}</p>
                                         </div>
                                     </div>
 
-                                    {/* Only show rooms if not a single room (habitacion) */}
-                                    {property.rooms !== undefined && property.type !== 'habitacion' && (
+                                    {/* Only show bedrooms if not a single room (habitacion) */}
+                                    {property.bedrooms !== undefined && property.type?.name !== 'habitacion' && (
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Habitaciones</label>
-                                            <p className="text-gray-900 mt-1">{property.rooms}</p>
+                                            <p className="text-gray-900 mt-1">{property.bedrooms}</p>
                                         </div>
                                     )}
                                 </div>
@@ -264,9 +264,9 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                     <div className="flex items-start gap-2 mt-1">
                                         <MapPin size={16} className="text-gray-400 mt-1 flex-shrink-0" />
                                         <div className="text-gray-900">
-                                            <p>{property.address.street}</p>
-                                            <p>{property.address.city}, {property.address.department}</p>
-                                            {property.address.postalCode && <p>{property.address.postalCode}</p>}
+                                            <p>{property.location?.street}</p>
+                                            <p>{property.location?.city}, {property.location?.department}</p>
+                                            {property.location?.postalCode && <p>{property.location.postalCode}</p>}
                                         </div>
                                     </div>
                                 </div>
@@ -275,32 +275,32 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                 {property.amenities && property.amenities.length > 0 && (
                                     <div>
                                         <label className="text-sm font-medium text-gray-500 mb-2 block">
-                                            {property.type === 'habitacion' ? 'Características' : 'Comodidades'}
+                                            {property.type?.name === 'habitacion' ? 'Características' : 'Comodidades'}
                                         </label>
                                         <div className="flex flex-wrap gap-2">
-                                            {property.amenities.map((amenity) => (
+                                            {property.amenities.map((amenity, index) => (
                                                 <span
-                                                    key={amenity}
+                                                    key={typeof amenity === 'string' ? amenity : amenity.id || index}
                                                     className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm"
                                                 >
-                                                    {amenity}
+                                                    {typeof amenity === 'string' ? amenity : amenity.name}
                                                 </span>
                                             ))}
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Nearby Universities */}
-                                {property.nearbyUniversities && property.nearbyUniversities.length > 0 && (
+                                {/* Nearby Institutions */}
+                                {property.institutions && property.institutions.length > 0 && (
                                     <div>
-                                        <label className="text-sm font-medium text-gray-500 mb-2 block">Universidades Cercanas</label>
+                                        <label className="text-sm font-medium text-gray-500 mb-2 block">Instituciones Cercanas</label>
                                         <div className="flex flex-wrap gap-2">
-                                            {property.nearbyUniversities.map((uni) => (
+                                            {property.institutions.map((institution) => (
                                                 <span
-                                                    key={uni}
+                                                    key={institution.id}
                                                     className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
                                                 >
-                                                    {uni}
+                                                    {institution.name}
                                                 </span>
                                             ))}
                                         </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, PaymentRequest } from '../types';
+import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities, createAmenity, updateAmenity, deleteAmenity } from '../store/slices/amenitiesSlice';
@@ -160,14 +160,14 @@ const AdminDashboard = () => {
         setIsDeleting(true);
         try {
             console.log('Attempting to delete property with ID:', propertyToDelete);
-            const success = await api.deleteProperty(propertyToDelete);
-            if (success) {
+            const resultAction = await dispatch(deleteProperty(propertyToDelete));
+
+            if (deleteProperty.fulfilled.match(resultAction)) {
                 await refreshData();
                 setSelectedProperty(null);
                 setPropertyToDelete(null);
-                // Optional: Show success toast/notification
             } else {
-                console.error('Failed to delete property. API returned false.');
+                console.error('Failed to delete property.');
                 alert('No se pudo eliminar la propiedad. Por favor intente nuevamente.');
             }
         } catch (error) {
@@ -189,8 +189,9 @@ const AdminDashboard = () => {
 
     const handleToggleFeatured = async (id: string) => {
         try {
-            const success = await api.toggleFeaturedProperty(id);
-            if (success) {
+            const resultAction = await dispatch(toggleFeatured(id));
+
+            if (toggleFeatured.fulfilled.match(resultAction)) {
                 await refreshData();
             }
         } catch (error) {
@@ -202,23 +203,14 @@ const AdminDashboard = () => {
         try {
             const success = await api.deletePropertyImage(propertyId, imageIndex);
             if (success) {
-                // Update local state
-                setPendingProperties(prev => prev.map(p => {
-                    if (p.id === propertyId) {
-                        return { ...p, images: p.images.filter((_, i) => i !== imageIndex) };
-                    }
-                    return p;
-                }));
-                setAllProperties(prev => prev.map(p => {
-                    if (p.id === propertyId) {
-                        return { ...p, images: p.images.filter((_, i) => i !== imageIndex) };
-                    }
-                    return p;
-                }));
-                if (selectedProperty && selectedProperty.id === propertyId) {
+                // Refresh properties from Redux to get updated data
+                await dispatch(fetchProperties({}));
+
+                // Update the selected property if it's the one being modified
+                if (selectedProperty && String(selectedProperty.id) === propertyId) {
                     setSelectedProperty({
                         ...selectedProperty,
-                        images: selectedProperty.images.filter((_, i) => i !== imageIndex)
+                        images: selectedProperty.images?.filter((_, i) => i !== imageIndex) || []
                     });
                 }
             }
@@ -626,7 +618,7 @@ const AdminDashboard = () => {
                 <PropertyReviewModal
                     property={selectedProperty}
                     onClose={() => setSelectedProperty(null)}
-                    onApprove={() => handleApprove(selectedProperty.id)}
+                    onApprove={() => handleApprove(String(selectedProperty.id))}
                     onReject={(id, reason) => handleReject(id, reason)}
                     onDeleteImage={handleDeleteImage}
                 />
