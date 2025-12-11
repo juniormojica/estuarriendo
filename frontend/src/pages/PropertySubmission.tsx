@@ -648,6 +648,7 @@ const PropertySubmission: React.FC = () => {
                   maxImages={maxImages}
                   maxSizeMB={5}
                   onLimitReached={() => setShowPremiumModal(true)}
+                  folder="properties"
                 />
               </div>
             )}

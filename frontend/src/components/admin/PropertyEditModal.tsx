@@ -455,6 +455,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                             onChange={handleImagesChange}
                             maxImages={10}
                             maxSizeMB={5}
+                            folder="properties"
                         />
                     </div>
 

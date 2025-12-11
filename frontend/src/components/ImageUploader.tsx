@@ -1,12 +1,14 @@
 import React, { useState, useRef, DragEvent } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { uploadSingleImage, CloudinaryFolder, CLOUDINARY_FOLDERS } from '../services/uploadService';
 
 interface ImageUploaderProps {
-    images: string[]; // base64 strings or URLs
+    images: string[]; // Cloudinary URLs
     onChange: (images: string[]) => void;
     maxImages?: number;
     maxSizeMB?: number;
     onLimitReached?: () => void;
+    folder?: CloudinaryFolder; // Cloudinary folder for organization
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -14,10 +16,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     onChange,
     maxImages = 10,
     maxSizeMB = 5,
-    onLimitReached
+    onLimitReached,
+    folder = CLOUDINARY_FOLDERS.PROPERTIES
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (files: FileList | null) => {
@@ -29,8 +34,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         if (images.length + fileArray.length > maxImages) {
             if (onLimitReached) {
                 onLimitReached();
-                // If callback exists, we might want to stop or just add up to the limit
-                // Let's add up to the limit and notify
             } else {
                 alert(`Solo puedes subir un máximo de ${maxImages} imágenes.`);
             }
@@ -41,9 +44,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
         const filesToProcess = fileArray.slice(0, remainingSlots);
 
-        const newImages: string[] = [];
+        setIsUploading(true);
+        const newUrls: string[] = [];
 
-        for (const file of filesToProcess) {
+        for (let i = 0; i < filesToProcess.length; i++) {
+            const file = filesToProcess[i];
+
             // Validate file type
             if (!file.type.startsWith('image/')) {
                 alert(`${file.name} no es una imagen válida`);
@@ -57,12 +63,36 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 continue;
             }
 
-            // Convert to base64
-            const base64 = await fileToBase64(file);
-            newImages.push(base64);
+            try {
+                // Convert to base64
+                setUploadProgress(prev => ({ ...prev, [i]: 10 }));
+                const base64 = await fileToBase64(file);
+
+                // Upload to Cloudinary
+                setUploadProgress(prev => ({ ...prev, [i]: 50 }));
+                const result = await uploadSingleImage(base64, folder);
+
+                // Add Cloudinary URL to array
+                newUrls.push(result.url);
+                setUploadProgress(prev => ({ ...prev, [i]: 100 }));
+
+            } catch (error: any) {
+                console.error('Error uploading image:', error);
+                alert(`Error al subir ${file.name}: ${error.message}`);
+                setUploadProgress(prev => {
+                    const newProgress = { ...prev };
+                    delete newProgress[i];
+                    return newProgress;
+                });
+            }
         }
 
-        onChange([...images, ...newImages]);
+        // Update parent component with new Cloudinary URLs
+        onChange([...images, ...newUrls]);
+
+        // Reset upload state
+        setIsUploading(false);
+        setUploadProgress({});
     };
 
     const fileToBase64 = (file: File): Promise<string> => {
@@ -130,27 +160,43 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         <div className="space-y-4">
             {/* Upload Area */}
             <div
-                onClick={handleClick}
+                onClick={!isUploading ? handleClick : undefined}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-8 transition-all cursor-pointer ${isDragging
-                    ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
+                className={`border-2 border-dashed rounded-lg p-8 transition-all ${isUploading
+                        ? 'border-blue-400 bg-blue-50 cursor-wait'
+                        : isDragging
+                            ? 'border-emerald-500 bg-emerald-50 cursor-pointer'
+                            : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50 cursor-pointer'
                     }`}
             >
                 <div className="text-center">
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <div className="text-sm text-gray-600 mb-2">
-                        <span className="font-medium text-emerald-600">Haz clic para subir</span> o arrastra y suelta
-                    </div>
-                    <p className="text-xs text-gray-500">
-                        PNG, JPG, GIF hasta {maxSizeMB}MB cada una (máximo {maxImages} imágenes)
-                    </p>
-                    {images.length > 0 && (
-                        <p className="text-sm text-emerald-600 font-medium mt-2">
-                            {images.length} de {maxImages} imágenes cargadas
-                        </p>
+                    {isUploading ? (
+                        <>
+                            <Loader2 className="h-12 w-12 text-blue-500 mx-auto mb-4 animate-spin" />
+                            <div className="text-sm text-blue-600 font-medium mb-2">
+                                Subiendo imágenes a Cloudinary...
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                Por favor espera mientras se procesan las imágenes
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <div className="text-sm text-gray-600 mb-2">
+                                <span className="font-medium text-emerald-600">Haz clic para subir</span> o arrastra y suelta
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                PNG, JPG, GIF hasta {maxSizeMB}MB cada una (máximo {maxImages} imágenes)
+                            </p>
+                            {images.length > 0 && (
+                                <p className="text-sm text-emerald-600 font-medium mt-2">
+                                    {images.length} de {maxImages} imágenes cargadas
+                                </p>
+                            )}
+                        </>
                     )}
                 </div>
                 <input
@@ -160,6 +206,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     accept="image/*"
                     onChange={(e) => handleFileSelect(e.target.files)}
                     className="hidden"
+                    disabled={isUploading}
                 />
             </div>
 
