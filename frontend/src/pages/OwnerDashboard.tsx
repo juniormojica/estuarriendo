@@ -232,11 +232,16 @@ const OwnerDashboard: React.FC = () => {
                                                         <Users className="h-5 w-5" />
                                                     </button>
 
-                                                    {/* Placeholder for Edit - could be implemented later */}
+                                                    {/* Edit Button - More prominent for rejected properties */}
                                                     <Link
                                                         to={`/editar-propiedad/${property.id}`}
-                                                        className="p-2 text-gray-400 hover:text-emerald-600 transition-colors"
-                                                        title="Editar"
+                                                        className={`p-2 transition-colors ${property.status === 'rejected'
+                                                                ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 ring-2 ring-orange-300 rounded-md'
+                                                                : 'text-gray-400 hover:text-emerald-600'
+                                                            }`}
+                                                        title={property.status === 'rejected'
+                                                            ? 'Editar y reenviar para revisión'
+                                                            : 'Editar'}
                                                     >
                                                         <Edit className="h-5 w-5" />
                                                     </Link>

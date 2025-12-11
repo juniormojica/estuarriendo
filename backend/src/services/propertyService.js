@@ -183,6 +183,14 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
             corePropertyData.locationId = location.id;
         }
 
+        // Check if property is currently rejected and reset status to pending
+        const currentProperty = await Property.findByPk(propertyId);
+        if (currentProperty && currentProperty.status === 'rejected') {
+            // Reset status to pending when a rejected property is updated
+            corePropertyData.status = 'pending';
+            corePropertyData.rejectionReason = null; // Clear rejection reason
+        }
+
         // 2. Update core property data
         if (Object.keys(corePropertyData).length > 0) {
             await Property.update(corePropertyData, {

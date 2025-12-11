@@ -61,7 +61,8 @@ export const fetchPropertyById = createAsyncThunk(
     async (id: string, { rejectWithValue }) => {
         try {
             const response = await axios.get(`/properties/${id}`);
-            return response.data.data as Property;
+            // Backend returns property directly, not wrapped in data.data
+            return response.data as Property;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch property');
         }

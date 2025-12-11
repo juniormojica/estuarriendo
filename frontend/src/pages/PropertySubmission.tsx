@@ -9,6 +9,7 @@ import { createProperty, updateProperty, fetchPropertyById } from '../store/slic
 import LoadingSpinner from '../components/LoadingSpinner';
 import ImageUploader from '../components/ImageUploader';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
+import RejectionWarningModal from '../components/RejectionWarningModal';
 import { departments, getCitiesByDepartment } from '../data/colombiaLocations';
 import { transformPropertyForBackend, transformPropertyFromBackend } from '../utils/propertyTransform';
 import { fetchPropertyTypes } from '../services/propertyTypeService';
@@ -31,6 +32,9 @@ const PropertySubmission: React.FC = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [coordStrings, setCoordStrings] = useState({ lat: '', lng: '' });
   const [propertyTypes, setPropertyTypes] = useState<PropertyTypeEntity[]>([]);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionInfo, setRejectionInfo] = useState({ reason: '', title: '' });
+  const [isLoadingProperty, setIsLoadingProperty] = useState(false);
 
   const maxImages = user?.plan === 'premium' ? 10 : 3;
 
@@ -93,11 +97,31 @@ const PropertySubmission: React.FC = () => {
   }, [id, dispatch]);
 
   const loadProperty = async (propertyId: string) => {
+    setIsLoadingProperty(true);
+    setError('');
+
     try {
       const resultAction = await dispatch(fetchPropertyById(propertyId));
 
       if (fetchPropertyById.fulfilled.match(resultAction)) {
         const property = resultAction.payload;
+
+        // Verify property exists before accessing its properties
+        if (!property) {
+          setError('Propiedad no encontrada');
+          setIsLoadingProperty(false);
+          return;
+        }
+
+        // Check if property is rejected and show modal
+        if (property.status === 'rejected' && property.rejectionReason) {
+          setRejectionInfo({
+            reason: property.rejectionReason,
+            title: property.title
+          });
+          setShowRejectionModal(true);
+        }
+
         const transformedData = transformPropertyFromBackend(property);
         setFormData(transformedData);
         setCoordStrings({
@@ -111,11 +135,18 @@ const PropertySubmission: React.FC = () => {
           const cities = getCitiesByDepartment(dept.id);
           setAvailableCities(cities.map(c => c.name));
         }
+      } else if (fetchPropertyById.rejected.match(resultAction)) {
+        const errorMessage = resultAction.error?.message || 'No se pudo cargar la propiedad';
+        setError(`Error: ${errorMessage}`);
+        console.error('Error loading property:', resultAction.error);
       } else {
         setError('Propiedad no encontrada');
       }
-    } catch (err) {
-      setError('Error al cargar la propiedad');
+    } catch (err: any) {
+      console.error('Error loading property:', err);
+      setError(`Error al cargar la propiedad: ${err.message || 'Error desconocido'}`);
+    } finally {
+      setIsLoadingProperty(false);
     }
   };
 
@@ -233,15 +264,13 @@ const PropertySubmission: React.FC = () => {
     setError('');
 
     try {
-      // Check if property types are loaded
-      if (propertyTypes.length === 0) {
-        setError('Cargando tipos de propiedad...');
-        setIsSubmitting(false);
-        return;
-      }
+      console.log('Form data type:', formData.type);
 
       // Transform form data to backend format
+      // propertyTypes is now optional since we send typeName directly
       const backendData = transformPropertyForBackend(formData, user, propertyTypes);
+
+      console.log('Transformed backend data:', backendData);
 
       if (isEditing && id) {
         // Update existing property
@@ -251,7 +280,9 @@ const PropertySubmission: React.FC = () => {
           setSubmitted(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-          setError(resultAction.payload as string || 'Error al actualizar la propiedad');
+          const errorMsg = resultAction.payload as string || 'Error al actualizar la propiedad';
+          console.error('Update error:', errorMsg);
+          setError(errorMsg);
         }
       } else {
         // Create new property
@@ -261,11 +292,14 @@ const PropertySubmission: React.FC = () => {
           setSubmitted(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-          setError(resultAction.payload as string || 'Error al crear la propiedad');
+          const errorMsg = resultAction.payload as string || 'Error al crear la propiedad';
+          console.error('Create error:', errorMsg, resultAction);
+          setError(errorMsg);
         }
       }
-    } catch (err) {
-      setError('Error inesperado. Por favor, intenta nuevamente.');
+    } catch (err: any) {
+      console.error('Submit error:', err);
+      setError(`Error inesperado: ${err.message || 'Por favor, intenta nuevamente.'} `);
     } finally {
       setIsSubmitting(false);
     }
@@ -360,14 +394,14 @@ const PropertySubmission: React.FC = () => {
             {STEPS.map((step, index) => (
               <div
                 key={step}
-                className={`flex flex-col items-center ${index <= currentStep ? 'text-emerald-600' : 'text-gray-400'
-                  }`}
+                className={`flex flex - col items - center ${index <= currentStep ? 'text-emerald-600' : 'text-gray-400'
+                  } `}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold mb-1 transition-colors ${index <= currentStep
+                  className={`w - 8 h - 8 rounded - full flex items - center justify - center text - sm font - semibold mb - 1 transition - colors ${index <= currentStep
                     ? 'bg-emerald-100 text-emerald-600'
                     : 'bg-gray-100 text-gray-500'
-                    }`}
+                    } `}
                 >
                   {index + 1}
                 </div>
@@ -378,7 +412,7 @@ const PropertySubmission: React.FC = () => {
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-300 ease-in-out"
-              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}% ` }}
             />
           </div>
         </div>
@@ -597,10 +631,10 @@ const PropertySubmission: React.FC = () => {
                     {amenities.map(amenity => (
                       <label
                         key={amenity.id}
-                        className={`flex items-center space-x-3 cursor-pointer p-3 border rounded-lg transition-all ${formData.amenities.includes(amenity.id)
+                        className={`flex items - center space - x - 3 cursor - pointer p - 3 border rounded - lg transition - all ${formData.amenities.includes(amenity.id)
                           ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
                           : 'border-gray-200 hover:bg-gray-50'
-                          }`}
+                          } `}
                       >
                         <input
                           type="checkbox"
@@ -660,10 +694,10 @@ const PropertySubmission: React.FC = () => {
               type="button"
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${currentStep === 0
+              className={`flex items - center space - x - 2 px - 6 py - 3 rounded - lg font - semibold transition - colors ${currentStep === 0
                 ? 'text-gray-300 cursor-not-allowed'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                } `}
             >
               <ChevronLeft className="h-5 w-5" />
               <span>Anterior</span>
@@ -701,6 +735,18 @@ const PropertySubmission: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Rejection Warning Modal */}
+      <RejectionWarningModal
+        isOpen={showRejectionModal}
+        rejectionReason={rejectionInfo.reason}
+        propertyTitle={rejectionInfo.title}
+        onClose={() => {
+          setShowRejectionModal(false);
+          navigate('/mis-propiedades');
+        }}
+        onContinue={() => setShowRejectionModal(false)}
+      />
 
       <PremiumUpgradeModal
         isOpen={showPremiumModal}

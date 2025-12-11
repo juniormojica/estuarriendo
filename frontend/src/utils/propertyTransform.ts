@@ -4,29 +4,21 @@ import { PropertyFormData, Property, User, PropertyTypeEntity } from '../types';
  * Transform form data to backend format for property creation/update
  * @param formData - Form data from the property form
  * @param user - Current user object
- * @param propertyTypes - Array of property types from the backend
+ * @param propertyTypes - Array of property types from the backend (optional, for backward compatibility)
  */
 export const transformPropertyForBackend = (
     formData: PropertyFormData,
     user: User,
-    propertyTypes: PropertyTypeEntity[]
+    propertyTypes?: PropertyTypeEntity[]
 ): any => {
-    // Get typeId from type name by looking it up in the provided array
-    const propertyType = propertyTypes.find(
-        pt => pt.name.toLowerCase() === formData.type.toLowerCase()
-    );
-
-    if (!propertyType) {
-        throw new Error(
-            `Tipo de propiedad no válido: ${formData.type}. ` +
-            `Los tipos válidos son: ${propertyTypes.map(pt => pt.name).join(', ')}`
-        );
-    }
+    // Send typeName directly instead of looking up typeId
+    // The backend will handle the conversion from name to ID
+    const typeName = formData.type;
 
     return {
         // Core property fields
         ownerId: formData.ownerId || user.id,
-        typeId: propertyType.id,
+        typeName: typeName, // Send name instead of ID
         title: formData.title,
         description: formData.description,
         monthlyRent: formData.monthlyRent || formData.price || 0,
