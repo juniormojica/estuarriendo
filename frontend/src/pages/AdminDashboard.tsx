@@ -203,8 +203,8 @@ const AdminDashboard = () => {
             const resultAction = await dispatch(toggleFeatured(id));
 
             if (toggleFeatured.fulfilled.match(resultAction)) {
-                const property = properties.find(p => String(p.id) === id);
-                const message = property?.isFeatured
+                const updatedProperty = resultAction.payload;
+                const message = updatedProperty.isFeatured
                     ? '⭐ Propiedad destacada'
                     : '✅ Destacado removido';
                 toast.success(message);

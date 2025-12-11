@@ -26,7 +26,7 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
     users = []
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('approved');
     const [filterUser, setFilterUser] = useState<string>('all');
     const [filterCity, setFilterCity] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -263,11 +263,20 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                                     e.stopPropagation();
                                                     onToggleFeatured(String(property.id));
                                                 }}
-                                                className={`p-2 rounded-lg transition-colors ${property.featured
-                                                    ? 'text-yellow-600 hover:bg-yellow-50'
-                                                    : 'text-gray-400 hover:bg-gray-50'
+                                                disabled={property.status !== 'approved'}
+                                                className={`p-2 rounded-lg transition-colors ${property.status !== 'approved'
+                                                        ? 'text-gray-300 cursor-not-allowed'
+                                                        : property.isFeatured
+                                                            ? 'text-yellow-600 hover:bg-yellow-50'
+                                                            : 'text-gray-400 hover:bg-gray-50'
                                                     }`}
-                                                title={property.isFeatured ? 'Quitar destacado' : 'Destacar'}
+                                                title={
+                                                    property.status !== 'approved'
+                                                        ? 'Solo se pueden destacar propiedades aprobadas'
+                                                        : property.isFeatured
+                                                            ? 'Quitar destacado'
+                                                            : 'Destacar'
+                                                }
                                             >
                                                 <Star size={18} className={property.isFeatured ? 'fill-yellow-600' : ''} />
                                             </button>
