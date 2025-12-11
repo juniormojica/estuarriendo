@@ -125,7 +125,6 @@ const AdminDashboard = () => {
 
             if (approveProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad aprobada exitosamente');
-                await refreshData();
                 setSelectedProperty(null);
             } else {
                 toast.error('❌ Error al aprobar la propiedad');
@@ -149,7 +148,6 @@ const AdminDashboard = () => {
 
             if (rejectProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad rechazada');
-                await refreshData();
                 setSelectedProperty(null);
             } else {
                 toast.error('❌ Error al rechazar la propiedad');
@@ -399,7 +397,7 @@ const AdminDashboard = () => {
                             onEdit={handleEdit}
                             onToggleFeatured={handleToggleFeatured}
                             users={users}
-                            defaultFilter="pending"
+                            defaultFilter="all"
                         />
                     </div>
                 );
