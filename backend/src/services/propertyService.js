@@ -52,8 +52,9 @@ export const createPropertyWithAssociations = async (propertyData) => {
 
     try {
         const {
-            // Property type
+            // Property type (can be ID or name)
             typeId,
+            typeName,
             // Location data
             location: locationData,
             // Contact data
@@ -68,13 +69,40 @@ export const createPropertyWithAssociations = async (propertyData) => {
             ...corePropertyData
         } = propertyData;
 
+        // Resolve property type ID
+        let resolvedTypeId = typeId;
+
+        // If typeName is provided, look it up in the database
+        if (typeName && !typeId) {
+            const propertyType = await PropertyType.findOne({
+                where: { name: typeName }
+            });
+
+            if (!propertyType) {
+                throw new Error(`Tipo de propiedad no válido: ${typeName}. Los tipos válidos son: pension, habitacion, apartamento, aparta-estudio`);
+            }
+
+            resolvedTypeId = propertyType.id;
+        }
+
+        // Validate that we have a type ID
+        if (!resolvedTypeId) {
+            throw new Error('Se requiere typeId o typeName para crear una propiedad');
+        }
+
+        // Verify the type ID exists
+        const typeExists = await PropertyType.findByPk(resolvedTypeId);
+        if (!typeExists) {
+            throw new Error(`El tipo de propiedad con ID ${resolvedTypeId} no existe en la base de datos`);
+        }
+
         // 1. Find or create location (N:1 - reuse if exists)
         const location = await findOrCreateLocation(locationData, transaction);
 
         // 2. Create the property
         const property = await Property.create({
             ...corePropertyData,
-            typeId,
+            typeId: resolvedTypeId,
             locationId: location.id
         }, { transaction });
 
