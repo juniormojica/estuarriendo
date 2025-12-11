@@ -101,11 +101,11 @@ const AdminDashboard = () => {
             totalRevenue: 0 // TODO: Calculate if needed
         };
         setStats(calculatedStats);
-    }, [properties]); // Only depend on properties, not the filtered arrays
+    }, [properties, currentSection]); // Recalculate when properties change OR when section changes
 
     const refreshData = async () => {
-        // Refresh properties from Redux
-        await dispatch(fetchProperties({}));
+        // Refresh properties from Redux with all statuses
+        await dispatch(fetchProperties({ status: 'all' }));
 
         // Refresh other data
         const [usersData, paymentsData, verificationsData] = await Promise.all([
@@ -172,7 +172,6 @@ const AdminDashboard = () => {
 
             if (deleteProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad eliminada exitosamente');
-                await refreshData();
                 setSelectedProperty(null);
                 setPropertyToDelete(null);
             } else {

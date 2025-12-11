@@ -125,7 +125,7 @@ export const deleteProperty = createAsyncThunk(
     async (id: string, { rejectWithValue }) => {
         try {
             await axios.delete(`/properties/${id}`);
-            return id;
+            return Number(id); // Convert to number to match Property.id type
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Failed to delete property');
         }
