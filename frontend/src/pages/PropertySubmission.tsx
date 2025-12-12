@@ -67,7 +67,7 @@ const PropertySubmission: React.FC = () => {
   useEffect(() => {
     const storedUser = localStorage.getItem('estuarriendo_current_user');
     if (!storedUser) {
-      window.location.href = '/login';
+      navigate('/login');
       return;
     }
     setUser(JSON.parse(storedUser));
@@ -95,7 +95,7 @@ const PropertySubmission: React.FC = () => {
       setIsEditing(true);
       loadProperty(id);
     }
-  }, [id, dispatch]);
+  }, [id, dispatch, navigate]);
 
   const loadProperty = async (propertyId: string) => {
     setIsLoadingProperty(true);
@@ -305,6 +305,11 @@ const PropertySubmission: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Prevent rendering if user is not authenticated
+  if (!user) {
+    return null;
+  }
 
   if (submitted) {
     return (
