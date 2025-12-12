@@ -110,7 +110,9 @@ export const updateProperty = createAsyncThunk(
     async ({ id, data }: { id: string; data: Partial<Property> }, { rejectWithValue }) => {
         try {
             const response = await axios.put(`/properties/${id}`, data);
-            return response.data.data as Property;
+            // Handle both response formats: response.data.data or response.data
+            const property = response.data.data || response.data;
+            return property as Property;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Failed to update property');
         }

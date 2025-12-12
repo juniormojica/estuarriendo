@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import { Property, PropertyTypeEntity, Amenity, PropertyImage } from '../../types';
+import { Property, PropertyTypeEntity } from '../../types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchAmenities } from '../../store/slices/amenitiesSlice';
 import { updateProperty } from '../../store/slices/propertiesSlice';
@@ -181,36 +181,47 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         setError('');
 
         try {
-            // Prepare update payload
-            const updateData: Partial<Property> = {
+            // Find the type name from the typeId
+            const selectedType = propertyTypes.find(t => t.id === formData.typeId);
+            if (!selectedType) {
+                throw new Error('Tipo de propiedad no válido');
+            }
+
+            // Prepare update payload in the format the backend expects
+            const updateData = {
+                // Core property fields
+                typeName: selectedType.name, // Send name instead of ID
                 title: formData.title,
                 description: formData.description,
                 monthlyRent: formData.monthlyRent,
-                deposit: formData.deposit,
-                bedrooms: formData.bedrooms,
-                bathrooms: formData.bathrooms,
-                area: formData.area,
-                floor: formData.floor,
-                // Location data
+                deposit: formData.deposit || null,
+                currency: 'COP',
+                bedrooms: formData.bedrooms || null,
+                bathrooms: formData.bathrooms || null,
+                area: formData.area || null,
+                floor: formData.floor || null,
+
+                // Location object - backend expects these specific fields
                 location: {
-                    id: formData.locationId || 0,
-                    department: formData.department,
                     city: formData.city,
+                    department: formData.department,
                     street: formData.street,
-                    neighborhood: formData.neighborhood
+                    neighborhood: formData.neighborhood || null,
+                    postalCode: null,
+                    latitude: property.location?.latitude || null,
+                    longitude: property.location?.longitude || null
                 },
-                // Type data
-                type: propertyTypes.find(t => t.id === formData.typeId),
+
                 // Amenities - send as array of IDs
-                amenities: formData.amenityIds.map(id => ({ id: String(id) } as Amenity)),
-                // Images - convert URLs to PropertyImage format
+                amenityIds: formData.amenityIds,
+
+                // Images - send as array of objects with url and metadata
                 images: formData.imageUrls.map((url, index) => ({
-                    id: index,
-                    propertyId: property.id,
                     url,
+                    caption: null,
                     displayOrder: index,
                     isPrimary: index === 0
-                } as PropertyImage))
+                }))
             };
 
             const resultAction = await dispatch(updateProperty({
@@ -227,11 +238,11 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 setError(errorMessage);
                 toast.error(`❌ ${errorMessage}`);
             }
-        } catch (err) {
-            const errorMsg = 'Error al guardar los cambios';
+        } catch (err: any) {
+            const errorMsg = err.message || 'Error al guardar los cambios';
             setError(errorMsg);
             toast.error(`❌ ${errorMsg}`);
-            console.error(err);
+            console.error('Error updating property:', err);
         } finally {
             setIsSaving(false);
         }
