@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, PlusCircle, Search, Sparkles } from 'lucide-react';
+import { X, PlusCircle, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WelcomeModal: React.FC = () => {
@@ -40,16 +40,17 @@ const WelcomeModal: React.FC = () => {
 
     const handlePublish = () => {
         handleClose();
-        navigate('/publicar');
+        navigate('/registro');
     };
 
     const handleBrowse = () => {
         handleClose();
-        // Scroll to properties section or just close
-        const propertiesSection = document.getElementById('properties-section');
-        if (propertiesSection) {
-            propertiesSection.scrollIntoView({ behavior: 'smooth' });
-        }
+        navigate('/', { state: { scrollToSearch: true } });
+    };
+
+    const handleLogin = () => {
+        handleClose();
+        navigate('/login');
     };
 
     return (
@@ -180,6 +181,19 @@ const WelcomeModal: React.FC = () => {
                                     </motion.button>
                                 </div>
 
+                                {/* Login Link for Existing Users */}
+                                <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+                                    <p className="text-sm text-gray-600">
+                                        ¿Ya tienes cuenta?{' '}
+                                        <button
+                                            onClick={handleLogin}
+                                            className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline"
+                                        >
+                                            Ingresar
+                                        </button>
+                                    </p>
+                                </div>
+
                                 {/* Features */}
                                 <div className="mt-6 pt-4 border-t border-gray-100">
                                     <div className="grid grid-cols-3 gap-3 text-center">
@@ -197,6 +211,8 @@ const WelcomeModal: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
+
+
 
                                 {/* ESC hint */}
                                 <p className="text-center text-xs text-gray-400 mt-4">

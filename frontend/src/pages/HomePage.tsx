@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SearchFilters } from '../types';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchProperties, setFilters } from '../store/slices/propertiesSlice';
@@ -9,6 +10,7 @@ import { ChevronDown } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const location = useLocation();
   const { items: properties, loading: isLoading, error } = useAppSelector((state) => state.properties);
 
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
@@ -25,6 +27,17 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     dispatch(fetchProperties());
   }, [dispatch]);
+
+  // Scroll to search section if state indicates it
+  useEffect(() => {
+    const state = location.state as { scrollToSearch?: boolean } | null;
+    if (state?.scrollToSearch) {
+      // Small delay to ensure the component is fully rendered
+      setTimeout(() => {
+        searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [location]);
 
   const handleFiltersChange = (filters: SearchFilters) => {
     setSelectedCity(filters.city);
