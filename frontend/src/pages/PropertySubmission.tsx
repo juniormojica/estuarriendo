@@ -13,6 +13,7 @@ import RejectionWarningModal from '../components/RejectionWarningModal';
 import { departments, getCitiesByDepartment } from '../data/colombiaLocations';
 import { transformPropertyForBackend, transformPropertyFromBackend } from '../utils/propertyTransform';
 import { fetchPropertyTypes } from '../services/propertyTypeService';
+import LocationPicker from '../components/LocationPicker';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
@@ -554,28 +555,55 @@ const PropertySubmission: React.FC = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Latitud (Opcional)</label>
-                      <input
-                        type="text"
-                        value={coordStrings.lat}
-                        onChange={(e) => handleCoordChange('lat', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                        placeholder="Ej: 10.46314"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Longitud (Opcional)</label>
-                      <input
-                        type="text"
-                        value={coordStrings.lng}
-                        onChange={(e) => handleCoordChange('lng', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                        placeholder="Ej: -73.25322"
-                      />
-                    </div>
+                  {/* Interactive Map Location Picker */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      📍 Ubicación en el Mapa
+                    </h3>
+                    <LocationPicker
+                      address={formData.address}
+                      coordinates={formData.coordinates || { lat: 0, lng: 0 }}
+                      onCoordinatesChange={(lat, lng) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          coordinates: { lat, lng }
+                        }));
+                        setCoordStrings({
+                          lat: lat.toString(),
+                          lng: lng.toString()
+                        });
+                      }}
+                    />
                   </div>
+
+                  {/* Manual Entry for Advanced Users */}
+                  <details className="mt-4">
+                    <summary className="text-sm text-gray-600 cursor-pointer hover:text-gray-900 font-medium">
+                      ⚙️ Ingresar coordenadas manualmente (avanzado)
+                    </summary>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Latitud</label>
+                        <input
+                          type="text"
+                          value={coordStrings.lat}
+                          onChange={(e) => handleCoordChange('lat', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          placeholder="Ej: 10.46314"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Longitud</label>
+                        <input
+                          type="text"
+                          value={coordStrings.lng}
+                          onChange={(e) => handleCoordChange('lng', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          placeholder="Ej: -73.25322"
+                        />
+                      </div>
+                    </div>
+                  </details>
                 </div>
               </div>
             )}
