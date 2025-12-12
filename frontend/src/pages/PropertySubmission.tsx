@@ -395,14 +395,14 @@ const PropertySubmission: React.FC = () => {
             {STEPS.map((step, index) => (
               <div
                 key={step}
-                className={`flex flex - col items - center ${index <= currentStep ? 'text-emerald-600' : 'text-gray-400'
-                  } `}
+                className={`flex flex-col items-center ${index <= currentStep ? 'text-emerald-600' : 'text-gray-400'
+                  }`}
               >
                 <div
-                  className={`w - 8 h - 8 rounded - full flex items - center justify - center text - sm font - semibold mb - 1 transition - colors ${index <= currentStep
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold mb-1 transition-colors ${index <= currentStep
                     ? 'bg-emerald-100 text-emerald-600'
                     : 'bg-gray-100 text-gray-500'
-                    } `}
+                    }`}
                 >
                   {index + 1}
                 </div>
@@ -659,10 +659,10 @@ const PropertySubmission: React.FC = () => {
                     {amenities.map(amenity => (
                       <label
                         key={amenity.id}
-                        className={`flex items - center space - x - 3 cursor - pointer p - 3 border rounded - lg transition - all ${formData.amenities.includes(amenity.id)
+                        className={`flex items-center space-x-3 cursor-pointer p-3 border rounded-lg transition-all ${formData.amenities.includes(amenity.id)
                           ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
                           : 'border-gray-200 hover:bg-gray-50'
-                          } `}
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -722,10 +722,10 @@ const PropertySubmission: React.FC = () => {
               type="button"
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
-              className={`flex items - center space - x - 2 px - 6 py - 3 rounded - lg font - semibold transition - colors ${currentStep === 0
+              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${currentStep === 0
                 ? 'text-gray-300 cursor-not-allowed'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                } `}
+                }`}
             >
               <ChevronLeft className="h-5 w-5" />
               <span>Anterior</span>
