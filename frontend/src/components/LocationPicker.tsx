@@ -51,7 +51,11 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
     // Update marker position when coordinates change externally
     useEffect(() => {
-        if (markerRef.current && coordinates.lat !== 0 && coordinates.lng !== 0) {
+        if (markerRef.current &&
+            coordinates.lat != null &&
+            coordinates.lng != null &&
+            coordinates.lat !== 0 &&
+            coordinates.lng !== 0) {
             const newPosition = { lat: coordinates.lat, lng: coordinates.lng };
             markerRef.current.setPosition(newPosition);
             mapInstanceRef.current?.panTo(newPosition);
@@ -70,15 +74,21 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             // Initialize geocoder
             geocoderRef.current = new google.maps.Geocoder();
 
-            // Determine initial center
-            const initialCenter = coordinates.lat !== 0 && coordinates.lng !== 0
+            // Determine initial center - check for valid coordinates
+            const hasValidCoordinates =
+                coordinates.lat != null &&
+                coordinates.lng != null &&
+                coordinates.lat !== 0 &&
+                coordinates.lng !== 0;
+
+            const initialCenter = hasValidCoordinates
                 ? coordinates
                 : defaultCenter;
 
             // Create map
             const map = new google.maps.Map(mapRef.current, {
                 center: initialCenter,
-                zoom: coordinates.lat !== 0 ? 15 : 6,
+                zoom: hasValidCoordinates ? 15 : 6,
                 mapTypeControl: true,
                 streetViewControl: false,
                 fullscreenControl: true,
@@ -244,17 +254,21 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             </div>
 
             {/* Coordinates Display */}
-            {coordinates.lat !== 0 && coordinates.lng !== 0 && (
+            {coordinates.lat !== 0 && coordinates.lng !== 0 && coordinates.lat != null && coordinates.lng != null && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-900 mb-2">Ubicación seleccionada</h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                             <span className="text-gray-600">Latitud:</span>
-                            <span className="ml-2 font-mono text-gray-900">{coordinates.lat.toFixed(6)}</span>
+                            <span className="ml-2 font-mono text-gray-900">
+                                {typeof coordinates.lat === 'number' ? coordinates.lat.toFixed(6) : '0.000000'}
+                            </span>
                         </div>
                         <div>
                             <span className="text-gray-600">Longitud:</span>
-                            <span className="ml-2 font-mono text-gray-900">{coordinates.lng.toFixed(6)}</span>
+                            <span className="ml-2 font-mono text-gray-900">
+                                {typeof coordinates.lng === 'number' ? coordinates.lng.toFixed(6) : '0.000000'}
+                            </span>
                         </div>
                     </div>
                 </div>

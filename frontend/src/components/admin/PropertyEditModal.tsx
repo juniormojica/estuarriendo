@@ -9,6 +9,7 @@ import ImageUploader from '../ImageUploader';
 import { departments, getCitiesByDepartment } from '../../data/colombiaLocations';
 import LoadingSpinner from '../LoadingSpinner';
 import { fetchPropertyTypes } from '../../services/propertyTypeService';
+import LocationPicker from '../LocationPicker';
 
 interface PropertyEditModalProps {
     property: Property;
@@ -32,6 +33,8 @@ interface EditFormData {
     city: string;
     street: string;
     neighborhood?: string;
+    latitude?: number;
+    longitude?: number;
     amenityIds: number[];
     imageUrls: string[];
 }
@@ -114,6 +117,8 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 city: property.location?.city || '',
                 street: property.location?.street || '',
                 neighborhood: property.location?.neighborhood,
+                latitude: property.location?.latitude,
+                longitude: property.location?.longitude,
                 amenityIds,
                 imageUrls
             });
@@ -208,8 +213,8 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     street: formData.street,
                     neighborhood: formData.neighborhood || null,
                     postalCode: null,
-                    latitude: property.location?.latitude || null,
-                    longitude: property.location?.longitude || null
+                    latitude: formData.latitude || null,
+                    longitude: formData.longitude || null
                 },
 
                 // Amenities - send as array of IDs
@@ -388,6 +393,44 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                                 />
                             </div>
+
+                            {/* Map Location Picker - Only show if address is filled */}
+                            {formData.department && formData.city && formData.street && (
+                                <div className="col-span-2 mt-4">
+                                    <h4 className="text-sm font-medium text-gray-900 mb-3">📍 Ubicación en el Mapa</h4>
+                                    <p className="text-xs text-gray-600 mb-2">
+                                        Ajusta el marcador para indicar la ubicación exacta de la propiedad
+                                    </p>
+                                    <LocationPicker
+                                        address={{
+                                            street: formData.street,
+                                            city: formData.city,
+                                            department: formData.department,
+                                            country: 'Colombia'
+                                        }}
+                                        coordinates={{
+                                            lat: formData.latitude || 0,
+                                            lng: formData.longitude || 0
+                                        }}
+                                        onCoordinatesChange={(lat, lng) => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                latitude: lat,
+                                                longitude: lng
+                                            }));
+                                        }}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Show message if address is incomplete */}
+                            {(!formData.department || !formData.city || !formData.street) && (
+                                <div className="col-span-2 mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <p className="text-sm text-blue-700">
+                                        💡 Completa el departamento, ciudad y dirección para poder editar la ubicación en el mapa
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
