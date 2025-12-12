@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize } from 'lucide-react';
 import { Property } from '../types';
 import ConfirmationModal from './ConfirmationModal';
+import ReadOnlyMap from './ReadOnlyMap';
 
 interface PropertyReviewModalProps {
     property: Property;
@@ -30,9 +31,24 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
 
     const [showRejectionInput, setShowRejectionInput] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [showLightbox, setShowLightbox] = useState(false);
+    const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            // Handle lightbox keyboard navigation
+            if (showLightbox) {
+                if (event.key === 'Escape') {
+                    setShowLightbox(false);
+                } else if (event.key === 'ArrowLeft') {
+                    setLightboxImageIndex((prev) => (prev - 1 + localImages.length) % localImages.length);
+                } else if (event.key === 'ArrowRight') {
+                    setLightboxImageIndex((prev) => (prev + 1) % localImages.length);
+                }
+                return;
+            }
+
+            // Handle modal keyboard navigation
             if (event.key === 'Escape') {
                 if (showRejectionInput) {
                     setShowRejectionInput(false);
@@ -48,7 +64,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onClose, showRejectionInput, showApproveConfirm, showRejectConfirm, showDeleteImageConfirm]);
+    }, [onClose, showRejectionInput, showApproveConfirm, showRejectConfirm, showDeleteImageConfirm, showLightbox, localImages.length]);
 
     const handleApproveClick = () => {
         setShowApproveConfirm(true);
@@ -143,206 +159,241 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                 </div>
 
                 <div className="p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Left Column - Images */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                                Imágenes ({localImages.length})
-                            </h3>
+                    {/* Property Header - Title and Price */}
+                    <div className="bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-lg p-6 mb-6">
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">{property.title}</h3>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Home size={18} className="text-gray-500" />
+                                        <span className="text-gray-700 capitalize font-medium">
+                                            {property.type?.name || property.type}
+                                        </span>
+                                    </div>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-sm text-gray-600">
+                                        Publicado: {property.createdAt}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm text-gray-600 mb-1">Precio Mensual</p>
+                                <p className="text-3xl font-bold text-emerald-600">
+                                    {new Intl.NumberFormat('es-CO', {
+                                        style: 'currency',
+                                        currency: property.currency
+                                    }).format(property.monthlyRent || 0)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                            {localImages.length > 0 ? (
-                                <div className="space-y-4">
-                                    {/* Main Image */}
-                                    <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video">
-                                        <img
-                                            src={typeof localImages[currentImageIndex] === 'string' ? localImages[currentImageIndex] : localImages[currentImageIndex]?.url}
-                                            alt={`${property.title} - ${currentImageIndex + 1}`}
-                                            className="w-full h-full object-contain bg-black"
-                                        />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column - Images (2/3 width) */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {/* Images Section */}
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <Maximize size={20} className="text-emerald-600" />
+                                    Imágenes ({localImages.length})
+                                </h4>
 
-                                        {/* Image Counter */}
-                                        <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm font-medium">
-                                            {currentImageIndex + 1} / {localImages.length}
+                                {localImages.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {/* Main Image */}
+                                        <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video cursor-pointer group"
+                                            onClick={() => {
+                                                setLightboxImageIndex(currentImageIndex);
+                                                setShowLightbox(true);
+                                            }}
+                                        >
+                                            <img
+                                                src={typeof localImages[currentImageIndex] === 'string' ? localImages[currentImageIndex] : localImages[currentImageIndex]?.url}
+                                                alt={`${property.title} - ${currentImageIndex + 1}`}
+                                                className="w-full h-full object-contain bg-black"
+                                            />
+
+                                            {/* Hover overlay */}
+                                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center">
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Maximize size={48} className="text-white drop-shadow-lg" />
+                                                </div>
+                                            </div>
+
+                                            {/* Image Counter */}
+                                            <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                                {currentImageIndex + 1} / {localImages.length}
+                                            </div>
+
+                                            {/* Delete Current Image Button */}
+                                            <button
+                                                onClick={() => handleDeleteImageClick(currentImageIndex)}
+                                                disabled={isProcessing}
+                                                className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors disabled:opacity-50"
+                                                title="Eliminar esta imagen"
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+
+                                            {/* Navigation Arrows */}
+                                            {localImages.length > 1 && (
+                                                <>
+                                                    <button
+                                                        onClick={prevImage}
+                                                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-all"
+                                                    >
+                                                        <ChevronLeft size={24} />
+                                                    </button>
+                                                    <button
+                                                        onClick={nextImage}
+                                                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-all"
+                                                    >
+                                                        <ChevronRight size={24} />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
 
-                                        {/* Delete Current Image Button */}
-                                        <button
-                                            onClick={() => handleDeleteImageClick(currentImageIndex)}
-                                            disabled={isProcessing}
-                                            className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors disabled:opacity-50"
-                                            title="Eliminar esta imagen"
-                                        >
-                                            <Trash2 size={20} />
-                                        </button>
-
-                                        {/* Navigation Arrows */}
+                                        {/* Thumbnail Strip */}
                                         {localImages.length > 1 && (
-                                            <>
-                                                <button
-                                                    onClick={prevImage}
-                                                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-all"
-                                                >
-                                                    <ChevronLeft size={24} />
-                                                </button>
-                                                <button
-                                                    onClick={nextImage}
-                                                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-all"
-                                                >
-                                                    <ChevronRight size={24} />
-                                                </button>
-                                            </>
+                                            <div className="grid grid-cols-5 gap-2">
+                                                {localImages.map((image, index) => (
+                                                    <button
+                                                        key={index}
+                                                        onClick={() => setCurrentImageIndex(index)}
+                                                        className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex
+                                                            ? 'border-emerald-500 ring-2 ring-emerald-200'
+                                                            : 'border-gray-200 hover:border-gray-300'
+                                                            }`}
+                                                    >
+                                                        <img
+                                                            src={typeof image === 'string' ? image : image?.url}
+                                                            alt={`Thumbnail ${index + 1}`}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
                                         )}
                                     </div>
+                                ) : (
+                                    <div className="bg-gray-100 rounded-lg p-8 text-center text-gray-500">
+                                        <Maximize className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                                        <p>No hay imágenes disponibles</p>
+                                    </div>
+                                )}
+                            </div>
 
-                                    {/* Thumbnail Strip */}
-                                    {localImages.length > 1 && (
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {localImages.map((image, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => setCurrentImageIndex(index)}
-                                                    className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex
-                                                        ? 'border-emerald-500 ring-2 ring-emerald-200'
-                                                        : 'border-gray-200 hover:border-gray-300'
-                                                        }`}
-                                                >
-                                                    <img
-                                                        src={typeof image === 'string' ? image : image?.url}
-                                                        alt={`Thumbnail ${index + 1}`}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="bg-gray-100 rounded-lg p-8 text-center text-gray-500">
-                                    <Maximize className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                                    <p>No hay imágenes disponibles</p>
-                                </div>
-                            )}
-                        </div>
+                            {/* Description Section */}
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-3">Descripción</h4>
+                                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{property.description}</p>
+                            </div>
 
-                        {/* Right Column - Property Details */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalles de la Propiedad</h3>
+                            {/* Location & Map Section */}
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <MapPin size={20} className="text-emerald-600" />
+                                    Ubicación
+                                </h4>
 
-                            <div className="space-y-4">
-                                {/* Title and Price */}
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Título</label>
-                                    <p className="text-lg font-bold text-gray-900">{property.title}</p>
-                                </div>
-
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Precio</label>
-                                    <p className="text-xl font-bold text-emerald-600">
-                                        {new Intl.NumberFormat('es-CO', {
-                                            style: 'currency',
-                                            currency: property.currency
-                                        }).format(property.monthlyRent || property.price || 0)}
-                                        <span className="text-sm text-gray-500 font-normal"> / mes</span>
-                                    </p>
-                                </div>
-
-                                {/* Description */}
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Descripción</label>
-                                    <p className="text-gray-700 whitespace-pre-wrap">{property.description}</p>
-                                </div>
-
-                                {/* Property Type */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-500">Tipo</label>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <Home size={16} className="text-gray-400" />
-                                            <p className="text-gray-900 capitalize">{property.type?.name || property.type}</p>
-                                        </div>
+                                <div className="space-y-4">
+                                    {/* Address */}
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <p className="font-medium text-gray-900">{property.location?.street}</p>
+                                        <p className="text-gray-600">{property.location?.city}, {property.location?.department}</p>
+                                        {property.location?.postalCode && <p className="text-sm text-gray-500">CP: {property.location.postalCode}</p>}
                                     </div>
 
-                                    {/* Only show bedrooms if not a single room (habitacion) */}
-                                    {property.bedrooms !== undefined && property.type?.name !== 'habitacion' && (
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-500">Habitaciones</label>
-                                            <p className="text-gray-900 mt-1">{property.bedrooms}</p>
+                                    {/* Map Display */}
+                                    {property.location?.latitude && property.location?.longitude ? (
+                                        <ReadOnlyMap
+                                            latitude={typeof property.location.latitude === 'string'
+                                                ? parseFloat(property.location.latitude)
+                                                : property.location.latitude}
+                                            longitude={typeof property.location.longitude === 'string'
+                                                ? parseFloat(property.location.longitude)
+                                                : property.location.longitude}
+                                            address={`${property.location.street}, ${property.location.city}`}
+                                        />
+                                    ) : (
+                                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                            <p className="text-sm text-yellow-800">
+                                                ⚠️ Esta propiedad no tiene coordenadas de ubicación. Considera solicitar al propietario que actualice la ubicación.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        </div>
 
-                                {/* Additional Details */}
-                                <div className="grid grid-cols-2 gap-4">
+                        {/* Right Column - Property Details (1/3 width) */}
+                        <div className="space-y-6">
+                            {/* Property Features */}
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-4">Características</h4>
+
+                                <div className="space-y-3">
+                                    {/* Only show bedrooms if not a single room (habitacion) */}
+                                    {property.bedrooms !== undefined && property.type?.name !== 'habitacion' && (
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                                            <span className="text-gray-600">Habitaciones</span>
+                                            <span className="font-semibold text-gray-900">{property.bedrooms}</span>
+                                        </div>
+                                    )}
+
                                     {property.bathrooms !== undefined && (
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-500">Baños</label>
-                                            <p className="text-gray-900 mt-1">{property.bathrooms}</p>
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                                            <span className="text-gray-600">Baños</span>
+                                            <span className="font-semibold text-gray-900">{property.bathrooms}</span>
                                         </div>
                                     )}
 
                                     {property.area !== undefined && (
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-500">Área</label>
-                                            <p className="text-gray-900 mt-1">{property.area} m²</p>
+                                        <div className="flex justify-between items-center py-2">
+                                            <span className="text-gray-600">Área</span>
+                                            <span className="font-semibold text-gray-900">{property.area} m²</span>
                                         </div>
                                     )}
                                 </div>
-
-                                {/* Location */}
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Ubicación</label>
-                                    <div className="flex items-start gap-2 mt-1">
-                                        <MapPin size={16} className="text-gray-400 mt-1 flex-shrink-0" />
-                                        <div className="text-gray-900">
-                                            <p>{property.location?.street}</p>
-                                            <p>{property.location?.city}, {property.location?.department}</p>
-                                            {property.location?.postalCode && <p>{property.location.postalCode}</p>}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Amenities */}
-                                {property.amenities && property.amenities.length > 0 && (
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-500 mb-2 block">
-                                            {property.type?.name === 'habitacion' ? 'Características' : 'Comodidades'}
-                                        </label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {property.amenities.map((amenity, index) => (
-                                                <span
-                                                    key={typeof amenity === 'string' ? amenity : amenity.id || index}
-                                                    className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm"
-                                                >
-                                                    {typeof amenity === 'string' ? amenity : amenity.name}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Nearby Institutions */}
-                                {property.institutions && property.institutions.length > 0 && (
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-500 mb-2 block">Instituciones Cercanas</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {property.institutions.map((institution) => (
-                                                <span
-                                                    key={institution.id}
-                                                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-                                                >
-                                                    {institution.name}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Created Date */}
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Fecha de Publicación</label>
-                                    <p className="text-gray-900 mt-1">{property.createdAt}</p>
-                                </div>
                             </div>
+
+                            {/* Amenities */}
+                            {property.amenities && property.amenities.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                                        {property.type?.name === 'habitacion' ? 'Características' : 'Comodidades'}
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {property.amenities.map((amenity, index) => (
+                                            <span
+                                                key={typeof amenity === 'string' ? amenity : amenity.id || index}
+                                                className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-sm font-medium"
+                                            >
+                                                {typeof amenity === 'string' ? amenity : amenity.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Nearby Institutions */}
+                            {property.institutions && property.institutions.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Instituciones Cercanas</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {property.institutions.map((institution) => (
+                                            <span
+                                                key={institution.id}
+                                                className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium"
+                                            >
+                                                {institution.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -409,6 +460,66 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* Image Lightbox */}
+            {showLightbox && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-95 z-[60] flex items-center justify-center"
+                    onClick={() => setShowLightbox(false)}
+                >
+                    <div className="relative w-full h-full flex items-center justify-center p-4">
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setShowLightbox(false)}
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+                        >
+                            <X size={32} />
+                        </button>
+
+                        {/* Image Counter */}
+                        <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm font-medium z-10">
+                            {lightboxImageIndex + 1} / {localImages.length}
+                        </div>
+
+                        {/* Main Image */}
+                        <img
+                            src={typeof localImages[lightboxImageIndex] === 'string' ? localImages[lightboxImageIndex] : localImages[lightboxImageIndex]?.url}
+                            alt={`${property.title} - ${lightboxImageIndex + 1}`}
+                            className="max-w-full max-h-full object-contain"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+
+                        {/* Navigation Arrows */}
+                        {localImages.length > 1 && (
+                            <>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLightboxImageIndex((prev) => (prev - 1 + localImages.length) % localImages.length);
+                                    }}
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-3 rounded-full transition-all"
+                                >
+                                    <ChevronLeft size={32} />
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLightboxImageIndex((prev) => (prev + 1) % localImages.length);
+                                    }}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-3 rounded-full transition-all"
+                                >
+                                    <ChevronRight size={32} />
+                                </button>
+                            </>
+                        )}
+
+                        {/* Keyboard hint */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm opacity-70">
+                            Usa las flechas ← → para navegar | ESC para cerrar
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Confirmation Modals */}
             <ConfirmationModal
