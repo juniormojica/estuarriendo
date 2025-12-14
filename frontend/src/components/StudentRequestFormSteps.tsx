@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Calendar, DollarSign, Home, MapPin, Clock, FileText, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';
 import { iconMap } from '../lib/icons';
+import CityAutocomplete from './CityAutocomplete';
+import InstitutionAutocomplete from './InstitutionAutocomplete';
+import { City, Institution } from '../types';
 
 interface FormData {
     city: string;
@@ -22,6 +25,11 @@ interface StudentRequestFormStepsProps {
     onCancel?: () => void;
     submitting?: boolean;
     isEditing?: boolean;
+    // NEW: Props for normalized location/institution
+    selectedCity?: City | null;
+    onCityChange?: (city: City | null) => void;
+    selectedInstitution?: Institution | null;
+    onInstitutionChange?: (institution: Institution | null) => void;
 }
 
 const dealBreakerOptions = [
@@ -40,7 +48,11 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
     onSubmit,
     onCancel,
     submitting = false,
-    isEditing = false
+    isEditing = false,
+    selectedCity,
+    onCityChange,
+    selectedInstitution,
+    onInstitutionChange
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState<FormData>({
@@ -65,7 +77,8 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
             if (!formData.city.trim()) {
                 newErrors.city = 'La ciudad es requerida';
             }
-            if (formData.isNearUniversity && !formData.universityTarget.trim()) {
+            // Check if institution is required: either selectedInstitution OR universityTarget text
+            if (formData.isNearUniversity && !selectedInstitution && !formData.universityTarget.trim()) {
                 newErrors.universityTarget = 'Este campo es requerido';
             }
             if (!formData.budgetMax || parseFloat(formData.budgetMax) <= 0) {
@@ -169,13 +182,17 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
                     <MapPin className="w-4 h-4 inline mr-2" />
                     Ciudad de Interés *
                 </label>
-                <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                    placeholder="Ej: Valledupar"
+                <CityAutocomplete
+                    value={selectedCity || null}
+                    onChange={(city) => {
+                        if (onCityChange) {
+                            onCityChange(city);
+                        }
+                        // Update local formData for backward compatibility
+                        setFormData({ ...formData, city: city?.name || '' });
+                    }}
+                    placeholder="Busca tu ciudad..."
+                    required
                 />
                 {errors.city && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -213,23 +230,43 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
                 </div>
 
                 {formData.isNearUniversity && (
-                    <div className="animate-fadeIn">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nombre de la Universidad o Corporación *
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.universityTarget}
-                            onChange={(e) => setFormData({ ...formData, universityTarget: e.target.value })}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.universityTarget ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                            placeholder="Ej: Universidad Popular del Cesar"
+                    <div className="animate-fadeIn space-y-3">
+                        <InstitutionAutocomplete
+                            cityId={selectedCity?.id || null}
+                            value={selectedInstitution || null}
+                            onChange={(institution) => {
+                                if (onInstitutionChange) {
+                                    onInstitutionChange(institution);
+                                }
+                                // Clear free text if institution selected
+                                if (institution) {
+                                    setFormData({ ...formData, universityTarget: '' });
+                                }
+                            }}
+                            placeholder="Busca tu universidad o corporación..."
                         />
-                        {errors.universityTarget && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center">
-                                <AlertCircle className="w-4 h-4 mr-1" />
-                                {errors.universityTarget}
-                            </p>
+
+                        {/* Fallback for institutions not in database */}
+                        {selectedCity && !selectedInstitution && (
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-2">
+                                    O escribe el nombre si no la encuentras:
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.universityTarget}
+                                    onChange={(e) => setFormData({ ...formData, universityTarget: e.target.value })}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.universityTarget ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    placeholder="Ej: Universidad Popular del Cesar"
+                                />
+                                {errors.universityTarget && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                                        <AlertCircle className="w-4 h-4 mr-1" />
+                                        {errors.universityTarget}
+                                    </p>
+                                )}
+                            </div>
                         )}
                     </div>
                 )}

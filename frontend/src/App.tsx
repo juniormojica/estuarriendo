@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
+import { getCurrentUser } from './store/slices/authSlice';
+import authService from './services/authService';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -23,7 +25,15 @@ import { ToastProvider } from './components/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 
-function App() {
+function AppContent() {
+  useEffect(() => {
+    // Initialize auth state if token exists
+    const token = authService.getToken();
+    if (token) {
+      store.dispatch(getCurrentUser());
+    }
+  }, []);
+
   return (
     <Provider store={store}>
       <ToastProvider>
@@ -87,7 +97,7 @@ function App() {
                 <Route
                   path="/busco-inmueble"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedUserTypes={['tenant']}>
                       <StudentRequestPage />
                     </ProtectedRoute>
                   }
@@ -118,4 +128,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppContent;

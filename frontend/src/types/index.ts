@@ -334,8 +334,11 @@ export interface StudentRequest {
   studentEmail: string;
   studentPhone: string;
   studentWhatsapp: string;
-  city: string;
-  universityTarget: string;
+  cityId: number;  // NEW - normalized city ID
+  city?: string;  // Backward compat - city name
+  institutionId?: number;  // NEW - normalized institution ID (optional)
+  institution?: Institution;  // NEW - populated by backend (optional)
+  universityTarget?: string;  // Fallback for institutions not in database
   budgetMax: number;
   propertyTypeDesired: PropertyType;
   requiredAmenities: string[];

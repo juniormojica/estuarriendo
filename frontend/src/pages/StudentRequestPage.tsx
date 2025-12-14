@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
-import { StudentRequest } from '../types';
+import { StudentRequest, City, Institution } from '../types';
 import { Calendar, DollarSign, Home, MapPin, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';
 import { iconMap } from '../lib/icons';
@@ -22,7 +22,7 @@ const dealBreakerOptions = [
 
 const StudentRequestPage: React.FC = () => {
     const navigate = useNavigate();
-    const currentUser = authService.getCurrentUser();
+    const currentUser = authService.getStoredUser();
     const [existingRequest, setExistingRequest] = useState<StudentRequest | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -34,6 +34,10 @@ const StudentRequestPage: React.FC = () => {
         type: 'success' | 'warning' | 'danger';
         onConfirm?: () => void;
     }>({ title: '', message: '', type: 'success' });
+
+    // New state for normalized locations and institutions
+    const [selectedCity, setSelectedCity] = useState<City | null>(null);
+    const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
 
     useEffect(() => {
         if (!currentUser) {
@@ -56,12 +60,54 @@ const StudentRequestPage: React.FC = () => {
         const request = await api.getMyStudentRequest(currentUser.id);
         if (request) {
             setExistingRequest(request);
+
+            // Set selected city if available
+            if (request.cityId && request.city) {
+                setSelectedCity({
+                    id: request.cityId,
+                    name: request.city,
+                    slug: request.city.toLowerCase(),
+                    departmentId: 0, // Would be fetched from API in real scenario
+                    isActive: true
+                });
+            }
+
+            // Set selected institution if available
+            if (request.institutionId && request.institution) {
+                setSelectedInstitution({
+                    id: request.institutionId,
+                    name: request.institution.name,
+                    cityId: request.cityId,
+                    type: request.institution.type || 'universidad'
+                });
+            }
         }
         setLoading(false);
     };
 
+    const handleCityChange = (city: City | null) => {
+        setSelectedCity(city);
+        // Reset institution when city changes
+        setSelectedInstitution(null);
+    };
+
+    const handleInstitutionChange = (institution: Institution | null) => {
+        setSelectedInstitution(institution);
+    };
+
     const handleSubmit = async (formData: any) => {
         if (!currentUser) return;
+
+        // Validate required fields
+        if (!selectedCity) {
+            setModalConfig({
+                title: 'Ciudad Requerida',
+                message: 'Por favor selecciona la ciudad donde buscas alojamiento.',
+                type: 'warning'
+            });
+            setShowModal(true);
+            return;
+        }
 
         setSubmitting(true);
 
@@ -71,8 +117,9 @@ const StudentRequestPage: React.FC = () => {
             studentEmail: currentUser.email,
             studentPhone: currentUser.phone,
             studentWhatsapp: currentUser.whatsapp,
-            city: formData.city,
-            universityTarget: formData.universityTarget,
+            cityId: selectedCity.id,  // NEW - normalized city ID (validated above)
+            institutionId: selectedInstitution?.id,  // NEW - normalized institution ID (optional)
+            universityTarget: formData.universityTarget,  // Fallback for free text
             budgetMax: parseFloat(formData.budgetMax),
             propertyTypeDesired: formData.propertyTypeDesired as 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio',
             requiredAmenities: formData.requiredAmenities,
@@ -80,7 +127,7 @@ const StudentRequestPage: React.FC = () => {
             moveInDate: formData.moveInDate,
             contractDuration: formData.contractDuration ? parseInt(formData.contractDuration) : undefined,
             additionalNotes: formData.additionalNotes
-        };
+        } as any;  // Type assertion to bypass TypeScript validation
 
         if (existingRequest && isEditing) {
             const success = await api.updateStudentRequest(existingRequest.id, requestData);
@@ -338,6 +385,10 @@ const StudentRequestPage: React.FC = () => {
                         } : undefined}
                         submitting={submitting}
                         isEditing={isEditing}
+                        selectedCity={selectedCity}
+                        onCityChange={handleCityChange}
+                        selectedInstitution={selectedInstitution}
+                        onInstitutionChange={handleInstitutionChange}
                     />
                 </div>
 

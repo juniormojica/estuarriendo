@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../store/hooks';
+import authService from '../services/authService';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -17,8 +18,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     requireAuth = true,
     allowedUserTypes
 }) => {
-    const { user, loading } = useAppSelector((state) => state.auth);
+    const { user: reduxUser, loading } = useAppSelector((state) => state.auth);
     const location = useLocation();
+
+    // Fallback to localStorage if Redux user is null
+    const storedUser = authService.getStoredUser();
+    const user = reduxUser || storedUser;
 
     // Show loading state while checking authentication
     if (loading) {
