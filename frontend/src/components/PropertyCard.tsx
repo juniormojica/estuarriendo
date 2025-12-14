@@ -13,12 +13,14 @@ import { authService } from '../services/authService';
 interface PropertyCardProps {
   property: Property;
   index?: number;
+  showRemoveButton?: boolean; // Show explicit remove button instead of heart icon
+  onRemoveFavorite?: (propertyId: string) => void; // Custom handler for removing favorites
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRemoveButton = false, onRemoveFavorite }) => {
   const navigate = useNavigate();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
-  const isFav = isFavorite(property.id);
+  const isFav = isFavorite(String(property.id));
   const currentUser = authService.getStoredUser();
 
   // Get owner info from property object (included by backend)
@@ -29,9 +31,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
     e.preventDefault();
     e.stopPropagation();
     if (isFav) {
-      removeFavorite(property.id);
+      // Use custom handler if provided, otherwise use context
+      if (onRemoveFavorite) {
+        onRemoveFavorite(String(property.id));
+      } else {
+        removeFavorite(String(property.id));
+      }
     } else {
-      addFavorite(property.id);
+      addFavorite(String(property.id));
     }
   };
 
@@ -119,17 +126,19 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
           </Badge>
         </div>
 
-        <button
-          onClick={toggleFavorite}
-          className={cn(
-            "absolute bottom-3 right-3 p-2 rounded-full shadow-md transition-all duration-200",
-            isFav
-              ? "bg-red-50 text-red-500 hover:bg-red-100"
-              : "bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white"
-          )}
-        >
-          <Heart className={cn("h-5 w-5", isFav && "fill-current")} />
-        </button>
+        {!showRemoveButton ? (
+          <button
+            onClick={toggleFavorite}
+            className={cn(
+              "absolute bottom-3 right-3 p-2 rounded-full shadow-md transition-all duration-200",
+              isFav
+                ? "bg-red-50 text-red-500 hover:bg-red-100"
+                : "bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white"
+            )}
+          >
+            <Heart className={cn("h-5 w-5", isFav && "fill-current")} />
+          </button>
+        ) : null}
       </Link>
 
       <div className="p-5 flex flex-col flex-grow">
@@ -208,6 +217,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0 }) => {
           </div>
 
           <div className="flex gap-2">
+            {showRemoveButton && (
+              <button
+                onClick={toggleFavorite}
+                className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors text-sm font-medium flex items-center gap-1.5"
+                title="Quitar de favoritos"
+              >
+                <Heart className="h-4 w-4 fill-current" />
+                <span>Quitar</span>
+              </button>
+            )}
             <button
               onClick={handleWhatsAppClick}
               className={cn(

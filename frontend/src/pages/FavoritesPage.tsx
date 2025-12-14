@@ -1,37 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ArrowLeft } from 'lucide-react';
 import { useFavorites } from '../context/FavoritesContext';
-import { api } from '../services/api';
+import favoritesService from '../services/favoritesService';
 import { Property } from '../types';
 import PropertyGrid from '../components/PropertyGrid';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const FavoritesPage: React.FC = () => {
-    const { favorites } = useFavorites();
+    const { removeFavorite: removeFavoriteFromContext } = useFavorites();
     const [properties, setProperties] = useState<Property[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string>('');
 
+    // Load favorites from backend on mount
     useEffect(() => {
+        // Scroll to top when page loads
+        window.scrollTo(0, 0);
+
         const loadFavorites = async () => {
             try {
                 setIsLoading(true);
-                // In a real API we would have an endpoint like /properties?ids=1,2,3
-                // For now we fetch all and filter client-side, or fetch one by one
-                // Fetching all is more efficient with the current mock API structure
-                const allProperties = await api.getProperties();
-                const favoriteProperties = allProperties.filter(p => favorites.includes(p.id));
+                setError('');
+                const favoriteProperties = await favoritesService.getFavorites();
                 setProperties(favoriteProperties);
-            } catch (err) {
-                setError('Error al cargar tus favoritos.');
+            } catch (err: any) {
+                console.error('Error loading favorites:', err);
+                if (err.response?.status === 401) {
+                    setError('Debes iniciar sesión para ver tus favoritos.');
+                } else {
+                    setError('Error al cargar tus favoritos.');
+                }
             } finally {
                 setIsLoading(false);
             }
         };
 
         loadFavorites();
-    }, [favorites]);
+    }, []); // Only load on mount
+
+    // Custom handler to remove favorite and update local state
+    const handleRemoveFavorite = useCallback(async (propertyId: string) => {
+        // Optimistically remove from local state
+        setProperties(prev => prev.filter(p => String(p.id) !== propertyId));
+
+        // Also remove from context (which handles the backend call)
+        await removeFavoriteFromContext(propertyId);
+    }, [removeFavoriteFromContext]);
 
     if (isLoading) {
         return (
@@ -67,7 +82,7 @@ const FavoritesPage: React.FC = () => {
                 </div>
 
                 {properties.length > 0 ? (
-                    <PropertyGrid properties={properties} />
+                    <PropertyGrid properties={properties} showRemoveButton={true} onRemoveFavorite={handleRemoveFavorite} />
                 ) : (
                     <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
                         <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />

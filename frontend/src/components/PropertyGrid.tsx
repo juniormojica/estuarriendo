@@ -7,9 +7,11 @@ interface PropertyGridProps {
   properties: Property[];
   isLoading?: boolean;
   error?: string;
+  showRemoveButton?: boolean; // Show remove button on cards (for favorites page)
+  onRemoveFavorite?: (propertyId: string) => void; // Custom handler for removing favorites
 }
 
-const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, isLoading, error }) => {
+const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, isLoading, error, showRemoveButton = false, onRemoveFavorite }) => {
   if (isLoading) {
     return <LoadingSpinner text="Cargando propiedades..." />;
   }
@@ -41,7 +43,13 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, isLoading, erro
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {properties.map((property, index) => (
-          <PropertyCard key={property.id} property={property} index={index} />
+          <PropertyCard
+            key={property.id}
+            property={property}
+            index={index}
+            showRemoveButton={showRemoveButton}
+            onRemoveFavorite={onRemoveFavorite}
+          />
         ))}
       </div>
     </div>
