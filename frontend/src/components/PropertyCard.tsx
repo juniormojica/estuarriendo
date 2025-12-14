@@ -20,6 +20,12 @@ interface PropertyCardProps {
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRemoveButton = false, onRemoveFavorite }) => {
   const navigate = useNavigate();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+
+  // Safety check: return null if property is undefined
+  if (!property || !property.id) {
+    return null;
+  }
+
   const isFav = isFavorite(String(property.id));
   const currentUser = authService.getStoredUser();
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
-import { PropertyFormData, PropertyTypeEntity } from '../types';
+import { ArrowLeft, CheckCircle, AlertCircle, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
+import { PropertyFormData, PropertyTypeEntity, City, Institution, PropertyInstitution } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -10,10 +10,11 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ImageUploader from '../components/ImageUploader';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import RejectionWarningModal from '../components/RejectionWarningModal';
-import { departments, getCitiesByDepartment } from '../data/colombiaLocations';
 import { transformPropertyForBackend, transformPropertyFromBackend } from '../utils/propertyTransform';
 import { fetchPropertyTypes } from '../services/propertyTypeService';
 import LocationPicker from '../components/LocationPicker';
+import CityAutocomplete from '../components/CityAutocomplete';
+import InstitutionAutocomplete from '../components/InstitutionAutocomplete';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
@@ -27,7 +28,6 @@ const PropertySubmission: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>('');
-  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [user, setUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -36,6 +36,16 @@ const PropertySubmission: React.FC = () => {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [rejectionInfo, setRejectionInfo] = useState({ reason: '', title: '' });
   const [isLoadingProperty, setIsLoadingProperty] = useState(false);
+
+  // New state for normalized locations and institutions
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [nearbyInstitutions, setNearbyInstitutions] = useState<Array<{
+    institution: Institution;
+    distance: number | null;
+  }>>([]);
+  const [showInstitutionSelector, setShowInstitutionSelector] = useState(false);
+  const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
+  const [tempDistance, setTempDistance] = useState<string>('');
 
   const maxImages = user?.plan === 'premium' ? 10 : 3;
 
@@ -58,6 +68,7 @@ const PropertySubmission: React.FC = () => {
     area: undefined,
     amenities: [],
     images: [],
+    nearbyInstitutions: [],
     coordinates: {
       lat: 0,
       lng: 0
@@ -130,11 +141,38 @@ const PropertySubmission: React.FC = () => {
           lng: transformedData.coordinates?.lng?.toString() || ''
         });
 
-        // Load available cities for the department
-        const dept = departments.find(d => d.name === transformedData.address.department);
-        if (dept) {
-          const cities = getCitiesByDepartment(dept.id);
-          setAvailableCities(cities.map(c => c.name));
+        // Set selected city if available
+        if (property.location?.cityId && property.location?.city) {
+          setSelectedCity({
+            id: property.location.cityId,
+            name: property.location.city,
+            slug: property.location.city.toLowerCase(),
+            departmentId: property.location.departmentId || 0,
+            department: property.location.department ? {
+              id: property.location.departmentId || 0,
+              name: property.location.department,
+              code: '',
+              slug: '',
+              isActive: true
+            } : undefined,
+            isActive: true
+          });
+        }
+
+        // Set nearby institutions if available
+        if (transformedData.nearbyInstitutions && transformedData.nearbyInstitutions.length > 0) {
+          // Load full institution data (this is simplified, in real app would fetch from API)
+          setNearbyInstitutions(
+            transformedData.nearbyInstitutions.map(ni => ({
+              institution: {
+                id: ni.institutionId,
+                name: '', // Would be fetched from API
+                cityId: property.location?.cityId || 0,
+                type: 'universidad'
+              },
+              distance: ni.distance
+            }))
+          );
         }
       } else if (fetchPropertyById.rejected.match(resultAction)) {
         const errorMessage = resultAction.error?.message || 'No se pudo cargar la propiedad';
@@ -154,29 +192,13 @@ const PropertySubmission: React.FC = () => {
   const handleInputChange = (field: string, value: any) => {
     if (field.startsWith('address.')) {
       const addressField = field.split('.')[1];
-
-      if (addressField === 'department') {
-        const dept = departments.find(d => d.id === value);
-        const deptName = dept ? dept.name : '';
-        const cities = getCitiesByDepartment(value);
-        setAvailableCities(cities.map(c => c.name));
-        setFormData(prev => ({
-          ...prev,
-          address: {
-            ...prev.address,
-            department: deptName,
-            city: ''
-          }
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          address: {
-            ...prev.address,
-            [addressField]: value
-          }
-        }));
-      }
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          [addressField]: value
+        }
+      }));
     } else {
       if (field === 'type') {
         setFormData(prev => ({
@@ -192,6 +214,55 @@ const PropertySubmission: React.FC = () => {
         }));
       }
     }
+  };
+
+  // Handle city selection from autocomplete
+  const handleCityChange = (city: City | null) => {
+    setSelectedCity(city);
+    if (city) {
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          cityId: city.id,
+          departmentId: city.departmentId,
+          city: city.name,
+          department: city.department?.name || ''
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          cityId: undefined,
+          departmentId: undefined,
+          city: '',
+          department: ''
+        }
+      }));
+    }
+  };
+
+  // Add institution to nearby list
+  const handleAddInstitution = () => {
+    if (tempInstitution) {
+      setNearbyInstitutions(prev => [
+        ...prev,
+        {
+          institution: tempInstitution,
+          distance: tempDistance ? parseInt(tempDistance) : null
+        }
+      ]);
+      setTempInstitution(null);
+      setTempDistance('');
+      setShowInstitutionSelector(false);
+    }
+  };
+
+  // Remove institution from list
+  const handleRemoveInstitution = (index: number) => {
+    setNearbyInstitutions(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCoordChange = (field: 'lat' | 'lng', value: string) => {
@@ -267,9 +338,18 @@ const PropertySubmission: React.FC = () => {
     try {
       console.log('Form data type:', formData.type);
 
+      // Add nearby institutions to formData
+      const dataToSubmit: PropertyFormData = {
+        ...formData,
+        nearbyInstitutions: nearbyInstitutions.map(ni => ({
+          institutionId: ni.institution.id,
+          distance: ni.distance
+        }))
+      };
+
       // Transform form data to backend format
       // propertyTypes is now optional since we send typeName directly
-      const backendData = transformPropertyForBackend(formData, user, propertyTypes);
+      const backendData = transformPropertyForBackend(dataToSubmit, user, propertyTypes);
 
       console.log('Transformed backend data:', backendData);
 
@@ -496,36 +576,13 @@ const PropertySubmission: React.FC = () => {
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Ubicación</h2>
                 <div className="grid grid-cols-1 gap-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Departamento *</label>
-                      <select
-                        value={departments.find(d => d.name === formData.address.department)?.id || ''}
-                        onChange={(e) => handleInputChange('address.department', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      >
-                        <option value="">Selecciona un departamento</option>
-                        {departments.map(dept => (
-                          <option key={dept.id} value={dept.id}>{dept.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Ciudad *</label>
-                      <select
-                        value={formData.address.city}
-                        onChange={(e) => handleInputChange('address.city', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                        disabled={!formData.address.department}
-                      >
-                        <option value="">Selecciona una ciudad</option>
-                        {availableCities.map(city => (
-                          <option key={city} value={city}>{city}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                  {/* City Autocomplete */}
+                  <CityAutocomplete
+                    value={selectedCity}
+                    onChange={handleCityChange}
+                    placeholder="Buscar ciudad..."
+                    required
+                  />
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Dirección *</label>
@@ -559,6 +616,103 @@ const PropertySubmission: React.FC = () => {
                       placeholder="Ej: 110221"
                     />
                   </div>
+
+                  {/* Nearby Institutions Section */}
+                  {selectedCity && (
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">
+                        🎓 Instituciones Cercanas
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        ¿Tu propiedad está cerca de alguna universidad o corporación? Esto ayuda a los estudiantes a encontrarla más fácilmente.
+                      </p>
+
+                      {/* List of added institutions */}
+                      {nearbyInstitutions.length > 0 && (
+                        <div className="space-y-2 mb-4">
+                          {nearbyInstitutions.map((ni, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
+                            >
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900">{ni.institution.name}</div>
+                                {ni.distance && (
+                                  <div className="text-sm text-gray-500">
+                                    A {ni.distance} metros
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveInstitution(index)}
+                                className="ml-3 text-red-600 hover:text-red-800 transition-colors"
+                              >
+                                <X className="h-5 w-5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add institution button/form */}
+                      {!showInstitutionSelector ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowInstitutionSelector(true)}
+                          className="flex items-center space-x-2 px-4 py-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                        >
+                          <Plus className="h-5 w-5" />
+                          <span>Agregar Institución</span>
+                        </button>
+                      ) : (
+                        <div className="space-y-3 p-4 bg-white rounded-lg border border-gray-200">
+                          <InstitutionAutocomplete
+                            cityId={selectedCity.id}
+                            value={tempInstitution}
+                            onChange={setTempInstitution}
+                            placeholder="Buscar institución..."
+                          />
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Distancia (metros) - Opcional
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={tempDistance}
+                              onChange={(e) => setTempDistance(e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                              placeholder="Ej: 500"
+                            />
+                          </div>
+
+                          <div className="flex space-x-2">
+                            <button
+                              type="button"
+                              onClick={handleAddInstitution}
+                              disabled={!tempInstitution}
+                              className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Agregar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowInstitutionSelector(false);
+                                setTempInstitution(null);
+                                setTempDistance('');
+                              }}
+                              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Interactive Map Location Picker */}
                   <div className="mt-6">

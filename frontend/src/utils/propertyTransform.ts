@@ -30,13 +30,15 @@ export const transformPropertyForBackend = (
         floor: formData.floor || null,
         availableFrom: formData.availableFrom || null,
 
-        // Location object
+        // Location object (use normalized IDs if available, fallback to strings)
         location: {
-            city: formData.address.city,
-            department: formData.address.department,
+            cityId: formData.address.cityId || null,
+            departmentId: formData.address.departmentId || null,
+            city: formData.address.city,  // Keep for backward compat
+            department: formData.address.department,  // Keep for backward compat
             street: formData.address.street,
             neighborhood: formData.address.neighborhood || null,
-            postalCode: formData.address.postalCode || null,
+            zipCode: formData.address.postalCode || null,
             latitude: formData.coordinates?.lat || null,
             longitude: formData.coordinates?.lng || null
         },
@@ -79,8 +81,11 @@ export const transformPropertyForBackend = (
             return img; // If already an object, return as is
         }),
 
-        // Institutions (universities) - empty for now, can be added later
-        institutions: formData.nearbyUniversities || [],
+        // Institutions (nearby universities/corporations)
+        institutions: (formData.nearbyInstitutions || []).map(ni => ({
+            id: ni.institutionId,
+            distance: ni.distance || null
+        })),
 
         // Amenities - convert to numbers if needed
         amenityIds: (formData.amenities || []).map(id =>
@@ -103,10 +108,12 @@ export const transformPropertyFromBackend = (property: Property): PropertyFormDa
         currency: property.currency,
         address: {
             country: 'Colombia',
+            cityId: property.location?.cityId,
+            departmentId: property.location?.departmentId,
             department: property.location?.department || '',
             city: property.location?.city || '',
             street: property.location?.street || '',
-            postalCode: property.location?.postalCode || '',
+            postalCode: property.location?.postalCode || property.location?.zipCode || '',
             neighborhood: property.location?.neighborhood || ''
         },
         coordinates: property.location?.latitude && property.location?.longitude
@@ -126,6 +133,11 @@ export const transformPropertyFromBackend = (property: Property): PropertyFormDa
         images: (property.images || []).map(img =>
             typeof img === 'string' ? img : img.url
         ),
+        // Transform institutions to PropertyInstitution format
+        nearbyInstitutions: (property.institutions || []).map(i => ({
+            institutionId: typeof i === 'object' ? i.id : 0,
+            distance: null  // Distance not stored in backend response
+        })),
         nearbyUniversities: (property.institutions || []).map(i =>
             typeof i === 'string' ? i : i.name
         ),

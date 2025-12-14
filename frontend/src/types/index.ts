@@ -64,8 +64,10 @@ export type StudentRequestStatus = 'open' | 'closed';
 
 export interface Address {
   country: string;
-  department: string;
-  city: string;
+  cityId?: number;  // NEW: normalized city ID
+  departmentId?: number;  // NEW: normalized department ID
+  department: string;  // Keep for backward compatibility
+  city: string;  // Keep for backward compatibility
   street: string;
   postalCode: string;
   neighborhood?: string;
@@ -98,18 +100,63 @@ export interface VerificationDocuments {
 
 /**
  * =================================================================================
- * B2. INTERFACES FOR NORMALIZED PROPERTY STRUCTURE
+ * B2. NORMALIZED LOCATION AND INSTITUTION TYPES
+ * =================================================================================
+ */
+
+// Department (normalized)
+export interface Department {
+  id: number;
+  name: string;
+  code: string;
+  slug: string;
+  isActive: boolean;
+}
+
+// City (normalized)
+export interface City {
+  id: number;
+  name: string;
+  slug: string;
+  departmentId: number;
+  department?: Department;
+  isActive: boolean;
+}
+
+// Institution (universities, corporations, institutes)
+export interface Institution {
+  id: number;
+  name: string;
+  cityId: number;
+  city?: City;
+  type: 'universidad' | 'corporacion' | 'instituto';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Property-Institution relationship (for nearby institutions)
+export interface PropertyInstitution {
+  institutionId: number;
+  distance?: number | null;  // Distance in meters (optional)
+}
+
+/**
+ * =================================================================================
+ * B3. LEGACY INTERFACES FOR NORMALIZED PROPERTY STRUCTURE
  * =================================================================================
  */
 
 // Location (normalized from address)
 export interface Location {
   id: number;
-  city: string;
-  department: string;
+  cityId?: number;  // NEW
+  departmentId?: number;  // NEW
+  city: string;  // Keep for backward compat
+  department: string;  // Keep for backward compat
   street: string;
   neighborhood?: string;
   postalCode?: string;
+  zipCode?: string;  // Alias for postalCode
   latitude?: number;
   longitude?: number;
 }
@@ -157,14 +204,6 @@ export interface PropertyImage {
   caption?: string;
   displayOrder: number;
   isPrimary: boolean;
-}
-
-// Institution (universities)
-export interface Institution {
-  id: number;
-  name: string;
-  type: string;
-  city: string;
 }
 
 
@@ -389,7 +428,8 @@ export interface PropertyFormData {
   // Relations
   amenities: (string | number)[];
   images: (string | File)[];
-  nearbyUniversities?: string[];
+  nearbyInstitutions?: PropertyInstitution[];  // NEW: institutions near the property
+  nearbyUniversities?: string[];  // Deprecated, use nearbyInstitutions
 
   // Optional
   ownerId?: string;
