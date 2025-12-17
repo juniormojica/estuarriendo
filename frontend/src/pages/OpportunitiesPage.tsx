@@ -8,7 +8,7 @@ import { mockAmenities } from '../data/mockData';
 
 const OpportunitiesPage: React.FC = () => {
     const navigate = useNavigate();
-    const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+    const [currentUser, setCurrentUser] = useState(authService.getStoredUser());
     const [opportunities, setOpportunities] = useState<StudentRequest[]>([]);
     const [filteredOpportunities, setFilteredOpportunities] = useState<StudentRequest[]>([]);
     const [loading, setLoading] = useState(true);

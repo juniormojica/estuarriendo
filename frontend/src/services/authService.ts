@@ -32,6 +32,28 @@ export interface ResetPasswordData {
 }
 
 /**
+ * Transform user data from backend format (snake_case) to frontend format (camelCase)
+ */
+const transformUserData = (backendUser: any): User => {
+    return {
+        id: backendUser.id,
+        name: backendUser.name,
+        email: backendUser.email,
+        phone: backendUser.phone,
+        whatsapp: backendUser.whatsapp,
+        userType: backendUser.userType || backendUser.user_type, // Handle both formats
+        isActive: backendUser.isActive ?? backendUser.is_active ?? true,
+        joinedAt: backendUser.joinedAt || backendUser.joined_at,
+        plan: backendUser.plan,
+        verificationStatus: backendUser.verificationStatus || backendUser.verification_status || 'not_submitted',
+        propertiesCount: backendUser.propertiesCount || 0,
+        approvedCount: backendUser.approvedCount || 0,
+        pendingCount: backendUser.pendingCount || 0,
+        rejectedCount: backendUser.rejectedCount || 0
+    } as User;
+};
+
+/**
  * Authentication Service
  * Handles all authentication-related API calls to the backend
  */
@@ -42,10 +64,12 @@ export const authService = {
     async register(data: RegisterData): Promise<AuthResponse> {
         const response = await apiClient.post<AuthResponse>('/auth/register', data);
 
-        // Save token and user to localStorage
+        // Transform and save user data
         if (response.data.token) {
+            const transformedUser = transformUserData(response.data.user);
             localStorage.setItem('estuarriendo_token', response.data.token);
-            localStorage.setItem('estuarriendo_current_user', JSON.stringify(response.data.user));
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            response.data.user = transformedUser;
         }
 
         return response.data;
@@ -57,10 +81,12 @@ export const authService = {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
         const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
 
-        // Save token and user to localStorage
+        // Transform and save user data
         if (response.data.token) {
+            const transformedUser = transformUserData(response.data.user);
             localStorage.setItem('estuarriendo_token', response.data.token);
-            localStorage.setItem('estuarriendo_current_user', JSON.stringify(response.data.user));
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            response.data.user = transformedUser;
         }
 
         return response.data;
@@ -72,10 +98,11 @@ export const authService = {
     async getCurrentUser(): Promise<User> {
         const response = await apiClient.get<User>('/auth/me');
 
-        // Update user in localStorage
-        localStorage.setItem('estuarriendo_current_user', JSON.stringify(response.data));
+        // Transform and update user in localStorage
+        const transformedUser = transformUserData(response.data);
+        localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
 
-        return response.data;
+        return transformedUser;
     },
 
     /**

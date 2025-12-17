@@ -13,6 +13,7 @@ import {
   VerificationDocuments
 } from '../types';
 import { mockProperties, mockAmenities } from '../data/mockData';
+import apiClient from '../lib/axios';
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -816,25 +817,48 @@ export const api = {
   },
 
   async getStudentRequests(filters?: { universityTarget?: string; budgetMax?: number; propertyTypeDesired?: string }): Promise<StudentRequest[]> {
-    await delay(300);
-    let requests = getStoredStudentRequests();
+    try {
+      // Build query parameters for backend API
+      const params = new URLSearchParams();
+      if (filters?.universityTarget) params.append('university', filters.universityTarget);
+      if (filters?.budgetMax) params.append('maxBudget', filters.budgetMax.toString());
+      if (filters?.propertyTypeDesired) params.append('propertyType', filters.propertyTypeDesired);
+      params.append('status', 'open'); // Only fetch open requests
 
-    // Only return open requests
-    requests = requests.filter(r => r.status === 'open');
+      // Call real backend API
+      const response = await apiClient.get(`/student-requests?${params.toString()}`);
 
-    if (filters) {
-      if (filters.universityTarget) {
-        requests = requests.filter(r => r.universityTarget.toLowerCase().includes(filters.universityTarget!.toLowerCase()));
-      }
-      if (filters.budgetMax) {
-        requests = requests.filter(r => r.budgetMax <= filters.budgetMax!);
-      }
-      if (filters.propertyTypeDesired) {
-        requests = requests.filter(r => r.propertyTypeDesired === filters.propertyTypeDesired);
-      }
+      // Transform backend response to frontend format
+      // Backend returns normalized data with relations (student, city, institution)
+      // Frontend expects flat structure with embedded student info
+      return response.data.map((request: any) => ({
+        id: request.id.toString(),
+        studentId: request.studentId,
+        studentName: request.student?.name || 'Estudiante',
+        studentEmail: request.student?.email || '',
+        studentPhone: request.student?.phone || '',
+        studentWhatsapp: request.student?.whatsapp || '',
+        cityId: request.cityId,
+        city: request.city?.name || '',
+        institutionId: request.institutionId,
+        institution: request.institution,
+        universityTarget: request.universityTarget || request.institution?.name || '',
+        budgetMax: parseFloat(request.budgetMax),
+        propertyTypeDesired: request.propertyTypeDesired,
+        requiredAmenities: request.requiredAmenities || [],
+        dealBreakers: request.dealBreakers || [],
+        moveInDate: request.moveInDate,
+        contractDuration: request.contractDuration,
+        additionalNotes: request.additionalNotes,
+        status: request.status,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt
+      }));
+    } catch (error) {
+      console.error('Error fetching student requests from backend:', error);
+      // Fallback to empty array on error instead of crashing
+      return [];
     }
-
-    return requests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
   async getMyStudentRequest(studentId: string): Promise<StudentRequest | null> {
