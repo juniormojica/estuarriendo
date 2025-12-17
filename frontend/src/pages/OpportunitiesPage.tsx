@@ -14,8 +14,10 @@ const OpportunitiesPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [showPremiumModal, setShowPremiumModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedOpportunity, setSelectedOpportunity] = useState<StudentRequest | null>(null);
     const [contactOpportunity, setContactOpportunity] = useState<StudentRequest | null>(null);
+    const [detailOpportunity, setDetailOpportunity] = useState<StudentRequest | null>(null);
 
     const [filters, setFilters] = useState({
         universityTarget: '',
@@ -52,6 +54,7 @@ const OpportunitiesPage: React.FC = () => {
             if (event.key === 'Escape') {
                 setShowContactModal(false);
                 setShowPremiumModal(false);
+                setShowDetailModal(false);
             }
         };
         window.addEventListener('keydown', handleEsc);
@@ -93,6 +96,11 @@ const OpportunitiesPage: React.FC = () => {
             setContactOpportunity(opportunity);
             setShowContactModal(true);
         }
+    };
+
+    const handleDetailClick = (opportunity: StudentRequest) => {
+        setDetailOpportunity(opportunity);
+        setShowDetailModal(true);
     };
 
     const handleUpgradeToPremium = () => {
@@ -277,22 +285,30 @@ const OpportunitiesPage: React.FC = () => {
                                         </div>
                                     )}
 
-                                    <button
-                                        onClick={() => handleContactClick(opportunity)}
-                                        className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${currentUser?.plan === 'premium'
-                                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                            }`}
-                                    >
-                                        {currentUser?.plan === 'premium' ? (
-                                            <>Ver Contacto</>
-                                        ) : (
-                                            <>
-                                                <Lock className="w-4 h-4 mr-2" />
-                                                Actualiza a Premium
-                                            </>
-                                        )}
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleDetailClick(opportunity)}
+                                            className="flex-1 py-3 rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                        >
+                                            Ver Detalle
+                                        </button>
+                                        <button
+                                            onClick={() => handleContactClick(opportunity)}
+                                            className={`flex-1 py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${currentUser?.plan === 'premium'
+                                                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                }`}
+                                        >
+                                            {currentUser?.plan === 'premium' ? (
+                                                <>Ver Contacto</>
+                                            ) : (
+                                                <>
+                                                    <Lock className="w-4 h-4 mr-2" />
+                                                    Actualiza a Premium
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -429,8 +445,172 @@ const OpportunitiesPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Detail Modal */}
+                {showDetailModal && detailOpportunity && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Detalle de la Solicitud</h2>
+                                    <p className="text-sm text-gray-600 mt-1">Información completa del estudiante</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowDetailModal(false)}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                {/* Student Info */}
+                                <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-4">
+                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                        <User className="w-5 h-5 mr-2 text-emerald-600" />
+                                        Información del Estudiante
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <p className="text-xs text-gray-500">Nombre</p>
+                                            <p className="font-medium text-gray-900">
+                                                {currentUser?.plan === 'premium' ? detailOpportunity.studentName : 'Estudiante'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Universidad/Zona</p>
+                                            <p className="font-medium text-gray-900">{detailOpportunity.universityTarget}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Property Requirements */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                        <Home className="w-5 h-5 mr-2 text-blue-600" />
+                                        Requisitos del Inmueble
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <p className="text-xs text-gray-500 mb-1">Presupuesto Máximo</p>
+                                            <p className="text-lg font-bold text-emerald-600">
+                                                ${detailOpportunity.budgetMax.toLocaleString('es-CO')}/mes
+                                            </p>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <p className="text-xs text-gray-500 mb-1">Tipo de Inmueble</p>
+                                            <p className="text-lg font-semibold text-gray-900 capitalize">
+                                                {detailOpportunity.propertyTypeDesired}
+                                            </p>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <p className="text-xs text-gray-500 mb-1">Fecha de Mudanza</p>
+                                            <p className="font-semibold text-gray-900">
+                                                {new Date(detailOpportunity.moveInDate).toLocaleDateString('es-CO', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                })}
+                                            </p>
+                                        </div>
+                                        {detailOpportunity.contractDuration && (
+                                            <div className="bg-gray-50 rounded-lg p-3">
+                                                <p className="text-xs text-gray-500 mb-1">Duración del Contrato</p>
+                                                <p className="font-semibold text-gray-900">
+                                                    {detailOpportunity.contractDuration} meses
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Required Amenities */}
+                                {detailOpportunity.requiredAmenities && detailOpportunity.requiredAmenities.length > 0 && (
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-3">Comodidades Requeridas</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {detailOpportunity.requiredAmenities.map((amenityId, idx) => {
+                                                const amenity = mockAmenities.find(a => a.id === amenityId);
+                                                return (
+                                                    <span
+                                                        key={idx}
+                                                        className="px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium"
+                                                    >
+                                                        {amenity ? amenity.name : amenityId}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Deal Breakers */}
+                                {detailOpportunity.dealBreakers && detailOpportunity.dealBreakers.length > 0 && (
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-3">Restricciones Importantes</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {detailOpportunity.dealBreakers.map((dealBreaker, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium"
+                                                >
+                                                    {dealBreaker}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Additional Notes */}
+                                {detailOpportunity.additionalNotes && (
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-3">Notas Adicionales</h3>
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <p className="text-gray-700 text-sm leading-relaxed">
+                                                {detailOpportunity.additionalNotes}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Location */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                        <MapPin className="w-5 h-5 mr-2 text-red-600" />
+                                        Ubicación
+                                    </h3>
+                                    <div className="bg-gray-50 rounded-lg p-3">
+                                        <p className="font-medium text-gray-900">{detailOpportunity.city}</p>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                                    <button
+                                        onClick={() => setShowDetailModal(false)}
+                                        className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                                    >
+                                        Cerrar
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowDetailModal(false);
+                                            handleContactClick(detailOpportunity);
+                                        }}
+                                        className={`flex-1 py-3 rounded-lg font-medium transition-colors ${currentUser?.plan === 'premium'
+                                                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                                : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                                            }`}
+                                    >
+                                        {currentUser?.plan === 'premium' ? 'Ver Contacto' : 'Actualizar a Premium'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
+        </div >
     );
 };
 

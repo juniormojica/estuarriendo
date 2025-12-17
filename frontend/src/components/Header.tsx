@@ -115,7 +115,7 @@ const Header: React.FC = () => {
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                         }`}
                     >
-                      Oportunidades
+                      Solicitudes
                       {newOpportunitiesCount > 0 && (
                         <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
                           {newOpportunitiesCount > 99 ? '99+' : newOpportunitiesCount}
