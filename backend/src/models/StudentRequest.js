@@ -23,14 +23,33 @@ const StudentRequest = sequelize.define('StudentRequest', {
         },
         onDelete: 'CASCADE'  // Changed from SET NULL - delete request if user deleted
     },
-    city: {
-        type: DataTypes.STRING(100),
-        allowNull: false
+    cityId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: 'city_id',
+        references: {
+            model: 'cities',
+            key: 'id'
+        },
+        onDelete: 'RESTRICT',
+        comment: 'City where student is looking for property'
+    },
+    institutionId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'institution_id',
+        references: {
+            model: 'institutions',
+            key: 'id'
+        },
+        onDelete: 'SET NULL',
+        comment: 'Target institution (university/corporation) - optional'
     },
     universityTarget: {
         type: DataTypes.STRING(255),
-        allowNull: false,
-        field: 'university_target'
+        allowNull: true,
+        field: 'university_target',
+        comment: 'Free-text university name if not in our database'
     },
     budgetMax: {
         type: DataTypes.DECIMAL(15, 0),

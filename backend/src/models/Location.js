@@ -22,15 +22,27 @@ const Location = sequelize.define('Location', {
         allowNull: false,
         comment: 'Neighborhood/locality'
     },
-    city: {
-        type: DataTypes.STRING(100),
+    cityId: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 'Bogotá'
+        field: 'city_id',
+        references: {
+            model: 'cities',
+            key: 'id'
+        },
+        onDelete: 'RESTRICT',
+        comment: 'City where property is located'
     },
-    department: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-        defaultValue: 'Cundinamarca'
+    departmentId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: 'department_id',
+        references: {
+            model: 'departments',
+            key: 'id'
+        },
+        onDelete: 'RESTRICT',
+        comment: 'Department where property is located'
     },
     zipCode: {
         type: DataTypes.STRING(20),
@@ -66,11 +78,19 @@ const Location = sequelize.define('Location', {
         {
             // Index for finding duplicate locations
             unique: true,
-            fields: ['street', 'neighborhood', 'city']
+            fields: ['street', 'neighborhood', 'city_id']
         },
         {
             // Index for geospatial queries
             fields: ['latitude', 'longitude']
+        },
+        {
+            // Index for filtering by city
+            fields: ['city_id']
+        },
+        {
+            // Index for filtering by department
+            fields: ['department_id']
         }
     ]
 });

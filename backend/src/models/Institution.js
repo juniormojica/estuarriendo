@@ -17,9 +17,15 @@ const Institution = sequelize.define('Institution', {
         allowNull: false,
         comment: 'Institution name'
     },
-    city: {
-        type: DataTypes.STRING(100),
+    cityId: {
+        type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'city_id',
+        references: {
+            model: 'cities',
+            key: 'id'
+        },
+        onDelete: 'RESTRICT',
         comment: 'City where institution is located'
     },
     type: {
@@ -44,11 +50,11 @@ const Institution = sequelize.define('Institution', {
     timestamps: false,
     indexes: [
         {
-            fields: ['city', 'type']
+            fields: ['city_id', 'type']
         },
         {
             unique: true,
-            fields: ['name', 'city']
+            fields: ['name', 'city_id']
         }
     ]
 });

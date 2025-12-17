@@ -29,6 +29,9 @@ import {
     PropertyType,
     Institution,
     PropertyInstitution,
+    // Location normalized models
+    Department,
+    City,
     // User normalized models
     UserIdentificationDetails,
     UserVerification,
@@ -52,6 +55,7 @@ import {
 } from '../src/utils/enums.js';
 import { hashPassword } from '../src/utils/passwordUtils.js';
 import * as propertyService from '../src/services/propertyService.js';
+import { seedDepartments, seedCities } from './seedLocations.js';
 
 /**
  * Clear all data from the database
@@ -72,6 +76,8 @@ const clearDatabase = async () => {
     await Property.destroy({ where: {}, truncate: true, cascade: true });
     await Location.destroy({ where: {}, truncate: true, cascade: true });
     await Institution.destroy({ where: {}, truncate: true, cascade: true });
+    await City.destroy({ where: {}, truncate: true, cascade: true });
+    await Department.destroy({ where: {}, truncate: true, cascade: true });
     await PropertyType.destroy({ where: {}, truncate: true, cascade: true });
     await Amenity.destroy({ where: {}, truncate: true, cascade: true });
     await UserStats.destroy({ where: {}, truncate: true, cascade: true });
@@ -358,26 +364,32 @@ const seedPropertyTypes = async () => {
 /**
  * Seed Institutions
  */
-const seedInstitutions = async () => {
+const seedInstitutions = async (cities) => {
     console.log('🎓 Seeding institutions...');
+
+    // Helper to find city by slug
+    const getCity = (slug) => cities.find(c => c.slug === slug);
 
     const institutions = [
         // Universities in Bogotá
-        { name: 'Universidad Nacional de Colombia', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad de los Andes', city: 'Bogotá', type: 'universidad' },
-        { name: 'Pontificia Universidad Javeriana', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad del Rosario', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad Externado de Colombia', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad de La Salle', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad Santo Tomás', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad Central', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad Pedagógica Nacional', city: 'Bogotá', type: 'universidad' },
-        { name: 'Universidad Distrital Francisco José de Caldas', city: 'Bogotá', type: 'universidad' },
+        { name: 'Universidad Nacional de Colombia', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad de los Andes', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Pontificia Universidad Javeriana', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad del Rosario', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad Externado de Colombia', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad de La Salle', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad Santo Tomás', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad Central', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad Pedagógica Nacional', cityId: getCity('bogota').id, type: 'universidad' },
+        { name: 'Universidad Distrital Francisco José de Caldas', cityId: getCity('bogota').id, type: 'universidad' },
         // Corporations
-        { name: 'SENA', city: 'Bogotá', type: 'corporacion' },
-        { name: 'Corporación Universitaria Minuto de Dios', city: 'Bogotá', type: 'corporacion' },
+        { name: 'SENA', cityId: getCity('bogota').id, type: 'corporacion' },
+        { name: 'Corporación Universitaria Minuto de Dios', cityId: getCity('bogota').id, type: 'corporacion' },
         // Institutes
-        { name: 'Instituto Tecnológico Pascual Bravo', city: 'Bogotá', type: 'instituto' }
+        { name: 'Instituto Tecnológico Pascual Bravo', cityId: getCity('medellin').id, type: 'instituto' },
+        // Valledupar
+        { name: 'Universidad Popular del Cesar', cityId: getCity('valledupar').id, type: 'universidad' },
+        { name: 'Universidad de Santander - UDES', cityId: getCity('valledupar').id, type: 'universidad' }
     ];
 
     const createdInstitutions = await Institution.bulkCreate(institutions);
@@ -389,10 +401,14 @@ const seedInstitutions = async () => {
 /**
  * Seed Properties
  */
-const seedProperties = async (owners, amenities, propertyTypes, institutions) => {
+const seedProperties = async (owners, amenities, propertyTypes, institutions, cities) => {
     console.log('🏘️  Seeding properties...');
 
     const ownerUsers = owners.filter(u => u.userType === UserType.OWNER);
+
+    // Get Bogotá city and Cundinamarca department
+    const bogota = cities.find(c => c.slug === 'bogota');
+    const cundinamarca = await Department.findOne({ where: { code: 'CUN' } });
 
     const neighborhoods = [
         'Chapinero', 'Usaquén', 'Teusaquillo', 'La Candelaria', 'Engativá',
@@ -428,8 +444,8 @@ const seedProperties = async (owners, amenities, propertyTypes, institutions) =>
             location: {
                 street: faker.location.streetAddress(),
                 neighborhood: neighborhood,
-                city: 'Bogotá',
-                department: 'Cundinamarca',
+                cityId: bogota.id,
+                departmentId: cundinamarca.id,
                 zipCode: faker.location.zipCode('#####'),
                 latitude: faker.location.latitude({ min: 4.5, max: 4.8 }),
                 longitude: faker.location.longitude({ min: -74.2, max: -74.0 })
@@ -570,26 +586,37 @@ const seedPaymentRequests = async (owners) => {
 /**
  * Seed Student Requests
  */
-const seedStudentRequests = async (tenants) => {
+const seedStudentRequests = async (tenants, cities, institutions) => {
     console.log('🎓 Seeding student requests...');
 
     const studentRequests = [];
     const tenantUsers = tenants.filter(u => u.userType === UserType.TENANT);
 
+    // Get Bogotá city
+    const bogota = cities.find(c => c.slug === 'bogota');
+
+    // Get some institutions for variety
+    const bogotaInstitutions = institutions.filter(i => i.cityId === bogota.id);
+
     for (let i = 0; i < 10; i++) {
         const tenant = faker.helpers.arrayElement(tenantUsers);
         const createdAt = faker.date.past({ months: 6 });
 
+        // Randomly assign institution or leave as free text
+        const useInstitution = faker.datatype.boolean();
+        const institution = useInstitution ? faker.helpers.arrayElement(bogotaInstitutions) : null;
+
         studentRequests.push({
             studentId: tenant.id,
-            city: 'Bogotá',
-            universityTarget: faker.helpers.arrayElement([
+            cityId: bogota.id,
+            institutionId: institution?.id || null,
+            universityTarget: !institution ? faker.helpers.arrayElement([
                 'Universidad Nacional',
                 'Universidad de los Andes',
                 'Universidad Javeriana',
                 'Universidad del Rosario',
                 'Universidad Externado'
-            ]),
+            ]) : null,
             budgetMax: faker.number.int({ min: 500000, max: 1500000 }),
             propertyTypeDesired: faker.helpers.arrayElement([
                 'pension',
@@ -629,55 +656,46 @@ const seedNotifications = async (users, properties) => {
     const rejectedProperties = properties.filter(p => p.status === PropertyStatus.REJECTED);
     const tenants = users.filter(u => u.userType === UserType.TENANT);
 
+    // Skip if no properties
+    if (properties.length === 0) {
+        console.log('  ⚠️  No properties found, skipping notifications');
+        return [];
+    }
+
     // Property interest notifications
-    for (let i = 0; i < 20; i++) {
-        const property = faker.helpers.arrayElement(approvedProperties);
-        const tenant = faker.helpers.arrayElement(tenants);
-        const owner = users.find(u => u.id === property.ownerId);
+    if (approvedProperties.length > 0 && tenants.length > 0) {
+        for (let i = 0; i < Math.min(20, approvedProperties.length); i++) {
+            const property = faker.helpers.arrayElement(approvedProperties);
+            const tenant = faker.helpers.arrayElement(tenants);
+            const owner = users.find(u => u.id === property.ownerId);
 
-        notifications.push({
-            userId: owner.id,
-            type: NotificationType.PROPERTY_INTEREST,
-            title: 'Nuevo interés en tu propiedad',
-            message: `${tenant.name} está interesado en tu propiedad "${property.title}"`,
-            propertyId: property.id,
-            propertyTitle: property.title,
-            interestedUserId: tenant.id,
-            read: faker.datatype.boolean(),
-            createdAt: faker.date.recent({ days: 30 })
-        });
+            notifications.push({
+                userId: owner.id,
+                type: NotificationType.PROPERTY_INTEREST,
+                title: 'Nuevo interés en tu propiedad',
+                message: `${tenant.name} está interesado en tu propiedad "${property.title}"`,
+                propertyId: property.id,
+                isRead: faker.datatype.boolean({ probability: 0.3 }),
+                createdAt: faker.date.recent({ days: 30 })
+            });
+        }
     }
 
-    // Property approved notifications
-    for (const property of approvedProperties.slice(0, 10)) {
-        const owner = users.find(u => u.id === property.ownerId);
+    // Property rejection notifications
+    if (rejectedProperties.length > 0) {
+        for (const property of rejectedProperties) {
+            const owner = users.find(u => u.id === property.ownerId);
 
-        notifications.push({
-            userId: owner.id,
-            type: NotificationType.PROPERTY_APPROVED,
-            title: 'Propiedad aprobada',
-            message: `Tu propiedad "${property.title}" ha sido aprobada`,
-            propertyId: property.id,
-            propertyTitle: property.title,
-            read: faker.datatype.boolean(),
-            createdAt: property.reviewedAt
-        });
-    }
-
-    // Property rejected notifications
-    for (const property of rejectedProperties) {
-        const owner = users.find(u => u.id === property.ownerId);
-
-        notifications.push({
-            userId: owner.id,
-            type: NotificationType.PROPERTY_REJECTED,
-            title: 'Propiedad rechazada',
-            message: `Tu propiedad "${property.title}" ha sido rechazada`,
-            propertyId: property.id,
-            propertyTitle: property.title,
-            read: faker.datatype.boolean(),
-            createdAt: property.reviewedAt
-        });
+            notifications.push({
+                userId: owner.id,
+                type: NotificationType.PROPERTY_REJECTED,
+                title: 'Propiedad rechazada',
+                message: `Tu propiedad "${property.title}" ha sido rechazada. ${property.rejectionReason}`,
+                propertyId: property.id,
+                isRead: faker.datatype.boolean({ probability: 0.5 }),
+                createdAt: property.reviewedAt
+            });
+        }
     }
 
     const created = await Notification.bulkCreate(notifications);
@@ -693,30 +711,41 @@ const seedActivityLogs = async (users, properties) => {
     console.log('📊 Seeding activity logs...');
 
     const activityLogs = [];
-    const actions = [
-        'user_registered',
-        'user_login',
-        'property_created',
-        'property_updated',
-        'property_viewed',
-        'property_approved',
-        'property_rejected',
-        'payment_submitted',
-        'notification_sent'
-    ];
+    const owners = users.filter(u => u.userType === UserType.OWNER);
 
-    for (let i = 0; i < 100; i++) {
-        const user = faker.helpers.arrayElement(users);
-        const action = faker.helpers.arrayElement(actions);
-        const property = action.includes('property') ? faker.helpers.arrayElement(properties) : null;
+    // Skip if no properties
+    if (properties.length === 0) {
+        console.log('  ⚠️  No properties found, skipping activity logs');
+        return [];
+    }
 
+    // Property submission logs
+    for (const property of properties) {
         activityLogs.push({
-            type: action,
-            message: faker.lorem.sentence(),
-            userId: user.id,
-            propertyId: property?.id || null,
-            timestamp: faker.date.past({ years: 1 })
+            userId: property.ownerId,
+            type: 'property_submitted',
+            message: `Propiedad "${property.title}" enviada para revisión`,
+            propertyId: property.id,
+            timestamp: property.submittedAt
         });
+
+        if (property.status === PropertyStatus.APPROVED) {
+            activityLogs.push({
+                userId: property.ownerId,
+                type: 'property_approved',
+                message: `Propiedad "${property.title}" aprobada`,
+                propertyId: property.id,
+                timestamp: property.reviewedAt
+            });
+        } else if (property.status === PropertyStatus.REJECTED) {
+            activityLogs.push({
+                userId: property.ownerId,
+                type: 'property_rejected',
+                message: `Propiedad "${property.title}" rechazada`,
+                propertyId: property.id,
+                timestamp: property.reviewedAt
+            });
+        }
     }
 
     const created = await ActivityLog.bulkCreate(activityLogs);
@@ -738,10 +767,12 @@ const seedDatabase = async () => {
         const users = await seedUsers();
         const amenities = await seedAmenities();
         const propertyTypes = await seedPropertyTypes();
-        const institutions = await seedInstitutions();
-        const properties = await seedProperties(users, amenities, propertyTypes, institutions);
+        const departments = await seedDepartments();
+        const cities = await seedCities(departments);
+        const institutions = await seedInstitutions(cities);
+        const properties = await seedProperties(users, amenities, propertyTypes, institutions, cities);
         const paymentRequests = await seedPaymentRequests(users);
-        const studentRequests = await seedStudentRequests(users);
+        const studentRequests = await seedStudentRequests(users, cities, institutions);
         const notifications = await seedNotifications(users, properties);
         const activityLogs = await seedActivityLogs(users, properties);
 
@@ -750,6 +781,8 @@ const seedDatabase = async () => {
         console.log(`   - Users: ${users.length}`);
         console.log(`   - Amenities: ${amenities.length}`);
         console.log(`   - Property Types: ${propertyTypes.length}`);
+        console.log(`   - Departments: ${departments.length}`);
+        console.log(`   - Cities: ${cities.length}`);
         console.log(`   - Institutions: ${institutions.length}`);
         console.log(`   - Properties: ${properties.length}`);
         console.log(`   - Payment Requests: ${paymentRequests.length}`);

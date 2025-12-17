@@ -58,6 +58,12 @@ const User = sequelize.define('User', {
         defaultValue: 'free',
         comment: 'Current user plan (denormalized from subscriptions)'
     },
+    premiumSince: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'premium_since',
+        comment: 'When user first became premium'
+    },
     verificationStatus: {
         type: DataTypes.ENUM('not_submitted', 'pending', 'verified', 'rejected'),
         allowNull: false,

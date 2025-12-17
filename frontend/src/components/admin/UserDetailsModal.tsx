@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, IdType } from '../../types';
 import { X, User as UserIcon, Mail, Phone, MessageCircle, Shield, CreditCard, Calendar, CheckCircle, XCircle, FileText, Edit2, Save, ArrowUpCircle, XOctagon, Ban, Power } from 'lucide-react';
 import { api } from '../../services/api';
+import ConfirmationModal from './ConfirmationModal';
 
 interface UserDetailsModalProps {
     user: User;
@@ -14,6 +15,13 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editedUser, setEditedUser] = useState<User>(user);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<{
+        title: string;
+        message: string;
+        type: 'danger' | 'warning' | 'success';
+        onConfirm: () => void;
+    } | null>(null);
 
     // Handle ESC key to close modal
     useEffect(() => {
@@ -70,72 +78,107 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
         }
     };
 
-    const handleUpgradeToPremium = async () => {
-        if (window.confirm('¿Estás seguro de actualizar este usuario a Premium?')) {
-            setIsSaving(true);
-            try {
-                const success = await api.updateUser(user.id, {
-                    plan: 'premium',
-                    premiumSince: new Date().toISOString()
-                });
+    const handleUpgradeToPremium = () => {
+        console.log('🎯 handleUpgradeToPremium called for user:', user.id);
+        setConfirmAction({
+            title: 'Actualizar a Premium',
+            message: '¿Estás seguro de actualizar este usuario a Premium? El usuario tendrá acceso a todas las funcionalidades premium.',
+            type: 'success',
+            onConfirm: async () => {
+                console.log('✅ User confirmed premium upgrade');
+                setShowConfirmModal(false);
+                setIsSaving(true);
+                try {
+                    console.log('📤 Calling api.updateUser with:', {
+                        userId: user.id,
+                        plan: 'premium',
+                        premiumSince: new Date().toISOString()
+                    });
 
-                if (success) {
-                    if (onUpdate) onUpdate();
-                } else {
-                    alert('Error al actualizar el plan');
+                    const success = await api.updateUser(user.id, {
+                        plan: 'premium',
+                        premiumSince: new Date().toISOString()
+                    });
+
+                    console.log('📥 Update result:', success);
+
+                    if (success) {
+                        console.log('✅ Update successful, calling onUpdate and onClose');
+                        if (onUpdate) {
+                            await onUpdate(); // Wait for parent to refresh
+                        }
+                        onClose(); // Close the modal after successful update
+                    } else {
+                        console.error('❌ Update returned false');
+                    }
+                } catch (error) {
+                    console.error('❌ Error in handleUpgradeToPremium:', error);
+                } finally {
+                    setIsSaving(false);
+                    console.log('🏁 handleUpgradeToPremium completed');
                 }
-            } catch (error) {
-                console.error('Error upgrading plan:', error);
-                alert('Error al actualizar el plan');
-            } finally {
-                setIsSaving(false);
             }
-        }
+        });
+        setShowConfirmModal(true);
     };
 
-    const handleToggleActiveStatus = async () => {
+    const handleToggleActiveStatus = () => {
         const action = user.isActive === false ? 'reactivar' : 'dar de baja';
-        if (window.confirm(`¿Estás seguro de ${action} a este usuario?`)) {
-            setIsSaving(true);
-            try {
-                const newStatus = user.isActive === false; // Toggle
-                const success = await api.softDeleteUser(user.id, newStatus);
+        setConfirmAction({
+            title: user.isActive === false ? 'Reactivar Usuario' : 'Dar de Baja Usuario',
+            message: `¿Estás seguro de ${action} a este usuario? ${user.isActive === false ? 'El usuario podrá volver a acceder a la plataforma.' : 'El usuario no podrá acceder a la plataforma.'}`,
+            type: user.isActive === false ? 'success' : 'warning',
+            onConfirm: async () => {
+                setShowConfirmModal(false);
+                setIsSaving(true);
+                try {
+                    const newStatus = user.isActive === false; // Toggle
+                    const success = await api.softDeleteUser(user.id, newStatus);
 
-                if (success) {
-                    if (onUpdate) onUpdate();
-                } else {
-                    alert(`Error al ${action} el usuario`);
+                    if (success) {
+                        if (onUpdate) {
+                            await onUpdate(); // Wait for parent to refresh
+                        }
+                        onClose(); // Close the modal after successful update
+                    }
+                } catch (error) {
+                    console.error('Error toggling user status:', error);
+                } finally {
+                    setIsSaving(false);
                 }
-            } catch (error) {
-                console.error('Error toggling user status:', error);
-                alert(`Error al ${action} el usuario`);
-            } finally {
-                setIsSaving(false);
             }
-        }
+        });
+        setShowConfirmModal(true);
     };
 
-    const handleCancelPremium = async () => {
-        if (window.confirm('¿Estás seguro de cancelar el plan Premium de este usuario?')) {
-            setIsSaving(true);
-            try {
-                const success = await api.updateUser(user.id, {
-                    plan: 'free',
-                    premiumSince: undefined
-                });
+    const handleCancelPremium = () => {
+        setConfirmAction({
+            title: 'Cancelar Plan Premium',
+            message: '¿Estás seguro de cancelar el plan Premium de este usuario? El usuario perderá acceso a las funcionalidades premium.',
+            type: 'danger',
+            onConfirm: async () => {
+                setShowConfirmModal(false);
+                setIsSaving(true);
+                try {
+                    const success = await api.updateUser(user.id, {
+                        plan: 'free',
+                        premiumSince: undefined
+                    });
 
-                if (success) {
-                    if (onUpdate) onUpdate();
-                } else {
-                    alert('Error al cancelar el plan');
+                    if (success) {
+                        if (onUpdate) {
+                            await onUpdate(); // Wait for parent to refresh
+                        }
+                        onClose(); // Close the modal after successful update
+                    }
+                } catch (error) {
+                    console.error('Error canceling plan:', error);
+                } finally {
+                    setIsSaving(false);
                 }
-            } catch (error) {
-                console.error('Error canceling plan:', error);
-                alert('Error al cancelar el plan');
-            } finally {
-                setIsSaving(false);
             }
-        }
+        });
+        setShowConfirmModal(true);
     };
 
     const displayUser = isEditing ? editedUser : user;
@@ -436,8 +479,8 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium text-gray-700">Estado de Verificación:</span>
                                     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${displayUser.verificationStatus === 'verified' ? 'bg-green-100 text-green-700' :
-                                            displayUser.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-red-100 text-red-700'
+                                        displayUser.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-red-100 text-red-700'
                                         }`}>
                                         {displayUser.verificationStatus === 'verified' ? '✓ Verificado' :
                                             displayUser.verificationStatus === 'pending' ? '⏳ Pendiente' :
@@ -544,6 +587,19 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                     )}
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            {confirmAction && (
+                <ConfirmationModal
+                    isOpen={showConfirmModal}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={confirmAction.onConfirm}
+                    title={confirmAction.title}
+                    message={confirmAction.message}
+                    type={confirmAction.type}
+                    isProcessing={isSaving}
+                />
+            )}
         </div>
     );
 };

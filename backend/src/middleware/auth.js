@@ -20,7 +20,7 @@ const authMiddleware = (req, res, next) => {
         // Verify token
         const decoded = verifyToken(token);
 
-        // Attach user ID to request
+        // Attach userId to request (controller expects req.userId)
         req.userId = decoded.userId;
 
         next();

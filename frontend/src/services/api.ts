@@ -471,25 +471,35 @@ export const api = {
     return false;
   },
 
+
   // Get users (actual registered users)
   async getUsers(): Promise<User[]> {
-    await delay(500);
-    const users = getStoredUsers();
+    try {
+      const response = await apiClient.get<any[]>('/users');
 
-    // Calculate stats for each user based on current properties
-    const properties = getStoredProperties();
-
-    return users.map(user => {
-      const userProperties = properties.filter(p => p.ownerId === user.id);
-
-      return {
-        ...user,
-        propertiesCount: userProperties.length,
-        approvedCount: userProperties.filter(p => p.status === 'approved').length,
-        pendingCount: userProperties.filter(p => p.status === 'pending').length,
-        rejectedCount: userProperties.filter(p => p.status === 'rejected').length
-      };
-    });
+      // Transform backend data to frontend format
+      return response.data.map((user: any) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        whatsapp: user.whatsapp,
+        userType: user.userType || user.user_type,
+        isActive: user.isActive ?? user.is_active ?? true,
+        joinedAt: user.joinedAt || user.joined_at,
+        plan: user.plan || 'free',
+        verificationStatus: user.verificationStatus || user.verification_status || 'not_submitted',
+        verificationSubmittedAt: user.verificationSubmittedAt || user.verification_submitted_at,
+        verificationDocuments: user.verificationDocuments || user.verification_documents,
+        propertiesCount: user.propertiesCount || user.properties_count || 0,
+        approvedCount: user.approvedCount || user.approved_count || 0,
+        pendingCount: user.pendingCount || user.pending_count || 0,
+        rejectedCount: user.rejectedCount || user.rejected_count || 0
+      }));
+    } catch (error) {
+      console.error('Error fetching users from backend:', error);
+      return [];
+    }
   },
 
   // Get properties by user
@@ -498,6 +508,31 @@ export const api = {
     const properties = getStoredProperties();
     // Filter properties that belong to this user
     return properties.filter(p => p.ownerId === userId || `user-${p.id.substring(0, 3)}` === userId);
+  },
+
+  // Update user
+  async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
+    try {
+      console.log('🔄 Updating user:', userId, 'with updates:', updates);
+      const response = await apiClient.put(`/users/${userId}`, updates);
+      console.log('✅ User update response:', response.data);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error updating user:', error);
+      console.error('Error details:', error.response?.data);
+      return false;
+    }
+  },
+
+  // Soft delete / reactivate user
+  async softDeleteUser(userId: string, isActive: boolean): Promise<boolean> {
+    try {
+      await apiClient.put(`/users/${userId}`, { isActive });
+      return true;
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      return false;
+    }
   },
 
   // Get activity log
@@ -735,58 +770,6 @@ export const api = {
       }
 
       return true;
-    }
-    return false;
-  },
-
-  // Update user details
-  async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
-    await delay(500);
-    try {
-      const users = getStoredUsers();
-      const index = users.findIndex(u => u.id === userId);
-
-      if (index !== -1) {
-        users[index] = { ...users[index], ...updates };
-        saveStoredUsers(users);
-
-        // Update current user if it matches
-        const currentUser = getStoredCurrentUser();
-        if (currentUser && currentUser.id === userId) {
-          const updatedCurrentUser = { ...currentUser, ...updates };
-          localStorage.setItem('estuarriendo_current_user', JSON.stringify(updatedCurrentUser));
-        }
-
-        return true;
-      }
-    } catch (e) {
-      console.error('Error updating user:', e);
-    }
-    return false;
-  },
-
-  // Soft delete user (logical delete)
-  async softDeleteUser(userId: string, isActive: boolean): Promise<boolean> {
-    await delay(500);
-    try {
-      const users = getStoredUsers();
-      const index = users.findIndex(u => u.id === userId);
-
-      if (index !== -1) {
-        users[index].isActive = isActive;
-        saveStoredUsers(users);
-
-        // Update current user if it matches
-        const currentUser = getStoredCurrentUser();
-        if (currentUser && currentUser.id === userId) {
-          currentUser.isActive = isActive;
-          localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
-        }
-
-        return true;
-      }
-    } catch (e) {
-      console.error('Error toggling user active status:', e);
     }
     return false;
   },

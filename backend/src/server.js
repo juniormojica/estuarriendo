@@ -28,6 +28,29 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// HTTP Request Logger Middleware
+app.use((req, res, next) => {
+    const start = Date.now();
+
+    // Capture the original res.json to log after response
+    const originalJson = res.json.bind(res);
+    res.json = function (body) {
+        const duration = Date.now() - start;
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+        return originalJson(body);
+    };
+
+    // Also capture res.send for non-JSON responses
+    const originalSend = res.send.bind(res);
+    res.send = function (body) {
+        const duration = Date.now() - start;
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+        return originalSend(body);
+    };
+
+    next();
+});
+
 // Health check route
 app.get('/api/health', (req, res) => {
     res.json({

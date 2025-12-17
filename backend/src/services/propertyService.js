@@ -22,17 +22,17 @@ import {
  * Prevents duplicate locations for properties in the same building
  */
 export const findOrCreateLocation = async (locationData, transaction = null) => {
-    const { street, neighborhood, city, department, zipCode, latitude, longitude } = locationData;
+    const { street, neighborhood, cityId, departmentId, zipCode, latitude, longitude } = locationData;
 
     // Try to find existing location
     const [location, created] = await Location.findOrCreate({
         where: {
             street,
             neighborhood,
-            city
+            cityId
         },
         defaults: {
-            department,
+            departmentId,
             zipCode,
             latitude,
             longitude
@@ -321,7 +321,7 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         status,
         ownerId,
         typeId,
-        city,
+        cityId,
         minRent,
         maxRent,
         isFeatured,
@@ -353,7 +353,7 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         {
             model: Location,
             as: 'location',
-            ...(city && { where: { city } })
+            ...(cityId && { where: { cityId } })
         },
         {
             model: Contact,

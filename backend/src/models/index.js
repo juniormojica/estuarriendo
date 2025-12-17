@@ -11,6 +11,7 @@ import StudentRequest from './StudentRequest.js';
 import Notification from './Notification.js';
 import ActivityLog from './ActivityLog.js';
 import SystemConfig from './SystemConfig.js';
+import Favorite from './Favorite.js';
 
 // Import property normalized models
 import Location from './Location.js';
@@ -20,6 +21,10 @@ import PropertyImage from './PropertyImage.js';
 import PropertyType from './PropertyType.js';
 import Institution from './Institution.js';
 import PropertyInstitution from './PropertyInstitution.js';
+
+// Import location normalized models
+import Department from './Department.js';
+import City from './City.js';
 
 // Import user normalized models
 import UserIdentificationDetails from './UserIdentificationDetails.js';
@@ -121,6 +126,39 @@ Property.belongsTo(User, {
     as: 'owner'
 });
 
+// Department <-> City (One-to-Many)
+Department.hasMany(City, {
+    foreignKey: 'departmentId',
+    as: 'cities',
+    onDelete: 'RESTRICT'
+});
+City.belongsTo(Department, {
+    foreignKey: 'departmentId',
+    as: 'department'
+});
+
+// City <-> Location (One-to-Many)
+City.hasMany(Location, {
+    foreignKey: 'cityId',
+    as: 'locations',
+    onDelete: 'RESTRICT'
+});
+Location.belongsTo(City, {
+    foreignKey: 'cityId',
+    as: 'city'
+});
+
+// Department <-> Location (One-to-Many)
+Department.hasMany(Location, {
+    foreignKey: 'departmentId',
+    as: 'locations',
+    onDelete: 'RESTRICT'
+});
+Location.belongsTo(Department, {
+    foreignKey: 'departmentId',
+    as: 'department'
+});
+
 // Property <-> Location (Many-to-One)
 Property.belongsTo(Location, {
     foreignKey: 'locationId',
@@ -174,6 +212,17 @@ PropertyType.hasMany(Property, {
     as: 'properties'
 });
 
+// City <-> Institution (One-to-Many)
+City.hasMany(Institution, {
+    foreignKey: 'cityId',
+    as: 'institutions',
+    onDelete: 'RESTRICT'
+});
+Institution.belongsTo(City, {
+    foreignKey: 'cityId',
+    as: 'city'
+});
+
 // Property <-> Institution (Many-to-Many through PropertyInstitution)
 Property.belongsToMany(Institution, {
     through: PropertyInstitution,
@@ -200,6 +249,28 @@ Amenity.belongsToMany(Property, {
     foreignKey: 'amenityId',
     otherKey: 'propertyId',
     as: 'properties'
+});
+
+// City <-> StudentRequest (One-to-Many)
+City.hasMany(StudentRequest, {
+    foreignKey: 'cityId',
+    as: 'studentRequests',
+    onDelete: 'RESTRICT'
+});
+StudentRequest.belongsTo(City, {
+    foreignKey: 'cityId',
+    as: 'city'
+});
+
+// Institution <-> StudentRequest (One-to-Many)
+Institution.hasMany(StudentRequest, {
+    foreignKey: 'institutionId',
+    as: 'studentRequests',
+    onDelete: 'SET NULL'
+});
+StudentRequest.belongsTo(Institution, {
+    foreignKey: 'institutionId',
+    as: 'institution'
 });
 
 // StudentRequest <-> User (Many-to-One)
@@ -274,6 +345,30 @@ ActivityLog.belongsTo(Property, {
     as: 'property'
 });
 
+// User <-> Property Favorites (Many-to-Many through Favorite)
+User.belongsToMany(Property, {
+    through: Favorite,
+    foreignKey: 'userId',
+    otherKey: 'propertyId',
+    as: 'favoriteProperties'
+});
+Property.belongsToMany(User, {
+    through: Favorite,
+    foreignKey: 'propertyId',
+    otherKey: 'userId',
+    as: 'favoritedBy'
+});
+
+// Direct associations for Favorite model
+Favorite.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user'
+});
+Favorite.belongsTo(Property, {
+    foreignKey: 'propertyId',
+    as: 'property'
+});
+
 /**
  * Export all models and sequelize instance
  */
@@ -289,6 +384,7 @@ export {
     Notification,
     ActivityLog,
     SystemConfig,
+    Favorite,
     // Property normalized models
     Location,
     Contact,
@@ -297,6 +393,9 @@ export {
     PropertyType,
     Institution,
     PropertyInstitution,
+    // Location normalized models
+    Department,
+    City,
     // User normalized models
     UserIdentificationDetails,
     UserVerification,
@@ -318,6 +417,7 @@ export default {
     Notification,
     ActivityLog,
     SystemConfig,
+    Favorite,
     // Property normalized models
     Location,
     Contact,
@@ -326,6 +426,9 @@ export default {
     PropertyType,
     Institution,
     PropertyInstitution,
+    // Location normalized models
+    Department,
+    City,
     // User normalized models
     UserIdentificationDetails,
     UserVerification,

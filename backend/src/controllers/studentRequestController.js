@@ -1,4 +1,4 @@
-import { StudentRequest, User } from '../models/index.js';
+import { StudentRequest, User, City, Institution } from '../models/index.js';
 import { StudentRequestStatus } from '../utils/enums.js';
 import { Op } from 'sequelize';
 
@@ -40,7 +40,19 @@ export const getAllStudentRequests = async (req, res) => {
                 {
                     model: User,
                     as: 'student',
-                    attributes: ['id', 'name', 'email'],
+                    attributes: ['id', 'name', 'email', 'phone', 'whatsapp'],
+                    required: false
+                },
+                {
+                    model: City,
+                    as: 'city',
+                    attributes: ['id', 'name', 'departmentId'],
+                    required: false
+                },
+                {
+                    model: Institution,
+                    as: 'institution',
+                    attributes: ['id', 'name', 'type'],
                     required: false
                 }
             ],
