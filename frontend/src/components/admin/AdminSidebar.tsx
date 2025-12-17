@@ -1,6 +1,6 @@
 import React from 'react';
 import { AdminSection } from '../../types';
-import { LayoutDashboard, Clock, Home, Users, Settings, Activity, CreditCard, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Clock, Home, Users, Settings, Activity, CreditCard, ShieldCheck, FileText } from 'lucide-react';
 
 interface AdminSidebarProps {
     currentSection: AdminSection;
@@ -40,6 +40,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentSection, onSectionCh
             id: 'all-properties' as AdminSection,
             label: 'Todas las Propiedades',
             icon: Home,
+            badge: null
+        },
+        {
+            id: 'student-requests' as AdminSection,
+            label: 'Solicitudes',
+            icon: FileText,
             badge: null
         },
         {

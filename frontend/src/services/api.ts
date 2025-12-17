@@ -885,18 +885,13 @@ export const api = {
   },
 
   async deleteStudentRequest(id: string): Promise<boolean> {
-    await delay(500);
-    const requests = getStoredStudentRequests();
-    const index = requests.findIndex(r => r.id === id);
-
-    if (index !== -1) {
-      // Mark as closed instead of deleting
-      requests[index].status = 'closed';
-      requests[index].updatedAt = new Date().toISOString();
-      saveStudentRequests(requests);
+    try {
+      await apiClient.delete(`/student-requests/${id}`);
       return true;
+    } catch (error) {
+      console.error('Error deleting student request:', error);
+      return false;
     }
-    return false;
   },
 
   // Notify owner of interest

@@ -14,6 +14,7 @@ import AdminConfig from '../components/admin/AdminConfig';
 import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
 import PropertyEditModal from '../components/admin/PropertyEditModal';
 import UserDetailsModal from '../components/admin/UserDetailsModal';
+import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
 import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
@@ -607,6 +608,13 @@ const AdminDashboard = () => {
                                 onDeleteAmenity={handleDeleteAmenity}
                             />
                         )}
+                    </div>
+                );
+            case 'student-requests':
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Solicitudes de Estudiantes</h2>
+                        <StudentRequestsAdmin />
                     </div>
                 );
             default:
