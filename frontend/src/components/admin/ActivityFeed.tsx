@@ -1,13 +1,50 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActivityLog } from '../../types';
-import { Clock } from 'lucide-react';
+import { Clock, RefreshCw } from 'lucide-react';
+import { api } from '../../services/api';
 
 interface ActivityFeedProps {
-    activities: ActivityLog[];
+    activities?: ActivityLog[];
     maxItems?: number;
+    showViewAll?: boolean;
+    onViewAll?: () => void;
 }
 
-const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, maxItems = 10 }) => {
+const ActivityFeed: React.FC<ActivityFeedProps> = ({
+    activities: propActivities,
+    maxItems = 10,
+    showViewAll = true,
+    onViewAll
+}) => {
+    const [activities, setActivities] = useState<ActivityLog[]>(propActivities || []);
+    const [isLoading, setIsLoading] = useState(!propActivities);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const loadActivities = async () => {
+        if (propActivities) return; // Don't fetch if activities are provided as props
+
+        try {
+            const logs = await api.getActivityLogs({ limit: maxItems });
+            setActivities(logs);
+        } catch (error) {
+            console.error('Error loading activities:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!propActivities) {
+            loadActivities();
+        }
+    }, [propActivities, maxItems]);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await loadActivities();
+        setIsRefreshing(false);
+    };
+
     const displayedActivities = activities.slice(0, maxItems);
 
     const getActivityIcon = (type: ActivityLog['type']) => {
@@ -18,9 +55,10 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, maxItems = 10 }
             property_deleted: '🗑️',
             property_featured: '⭐',
             user_registered: '👤',
-            config_updated: '⚙️'
+            config_updated: '⚙️',
+            payment_verified: '💳'
         };
-        return icons[type];
+        return icons[type] || '📋';
     };
 
     const getActivityColor = (type: ActivityLog['type']) => {
@@ -31,9 +69,10 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, maxItems = 10 }
             property_deleted: 'text-gray-600',
             property_featured: 'text-yellow-600',
             user_registered: 'text-purple-600',
-            config_updated: 'text-orange-600'
+            config_updated: 'text-orange-600',
+            payment_verified: 'text-emerald-600'
         };
-        return colors[type];
+        return colors[type] || 'text-gray-600';
     };
 
     const formatTimestamp = (timestamp: string) => {
@@ -53,15 +92,30 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, maxItems = 10 }
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <Clock size={20} />
                     Actividad Reciente
                 </h3>
+                {!propActivities && (
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                        title="Actualizar"
+                    >
+                        <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+                    </button>
+                )}
             </div>
 
             <div className="divide-y divide-gray-100">
-                {displayedActivities.length === 0 ? (
+                {isLoading ? (
+                    <div className="p-8 text-center text-gray-500">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                        <p className="mt-2">Cargando actividad...</p>
+                    </div>
+                ) : displayedActivities.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         No hay actividad reciente
                     </div>
@@ -84,9 +138,12 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, maxItems = 10 }
                 )}
             </div>
 
-            {activities.length > maxItems && (
+            {showViewAll && activities.length > 0 && (
                 <div className="p-3 border-t border-gray-200 text-center">
-                    <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    <button
+                        onClick={onViewAll}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
                         Ver todas las actividades ({activities.length})
                     </button>
                 </div>

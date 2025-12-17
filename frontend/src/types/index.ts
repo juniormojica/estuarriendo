@@ -455,6 +455,25 @@ export interface ActivityLog {
   timestamp: string;
   userId?: string;
   propertyId?: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  property?: {
+    id: number;
+    title: string;
+    type: string;
+  };
+}
+
+export interface ActivityStatistics {
+  totalLogs: number;
+  activityByType: Array<{
+    type: string;
+    count: number;
+  }>;
+  recentActivity: number;
 }
 
 export interface SystemConfig {

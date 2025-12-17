@@ -6,6 +6,7 @@ import {
   User,
   PropertyStats,
   ActivityLog,
+  ActivityStatistics,
   SystemConfig,
   PaymentRequest,
   StudentRequest,
@@ -1060,6 +1061,53 @@ export const api = {
     await delay(300);
     const users = getStoredUsers();
     return users.filter(u => u.verificationStatus === 'pending');
+  },
+
+  // Activity Logs Methods
+  async getActivityLogs(filters?: {
+    type?: string;
+    userId?: string;
+    propertyId?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ActivityLog[]> {
+    try {
+      const response = await apiClient.get('/activity-logs', { params: filters });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
+      return [];
+    }
+  },
+
+  async getActivityStatistics(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ActivityStatistics> {
+    try {
+      const response = await apiClient.get('/activity-logs/statistics/summary', { params: filters });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching activity statistics:', error);
+      return { totalLogs: 0, activityByType: [], recentActivity: 0 };
+    }
+  },
+
+  async createActivityLog(log: {
+    type: string;
+    message: string;
+    userId?: string;
+    propertyId?: number;
+  }): Promise<boolean> {
+    try {
+      await apiClient.post('/activity-logs', log);
+      return true;
+    } catch (error) {
+      console.error('Error creating activity log:', error);
+      return false;
+    }
   }
 
 }

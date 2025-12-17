@@ -15,6 +15,7 @@ import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal
 import PropertyEditModal from '../components/admin/PropertyEditModal';
 import UserDetailsModal from '../components/admin/UserDetailsModal';
 import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
+import ActivityLogsAdmin from '../components/admin/ActivityLogsAdmin';
 import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
@@ -359,7 +360,11 @@ const AdminDashboard = () => {
                         <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
                         <AdminStats stats={stats} />
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                            <ActivityFeed activities={activities} maxItems={8} />
+                            <ActivityFeed
+                                activities={activities}
+                                maxItems={8}
+                                onViewAll={() => setCurrentSection('activity')}
+                            />
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen Rápido</h3>
                                 <div className="space-y-3">
@@ -588,12 +593,7 @@ const AdminDashboard = () => {
                     </div>
                 );
             case 'activity':
-                return (
-                    <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Registro de Actividad</h2>
-                        <ActivityFeed activities={activities} />
-                    </div>
-                );
+                return <ActivityLogsAdmin />;
             case 'config':
                 return (
                     <div className="space-y-6">
