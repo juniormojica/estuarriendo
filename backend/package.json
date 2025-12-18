@@ -13,6 +13,7 @@
         "seed:data": "node scripts/seedData.js seed",
         "seed:data:clear": "node scripts/seedData.js clear",
         "seed:data:reset": "node scripts/seedData.js reset",
+        "seed:institutions": "node scripts/seedInstitutions.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [

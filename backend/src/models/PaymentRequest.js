@@ -44,13 +44,13 @@ const PaymentRequest = sequelize.define('PaymentRequest', {
     },
     proofImageUrl: {
         type: DataTypes.STRING(500),
-        allowNull: false,
+        allowNull: true,
         field: 'proof_image_url',
         comment: 'Cloudinary URL of payment proof'
     },
     proofImagePublicId: {
         type: DataTypes.STRING(255),
-        allowNull: false,
+        allowNull: true,
         field: 'proof_image_public_id',
         comment: 'Cloudinary public_id for deletion'
     },

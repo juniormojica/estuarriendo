@@ -20,6 +20,9 @@ export const getAllProperties = async (req, res) => {
             ownerId,
             isFeatured,
             isRented,
+            institutionId,
+            institutionType,
+            maxDistance,
             limit = 50,
             offset = 0
         } = req.query;
@@ -36,7 +39,11 @@ export const getAllProperties = async (req, res) => {
             maxRent: maxPrice ? parseFloat(maxPrice) : undefined,
             ownerId,
             isFeatured: isFeatured !== undefined ? isFeatured === 'true' : undefined,
-            isRented: isRented !== undefined ? isRented === 'true' : undefined
+            isRented: isRented !== undefined ? isRented === 'true' : undefined,
+            // Institution filters
+            institutionId: institutionId ? parseInt(institutionId) : undefined,
+            institutionType,
+            maxDistance: maxDistance ? parseInt(maxDistance) : undefined
         };
 
         const options = {

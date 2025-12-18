@@ -325,7 +325,10 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         minRent,
         maxRent,
         isFeatured,
-        isRented
+        isRented,
+        institutionId,
+        institutionType,
+        maxDistance
     } = filters;
 
     const {
@@ -372,13 +375,6 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
             as: 'type'
         },
         {
-            model: Institution,
-            as: 'institutions',
-            through: {
-                attributes: ['distance']
-            }
-        },
-        {
             model: Amenity,
             as: 'amenities',
             through: {
@@ -386,6 +382,51 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
             }
         }
     ];
+
+    // Institution filtering
+    if (institutionId || institutionType || maxDistance) {
+        const institutionInclude = {
+            model: Institution,
+            as: 'institutions',
+            through: {
+                attributes: ['distance']
+            }
+        };
+
+        // Build where clause for institution
+        const institutionWhere = {};
+        if (institutionId) {
+            institutionWhere.id = institutionId;
+        }
+        if (institutionType) {
+            institutionWhere.type = institutionType;
+        }
+
+        if (Object.keys(institutionWhere).length > 0) {
+            institutionInclude.where = institutionWhere;
+        }
+
+        // Filter by distance in junction table
+        if (maxDistance) {
+            institutionInclude.through.where = {
+                distance: { [sequelize.Op.lte]: maxDistance }
+            };
+        }
+
+        // Make it required (INNER JOIN) so only properties with matching institutions are returned
+        institutionInclude.required = true;
+
+        include.push(institutionInclude);
+    } else {
+        // Include institutions but not required (LEFT JOIN)
+        include.push({
+            model: Institution,
+            as: 'institutions',
+            through: {
+                attributes: ['distance']
+            }
+        });
+    }
 
     return await Property.findAndCountAll({
         where,

@@ -33,6 +33,21 @@ const Institution = sequelize.define('Institution', {
         allowNull: false,
         comment: 'Type: universidad, corporacion, instituto, etc.'
     },
+    acronym: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        comment: 'Common acronym or initials (e.g., UPC, SENA, UNAD)'
+    },
+    latitude: {
+        type: DataTypes.DECIMAL(10, 8),
+        allowNull: true,
+        comment: 'Latitude coordinate'
+    },
+    longitude: {
+        type: DataTypes.DECIMAL(11, 8),
+        allowNull: true,
+        comment: 'Longitude coordinate'
+    },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -55,6 +70,9 @@ const Institution = sequelize.define('Institution', {
         {
             unique: true,
             fields: ['name', 'city_id']
+        },
+        {
+            fields: ['acronym']
         }
     ]
 });

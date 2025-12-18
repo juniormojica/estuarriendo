@@ -371,25 +371,207 @@ const seedInstitutions = async (cities) => {
     const getCity = (slug) => cities.find(c => c.slug === slug);
 
     const institutions = [
-        // Universities in Bogotá
-        { name: 'Universidad Nacional de Colombia', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad de los Andes', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Pontificia Universidad Javeriana', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad del Rosario', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad Externado de Colombia', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad de La Salle', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad Santo Tomás', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad Central', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad Pedagógica Nacional', cityId: getCity('bogota').id, type: 'universidad' },
-        { name: 'Universidad Distrital Francisco José de Caldas', cityId: getCity('bogota').id, type: 'universidad' },
-        // Corporations
-        { name: 'SENA', cityId: getCity('bogota').id, type: 'corporacion' },
-        { name: 'Corporación Universitaria Minuto de Dios', cityId: getCity('bogota').id, type: 'corporacion' },
-        // Institutes
-        { name: 'Instituto Tecnológico Pascual Bravo', cityId: getCity('medellin').id, type: 'instituto' },
-        // Valledupar
-        { name: 'Universidad Popular del Cesar', cityId: getCity('valledupar').id, type: 'universidad' },
-        { name: 'Universidad de Santander - UDES', cityId: getCity('valledupar').id, type: 'universidad' }
+        // VALLEDUPAR - Universidades
+        {
+            name: 'Universidad Popular del Cesar - UPC',
+            acronym: 'UPC',
+            cityId: getCity('valledupar').id,
+            type: 'universidad',
+            latitude: 10.4594,
+            longitude: -73.2625
+        },
+        {
+            name: 'Universidad de Santander - UDES',
+            acronym: 'UDES',
+            cityId: getCity('valledupar').id,
+            type: 'universidad',
+            latitude: 10.4851,
+            longitude: -73.2438
+        },
+        {
+            name: 'Fundación Universitaria del Área Andina',
+            acronym: 'AREANDINA',
+            cityId: getCity('valledupar').id,
+            type: 'universidad',
+            latitude: 10.4792,
+            longitude: -73.2456
+        },
+        {
+            name: 'Universidad Nacional Abierta y a Distancia - UNAD',
+            acronym: 'UNAD',
+            cityId: getCity('valledupar').id,
+            type: 'universidad',
+            latitude: 10.4631,
+            longitude: -73.2532
+        },
+        {
+            name: 'Universidad Antonio Nariño',
+            acronym: 'UAN',
+            cityId: getCity('valledupar').id,
+            type: 'universidad',
+            latitude: 10.4720,
+            longitude: -73.2510
+        },
+
+        // VALLEDUPAR - Institutos Técnicos
+        {
+            name: 'SENA - Centro de Formación Valledupar',
+            acronym: 'SENA',
+            cityId: getCity('valledupar').id,
+            type: 'instituto',
+            latitude: 10.4700,
+            longitude: -73.2500
+        },
+        {
+            name: 'UPARSYSTEM - Universidad para el Desarrollo',
+            acronym: 'UPARSYSTEM',
+            cityId: getCity('valledupar').id,
+            type: 'instituto',
+            latitude: 10.4680,
+            longitude: -73.2490
+        },
+        {
+            name: 'INSTECOM - Instituto Técnico de Comercio',
+            acronym: 'INSTECOM',
+            cityId: getCity('valledupar').id,
+            type: 'instituto',
+            latitude: 10.4650,
+            longitude: -73.2520
+        },
+        {
+            name: 'Instituto Técnico Nacional de Comercio',
+            acronym: 'ITNC',
+            cityId: getCity('valledupar').id,
+            type: 'instituto',
+            latitude: 10.4640,
+            longitude: -73.2530
+        },
+        {
+            name: 'Politécnico de la Costa Atlántica',
+            acronym: 'POLITECNICO',
+            cityId: getCity('valledupar').id,
+            type: 'instituto',
+            latitude: 10.4710,
+            longitude: -73.2480
+        },
+        {
+            name: 'Instituto Técnico Agropecuario',
+            acronym: 'ITA',
+            cityId: getCity('valledupar').id,
+            type: 'instituto',
+            latitude: 10.4600,
+            longitude: -73.2550
+        },
+
+        // BOGOTÁ - Universidades
+        {
+            name: 'Universidad Nacional de Colombia',
+            acronym: 'UNAL',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6381,
+            longitude: -74.0836
+        },
+        {
+            name: 'Universidad de los Andes',
+            acronym: 'UNIANDES',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6017,
+            longitude: -74.0659
+        },
+        {
+            name: 'Pontificia Universidad Javeriana',
+            acronym: 'JAVERIANA',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6282,
+            longitude: -74.0645
+        },
+        {
+            name: 'Universidad del Rosario',
+            acronym: 'UROSARIO',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6030,
+            longitude: -74.0689
+        },
+        {
+            name: 'Universidad Externado de Colombia',
+            acronym: 'EXTERNADO',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6025,
+            longitude: -74.0707
+        },
+        {
+            name: 'Universidad de La Salle',
+            acronym: 'LASALLE',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6311,
+            longitude: -74.0701
+        },
+        {
+            name: 'Universidad Santo Tomás',
+            acronym: 'USTA',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6097,
+            longitude: -74.0817
+        },
+        {
+            name: 'Universidad Central',
+            acronym: 'UCENTRAL',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6486,
+            longitude: -74.0594
+        },
+        {
+            name: 'Universidad Pedagógica Nacional',
+            acronym: 'UPN',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6200,
+            longitude: -74.1050
+        },
+        {
+            name: 'Universidad Distrital Francisco José de Caldas',
+            acronym: 'UD',
+            cityId: getCity('bogota').id,
+            type: 'universidad',
+            latitude: 4.6575,
+            longitude: -74.1040
+        },
+
+        // BOGOTÁ - Institutos
+        {
+            name: 'SENA - Bogotá',
+            acronym: 'SENA',
+            cityId: getCity('bogota').id,
+            type: 'instituto',
+            latitude: 4.6097,
+            longitude: -74.0817
+        },
+        {
+            name: 'Corporación Universitaria Minuto de Dios',
+            acronym: 'UNIMINUTO',
+            cityId: getCity('bogota').id,
+            type: 'instituto',
+            latitude: 4.7110,
+            longitude: -74.0721
+        },
+
+        // MEDELLÍN - Institutos
+        {
+            name: 'Instituto Tecnológico Pascual Bravo',
+            acronym: 'PASCUAL_BRAVO',
+            cityId: getCity('medellin').id,
+            type: 'instituto',
+            latitude: 6.2476,
+            longitude: -75.5658
+        }
     ];
 
     const createdInstitutions = await Institution.bulkCreate(institutions);

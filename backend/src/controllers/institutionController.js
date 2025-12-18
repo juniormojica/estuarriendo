@@ -68,9 +68,18 @@ export const searchInstitutions = async (req, res) => {
         }
 
         const where = {
-            name: {
-                [Op.iLike]: `%${q}%`
-            }
+            [Op.or]: [
+                {
+                    name: {
+                        [Op.iLike]: `%${q}%`
+                    }
+                },
+                {
+                    acronym: {
+                        [Op.iLike]: `%${q}%`
+                    }
+                }
+            ]
         };
 
         if (cityId) {
@@ -98,7 +107,7 @@ export const searchInstitutions = async (req, res) => {
             ],
             limit: parseInt(limit),
             order: [['name', 'ASC']],
-            attributes: ['id', 'name', 'cityId', 'type']
+            attributes: ['id', 'name', 'acronym', 'cityId', 'type']
         });
 
         res.json(institutions);
