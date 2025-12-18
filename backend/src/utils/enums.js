@@ -78,6 +78,7 @@ export const NotificationType = {
     PAYMENT_VERIFIED: 'payment_verified',
     PAYMENT_REJECTED: 'payment_rejected',
     PAYMENT_SUBMITTED: 'payment_submitted',
+    PROPERTY_SUBMITTED: 'property_submitted',
     PROPERTY_APPROVED: 'property_approved',
     PROPERTY_REJECTED: 'property_rejected'
 };

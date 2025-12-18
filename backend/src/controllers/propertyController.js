@@ -1,5 +1,5 @@
-import { Property, User, Amenity } from '../models/index.js';
-import { PropertyStatus } from '../utils/enums.js';
+import { Property, User, Amenity, Notification } from '../models/index.js';
+import { PropertyStatus, NotificationType, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';
 
@@ -148,6 +148,26 @@ export const createProperty = async (req, res) => {
             pendingCount: owner.pendingCount + 1
         });
 
+        // Notify all admins about new property submission
+        const admins = await User.findAll({
+            where: {
+                userType: {
+                    [Op.in]: [UserType.ADMIN, UserType.SUPER_ADMIN]
+                }
+            }
+        });
+
+        for (const admin of admins) {
+            await Notification.create({
+                userId: admin.id,
+                type: NotificationType.PROPERTY_SUBMITTED,
+                title: 'Nueva propiedad pendiente de revisión',
+                message: `${owner.name} ha enviado una nueva propiedad: "${property.title}"`,
+                propertyId: property.id,
+                isRead: false
+            });
+        }
+
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(property.id);
 
@@ -267,6 +287,16 @@ export const approveProperty = async (req, res) => {
             }
         }
 
+        // Notify owner about property approval
+        await Notification.create({
+            userId: property.ownerId,
+            type: NotificationType.PROPERTY_APPROVED,
+            title: '¡Propiedad aprobada!',
+            message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para estudiantes.`,
+            propertyId: property.id,
+            isRead: false
+        });
+
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
 
@@ -326,6 +356,16 @@ export const rejectProperty = async (req, res) => {
                 await owner.update(updates);
             }
         }
+
+        // Notify owner about property rejection
+        await Notification.create({
+            userId: property.ownerId,
+            type: NotificationType.PROPERTY_REJECTED,
+            title: 'Propiedad rechazada',
+            message: `Tu propiedad "${property.title}" ha sido rechazada. Motivo: ${reason}`,
+            propertyId: property.id,
+            isRead: false
+        });
 
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
