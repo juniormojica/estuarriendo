@@ -95,6 +95,14 @@ function AppContent() {
                   }
                 />
                 <Route
+                  path="/mi-perfil"
+                  element={
+                    <ProtectedRoute>
+                      <UserProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/busco-inmueble"
                   element={
                     <ProtectedRoute allowedUserTypes={['tenant']}>

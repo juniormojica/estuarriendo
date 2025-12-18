@@ -915,6 +915,17 @@ export const api = {
     }
   },
 
+  // Delete notification
+  async deleteNotification(notificationId: string): Promise<boolean> {
+    try {
+      await apiClient.delete(`/notifications/${notificationId}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+  },
+
   // Verification Methods
   async submitVerification(userId: string, documents: VerificationDocuments): Promise<{ success: boolean; message: string }> {
     await delay(500);

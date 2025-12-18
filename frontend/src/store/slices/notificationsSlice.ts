@@ -80,6 +80,18 @@ export const markAllAsRead = createAsyncThunk(
     }
 );
 
+export const deleteNotification = createAsyncThunk(
+    'notifications/deleteNotification',
+    async (notificationId: string, { rejectWithValue }) => {
+        try {
+            await api.deleteNotification(notificationId);
+            return notificationId;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to delete notification');
+        }
+    }
+);
+
 const notificationsSlice = createSlice({
     name: 'notifications',
     initialState,
@@ -128,6 +140,15 @@ const notificationsSlice = createSlice({
         builder.addCase(markAllAsRead.fulfilled, (state) => {
             state.items = state.items.map(n => ({ ...n, read: true }));
             state.unreadCount = 0;
+        });
+
+        // Delete notification
+        builder.addCase(deleteNotification.fulfilled, (state, action: PayloadAction<string>) => {
+            const notification = state.items.find(n => n.id === action.payload);
+            if (notification && !notification.read) {
+                state.unreadCount = Math.max(0, state.unreadCount - 1);
+            }
+            state.items = state.items.filter(n => n.id !== action.payload);
         });
     }
 });

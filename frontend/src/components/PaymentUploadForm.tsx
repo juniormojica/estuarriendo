@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Copy, Check, AlertCircle, X } from 'lucide-react';
 import { api } from '../services/api';
+import { User } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 
 interface PaymentUploadFormProps {
-    user: any;
+    user: User;
     onSuccess: () => void;
-    selectedPlan: 'weekly' | 'monthly' | 'quarterly';
+    selectedPlan: 'weekly' | 'monthly' | 'quarterly' | null;
 }
 
 const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, selectedPlan }) => {
@@ -25,7 +26,8 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
         quarterly: { name: 'Trimestral', price: 28000, duration: 90 }
     };
 
-    const selectedPlanData = plans[selectedPlan];
+    const selectedPlanData = selectedPlan ? plans[selectedPlan] : null;
+
 
     const bankAccounts = [
         { name: 'Nequi', number: '3044736477', type: 'Ahorros', holder: 'Junior Armando Mojica Dominguez' },
@@ -66,6 +68,11 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
             return;
         }
 
+        if (!selectedPlanData) {
+            setError('Por favor selecciona un plan');
+            return;
+        }
+
         setIsSubmitting(true);
         setError('');
 
@@ -73,7 +80,7 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
             await api.createPaymentRequest({
                 userId: user.id,
                 amount: selectedPlanData.price,
-                planType: selectedPlan,
+                planType: selectedPlan!,
                 planDuration: selectedPlanData.duration,
                 referenceCode,
                 proofImageBase64: preview
@@ -81,7 +88,10 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
             onSuccess();
         } catch (err: any) {
             console.error('Error al enviar comprobante:', err);
-            setError(err.response?.data?.message || 'Error al enviar el comprobante. Inténtalo de nuevo.');
+            console.error('Error response:', err.response);
+            // Extract error message from backend response
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Error al enviar el comprobante. Inténtalo de nuevo.';
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -100,7 +110,11 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
                 <h3 className="text-xl font-bold mb-2">Instrucciones de Pago</h3>
                 <p className="text-emerald-100 text-sm">
-                    Realiza la transferencia de <span className="font-bold">${selectedPlanData.price.toLocaleString('es-CO')} COP</span> ({selectedPlanData.name}) y sube el comprobante.
+                    {selectedPlanData ? (
+                        <>Realiza la transferencia de <span className="font-bold">${selectedPlanData.price.toLocaleString('es-CO')} COP</span> ({selectedPlanData.name}) y sube el comprobante.</>
+                    ) : (
+                        <>Selecciona un plan para continuar</>
+                    )}
                 </p>
             </div>
 
@@ -126,32 +140,34 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
                     </div>
                 </div>
 
-                {/* Bank Accounts */}
+                {/* Bank Accounts - Compact Grid */}
                 <div>
-                    <h4 className="font-semibold text-gray-900 mb-3">Cuentas Disponibles</h4>
-                    <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900">Cuentas Disponibles</h4>
+                        <p className="text-xs text-gray-500">Junior Armando Mojica Dominguez</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {bankAccounts.map((account, index) => (
-                            <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div key={index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="font-bold text-gray-900">{account.name}</span>
-                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
+                                    <span className="font-bold text-gray-900 text-sm">{account.name}</span>
+                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
                                         {account.type}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="font-mono text-gray-700">{account.number}</span>
+                                    <span className="font-mono text-gray-700 text-sm">{account.number}</span>
                                     <button
                                         onClick={() => handleCopy(account.number, `acc-${index}`)}
-                                        className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                                        className="p-1 hover:bg-gray-200 rounded transition-colors"
                                     >
                                         {copied === `acc-${index}` ? (
-                                            <Check className="h-4 w-4 text-green-600" />
+                                            <Check className="h-3.5 w-3.5 text-green-600" />
                                         ) : (
-                                            <Copy className="h-4 w-4 text-gray-600" />
+                                            <Copy className="h-3.5 w-3.5 text-gray-600" />
                                         )}
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">{account.holder}</p>
                             </div>
                         ))}
                     </div>

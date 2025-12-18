@@ -95,6 +95,20 @@ export const createPaymentRequest = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Check if user already has a pending payment request
+        const existingPending = await PaymentRequest.findOne({
+            where: {
+                userId,
+                status: PaymentRequestStatus.PENDING
+            }
+        });
+
+        if (existingPending) {
+            return res.status(400).json({
+                error: 'Ya tienes una solicitud de pago pendiente. Por favor espera a que sea revisada antes de enviar otra.'
+            });
+        }
+
         // Upload proof image to Cloudinary (payouts folder)
         const { uploadImage } = await import('../utils/cloudinaryUtils.js');
         const uploadResult = await uploadImage(proofImageBase64, 'payouts');

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -66,6 +67,18 @@ const AdminDashboard = () => {
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Use React Router's useLocation hook
+    const location = useLocation();
+
+    useEffect(() => {
+        // Check for section query parameter
+        const params = new URLSearchParams(location.search);
+        const section = params.get('section');
+        if (section && ['dashboard', 'properties', 'users', 'payments', 'amenities', 'config', 'student-requests', 'activity-logs'].includes(section)) {
+            setCurrentSection(section as AdminSection);
+        }
+    }, [location.search]);
 
     useEffect(() => {
         loadInitialData();
@@ -389,6 +402,8 @@ const AdminDashboard = () => {
     };
 
     const renderContent = () => {
+        console.log('AdminDashboard - renderContent called with currentSection:', currentSection);
+
         if (loading) {
             return (
                 <div className="flex items-center justify-center h-64">
@@ -669,7 +684,11 @@ const AdminDashboard = () => {
         <div className="flex h-screen bg-gray-100">
             <AdminSidebar
                 currentSection={currentSection}
-                onSectionChange={setCurrentSection}
+                onSectionChange={(section) => {
+                    setCurrentSection(section);
+                    // Update URL to match section
+                    window.history.pushState({}, '', `/admin?section=${section}`);
+                }}
                 pendingCount={stats.pending}
                 paymentCount={paymentRequests.filter(r => r.status === 'pending').length}
                 verificationCount={pendingVerifications.length}

@@ -13,7 +13,7 @@ interface Plan {
 
 interface PlanComparisonCardsProps {
     onSelectPlan: (planId: 'weekly' | 'monthly' | 'quarterly') => void;
-    selectedPlan: 'weekly' | 'monthly' | 'quarterly';
+    selectedPlan: 'weekly' | 'monthly' | 'quarterly' | null;
     currentPlan?: string;
 }
 
@@ -71,17 +71,17 @@ const PlanComparisonCards: React.FC<PlanComparisonCardsProps> = ({
                         <div
                             key={plan.id}
                             className={`relative rounded-xl border-2 transition-all duration-300 ${isSelected
-                                    ? 'border-emerald-500 shadow-xl scale-105'
-                                    : plan.recommended
-                                        ? 'border-emerald-300 shadow-lg'
-                                        : 'border-gray-200 shadow-md hover:border-emerald-200 hover:shadow-lg'
+                                ? 'border-emerald-500 shadow-xl scale-105'
+                                : plan.recommended
+                                    ? 'border-emerald-300 shadow-lg'
+                                    : 'border-gray-200 shadow-md hover:border-emerald-200 hover:shadow-lg'
                                 } ${plan.recommended ? 'md:-mt-2 md:mb-2' : ''}`}
                         >
                             {/* Badge */}
                             {plan.recommended && (
                                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
                                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1 shadow-lg">
-                                        <Sparkles className="h-3 w-3" />
+
                                         <span>Más Popular</span>
                                     </div>
                                 </div>
@@ -128,10 +128,10 @@ const PlanComparisonCards: React.FC<PlanComparisonCardsProps> = ({
                                     onClick={() => onSelectPlan(plan.id)}
                                     disabled={isCurrent}
                                     className={`w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${isSelected
-                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
-                                            : plan.recommended
-                                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md'
-                                                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                                        : plan.recommended
+                                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md'
+                                            : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                                         } ${isCurrent ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     {isCurrent ? 'Plan Actual' : isSelected ? 'Seleccionado ✓' : 'Seleccionar'}

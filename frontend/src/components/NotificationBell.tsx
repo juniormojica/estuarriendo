@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchNotifications, markAsRead, markAllAsRead } from '../store/slices/notificationsSlice';
+import { fetchNotifications, markAsRead, markAllAsRead, deleteNotification } from '../store/slices/notificationsSlice';
 
 const NotificationBell: React.FC = () => {
     const navigate = useNavigate();
@@ -39,30 +39,30 @@ const NotificationBell: React.FC = () => {
     };
 
     const handleNotificationClick = (notification: any) => {
-        // Mark as read
-        if (!notification.read) {
-            handleMarkAsRead(notification.id);
-        }
+        // Delete notification instead of marking as read
+        dispatch(deleteNotification(notification.id));
 
-        // Navigate based on notification type
+        // Navigate based on notification type (property_interest is informative only, no navigation)
         switch (notification.type) {
             case 'payment_verified':
-                navigate('/mi-perfil');
+                // User: Navigate to profile billing tab to see updated subscription
+                navigate('/mi-perfil?tab=billing');
                 break;
             case 'payment_rejected':
-                navigate('/planes');
+                // User: Navigate to profile billing tab to resubmit payment
+                navigate('/mi-perfil?tab=billing');
                 break;
             case 'payment_submitted':
-                navigate('/admin/payments');
+                // Admin: Navigate to admin dashboard payments section
+                navigate('/admin?section=payments');
                 break;
             case 'property_approved':
             case 'property_rejected':
+                // Owner: Navigate to my properties page
                 navigate('/mis-propiedades');
                 break;
             case 'property_interest':
-                if (notification.propertyId) {
-                    navigate(`/property/${notification.propertyId}`);
-                }
+                // Informative only - no navigation
                 break;
             default:
                 break;

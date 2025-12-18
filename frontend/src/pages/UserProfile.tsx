@@ -5,6 +5,7 @@ import { useAppSelector } from '../store/hooks';
 import { api } from '../services/api';
 import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock, ShieldCheck, XCircle } from 'lucide-react';
 import PaymentUploadForm from '../components/PaymentUploadForm';
+import PaymentFlowSection from '../components/PaymentFlowSection';
 import PlanComparisonCards from '../components/PlanComparisonCards';
 import VerificationForm from '../components/VerificationForm';
 
@@ -378,35 +379,12 @@ const UserProfile: React.FC = () => {
                                                     </div>
                                                 )}
 
-                                                {/* Plan Comparison Cards */}
-                                                {(!paymentRequest || paymentRequest.status === 'rejected') && (
-                                                    <>
-                                                        <PlanComparisonCards
-                                                            onSelectPlan={(planId) => setInitialPlan(planId)}
-                                                            selectedPlan={initialPlan as 'weekly' | 'monthly' | 'quarterly' || 'monthly'}
-                                                            currentPlan={user.plan}
-                                                        />
-
-
-                                                        {/* Payment Upload Form - Only shown after plan selection */}
-                                                        {(() => {
-                                                            console.log('Payment form check:', {
-                                                                initialPlan,
-                                                                shouldShow: !!initialPlan,
-                                                                paymentRequest: paymentRequest?.status
-                                                            });
-                                                            return initialPlan && (
-                                                                <div className="animate-fadeIn">
-                                                                    <PaymentUploadForm
-                                                                        user={user}
-                                                                        onSuccess={handlePaymentSuccess}
-                                                                        selectedPlan={initialPlan as 'weekly' | 'monthly' | 'quarterly'}
-                                                                    />
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                    </>
-                                                )}
+                                                {/* Payment Flow Section with Step Indicators */}
+                                                <PaymentFlowSection
+                                                    user={user}
+                                                    paymentRequest={paymentRequest}
+                                                    onPaymentSuccess={handlePaymentSuccess}
+                                                />
                                             </div>
                                         );
                                     })()}
