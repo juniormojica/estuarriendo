@@ -14,8 +14,11 @@ import AdminConfig from '../components/admin/AdminConfig';
 import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
 import PropertyEditModal from '../components/admin/PropertyEditModal';
 import UserDetailsModal from '../components/admin/UserDetailsModal';
+import ConfirmationModal from '../components/admin/ConfirmationModal';
 import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
 import ActivityLogsAdmin from '../components/admin/ActivityLogsAdmin';
+import PendingActionsCard from '../components/admin/PendingActionsCard';
+import UserStatsCard from '../components/admin/UserStatsCard';
 import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
@@ -42,6 +45,7 @@ const AdminDashboard = () => {
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
     const [pendingVerifications, setPendingVerifications] = useState<User[]>([]);
+    const [studentRequestsCount, setStudentRequestsCount] = useState(0);
 
     // Calculate filtered properties from Redux
     const pendingProperties = properties.filter(p => p.status === 'pending');
@@ -52,9 +56,16 @@ const AdminDashboard = () => {
     // UI states
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [paymentConfirmModal, setPaymentConfirmModal] = useState<{
+        isOpen: boolean;
+        type: 'verify' | 'reject';
+        requestId: string;
+        userName: string;
+    } | null>(null);
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     useEffect(() => {
         loadInitialData();
@@ -72,12 +83,13 @@ const AdminDashboard = () => {
 
             // Fetch other data that still uses api methods
             // TODO: These should also be migrated to Redux eventually
-            const [usersData, activitiesData, configData, paymentsData, verificationsData] = await Promise.all([
+            const [usersData, activitiesData, configData, paymentsData, verificationsData, studentRequests] = await Promise.all([
                 api.getUsers(),
                 api.getActivityLog(),
                 api.getSystemConfig(),
                 api.getPaymentRequests(),
-                api.getPendingVerifications()
+                api.getPendingVerifications(),
+                api.getStudentRequests()
             ]);
 
             setUsers(usersData);
@@ -85,6 +97,7 @@ const AdminDashboard = () => {
             setSystemConfig(configData);
             setPaymentRequests(paymentsData);
             setPendingVerifications(verificationsData);
+            setStudentRequestsCount(studentRequests.filter(r => r.status === 'open').length);
         } catch (error) {
             console.error('Error loading admin data:', error);
         } finally {
@@ -248,6 +261,63 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleVerifyPayment = (requestId: string) => {
+        const request = paymentRequests.find(r => r.id === requestId);
+        if (!request) return;
+
+        setPaymentConfirmModal({
+            isOpen: true,
+            type: 'verify',
+            requestId,
+            userName: request.user?.name || 'Usuario'
+        });
+    };
+
+    const handleRejectPayment = (requestId: string) => {
+        const request = paymentRequests.find(r => r.id === requestId);
+        if (!request) return;
+
+        setPaymentConfirmModal({
+            isOpen: true,
+            type: 'reject',
+            requestId,
+            userName: request.user?.name || 'Usuario'
+        });
+    };
+
+    const handleConfirmPaymentAction = async () => {
+        if (!paymentConfirmModal) return;
+
+        setIsProcessingPayment(true);
+        try {
+            const { type, requestId } = paymentConfirmModal;
+
+            if (type === 'verify') {
+                const success = await api.verifyPaymentRequest(requestId);
+                if (success) {
+                    toast.success('✅ Pago verificado exitosamente');
+                    await refreshData();
+                } else {
+                    toast.error('❌ Error al verificar el pago');
+                }
+            } else {
+                const success = await api.rejectPaymentRequest(requestId);
+                if (success) {
+                    toast.success('✅ Pago rechazado');
+                    await refreshData();
+                } else {
+                    toast.error('❌ Error al rechazar el pago');
+                }
+            }
+        } catch (error) {
+            console.error('Error processing payment:', error);
+            toast.error('❌ Error al procesar el pago');
+        } finally {
+            setIsProcessingPayment(false);
+            setPaymentConfirmModal(null);
+        }
+    };
+
     const handleSaveConfig = async (config: SystemConfig) => {
         try {
             const success = await api.updateSystemConfig(config);
@@ -287,32 +357,6 @@ const AdminDashboard = () => {
             } catch (error) {
                 console.error('Error deleting amenity:', error);
                 alert('Error al eliminar amenidad');
-            }
-        }
-    };
-
-    const handleVerifyPayment = async (id: string) => {
-        if (window.confirm('¿Estás seguro de verificar este pago? El usuario será actualizado a Premium.')) {
-            try {
-                const success = await api.verifyPaymentRequest(id);
-                if (success) {
-                    await refreshData();
-                }
-            } catch (error) {
-                console.error('Error verifying payment:', error);
-            }
-        }
-    };
-
-    const handleRejectPayment = async (id: string) => {
-        if (window.confirm('¿Estás seguro de rechazar este pago?')) {
-            try {
-                const success = await api.rejectPaymentRequest(id);
-                if (success) {
-                    await refreshData();
-                }
-            } catch (error) {
-                console.error('Error rejecting payment:', error);
             }
         }
     };
@@ -365,26 +409,15 @@ const AdminDashboard = () => {
                                 maxItems={8}
                                 onViewAll={() => setCurrentSection('activity')}
                             />
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen Rápido</h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                                        <span className="text-gray-700">Propiedades Pendientes</span>
-                                        <span className="text-2xl font-bold text-yellow-600">{stats.pending}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                                        <span className="text-gray-700">Propiedades Aprobadas</span>
-                                        <span className="text-2xl font-bold text-green-600">{stats.approved}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                                        <span className="text-gray-700">Propiedades Destacadas</span>
-                                        <span className="text-2xl font-bold text-purple-600">{stats.featured}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                                        <span className="text-gray-700">Total Usuarios</span>
-                                        <span className="text-2xl font-bold text-blue-600">{users.length}</span>
-                                    </div>
-                                </div>
+                            <div className="space-y-6">
+                                <PendingActionsCard
+                                    pendingProperties={stats.pending}
+                                    pendingVerifications={pendingVerifications.length}
+                                    pendingPayments={paymentRequests.filter(r => r.status === 'pending').length}
+                                    pendingStudentRequests={studentRequestsCount}
+                                    onNavigate={setCurrentSection}
+                                />
+                                <UserStatsCard users={users} />
                             </div>
                         </div>
                     </div>
@@ -422,6 +455,7 @@ const AdminDashboard = () => {
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referencia</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comprobante</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
@@ -435,21 +469,30 @@ const AdminDashboard = () => {
                                                     {request.referenceCode}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {request.userName}
+                                                    {request.user?.name || 'Usuario desconocido'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                                        {request.planType}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     ${request.amount.toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <a
-                                                        href={request.proofImage}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center text-blue-600 hover:text-blue-800"
-                                                    >
-                                                        <FileText className="w-4 h-4 mr-1" />
-                                                        Ver Comprobante
-                                                    </a>
+                                                    {request.proofImageUrl ? (
+                                                        <a
+                                                            href={request.proofImageUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center text-blue-600 hover:text-blue-800"
+                                                        >
+                                                            <FileText className="w-4 h-4 mr-1" />
+                                                            Ver Comprobante
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-gray-400">Sin comprobante</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {new Date(request.createdAt).toLocaleDateString()}
@@ -674,6 +717,24 @@ const AdminDashboard = () => {
                     isOpen={!!selectedUser}
                     onClose={() => setSelectedUser(null)}
                     onUpdate={refreshData}
+                />
+            )}
+
+            {/* Payment Confirmation Modal */}
+            {paymentConfirmModal && (
+                <ConfirmationModal
+                    isOpen={paymentConfirmModal.isOpen}
+                    onClose={() => setPaymentConfirmModal(null)}
+                    onConfirm={handleConfirmPaymentAction}
+                    title={paymentConfirmModal.type === 'verify' ? 'Verificar Pago' : 'Rechazar Pago'}
+                    message={
+                        paymentConfirmModal.type === 'verify'
+                            ? `¿Estás seguro de verificar el pago de ${paymentConfirmModal.userName}? El usuario obtendrá acceso premium inmediatamente.`
+                            : `¿Estás seguro de rechazar el pago de ${paymentConfirmModal.userName}? El usuario podrá intentar nuevamente.`
+                    }
+                    confirmText={paymentConfirmModal.type === 'verify' ? 'Verificar' : 'Rechazar'}
+                    type={paymentConfirmModal.type === 'verify' ? 'success' : 'danger'}
+                    isProcessing={isProcessingPayment}
                 />
             )}
         </div>

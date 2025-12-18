@@ -22,11 +22,6 @@ const PaymentRequest = sequelize.define('PaymentRequest', {
         },
         onDelete: 'CASCADE'
     },
-    userName: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-        field: 'user_name'
-    },
     amount: {
         type: DataTypes.DECIMAL(15, 0),
         allowNull: false
@@ -47,11 +42,17 @@ const PaymentRequest = sequelize.define('PaymentRequest', {
         allowNull: true,
         field: 'reference_code'
     },
-    proofImage: {
-        type: DataTypes.TEXT,
+    proofImageUrl: {
+        type: DataTypes.STRING(500),
         allowNull: false,
-        field: 'proof_image',
-        comment: 'Base64 encoded payment proof image'
+        field: 'proof_image_url',
+        comment: 'Cloudinary URL of payment proof'
+    },
+    proofImagePublicId: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        field: 'proof_image_public_id',
+        comment: 'Cloudinary public_id for deletion'
     },
     status: {
         type: DataTypes.ENUM(...getEnumValues(PaymentRequestStatus)),

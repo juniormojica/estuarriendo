@@ -509,23 +509,60 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
 
                             {displayUser.verificationStatus === 'verified' && (
                                 <button
-                                    onClick={async () => {
-                                        if (window.confirm('¿Estás seguro de revocar la verificación de este usuario?')) {
-                                            setIsSaving(true);
-                                            try {
-                                                const success = await api.updateVerificationStatus(displayUser.id, 'rejected', 'Verificación revocada por administrador');
-                                                if (success) {
-                                                    if (onUpdate) onUpdate();
-                                                } else {
-                                                    alert('Error al revocar la verificación');
+                                    onClick={() => {
+                                        setConfirmAction({
+                                            title: 'Revocar Verificación',
+                                            message: '¿Estás seguro de revocar la verificación de este usuario? Esta acción cambiará su estado a "Rechazado".',
+                                            type: 'danger',
+                                            onConfirm: async () => {
+                                                setIsSaving(true);
+                                                try {
+                                                    const success = await api.updateVerificationStatus(
+                                                        displayUser.id,
+                                                        'rejected',
+                                                        'Verificación revocada por administrador'
+                                                    );
+                                                    if (success) {
+                                                        // Update local state immediately
+                                                        setDisplayUser({
+                                                            ...displayUser,
+                                                            verificationStatus: 'rejected'
+                                                        });
+                                                        // Notify parent to refresh
+                                                        if (onUpdate) onUpdate();
+
+                                                        // Show success message
+                                                        setConfirmAction({
+                                                            title: 'Verificación Revocada',
+                                                            message: 'La verificación del usuario ha sido revocada exitosamente.',
+                                                            type: 'success',
+                                                            onConfirm: () => setShowConfirmModal(false)
+                                                        });
+                                                        setShowConfirmModal(true);
+                                                    } else {
+                                                        setConfirmAction({
+                                                            title: 'Error',
+                                                            message: 'No se pudo revocar la verificación. Por favor, intenta nuevamente.',
+                                                            type: 'danger',
+                                                            onConfirm: () => setShowConfirmModal(false)
+                                                        });
+                                                        setShowConfirmModal(true);
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error revoking verification:', error);
+                                                    setConfirmAction({
+                                                        title: 'Error',
+                                                        message: 'Ocurrió un error al revocar la verificación.',
+                                                        type: 'danger',
+                                                        onConfirm: () => setShowConfirmModal(false)
+                                                    });
+                                                    setShowConfirmModal(true);
+                                                } finally {
+                                                    setIsSaving(false);
                                                 }
-                                            } catch (error) {
-                                                console.error('Error revoking verification:', error);
-                                                alert('Error al revocar la verificación');
-                                            } finally {
-                                                setIsSaving(false);
                                             }
-                                        }
+                                        });
+                                        setShowConfirmModal(true);
                                     }}
                                     disabled={isSaving}
                                     className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex items-center justify-center disabled:opacity-50"

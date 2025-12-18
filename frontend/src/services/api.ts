@@ -536,6 +536,34 @@ export const api = {
     }
   },
 
+  // Update user verification status
+  async updateVerificationStatus(
+    userId: string,
+    verificationStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected',
+    verificationRejectionReason?: string
+  ): Promise<boolean> {
+    try {
+      console.log('🔄 Frontend: Calling updateVerificationStatus');
+      console.log('  - User ID:', userId);
+      console.log('  - Status:', verificationStatus);
+      console.log('  - Reason:', verificationRejectionReason);
+
+      const response = await apiClient.put(`/users/${userId}/verification-status`, {
+        verificationStatus,
+        verificationRejectionReason
+      });
+
+      console.log('✅ Frontend: Update successful', response.data);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Frontend: Error updating verification status');
+      console.error('  - Error:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return false;
+    }
+  },
+
   // Get activity log
   async getActivityLog(): Promise<ActivityLog[]> {
     await delay(300);
@@ -634,145 +662,64 @@ export const api = {
   },
 
   // Payment Requests
-  async createPaymentRequest(request: Omit<PaymentRequest, 'id' | 'status' | 'createdAt'>): Promise<boolean> {
-    await delay(500);
-
+  async createPaymentRequest(request: {
+    userId: string;
+    amount: number;
+    planType: string;
+    planDuration: number;
+    referenceCode: string;
+    proofImageBase64: string;
+  }): Promise<boolean> {
     try {
-      const requests = getStoredPaymentRequests();
+      console.log('📤 Creating payment request:', {
+        userId: request.userId,
+        amount: request.amount,
+        planType: request.planType,
+        planDuration: request.planDuration,
+        referenceCode: request.referenceCode,
+        imageSize: request.proofImageBase64.length
+      });
 
-      // Handle large images to prevent QuotaExceededError
-      let proofImage = request.proofImage;
-      if (proofImage && proofImage.length > 100 * 1024) { // > 100KB
-        console.warn('Image too large for localStorage, using placeholder');
-        // Use a placeholder or just keep the reference without the image data if it's too big
-        proofImage = 'https://ui-avatars.com/api/?name=Comprobante&background=0D8ABC&color=fff&size=200';
-      }
+      const response = await apiClient.post('/payment-requests', request);
 
-      const newRequest: PaymentRequest = {
-        id: Date.now().toString(),
-        ...request,
-        proofImage,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      };
-
-      try {
-        requests.push(newRequest);
-        savePaymentRequests(requests);
-      } catch (e) {
-        console.error('Storage quota exceeded, retrying without image', e);
-        newRequest.proofImage = '';
-        requests.pop();
-        requests.push(newRequest);
-        savePaymentRequests(requests);
-      }
-
-      // Update user with paymentRequestId
-      try {
-        const users = getStoredUsers();
-        const userIndex = users.findIndex((u: any) => u.id === request.userId);
-        if (userIndex !== -1) {
-          users[userIndex].paymentRequestId = newRequest.id;
-          saveStoredUsers(users);
-
-          // Update current user if needed
-          const currentUser = getStoredCurrentUser();
-          if (currentUser && currentUser.id === request.userId) {
-            currentUser.paymentRequestId = newRequest.id;
-            localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
-          }
-        }
-      } catch (e) {
-        console.error('Error updating user with payment request:', e);
-        // Do not throw here, as the payment request was already saved
-      }
-
+      console.log('✅ Payment request created:', response.data);
       return true;
-    } catch (error) {
-      console.error('Error creating payment request:', error);
+    } catch (error: any) {
+      console.error('❌ Error creating payment request:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
       throw error;
     }
   },
 
   async getPaymentRequests(): Promise<PaymentRequest[]> {
-    await delay(500);
-    return getStoredPaymentRequests();
+    try {
+      const response = await apiClient.get<PaymentRequest[]>('/payment-requests');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching payment requests:', error);
+      return [];
+    }
   },
 
   async verifyPaymentRequest(requestId: string): Promise<boolean> {
-    await delay(500);
-    const requests = getStoredPaymentRequests();
-    const index = requests.findIndex(r => r.id === requestId);
-
-    if (index !== -1) {
-      requests[index].status = 'verified';
-      requests[index].processedAt = new Date().toISOString();
-      savePaymentRequests(requests);
-
-      // Upgrade user to premium
-      const userId = requests[index].userId;
-      try {
-        const users = getStoredUsers();
-        const userIndex = users.findIndex((u: any) => u.id === userId);
-
-        if (userIndex !== -1) {
-          users[userIndex].plan = 'premium';
-          users[userIndex].paymentRequestId = undefined; // Clear request id
-          users[userIndex].premiumSince = new Date().toISOString(); // Set premium date
-          saveStoredUsers(users);
-
-          // Update current user if needed
-          const currentUser = getStoredCurrentUser();
-          if (currentUser && currentUser.id === userId) {
-            currentUser.plan = 'premium';
-            currentUser.paymentRequestId = undefined;
-            currentUser.premiumSince = users[userIndex].premiumSince;
-            localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
-          }
-        }
-      } catch (e) {
-        console.error('Error upgrading user:', e);
-      }
-
+    try {
+      await apiClient.put(`/payment-requests/${requestId}/verify`);
       return true;
+    } catch (error) {
+      console.error('Error verifying payment request:', error);
+      return false;
     }
-    return false;
   },
 
   async rejectPaymentRequest(requestId: string): Promise<boolean> {
-    await delay(500);
-    const requests = getStoredPaymentRequests();
-    const index = requests.findIndex(r => r.id === requestId);
-
-    if (index !== -1) {
-      requests[index].status = 'rejected';
-      requests[index].processedAt = new Date().toISOString();
-      savePaymentRequests(requests);
-
-      // Clear paymentRequestId from user so they can try again
-      const userId = requests[index].userId;
-      try {
-        const users = getStoredUsers();
-        const userIndex = users.findIndex((u: any) => u.id === userId);
-
-        if (userIndex !== -1) {
-          users[userIndex].paymentRequestId = undefined;
-          saveStoredUsers(users);
-
-          // Update current user if needed
-          const currentUser = getStoredCurrentUser();
-          if (currentUser && currentUser.id === userId) {
-            currentUser.paymentRequestId = undefined;
-            localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
-          }
-        }
-      } catch (e) {
-        console.error('Error clearing user payment request:', e);
-      }
-
+    try {
+      await apiClient.put(`/payment-requests/${requestId}/reject`);
       return true;
+    } catch (error) {
+      console.error('Error rejecting payment request:', error);
+      return false;
     }
-    return false;
   },
 
   // Student Request Methods
@@ -926,44 +873,46 @@ export const api = {
 
   // Get notifications for a user
   async getNotifications(userId: string): Promise<Notification[]> {
-    await delay(300);
-    const notifications = getStoredNotifications();
-    return notifications
-      .filter(n => n.userId === userId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    try {
+      const response = await apiClient.get<Notification[]>(`/notifications/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
   },
 
   // Mark notification as read
   async markNotificationAsRead(notificationId: string): Promise<boolean> {
-    await delay(200);
-    const notifications = getStoredNotifications();
-    const index = notifications.findIndex(n => n.id === notificationId);
-
-    if (index !== -1) {
-      notifications[index].read = true;
-      saveNotifications(notifications);
+    try {
+      await apiClient.put(`/notifications/${notificationId}/read`);
       return true;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
     }
-    return false;
   },
 
   // Mark all notifications as read for a user
   async markAllNotificationsAsRead(userId: string): Promise<boolean> {
-    await delay(300);
-    const notifications = getStoredNotifications();
-    let updated = false;
-
-    notifications.forEach(n => {
-      if (n.userId === userId && !n.read) {
-        n.read = true;
-        updated = true;
-      }
-    });
-
-    if (updated) {
-      saveNotifications(notifications);
+    try {
+      await apiClient.put(`/notifications/user/${userId}/read-all`);
+      return true;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
     }
-    return updated;
+  },
+
+  // Get unread notification count
+  async getUnreadNotificationCount(userId: string): Promise<{ count: number }> {
+    try {
+      const response = await apiClient.get<{ count: number }>(`/notifications/user/${userId}/unread-count`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      return { count: 0 };
+    }
   },
 
   // Verification Methods
@@ -1015,47 +964,6 @@ export const api = {
     return user?.verificationStatus || 'not_submitted';
   },
 
-  async updateVerificationStatus(
-    userId: string,
-    status: 'verified' | 'rejected',
-    reason?: string
-  ): Promise<{ success: boolean }> {
-    await delay(500);
-
-    try {
-      const users = getStoredUsers();
-      const userIndex = users.findIndex(u => u.id === userId);
-
-      if (userIndex === -1) {
-        return { success: false };
-      }
-
-      users[userIndex] = {
-        ...users[userIndex],
-        verificationStatus: status,
-        isVerified: status === 'verified',
-        verificationProcessedAt: new Date().toISOString(),
-        verificationRejectionReason: status === 'rejected' ? reason : undefined
-      };
-
-      saveStoredUsers(users);
-
-      // Update current user if it matches
-      const currentUser = getStoredCurrentUser();
-      if (currentUser && currentUser.id === userId) {
-        currentUser.verificationStatus = status;
-        currentUser.isVerified = status === 'verified';
-        currentUser.verificationProcessedAt = new Date().toISOString();
-        currentUser.verificationRejectionReason = status === 'rejected' ? reason : undefined;
-        localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
-      }
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating verification status:', error);
-      return { success: false };
-    }
-  },
 
   async getPendingVerifications(): Promise<User[]> {
     await delay(300);

@@ -76,6 +76,8 @@ export const PaymentRequestStatus = {
 export const NotificationType = {
     PROPERTY_INTEREST: 'property_interest',
     PAYMENT_VERIFIED: 'payment_verified',
+    PAYMENT_REJECTED: 'payment_rejected',
+    PAYMENT_SUBMITTED: 'payment_submitted',
     PROPERTY_APPROVED: 'property_approved',
     PROPERTY_REJECTED: 'property_rejected'
 };

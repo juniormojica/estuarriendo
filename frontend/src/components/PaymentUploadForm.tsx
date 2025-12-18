@@ -67,24 +67,31 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
         }
 
         setIsSubmitting(true);
+        setError('');
 
         try {
             await api.createPaymentRequest({
                 userId: user.id,
-                userName: user.name,
                 amount: selectedPlanData.price,
                 planType: selectedPlan,
                 planDuration: selectedPlanData.duration,
                 referenceCode,
-                proofImage: preview
+                proofImageBase64: preview
             });
             onSuccess();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error al enviar comprobante:', err);
-            setError('Error al enviar el comprobante. Inténtalo de nuevo.');
+            setError(err.response?.data?.message || 'Error al enviar el comprobante. Inténtalo de nuevo.');
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleChangeImage = () => {
+        setFile(null);
+        setPreview(null);
+        setError('');
+        fileInputRef.current?.click();
     };
 
     return (
@@ -165,21 +172,31 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
                                 <p className="text-sm text-gray-500">PNG, JPG o PDF (máx. 2MB)</p>
                             </div>
                         ) : (
-                            <div className="relative">
-                                <img
-                                    src={preview}
-                                    alt="Comprobante"
-                                    className="w-full h-64 object-contain bg-gray-100 rounded-lg border border-gray-200"
-                                />
+                            <div className="space-y-3">
+                                <div className="relative">
+                                    <img
+                                        src={preview}
+                                        alt="Comprobante"
+                                        className="w-full h-64 object-contain bg-gray-100 rounded-lg border border-gray-200"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFile(null);
+                                            setPreview(null);
+                                        }}
+                                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setFile(null);
-                                        setPreview(null);
-                                    }}
-                                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                                    onClick={handleChangeImage}
+                                    className="w-full px-4 py-2 border-2 border-emerald-500 text-emerald-700 rounded-lg hover:bg-emerald-50 font-medium transition-colors flex items-center justify-center"
                                 >
-                                    <X className="h-4 w-4" />
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Cambiar Imagen
                                 </button>
                             </div>
                         )}

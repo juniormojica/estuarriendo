@@ -107,14 +107,21 @@ export const updateVerificationStatus = async (req, res) => {
         const { id } = req.params;
         const { verificationStatus, verificationRejectionReason } = req.body;
 
+        console.log('🔄 updateVerificationStatus called with:');
+        console.log('  - User ID:', id);
+        console.log('  - Status:', verificationStatus);
+        console.log('  - Reason:', verificationRejectionReason);
+
         const user = await userService.updateVerificationStatus(
             id,
             verificationStatus,
             verificationRejectionReason
         );
 
+        console.log('✅ User verification status updated successfully');
         res.json(user);
     } catch (error) {
+        console.error('❌ Error in updateVerificationStatus:', error.message);
         handleError(res, error);
     }
 };

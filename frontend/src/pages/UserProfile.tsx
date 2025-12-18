@@ -320,57 +320,96 @@ const UserProfile: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {user.plan !== 'premium' && (
-                                        <div className="space-y-8">
-                                            {/* Payment Status Messages */}
-                                            {paymentRequest && paymentRequest.status === 'pending' && (
-                                                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
-                                                    <Clock className="h-16 w-16 text-yellow-500 mb-4" />
-                                                    <h4 className="text-xl font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
-                                                    <p className="text-yellow-700 mb-4 max-w-md">
-                                                        Hemos recibido tu comprobante. El plan se activará en un máximo de 2 horas tras la verificación manual.
-                                                    </p>
-                                                    <div className="text-sm text-yellow-600 bg-yellow-100 inline-block px-4 py-2 rounded-full font-mono font-bold">
-                                                        Referencia: {paymentRequest.referenceCode}
-                                                    </div>
-                                                </div>
-                                            )}
+                                    {/* Check if user can upload payment: either free plan OR premium expired */}
+                                    {(() => {
+                                        const isPremium = user.plan === 'premium';
+                                        const isExpired = user.planExpiresAt ? new Date(user.planExpiresAt) < new Date() : false;
+                                        const canUploadPayment = !isPremium || isExpired;
 
-                                            {paymentRequest && paymentRequest.status === 'rejected' && (
-                                                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-                                                    <div className="flex items-center space-x-3 mb-3">
-                                                        <AlertCircle className="h-8 w-8 text-red-600" />
-                                                        <h4 className="text-xl font-bold text-red-800">Pago Rechazado</h4>
-                                                    </div>
-                                                    <p className="text-red-700">
-                                                        Tu último pago fue rechazado. Por favor intenta nuevamente o contacta a soporte.
-                                                    </p>
-                                                </div>
-                                            )}
+                                        console.log('Payment upload check:', {
+                                            plan: user.plan,
+                                            isPremium,
+                                            planExpiresAt: user.planExpiresAt,
+                                            isExpired,
+                                            canUploadPayment
+                                        });
 
-                                            {/* Plan Comparison Cards */}
-                                            {(!paymentRequest || paymentRequest.status === 'rejected') && (
-                                                <>
-                                                    <PlanComparisonCards
-                                                        onSelectPlan={(planId) => setInitialPlan(planId)}
-                                                        selectedPlan={initialPlan as 'weekly' | 'monthly' | 'quarterly' || 'monthly'}
-                                                        currentPlan={user.plan}
-                                                    />
-
-                                                    {/* Payment Upload Form - Only shown after plan selection */}
-                                                    {initialPlan && (
-                                                        <div className="animate-fadeIn">
-                                                            <PaymentUploadForm
-                                                                user={user}
-                                                                onSuccess={handlePaymentSuccess}
-                                                                selectedPlan={initialPlan as 'weekly' | 'monthly' | 'quarterly'}
-                                                            />
+                                        return canUploadPayment && (
+                                            <div className="space-y-8">
+                                                {/* Expiration Warning for expired premium users */}
+                                                {isPremium && isExpired && (
+                                                    <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6">
+                                                        <div className="flex items-center space-x-3 mb-2">
+                                                            <AlertCircle className="h-8 w-8 text-orange-600" />
+                                                            <h4 className="text-xl font-bold text-orange-800">Plan Premium Expirado</h4>
                                                         </div>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
+                                                        <p className="text-orange-700 mb-2">
+                                                            Tu plan premium ha expirado el {new Date(user.planExpiresAt!).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}.
+                                                        </p>
+                                                        <p className="text-orange-700">
+                                                            Renueva tu suscripción para seguir disfrutando de todos los beneficios premium.
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* Payment Status Messages */}
+                                                {paymentRequest && paymentRequest.status === 'pending' && (
+                                                    <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
+                                                        <Clock className="h-16 w-16 text-yellow-500 mb-4" />
+                                                        <h4 className="text-xl font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
+                                                        <p className="text-yellow-700 mb-4 max-w-md">
+                                                            Hemos recibido tu comprobante. El plan se activará en un máximo de 2 horas tras la verificación manual.
+                                                        </p>
+                                                        <div className="text-sm text-yellow-600 bg-yellow-100 inline-block px-4 py-2 rounded-full font-mono font-bold">
+                                                            Referencia: {paymentRequest.referenceCode}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {paymentRequest && paymentRequest.status === 'rejected' && (
+                                                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
+                                                        <div className="flex items-center space-x-3 mb-3">
+                                                            <AlertCircle className="h-8 w-8 text-red-600" />
+                                                            <h4 className="text-xl font-bold text-red-800">Pago Rechazado</h4>
+                                                        </div>
+                                                        <p className="text-red-700">
+                                                            Tu último pago fue rechazado. Por favor intenta nuevamente o contacta a soporte.
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* Plan Comparison Cards */}
+                                                {(!paymentRequest || paymentRequest.status === 'rejected') && (
+                                                    <>
+                                                        <PlanComparisonCards
+                                                            onSelectPlan={(planId) => setInitialPlan(planId)}
+                                                            selectedPlan={initialPlan as 'weekly' | 'monthly' | 'quarterly' || 'monthly'}
+                                                            currentPlan={user.plan}
+                                                        />
+
+
+                                                        {/* Payment Upload Form - Only shown after plan selection */}
+                                                        {(() => {
+                                                            console.log('Payment form check:', {
+                                                                initialPlan,
+                                                                shouldShow: !!initialPlan,
+                                                                paymentRequest: paymentRequest?.status
+                                                            });
+                                                            return initialPlan && (
+                                                                <div className="animate-fadeIn">
+                                                                    <PaymentUploadForm
+                                                                        user={user}
+                                                                        onSuccess={handlePaymentSuccess}
+                                                                        selectedPlan={initialPlan as 'weekly' | 'monthly' | 'quarterly'}
+                                                                    />
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             )}
 

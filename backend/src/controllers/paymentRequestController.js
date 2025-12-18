@@ -1,5 +1,6 @@
 import { PaymentRequest, User } from '../models/index.js';
 import { PaymentRequestStatus, PlanType } from '../utils/enums.js';
+import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } from '../services/notificationService.js';
 
 /**
  * PaymentRequest Controller
@@ -81,10 +82,10 @@ export const getUserPaymentRequests = async (req, res) => {
 // Create payment request
 export const createPaymentRequest = async (req, res) => {
     try {
-        const { userId, userName, amount, planType, planDuration, referenceCode, proofImage } = req.body;
+        const { userId, amount, planType, planDuration, referenceCode, proofImageBase64 } = req.body;
 
         // Validate required fields
-        if (!userId || !userName || !amount || !planType || !planDuration || !referenceCode || !proofImage) {
+        if (!userId || !amount || !planType || !planDuration || !referenceCode || !proofImageBase64) {
             return res.status(400).json({ error: 'All fields are required' });
         }
 
@@ -94,19 +95,57 @@ export const createPaymentRequest = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Upload proof image to Cloudinary (payouts folder)
+        const { uploadImage } = await import('../utils/cloudinaryUtils.js');
+        const uploadResult = await uploadImage(proofImageBase64, 'payouts');
+
+        // Create payment request
         const request = await PaymentRequest.create({
             userId,
-            userName,
             amount,
             planType,
             planDuration,
             referenceCode,
-            proofImage,
+            proofImageUrl: uploadResult.url,
+            proofImagePublicId: uploadResult.publicId,
             status: PaymentRequestStatus.PENDING,
             createdAt: new Date()
         });
 
-        res.status(201).json(request);
+        // Notify all admins about new payment submission
+        try {
+            // Get all admin users
+            const admins = await User.findAll({
+                where: {
+                    userType: ['admin', 'superAdmin']
+                },
+                attributes: ['id']
+            });
+
+            // Send notification to each admin
+            for (const admin of admins) {
+                await notifyPaymentSubmitted({
+                    adminId: admin.id,
+                    userName: user.name,
+                    planType,
+                    amount,
+                    referenceCode
+                });
+            }
+        } catch (notifError) {
+            console.error('Error sending admin notifications:', notifError);
+            // Don't fail the request if notification fails
+        }
+
+        res.status(201).json({
+            message: 'Payment request submitted successfully',
+            request: {
+                id: request.id,
+                status: request.status,
+                proofImageUrl: request.proofImageUrl,
+                createdAt: request.createdAt
+            }
+        });
     } catch (error) {
         console.error('Error creating payment request:', error);
         res.status(500).json({ error: 'Failed to create payment request', message: error.message });
@@ -118,7 +157,15 @@ export const verifyPaymentRequest = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const request = await PaymentRequest.findByPk(id);
+        // Get payment request with user data
+        const request = await PaymentRequest.findByPk(id, {
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['id', 'name', 'email', 'plan', 'premiumSince']
+            }]
+        });
+
         if (!request) {
             return res.status(404).json({ error: 'Payment request not found' });
         }
@@ -127,37 +174,66 @@ export const verifyPaymentRequest = async (req, res) => {
             return res.status(400).json({ error: 'Payment request already processed' });
         }
 
-        // Update request status
+        const user = request.user;
+        const now = new Date();
+        const expiresAt = new Date(now);
+        expiresAt.setDate(expiresAt.getDate() + request.planDuration);
+
+        // 1. Update payment request status
         await request.update({
             status: PaymentRequestStatus.VERIFIED,
-            processedAt: new Date()
+            processedAt: now
         });
 
-        // Update user's plan
-        const user = await User.findByPk(request.userId);
-        if (user) {
-            const now = new Date();
-            const expiresAt = new Date(now);
-            expiresAt.setDate(expiresAt.getDate() + request.planDuration);
+        // 2. Create new Subscription record
+        const { Subscription } = await import('../models/index.js');
+        const subscription = await Subscription.create({
+            userId: user.id,
+            plan: PlanType.PREMIUM,
+            planType: request.planType,
+            startedAt: now,
+            expiresAt: expiresAt,
+            paymentRequestId: request.id,
+            status: 'active',
+            createdAt: now
+        });
 
-            await user.update({
-                plan: PlanType.PREMIUM,
-                planType: request.planType,
-                planStartedAt: now,
-                planExpiresAt: expiresAt,
-                paymentRequestId: request.id,
-                premiumSince: user.premiumSince || now,
-                updatedAt: now
-            });
-        }
+        // 3. Update User's plan (denormalized for quick access)
+        await user.update({
+            plan: PlanType.PREMIUM,
+            premiumSince: user.premiumSince || now,
+            updatedAt: now
+        });
+
+        // 4. Create activity log
+        const { ActivityLog } = await import('../models/index.js');
+        await ActivityLog.create({
+            type: 'payment_verified',
+            message: `Pago verificado para ${user.name} - Plan ${request.planType} por ${request.planDuration} días`,
+            userId: user.id,
+            timestamp: now
+        });
+
+        // 5. Send notification to user
+        await notifyPaymentVerified({
+            userId: user.id,
+            userName: user.name,
+            planType: request.planType,
+            expiresAt: subscription.expiresAt
+        });
 
         res.json({
-            message: 'Payment verified and plan activated',
-            request,
+            message: 'Payment verified and premium plan activated',
+            subscription: {
+                id: subscription.id,
+                plan: subscription.plan,
+                planType: subscription.planType,
+                expiresAt: subscription.expiresAt
+            },
             user: {
                 id: user.id,
                 plan: user.plan,
-                planExpiresAt: user.planExpiresAt
+                premiumSince: user.premiumSince
             }
         });
     } catch (error) {
@@ -170,8 +246,17 @@ export const verifyPaymentRequest = async (req, res) => {
 export const rejectPaymentRequest = async (req, res) => {
     try {
         const { id } = req.params;
+        const { reason } = req.body;
 
-        const request = await PaymentRequest.findByPk(id);
+        // Get payment request with user data
+        const request = await PaymentRequest.findByPk(id, {
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['id', 'name']
+            }]
+        });
+
         if (!request) {
             return res.status(404).json({ error: 'Payment request not found' });
         }
@@ -180,14 +265,45 @@ export const rejectPaymentRequest = async (req, res) => {
             return res.status(400).json({ error: 'Payment request already processed' });
         }
 
+        const now = new Date();
+
+        // Update request status
         await request.update({
             status: PaymentRequestStatus.REJECTED,
-            processedAt: new Date()
+            processedAt: now
+        });
+
+        // Optional: Delete proof image from Cloudinary to save space
+        try {
+            const { deleteImage } = await import('../utils/cloudinaryUtils.js');
+            await deleteImage(request.proofImagePublicId);
+        } catch (err) {
+            console.error('Failed to delete image from Cloudinary:', err);
+            // Don't fail the request if image deletion fails
+        }
+
+        // Create activity log
+        const { ActivityLog } = await import('../models/index.js');
+        await ActivityLog.create({
+            type: 'payment_rejected',
+            message: `Pago rechazado para ${request.user.name}${reason ? ` - Razón: ${reason}` : ''}`,
+            userId: request.userId,
+            timestamp: now
+        });
+
+        // Send notification to user
+        await notifyPaymentRejected({
+            userId: request.userId,
+            userName: request.user.name,
+            reason
         });
 
         res.json({
             message: 'Payment request rejected',
-            request
+            request: {
+                id: request.id,
+                status: request.status
+            }
         });
     } catch (error) {
         console.error('Error rejecting payment request:', error);

@@ -19,20 +19,6 @@ export const getUserNotifications = async (req, res) => {
 
         const notifications = await Notification.findAll({
             where,
-            include: [
-                {
-                    model: Property,
-                    as: 'property',
-                    attributes: ['id', 'title', 'type'],
-                    required: false
-                },
-                {
-                    model: User,
-                    as: 'interestedUser',
-                    attributes: ['id', 'name', 'email', 'phone', 'whatsapp'],
-                    required: false
-                }
-            ],
             limit: parseInt(limit),
             offset: parseInt(offset),
             order: [['createdAt', 'DESC']]

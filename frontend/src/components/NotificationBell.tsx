@@ -1,56 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { Notification } from '../types';
-import { api } from '../services/api';
-import { authService } from '../services/authService';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchNotifications, markAsRead, markAllAsRead } from '../store/slices/notificationsSlice';
 
 const NotificationBell: React.FC = () => {
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(false);
 
-    const loadNotifications = async () => {
-        const currentUser = authService.getStoredUser();
-        if (!currentUser) return;
-
-        setLoading(true);
-        try {
-            const userNotifications = await api.getNotifications(currentUser.id);
-            setNotifications(userNotifications);
-        } catch (error) {
-            console.error('Error loading notifications:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { items: notifications, loading, unreadCount } = useAppSelector((state) => state.notifications);
 
     useEffect(() => {
-        loadNotifications();
-        // Reload notifications every 30 seconds
-        const interval = setInterval(loadNotifications, 30000);
+        // Load notifications on mount
+        dispatch(fetchNotifications());
+
+        // Reload notifications every 15 seconds for real-time updates
+        const interval = setInterval(() => {
+            dispatch(fetchNotifications());
+        }, 15000);
+
         return () => clearInterval(interval);
-    }, []);
+    }, [dispatch]);
 
     const toggleNotifications = () => {
         setIsOpen(!isOpen);
         if (!isOpen) {
-            loadNotifications();
+            dispatch(fetchNotifications());
         }
     };
 
     const handleMarkAsRead = async (notificationId: string) => {
-        await api.markNotificationAsRead(notificationId);
-        loadNotifications();
+        await dispatch(markAsRead(notificationId));
     };
 
     const handleMarkAllAsRead = async () => {
-        const currentUser = authService.getStoredUser();
-        if (!currentUser) return;
+        await dispatch(markAllAsRead());
+    };
 
-        await api.markAllNotificationsAsRead(currentUser.id);
-        loadNotifications();
+    const handleNotificationClick = (notification: any) => {
+        // Mark as read
+        if (!notification.read) {
+            handleMarkAsRead(notification.id);
+        }
+
+        // Navigate based on notification type
+        switch (notification.type) {
+            case 'payment_verified':
+                navigate('/mi-perfil');
+                break;
+            case 'payment_rejected':
+                navigate('/planes');
+                break;
+            case 'payment_submitted':
+                navigate('/admin/payments');
+                break;
+            case 'property_approved':
+            case 'property_rejected':
+                navigate('/mis-propiedades');
+                break;
+            case 'property_interest':
+                if (notification.propertyId) {
+                    navigate(`/property/${notification.propertyId}`);
+                }
+                break;
+            default:
+                break;
+        }
+
+        setIsOpen(false);
     };
 
     const formatTimestamp = (timestamp: string) => {
@@ -67,8 +85,6 @@ const NotificationBell: React.FC = () => {
         if (diffDays < 7) return `Hace ${diffDays}d`;
         return date.toLocaleDateString('es-CO', { month: 'short', day: 'numeric' });
     };
-
-    const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
         <div className="relative">
@@ -124,16 +140,7 @@ const NotificationBell: React.FC = () => {
                                     {notifications.map((notification) => (
                                         <div
                                             key={notification.id}
-                                            onClick={() => {
-                                                if (!notification.read) {
-                                                    handleMarkAsRead(notification.id);
-                                                }
-                                                // Navigate if it's a property approval or rejection
-                                                if (notification.type === 'property_approved' || notification.type === 'property_rejected') {
-                                                    navigate('/mis-propiedades');
-                                                    setIsOpen(false);
-                                                }
-                                            }}
+                                            onClick={() => handleNotificationClick(notification)}
                                             className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!notification.read ? 'bg-blue-50' : ''
                                                 }`}
                                         >
@@ -180,3 +187,4 @@ const NotificationBell: React.FC = () => {
 };
 
 export default NotificationBell;
+
