@@ -681,7 +681,7 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex flex-col lg:flex-row h-screen bg-gray-100">
             <AdminSidebar
                 currentSection={currentSection}
                 onSectionChange={(section) => {
@@ -695,7 +695,7 @@ const AdminDashboard = () => {
             />
 
             <div className="flex-1 overflow-auto">
-                <div className="p-8">
+                <div className="p-4 sm:p-6 lg:p-8">
                     {renderContent()}
                 </div>
             </div>
