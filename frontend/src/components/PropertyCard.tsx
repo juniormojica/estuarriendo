@@ -122,14 +122,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           </Badge>
         </div>
 
-        {/* Favorite Button - Bottom Right - Touch-friendly */}
+        {/* Favorite Button - Bottom Right - Touch-friendly & Centered */}
         {!showRemoveButton && (
           <button
             onClick={toggleFavorite}
             className={cn(
               "absolute bottom-2 sm:bottom-3 right-2 sm:right-3",
               "min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px]",
-              "p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-200",
+              "flex items-center justify-center",
+              "rounded-full shadow-md transition-all duration-200",
               "active:scale-95",
               isFav
                 ? "bg-red-50 text-red-500 hover:bg-red-100"
