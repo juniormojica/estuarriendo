@@ -88,7 +88,31 @@ const getStoredCurrentUser = (): User | any => {
   return {};
 };
 
+
 export const api = {
+  // Institution Methods
+  async getAllInstitutions(params?: { type?: string; cityId?: number; limit?: number }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/institutions', { params });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+      return [];
+    }
+  },
+
+  async searchInstitutions(query: string, params?: { type?: string; cityId?: number; limit?: number }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/institutions/search', {
+        params: { q: query, ...params }
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error searching institutions:', error);
+      return [];
+    }
+  },
+
   // Get all properties with optional filters
   async getProperties(filters?: SearchFilters): Promise<Property[]> {
     await delay(500);

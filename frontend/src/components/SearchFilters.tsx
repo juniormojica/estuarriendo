@@ -3,8 +3,8 @@ import { Search, Filter, X } from 'lucide-react';
 import { SearchFilters as SearchFiltersType } from '../types';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
-import { universities } from '../data/mockData';
 import { getAllCityNames } from '../data/colombiaLocations';
+import InstitutionSearch from './InstitutionSearch';
 
 interface SearchFiltersProps {
   onFiltersChange: (filters: SearchFiltersType) => void;
@@ -16,6 +16,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
   const { items: amenities } = useAppSelector((state) => state.amenities);
 
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
   const [filters, setFilters] = useState<SearchFiltersType>({
     priceMin: undefined,
     priceMax: undefined
@@ -40,11 +41,17 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
     handleFilterChange('amenities', newAmenities);
   };
 
+  const handleInstitutionSelect = (institution: any) => {
+    setSelectedInstitution(institution);
+    handleFilterChange('institutionId', institution?.id);
+  };
+
   const clearFilters = () => {
     const emptyFilters: SearchFiltersType = {
       priceMin: undefined,
       priceMax: undefined
     };
+    setSelectedInstitution(null);
     setFilters(emptyFilters);
     onFiltersChange(emptyFilters);
   };
@@ -103,18 +110,27 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cerca de Universidad</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Institución</label>
           <select
-            value={filters.university || ''}
-            onChange={(e) => handleFilterChange('university', e.target.value || undefined)}
+            value={filters.institutionType || ''}
+            onChange={(e) => handleFilterChange('institutionType', e.target.value || undefined)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
             disabled={isLoading}
           >
-            <option value="">Todas las universidades</option>
-            {universities.map(uni => (
-              <option key={uni.id} value={uni.id}>{uni.name}</option>
-            ))}
+            <option value="">Todas</option>
+            <option value="universidad">Universidades</option>
+            <option value="instituto">Institutos Técnicos</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Buscar Institución</label>
+          <InstitutionSearch
+            onSelect={handleInstitutionSelect}
+            selectedInstitution={selectedInstitution}
+            placeholder="Buscar universidad o instituto..."
+            type={filters.institutionType as any}
+          />
         </div>
 
         <div className="flex items-end">

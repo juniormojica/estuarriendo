@@ -408,6 +408,10 @@ export interface SearchFilters {
   university?: string;
   amenities?: string[];
   status?: 'all' | 'pending' | 'approved' | 'rejected';
+  // Institution filters
+  institutionId?: number;
+  institutionType?: 'universidad' | 'instituto';
+  maxDistance?: number;
 }
 
 export interface PropertyFormData {

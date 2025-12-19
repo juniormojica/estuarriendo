@@ -194,7 +194,7 @@ const OwnerDashboard: React.FC = () => {
                                                 {property.status === 'approved' && (
                                                     <button
                                                         onClick={() => handleToggleRented(property.id)}
-                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${property.is_rented
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${property.isRented
                                                             ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                                                             : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                                             }`}
@@ -236,8 +236,8 @@ const OwnerDashboard: React.FC = () => {
                                                     <Link
                                                         to={`/editar-propiedad/${property.id}`}
                                                         className={`p-2 transition-colors ${property.status === 'rejected'
-                                                                ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 ring-2 ring-orange-300 rounded-md'
-                                                                : 'text-gray-400 hover:text-emerald-600'
+                                                            ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 ring-2 ring-orange-300 rounded-md'
+                                                            : 'text-gray-400 hover:text-emerald-600'
                                                             }`}
                                                         title={property.status === 'rejected'
                                                             ? 'Editar y reenviar para revisión'

@@ -56,10 +56,21 @@ const NotificationBell: React.FC = () => {
                 // Admin: Navigate to admin dashboard payments section
                 navigate('/admin?section=payments');
                 break;
+            case 'property_submitted':
+                // Admin: Navigate to admin dashboard properties section
+                navigate('/admin?section=properties');
+                break;
             case 'property_approved':
-            case 'property_rejected':
                 // Owner: Navigate to my properties page
                 navigate('/mis-propiedades');
+                break;
+            case 'property_rejected':
+                // Owner: Navigate to edit property page to fix issues
+                if (notification.propertyId) {
+                    navigate(`/editar-propiedad/${notification.propertyId}`);
+                } else {
+                    navigate('/mis-propiedades');
+                }
                 break;
             case 'property_interest':
                 // Informative only - no navigation
@@ -91,7 +102,7 @@ const NotificationBell: React.FC = () => {
             {/* Bell Button */}
             <button
                 onClick={toggleNotifications}
-                className="relative p-2 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-gray-100"
+                className="relative min-w-[44px] min-h-[44px] p-2 text-gray-600 hover:text-emerald-600 transition-colors rounded-full hover:bg-gray-100 active:bg-gray-200"
                 aria-label="Notificaciones"
             >
                 <Bell className="h-6 w-6" />
@@ -114,7 +125,7 @@ const NotificationBell: React.FC = () => {
                     />
 
                     {/* Notifications Panel */}
-                    <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-20 overflow-hidden">
+                    <div className="fixed sm:absolute right-4 sm:right-0 left-4 sm:left-auto mt-2 sm:w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-20 overflow-hidden max-w-md">
                         {/* Header */}
                         <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
                             <h3 className="text-sm font-semibold text-gray-900">Notificaciones</h3>
@@ -141,8 +152,7 @@ const NotificationBell: React.FC = () => {
                                         <div
                                             key={notification.id}
                                             onClick={() => handleNotificationClick(notification)}
-                                            className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!notification.read ? 'bg-blue-50' : ''
-                                                }`}
+                                            className={`px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
                                         >
                                             <div className="flex items-start space-x-3">
                                                 <div className="flex-1 min-w-0">
@@ -173,7 +183,7 @@ const NotificationBell: React.FC = () => {
                             <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
                                 <button
                                     onClick={handleMarkAllAsRead}
-                                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                                    className="w-full min-h-[44px] text-sm text-emerald-600 hover:text-emerald-700 font-medium py-2 hover:bg-emerald-50 rounded-lg transition-colors active:bg-emerald-100"
                                 >
                                     Marcar todas como leídas
                                 </button>

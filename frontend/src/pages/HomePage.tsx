@@ -16,7 +16,6 @@ const HomePage: React.FC = () => {
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
   const searchSectionRef = useRef<HTMLDivElement>(null);
 
-  // Extract available cities from properties
   const availableCities = Array.from(new Set(
     (properties || [])
       .filter(p => p && p.location?.city)
@@ -28,11 +27,9 @@ const HomePage: React.FC = () => {
     dispatch(fetchProperties());
   }, [dispatch]);
 
-  // Scroll to search section if state indicates it
   useEffect(() => {
     const state = location.state as { scrollToSearch?: boolean } | null;
     if (state?.scrollToSearch) {
-      // Small delay to ensure the component is fully rendered
       setTimeout(() => {
         searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
@@ -58,10 +55,9 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Welcome Modal */}
       <WelcomeModal />
 
-      {/* Hero Section */}
+      {/* Hero Section - Mobile Optimized */}
       <div className="relative bg-gray-900 text-white">
         <div className="absolute inset-0">
           <img
@@ -71,19 +67,27 @@ const HomePage: React.FC = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-800/75" />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+
+        {/* Responsive padding and text sizes */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 lg:py-32">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+            {/* Responsive heading */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 sm:mb-6 leading-tight">
               Encuentra tu <span className="text-accent-400">alojamiento universitario</span> ideal
             </h1>
-            <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-8 font-light">
+
+            {/* Responsive subheading */}
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 max-w-3xl mx-auto mb-6 sm:mb-8 font-light px-4">
               Apartamentos, habitaciones y pensiones cerca de tu universidad en Valledupar. Diseñado para estudiantes.
             </p>
+
+            {/* Touch-friendly CTA button */}
             <button
               onClick={scrollToSearch}
-              className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+              className="inline-flex items-center justify-center space-x-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-base sm:text-lg font-bold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 active:scale-95 min-h-[48px]"
             >
-              <span>Ver Publicaciones Disponibles</span>
+              <span className="hidden sm:inline">Ver Publicaciones Disponibles</span>
+              <span className="sm:hidden">Ver Propiedades</span>
               <ChevronDown className="h-5 w-5 animate-bounce" />
             </button>
           </div>
@@ -91,19 +95,23 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div ref={searchSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Available Cities Section */}
+      <div ref={searchSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Available Cities Section - Mobile Optimized */}
         {availableCities.length > 0 && (
-          <div className="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Ciudades Disponibles</h2>
-            <div className="flex flex-wrap gap-3">
+          <div className="mb-6 sm:mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+              Ciudades Disponibles
+            </h2>
+
+            {/* Scrollable city buttons on mobile */}
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {availableCities.map(city => (
                 <button
                   key={city}
                   onClick={() => handleCityClick(city)}
-                  className={`px-4 py-2 rounded-full font-medium transition-all ${selectedCity === city
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
+                  className={`px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-medium transition-all min-h-[44px] active:scale-95 ${selectedCity === city
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
                     }`}
                 >
                   {city}
@@ -116,9 +124,9 @@ const HomePage: React.FC = () => {
                     dispatch(setFilters({}));
                     dispatch(fetchProperties());
                   }}
-                  className="px-4 py-2 rounded-full font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-all"
+                  className="px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-all min-h-[44px] active:scale-95"
                 >
-                  ✕ Limpiar filtro
+                  ✕ Limpiar
                 </button>
               )}
             </div>
