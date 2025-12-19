@@ -61,29 +61,31 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+      {/* Header - Mobile Optimized */}
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className="flex items-center space-x-2">
-          <Search className="h-5 w-5 text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900">Buscar Propiedades</h2>
+          <Search className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Buscar Propiedades</h2>
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors"
+          className="flex items-center space-x-1.5 sm:space-x-2 min-w-[44px] min-h-[44px] px-3 py-2 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
         >
           <Filter className="h-4 w-4" />
-          <span>{showFilters ? 'Ocultar Filtros' : 'Más Filtros'}</span>
+          <span className="hidden sm:inline">{showFilters ? 'Ocultar Filtros' : 'Más Filtros'}</span>
+          <span className="sm:hidden">{showFilters ? 'Ocultar' : 'Filtros'}</span>
         </button>
       </div>
 
-      {/* Basic Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      {/* Basic Filters - Responsive Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Ciudad</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Ciudad</label>
           <select
             value={filters.city || ''}
             onChange={(e) => handleFilterChange('city', e.target.value || undefined)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
             disabled={isLoading}
           >
             <option value="">Todas las ciudades</option>
@@ -94,11 +96,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Propiedad</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tipo de Propiedad</label>
           <select
             value={filters.type || ''}
             onChange={(e) => handleFilterChange('type', e.target.value || undefined)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
             disabled={isLoading}
           >
             <option value="">Todos los tipos</option>
@@ -110,11 +112,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Institución</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tipo de Institución</label>
           <select
             value={filters.institutionType || ''}
             onChange={(e) => handleFilterChange('institutionType', e.target.value || undefined)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
             disabled={isLoading}
           >
             <option value="">Todas</option>
@@ -123,8 +125,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Buscar Institución</label>
+        <div className="sm:col-span-2 lg:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Buscar Institución</label>
           <InstitutionSearch
             onSelect={handleInstitutionSelect}
             selectedInstitution={selectedInstitution}
@@ -133,33 +135,33 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           />
         </div>
 
-        <div className="flex items-end">
-          {hasActiveFilters && (
+        {hasActiveFilters && (
+          <div className="sm:col-span-2 lg:col-span-3 flex justify-start sm:justify-end">
             <button
               onClick={clearFilters}
-              className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors"
+              className="flex items-center space-x-1.5 min-w-[44px] min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors"
               disabled={isLoading}
             >
               <X className="h-4 w-4" />
               <span>Limpiar Filtros</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Advanced Filters */}
+      {/* Advanced Filters - Mobile Optimized */}
       {showFilters && (
-        <div className="border-t border-gray-200 pt-4 space-y-4">
+        <div className="border-t border-gray-200 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
           {/* Price Range */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Rango de Precio (COP)</label>
-            <div className="grid grid-cols-2 gap-4">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-3">Rango de Precio (COP)</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <input
                 type="number"
                 placeholder="Precio mínimo"
                 value={filters.priceMin || ''}
                 onChange={(e) => handleFilterChange('priceMin', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                className="min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
                 disabled={isLoading}
               />
               <input
@@ -167,7 +169,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
                 placeholder="Precio máximo"
                 value={filters.priceMax || ''}
                 onChange={(e) => handleFilterChange('priceMax', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                className="min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
                 disabled={isLoading}
               />
             </div>
@@ -175,13 +177,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
 
           {/* Rooms and Bathrooms */}
           {filters.type !== 'habitacion' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones mínimas</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Habitaciones mínimas</label>
                 <select
                   value={filters.rooms || ''}
                   onChange={(e) => handleFilterChange('rooms', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
                   disabled={isLoading}
                 >
                   <option value="">Cualquier cantidad</option>
@@ -193,11 +195,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Baños mínimos</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Baños mínimos</label>
                 <select
                   value={filters.bathrooms || ''}
                   onChange={(e) => handleFilterChange('bathrooms', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
                   disabled={isLoading}
                 >
                   <option value="">Cualquier cantidad</option>
@@ -210,19 +212,20 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           )}
 
           {/* Amenities */}
+          {/* Amenities - Mobile Optimized */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Comodidades</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-3">Comodidades</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-2">
               {amenities.map(amenity => (
-                <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer">
+                <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer min-h-[44px] p-2 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
                   <input
                     type="checkbox"
                     checked={(filters.amenities || []).includes(amenity.id)}
                     onChange={() => handleAmenityToggle(amenity.id)}
-                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 min-w-[20px] min-h-[20px]"
                     disabled={isLoading}
                   />
-                  <span className="text-sm text-gray-700">{amenity.name}</span>
+                  <span className="text-xs sm:text-sm text-gray-700">{amenity.name}</span>
                 </label>
               ))}
             </div>

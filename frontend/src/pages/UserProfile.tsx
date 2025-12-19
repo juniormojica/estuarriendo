@@ -121,14 +121,60 @@ const UserProfile: React.FC = () => {
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-8">Mi Perfil</h1>
+                {/* Header - Responsive */}
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 lg:mb-8">Mi Perfil</h1>
 
-                <div className="flex flex-col md:flex-row gap-6">
-                    {/* Sidebar - Sticky */}
-                    <div className="w-full md:w-64 flex-shrink-0">
-                        <div className="bg-white rounded-xl shadow-sm p-4 md:sticky md:top-8">
+                <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+                    {/* Tabs Navigation - Horizontal on Mobile, Vertical Sidebar on Desktop */}
+                    <div className="w-full lg:w-64 flex-shrink-0">
+                        {/* Mobile: Horizontal Scrollable Tabs */}
+                        <div className="lg:hidden bg-white rounded-lg shadow-sm p-2 mb-4 overflow-x-auto">
+                            <nav className="flex space-x-2 min-w-max">
+                                <button
+                                    onClick={() => setActiveTab('profile')}
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'profile' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                        }`}
+                                >
+                                    <UserIcon className="w-4 h-4" />
+                                    <span>Información</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('security')}
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'security' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                        }`}
+                                >
+                                    <Shield className="w-4 h-4" />
+                                    <span>Seguridad</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('billing')}
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'billing' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                        }`}
+                                >
+                                    <CreditCard className="w-4 h-4" />
+                                    <span>Plan</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('verification')}
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'verification' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                        }`}
+                                >
+                                    <ShieldCheck className="w-4 h-4" />
+                                    <span>Verificación</span>
+                                    {user.verificationStatus === 'verified' && (
+                                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                    )}
+                                    {user.verificationStatus === 'pending' && (
+                                        <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                                    )}
+                                </button>
+                            </nav>
+                        </div>
+
+                        {/* Desktop: Vertical Sidebar */}
+                        <div className="hidden lg:block bg-white rounded-xl shadow-sm p-4 lg:sticky lg:top-8">
                             <nav className="space-y-1">
                                 <button
                                     onClick={() => setActiveTab('profile')}
@@ -172,9 +218,9 @@ const UserProfile: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Content */}
+                    {/* Content - Responsive Padding */}
                     <div className="flex-1 min-w-0">
-                        <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
                             {message && (
                                 <div className={`mb-6 p-4 rounded-lg flex items-center justify-center ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                                     }`}>
@@ -184,56 +230,56 @@ const UserProfile: React.FC = () => {
                             )}
 
                             {activeTab === 'profile' && (
-                                <div className="space-y-6 animate-fadeIn">
-                                    <h2 className="text-lg font-medium text-gray-900">Información Personal</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+                                    <h2 className="text-base sm:text-lg font-medium text-gray-900">Información Personal</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Nombre Completo</label>
                                             <input
                                                 type="text"
                                                 value={formData.name || ''}
                                                 onChange={(e) => handleInputChange('name', e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Correo Electrónico</label>
                                             <input
                                                 type="email"
                                                 value={formData.email || ''}
                                                 disabled
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Teléfono</label>
                                             <input
                                                 type="tel"
                                                 value={formData.phone || ''}
                                                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">WhatsApp</label>
                                             <input
                                                 type="tel"
                                                 value={formData.whatsapp || ''}
                                                 onChange={(e) => handleInputChange('whatsapp', e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="pt-6 border-t border-gray-100">
-                                        <h2 className="text-lg font-medium text-gray-900 mb-4">Documento de Identidad</h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="pt-4 sm:pt-6 border-t border-gray-100">
+                                        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Documento de Identidad</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Tipo de Documento</label>
                                                 <select
                                                     value={formData.idType || ''}
                                                     onChange={(e) => handleInputChange('idType', e.target.value)}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                                 >
                                                     <option value="">Seleccionar</option>
                                                     <option value="CC">Cédula de Ciudadanía</option>
@@ -242,22 +288,22 @@ const UserProfile: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Número de Documento</label>
                                                 <input
                                                     type="text"
                                                     value={formData.idNumber || ''}
                                                     onChange={(e) => handleInputChange('idNumber', e.target.value)}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end pt-4">
+                                    <div className="flex justify-end pt-3 sm:pt-4">
                                         <button
                                             onClick={handleSaveProfile}
                                             disabled={saving}
-                                            className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                                            className="flex items-center min-h-[48px] px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 transition-colors font-medium"
                                         >
                                             {saving ? <Loader className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                                             Guardar Cambios
@@ -267,33 +313,33 @@ const UserProfile: React.FC = () => {
                             )}
 
                             {activeTab === 'security' && (
-                                <div className="space-y-6 animate-fadeIn">
-                                    <h2 className="text-lg font-medium text-gray-900">Cambiar Contraseña</h2>
-                                    <div className="max-w-md space-y-4">
+                                <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+                                    <h2 className="text-base sm:text-lg font-medium text-gray-900">Cambiar Contraseña</h2>
+                                    <div className="max-w-md space-y-3 sm:space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Contraseña Actual</label>
                                             <input
                                                 type="password"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Nueva Contraseña</label>
                                             <input
                                                 type="password"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Nueva Contraseña</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Confirmar Nueva Contraseña</label>
                                             <input
                                                 type="password"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                             />
                                         </div>
                                         <div className="pt-2">
                                             <button
-                                                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
+                                                className="min-h-[48px] px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gray-800 text-white rounded-lg hover:bg-gray-900 active:bg-black transition-colors font-medium"
                                             >
                                                 Actualizar Contraseña
                                             </button>
