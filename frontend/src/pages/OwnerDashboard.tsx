@@ -99,20 +99,20 @@ const OwnerDashboard: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Mis Propiedades</h1>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Mis Propiedades</h1>
+                        <p className="mt-1 text-xs sm:text-sm text-gray-500">
                             Gestiona tus publicaciones y revisa su estado
                         </p>
                     </div>
                     <Link
                         to="/publicar"
-                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                        className="inline-flex items-center justify-center min-h-[48px] px-4 sm:px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm sm:text-base font-medium text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
                     >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                         Nueva Propiedad
                     </Link>
                 </div>
@@ -125,16 +125,16 @@ const OwnerDashboard: React.FC = () => {
                 )}
 
                 {properties.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                        <Home className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">No tienes propiedades</h3>
-                        <p className="mt-1 text-sm text-gray-500">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+                        <Home className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm sm:text-base font-medium text-gray-900">No tienes propiedades</h3>
+                        <p className="mt-1 text-xs sm:text-sm text-gray-500">
                             Comienza publicando tu primera propiedad para arriendo.
                         </p>
-                        <div className="mt-6">
+                        <div className="mt-4 sm:mt-6">
                             <Link
                                 to="/publicar"
-                                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700"
+                                className="inline-flex items-center min-h-[48px] px-6 py-3 border border-transparent shadow-sm text-sm sm:text-base font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
                             >
                                 <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                                 Publicar Propiedad
@@ -142,12 +142,12 @@ const OwnerDashboard: React.FC = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                         <ul className="divide-y divide-gray-200">
                             {properties.map((property) => (
                                 <li key={property.id}>
                                     <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                             <div className="flex items-center min-w-0 flex-1">
                                                 <div className="flex-shrink-0 h-16 w-16 rounded-lg overflow-hidden bg-gray-100">
                                                     <img
@@ -187,7 +187,7 @@ const OwnerDashboard: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center space-x-4 ml-4">
+                                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 sm:ml-4">
                                                 {getStatusBadge(property.status)}
 
                                                 {/* Rental Status Toggle */}
@@ -214,11 +214,11 @@ const OwnerDashboard: React.FC = () => {
                                                     </button>
                                                 )}
 
-                                                <div className="flex items-center space-x-2">
+                                                <div className="flex items-center gap-2">
                                                     {/* View Property Button */}
                                                     <Link
                                                         to={`/propiedad/${property.id}`}
-                                                        className="p-2 text-gray-400 hover:text-emerald-600 transition-colors"
+                                                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-emerald-600 active:text-emerald-700 transition-colors rounded-lg hover:bg-emerald-50"
                                                         title="Ver Propiedad"
                                                     >
                                                         <Eye className="h-5 w-5" />
@@ -226,7 +226,7 @@ const OwnerDashboard: React.FC = () => {
 
                                                     <button
                                                         onClick={() => handleOpenInterests(String(property.id), property.title)}
-                                                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                                                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-blue-600 active:text-blue-700 transition-colors rounded-lg hover:bg-blue-50"
                                                         title="Ver Interesados"
                                                     >
                                                         <Users className="h-5 w-5" />
@@ -235,9 +235,9 @@ const OwnerDashboard: React.FC = () => {
                                                     {/* Edit Button - More prominent for rejected properties */}
                                                     <Link
                                                         to={`/editar-propiedad/${property.id}`}
-                                                        className={`p-2 transition-colors ${property.status === 'rejected'
-                                                            ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 ring-2 ring-orange-300 rounded-md'
-                                                            : 'text-gray-400 hover:text-emerald-600'
+                                                        className={`p-2 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors rounded-lg ${property.status === 'rejected'
+                                                            ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 active:bg-orange-100 ring-2 ring-orange-300'
+                                                            : 'text-gray-400 hover:text-emerald-600 active:text-emerald-700 hover:bg-emerald-50'
                                                             }`}
                                                         title={property.status === 'rejected'
                                                             ? 'Editar y reenviar para revisión'
@@ -265,7 +265,7 @@ const OwnerDashboard: React.FC = () => {
                                                     ) : (
                                                         <button
                                                             onClick={() => setDeleteId(String(property.id))}
-                                                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                                                            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-red-600 active:text-red-700 transition-colors rounded-lg hover:bg-red-50"
                                                             title="Eliminar"
                                                         >
                                                             <Trash2 className="h-5 w-5" />
