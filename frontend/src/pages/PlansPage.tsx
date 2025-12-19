@@ -4,18 +4,18 @@ import { CheckCircle, Star, Zap, Shield, Award } from 'lucide-react';
 
 const PlansPage: React.FC = () => {
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gray-50 py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto">
-                <div className="text-center max-w-3xl mx-auto mb-10">
-                    <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight">
+                <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">
                         Elige el plan perfecto para ti
                     </h1>
-                    <p className="mt-3 text-lg text-gray-500">
+                    <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-500">
                         Maximiza la visibilidad de tus propiedades y encuentra inquilinos más rápido con nuestros planes premium.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-6 items-start">
+                <div className="grid grid-cols-1 gap-6 sm:gap-6 lg:grid-cols-3 lg:gap-8 items-stretch">
                     {/* Plan Semanal */}
                     <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
                         <div className="p-6 flex-1">
@@ -41,10 +41,10 @@ const PlansPage: React.FC = () => {
                                 </li>
                             </ul>
                         </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
+                        <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                             <Link
                                 to="/perfil?tab=billing&plan=weekly"
-                                className="block w-full bg-emerald-100 border border-transparent rounded-md py-2 px-4 text-center text-sm font-medium text-emerald-700 hover:bg-emerald-200 transition-colors"
+                                className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
                             >
                                 Seleccionar Plan Semanal
                             </Link>
@@ -90,10 +90,10 @@ const PlansPage: React.FC = () => {
                                 </li>
                             </ul>
                         </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
+                        <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                             <Link
                                 to="/perfil?tab=billing&plan=monthly"
-                                className="block w-full bg-emerald-600 border border-transparent rounded-md py-2 px-4 text-center text-sm font-medium text-white hover:bg-emerald-700 transition-colors shadow-sm"
+                                className="block w-full min-h-[48px] bg-emerald-600 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-sm"
                             >
                                 Seleccionar Plan Mensual
                             </Link>
@@ -129,10 +129,10 @@ const PlansPage: React.FC = () => {
                                 </li>
                             </ul>
                         </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
+                        <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                             <Link
                                 to="/perfil?tab=billing&plan=quarterly"
-                                className="block w-full bg-emerald-100 border border-transparent rounded-md py-2 px-4 text-center text-sm font-medium text-emerald-700 hover:bg-emerald-200 transition-colors"
+                                className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
                             >
                                 Seleccionar Plan Trimestral
                             </Link>
@@ -140,18 +140,18 @@ const PlansPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="mt-10 bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:p-8">
+                <div className="mt-8 sm:mt-10 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
                     <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
                         <div>
-                            <h3 className="text-lg font-bold text-gray-900">¿Tienes dudas sobre qué plan elegir?</h3>
-                            <p className="mt-2 text-base text-gray-500">
+                            <h3 className="text-base sm:text-lg font-bold text-gray-900">¿Tienes dudas sobre qué plan elegir?</h3>
+                            <p className="mt-2 text-sm sm:text-base text-gray-500">
                                 Nuestro equipo está disponible para ayudarte a seleccionar la mejor opción para tus necesidades. Contáctanos y te asesoraremos sin compromiso.
                             </p>
                         </div>
                         <div className="mt-4 lg:mt-0 flex justify-center lg:justify-end">
                             <a
                                 href="mailto:soporte@estuarriendo.com"
-                                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                                className="inline-flex items-center min-h-[48px] px-6 py-3 border border-gray-300 shadow-sm text-sm sm:text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
                             >
                                 Contactar Soporte
                             </a>
