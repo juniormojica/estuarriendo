@@ -393,21 +393,21 @@ const PropertySubmission: React.FC = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-md w-full mx-4 text-center animate-fadeIn">
-          <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 max-w-md w-full text-center animate-fadeIn">
+          <CheckCircle className="h-12 w-12 sm:h-16 sm:w-16 text-green-600 mx-auto mb-3 sm:mb-4" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
             {isEditing ? '¡Propiedad Actualizada!' : '¡Propiedad Enviada a Revisión!'}
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
             {isEditing
               ? 'Tu propiedad ha sido actualizada exitosamente.'
               : 'Tu propiedad ha sido enviada exitosamente. Nuestro equipo la revisará y será publicada pronto.'}
           </p>
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             <Link
               to="/mis-propiedades"
-              className="block w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+              className="block w-full min-h-[48px] bg-emerald-600 text-white py-3 px-4 rounded-lg text-sm sm:text-base font-semibold hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
             >
               Volver a Mis Propiedades
             </Link>
@@ -440,10 +440,10 @@ const PropertySubmission: React.FC = () => {
                       lng: 0
                     }
                   });
-                  setAvailableCities([]);
+                  setNearbyInstitutions([]);
                   setCoordStrings({ lat: '', lng: '' });
                 }}
-                className="block w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                className="block w-full min-h-[48px] border border-gray-300 text-gray-700 py-3 px-4 rounded-lg text-sm sm:text-base font-semibold hover:bg-gray-50 active:bg-gray-100 transition-colors"
               >
                 Publicar Otra Propiedad
               </button>
@@ -455,28 +455,28 @@ const PropertySubmission: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-gray-50 pb-8 sm:pb-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Header - Responsive */}
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <Link
             to={isEditing ? "/mis-propiedades" : "/"}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
+            className="inline-flex items-center space-x-2 min-h-[44px] text-gray-600 hover:text-gray-900 active:text-gray-700 transition-colors mb-3 sm:mb-4"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span>{isEditing ? 'Volver a Mis Propiedades' : 'Volver al inicio'}</span>
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-sm sm:text-base">{isEditing ? 'Volver a Mis Propiedades' : 'Volver al inicio'}</span>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             {isEditing ? 'Editar Propiedad' : 'Publicar Propiedad'}
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-sm sm:text-base text-gray-600 mt-1.5 sm:mt-2">
             {isEditing ? 'Actualiza la información de tu propiedad.' : `Completa la información en ${STEPS.length} sencillos pasos.`}
           </p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
+        {/* Progress Bar - Mobile Optimized */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
             {STEPS.map((step, index) => (
               <div
                 key={step}
@@ -484,31 +484,31 @@ const PropertySubmission: React.FC = () => {
                   }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold mb-1 transition-colors ${index <= currentStep
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold mb-1 transition-colors ${index <= currentStep
                     ? 'bg-emerald-100 text-emerald-600'
                     : 'bg-gray-100 text-gray-500'
                     }`}
                 >
                   {index + 1}
                 </div>
-                <span className="text-xs hidden sm:block">{step}</span>
+                <span className="text-[10px] sm:text-xs text-center hidden sm:block max-w-[80px] leading-tight">{step}</span>
               </div>
             ))}
           </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-300 ease-in-out"
-              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}% ` }}
+              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
             />
           </div>
         </div>
 
-        {/* Form Content */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+        {/* Form Content - Responsive */}
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 animate-fadeIn">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <span className="text-red-700">{error}</span>
+            <div className="mb-4 sm:mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start space-x-2 animate-fadeIn">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <span className="text-xs sm:text-sm text-red-700">{error}</span>
             </div>
           )}
 
