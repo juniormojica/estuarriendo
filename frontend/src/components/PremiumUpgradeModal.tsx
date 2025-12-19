@@ -24,18 +24,18 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
-            <div className="flex min-h-full items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-xl max-w-md w-full relative animate-scaleIn my-auto">
-                    {/* Close Button */}
+            <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl max-w-sm sm:max-w-md w-full relative animate-scaleIn my-auto">
+                    {/* Close Button - Touch Friendly */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+                        className="absolute top-3 right-3 sm:top-4 sm:right-4 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 active:text-gray-700 transition-colors z-10 rounded-full hover:bg-gray-100"
                     >
-                        <X className="w-6 h-6" />
+                        <X className="w-5 h-5 sm:w-6 sm:w-6" />
                     </button>
 
-                    {/* Header */}
-                    <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white text-center relative overflow-hidden rounded-t-2xl">
+                    {/* Header - Responsive */}
+                    <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-4 sm:p-6 text-white text-center relative overflow-hidden rounded-t-xl sm:rounded-t-2xl">
                         <div className="absolute top-0 left-0 w-full h-full opacity-10">
                             <Star className="w-24 h-24 absolute -top-4 -left-4" />
                             <Zap className="w-32 h-32 absolute -bottom-8 -right-8" />
@@ -45,13 +45,13 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                             <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
                                 <Star className="w-6 h-6 text-yellow-300 fill-yellow-300" />
                             </div>
-                            <h2 className="text-xl font-bold mb-1">Mejora tu Plan</h2>
-                            <p className="text-emerald-100 text-sm">Desbloquea todo el potencial</p>
+                            <h2 className="text-lg sm:text-xl font-bold mb-1">Mejora tu Plan</h2>
+                            <p className="text-emerald-100 text-xs sm:text-sm">Desbloquea todo el potencial</p>
                         </div>
                     </div>
 
-                    {/* Content */}
-                    <div className="p-6">
+                    {/* Content - Responsive */}
+                    <div className="p-4 sm:p-6">
                         <div className="text-center mb-5">
                             <p className="text-gray-600 mb-2 text-sm">Has alcanzado el límite de imágenes gratuito.</p>
                             <div className="flex items-center justify-center space-x-4 text-sm">
@@ -123,7 +123,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
 
                         <button
                             onClick={onClose}
-                            className="block w-full text-center py-3 text-gray-500 hover:text-gray-700 text-sm"
+                            className="block w-full text-center min-h-[44px] py-3 text-gray-500 hover:text-gray-700 active:text-gray-900 text-sm transition-colors"
                         >
                             Continuar con Plan Gratuito
                         </button>

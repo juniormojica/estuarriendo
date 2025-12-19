@@ -20,19 +20,19 @@ const RejectionWarningModal: React.FC<RejectionWarningModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
                 {/* Backdrop */}
                 <div
                     className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
                     onClick={onClose}
                 />
 
-                {/* Modal */}
-                <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all">
-                    {/* Close button */}
+                {/* Modal - Responsive */}
+                <div className="relative bg-white rounded-xl sm:rounded-lg shadow-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 transform transition-all">
+                    {/* Close button - Touch Friendly */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute top-3 right-3 sm:top-4 sm:right-4 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 active:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -70,17 +70,17 @@ const RejectionWarningModal: React.FC<RejectionWarningModalProps> = ({
                         </p>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-3">
+                    {/* Actions - Touch Friendly */}
+                    <div className="flex flex-col sm:flex-row gap-3">
                         <button
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                            className="flex-1 min-h-[48px] px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={onContinue}
-                            className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                            className="flex-1 min-h-[48px] px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 transition-colors font-medium"
                         >
                             Entendido
                         </button>

@@ -58,9 +58,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fadeIn">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-slideUp">
-                <div className="p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black bg-opacity-50 animate-fadeIn">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full animate-slideUp">
+                <div className="p-4 sm:p-6">
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center space-x-3">
                             {getIcon()}
@@ -68,18 +68,18 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 active:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
                         >
-                            <X className="w-6 h-6" />
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </div>
 
                     <p className="text-gray-600 mb-6 ml-15">{message}</p>
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                         <button
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                            className="flex-1 min-h-[48px] px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 active:bg-gray-400 font-medium transition-colors"
                         >
                             {cancelText}
                         </button>
@@ -88,7 +88,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                                 onConfirm();
                                 onClose();
                             }}
-                            className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors ${getButtonColor()}`}
+                            className={`flex-1 min-h-[48px] px-4 py-3 text-white rounded-lg font-medium transition-colors ${getButtonColor()}`}
                         >
                             {confirmText}
                         </button>
