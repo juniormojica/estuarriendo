@@ -66,62 +66,53 @@ const WelcomeModal: React.FC = () => {
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
                     />
 
-                    {/* Modal */}
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Modal - Responsive */}
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ type: 'spring', duration: 0.5 }}
-                            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+                            className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-lg max-h-[90vh] overflow-y-auto"
                         >
-                            {/* Close Button */}
+                            {/* Close Button - Touch Friendly */}
                             <button
                                 onClick={handleClose}
-                                className="sticky top-3 right-3 float-right p-2 rounded-full hover:bg-gray-100 transition-colors z-10 bg-white/90 backdrop-blur-sm shadow-md"
+                                className="sticky top-3 right-3 float-right p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors z-10 bg-white/90 backdrop-blur-sm shadow-md"
                                 aria-label="Cerrar"
                             >
                                 <X className="h-5 w-5 text-gray-600" />
                             </button>
 
-                            {/* Header with gradient */}
-                            <div className="relative bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 px-6 py-6 text-white rounded-t-2xl">
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24" />
-                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16" />
+                            {/* Header with gradient - Responsive */}
+                            <div className="relative bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 px-4 sm:px-6 py-6 sm:py-8 text-white rounded-t-xl sm:rounded-t-2xl">
+                                <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-white/10 rounded-full -mr-16 sm:-mr-24 -mt-16 sm:-mt-24" />
+                                <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -ml-12 sm:-ml-16 -mb-12 sm:-mb-16" />
 
-                                <div className="relative pt-8">
-                                    {/* <motion.div
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ delay: 0.2, type: 'spring' }}
-                                        className="inline-flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl mb-3"
-                                    >
-                                        <Sparkles className="h-6 w-6" />
-                                    </motion.div> */}
-
-                                    <h2 className="text-2xl font-bold mb-2">
+                                <div className="relative pt-6 sm:pt-8">
+                                    <h2 className="text-xl sm:text-2xl font-bold mb-2">
                                         ¡Bienvenido a EstuArriendo! 🏠
                                     </h2>
-                                    <p className="text-emerald-50 text-sm">
+                                    <p className="text-emerald-50 text-xs sm:text-sm">
                                         Tu plataforma ideal para alojamiento estudiantil
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Content */}
-                            <div className="p-6">
-                                <p className="text-gray-600 text-center mb-6 text-sm">
+                            {/* Content - Responsive */}
+                            <div className="p-4 sm:p-6">
+                                <p className="text-gray-600 text-center mb-4 sm:mb-6 text-xs sm:text-sm">
                                     ¿Qué te gustaría hacer hoy?
                                 </p>
 
-                                {/* CTA Buttons */}
+                                {/* CTA Buttons - Touch Friendly */}
                                 <div className="space-y-3">
                                     {/* Browse Properties */}
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handleBrowse}
-                                        className="group w-full relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 text-left transition-all hover:border-blue-400 hover:shadow-md"
+                                        className="group w-full min-h-[56px] relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 text-left transition-all hover:border-blue-400 hover:shadow-md active:border-blue-500"
                                     >
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-200/20 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
 
@@ -153,7 +144,7 @@ const WelcomeModal: React.FC = () => {
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handlePublish}
-                                        className="group w-full relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-4 text-left transition-all hover:border-emerald-400 hover:shadow-md"
+                                        className="group w-full min-h-[56px] relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-4 text-left transition-all hover:border-emerald-400 hover:shadow-md active:border-emerald-500"
                                     >
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-200/20 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
 
