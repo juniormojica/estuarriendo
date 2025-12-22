@@ -519,7 +519,11 @@ export const api = {
         propertiesCount: user.propertiesCount || user.properties_count || 0,
         approvedCount: user.approvedCount || user.approved_count || 0,
         pendingCount: user.pendingCount || user.pending_count || 0,
-        rejectedCount: user.rejectedCount || user.rejected_count || 0
+        rejectedCount: user.rejectedCount || user.rejected_count || 0,
+        // Extract from nested identificationDetails object
+        idType: user.identificationDetails?.idType || user.idType,
+        idNumber: user.identificationDetails?.idNumber || user.idNumber,
+        role: user.identificationDetails?.ownerRole || user.role
       }));
     } catch (error) {
       console.error('Error fetching users from backend:', error);
@@ -561,8 +565,10 @@ export const api = {
         approvedCount: user.approvedCount || user.approved_count || 0,
         pendingCount: user.pendingCount || user.pending_count || 0,
         rejectedCount: user.rejectedCount || user.rejected_count || 0,
-        idType: user.idType,
-        idNumber: user.idNumber,
+        // Extract from nested identificationDetails object
+        idType: user.identificationDetails?.idType || user.idType,
+        idNumber: user.identificationDetails?.idNumber || user.idNumber,
+        role: user.identificationDetails?.ownerRole || user.role,
         updatedAt: user.updatedAt
       };
     } catch (error: any) {

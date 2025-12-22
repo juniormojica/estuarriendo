@@ -155,24 +155,58 @@ export const createUser = async (userData) => {
  * @throws {NotFoundError} If user not found
  */
 export const updateUser = async (id, updates) => {
+    // Separate identification details from main user updates
+    const { idType, idNumber, ownerRole, ...userUpdates } = updates;
+
     // Hash password if it's being updated
-    if (updates.password) {
-        updates.password = await hashPassword(updates.password);
+    if (userUpdates.password) {
+        userUpdates.password = await hashPassword(userUpdates.password);
     }
 
     // Add updated timestamp
     const updatesWithTimestamp = {
-        ...updates,
+        ...userUpdates,
         updatedAt: new Date()
     };
 
+    // Update main user record
     const user = await userRepository.update(id, updatesWithTimestamp);
 
     if (!user) {
         throw new NotFoundError('User not found');
     }
 
-    return sanitizeUser(user);
+    // Update or create identification details if provided
+    if (idType !== undefined || idNumber !== undefined || ownerRole !== undefined) {
+        const { UserIdentificationDetails } = await import('../models/index.js');
+
+        const identificationUpdates = {};
+        if (idType !== undefined) identificationUpdates.idType = idType;
+        if (idNumber !== undefined) identificationUpdates.idNumber = idNumber;
+        if (ownerRole !== undefined) identificationUpdates.ownerRole = ownerRole;
+
+        // Try to find existing identification details
+        const existingDetails = await UserIdentificationDetails.findOne({ where: { userId: id } });
+
+        if (existingDetails) {
+            // Update existing record
+            await existingDetails.update({
+                ...identificationUpdates,
+                updatedAt: new Date()
+            });
+        } else {
+            // Create new record
+            await UserIdentificationDetails.create({
+                userId: id,
+                ...identificationUpdates,
+                createdAt: new Date()
+            });
+        }
+    }
+
+    // Fetch updated user with all relations
+    const updatedUser = await userRepository.findById(id);
+    return sanitizeUser(updatedUser);
 };
 
 /**

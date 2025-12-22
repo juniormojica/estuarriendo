@@ -1,4 +1,4 @@
-import { User, UserVerificationDocuments } from '../models/index.js';
+import { User, UserVerificationDocuments, UserIdentificationDetails } from '../models/index.js';
 
 /**
  * User Repository
@@ -18,6 +18,11 @@ export const findAll = async (options = {}) => {
                 model: UserVerificationDocuments,
                 as: 'verificationDocuments',
                 attributes: ['submittedAt', 'processedAt']
+            },
+            {
+                model: UserIdentificationDetails,
+                as: 'identificationDetails',
+                attributes: ['idType', 'idNumber', 'ownerRole']
             }
         ]
     };
@@ -39,6 +44,11 @@ export const findById = async (id, options = {}) => {
                 model: UserVerificationDocuments,
                 as: 'verificationDocuments',
                 attributes: ['submittedAt', 'processedAt']
+            },
+            {
+                model: UserIdentificationDetails,
+                as: 'identificationDetails',
+                attributes: ['idType', 'idNumber', 'ownerRole']
             }
         ]
     };
