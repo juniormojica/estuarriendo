@@ -536,16 +536,39 @@ export const api = {
   },
 
   // Update user
-  async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
     try {
       console.log('🔄 Updating user:', userId, 'with updates:', updates);
       const response = await apiClient.put(`/users/${userId}`, updates);
-      console.log('✅ User update response:', response.data);
-      return true;
+      console.log('✅ User updated:', response.data);
+
+      // Transform backend response to frontend format
+      const user = response.data;
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        whatsapp: user.whatsapp,
+        userType: user.userType || user.user_type,
+        isActive: user.isActive ?? user.is_active ?? true,
+        joinedAt: user.joinedAt || user.joined_at,
+        plan: user.plan || 'free',
+        verificationStatus: user.verificationStatus || user.verification_status || 'not_submitted',
+        verificationSubmittedAt: user.verificationSubmittedAt || user.verification_submitted_at,
+        verificationDocuments: user.verificationDocuments || user.verification_documents,
+        propertiesCount: user.propertiesCount || user.properties_count || 0,
+        approvedCount: user.approvedCount || user.approved_count || 0,
+        pendingCount: user.pendingCount || user.pending_count || 0,
+        rejectedCount: user.rejectedCount || user.rejected_count || 0,
+        idType: user.idType,
+        idNumber: user.idNumber,
+        updatedAt: user.updatedAt
+      };
     } catch (error: any) {
       console.error('❌ Error updating user:', error);
       console.error('Error details:', error.response?.data);
-      return false;
+      throw error;
     }
   },
 

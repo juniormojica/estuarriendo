@@ -77,6 +77,36 @@ export const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
+
+        // Security: Only allow users to update their own profile (unless admin/superAdmin)
+        if (req.user) {
+            const isOwnProfile = req.user.id === id;
+            const isAdmin = req.user.userType === 'admin' || req.user.userType === 'superAdmin';
+
+            if (!isOwnProfile && !isAdmin) {
+                return res.status(403).json({
+                    error: 'No tienes permiso para actualizar este perfil'
+                });
+            }
+
+            // For regular users updating their own profile, only allow specific fields
+            if (isOwnProfile && !isAdmin) {
+                const allowedFields = ['name', 'phone', 'whatsapp', 'idType', 'idNumber'];
+                const filteredUpdates = {};
+
+                allowedFields.forEach(field => {
+                    if (updates[field] !== undefined) {
+                        filteredUpdates[field] = updates[field];
+                    }
+                });
+
+                // Use filtered updates instead of all updates
+                const user = await userService.updateUser(id, filteredUpdates);
+                return res.json(user);
+            }
+        }
+
+        // Admin can update any field
         const user = await userService.updateUser(id, updates);
         res.json(user);
     } catch (error) {
