@@ -748,27 +748,25 @@ export const api = {
 
   // Student Request Methods
   async createStudentRequest(request: Omit<StudentRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<{ success: boolean; message: string; id?: string }> {
-    await delay(500);
+    try {
+      console.log('📤 Creating student request:', request);
 
-    // Check if student already has an open request
-    const existingRequest = await this.getMyStudentRequest(request.studentId);
-    if (existingRequest) {
-      return { success: false, message: 'Ya tienes una solicitud activa. Cierra la actual antes de crear una nueva.' };
+      const response = await apiClient.post('/student-requests', request);
+
+      console.log('✅ Student request created:', response.data);
+      return {
+        success: true,
+        message: 'Solicitud creada exitosamente',
+        id: response.data.id?.toString()
+      };
+    } catch (error: any) {
+      console.error('❌ Error creating student request:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Error al crear la solicitud';
+      return {
+        success: false,
+        message: errorMessage
+      };
     }
-
-    const requests = getStoredStudentRequests();
-    const newRequest: StudentRequest = {
-      id: Date.now().toString(),
-      ...request,
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    requests.push(newRequest);
-    saveStudentRequests(requests);
-
-    return { success: true, message: 'Solicitud creada exitosamente', id: newRequest.id };
   },
 
   async getStudentRequests(filters?: { universityTarget?: string; budgetMax?: number; propertyTypeDesired?: string }): Promise<StudentRequest[]> {
@@ -817,26 +815,61 @@ export const api = {
   },
 
   async getMyStudentRequest(studentId: string): Promise<StudentRequest | null> {
-    await delay(300);
-    const requests = getStoredStudentRequests();
-    return requests.find(r => r.studentId === studentId && r.status === 'open') || null;
+    try {
+      const response = await apiClient.get(`/student-requests/student/${studentId}`);
+
+      // Backend returns array of requests, find the open one
+      const requests = response.data;
+      if (!Array.isArray(requests) || requests.length === 0) {
+        return null;
+      }
+
+      // Find the first open request
+      const openRequest = requests.find((r: any) => r.status === 'open');
+      if (!openRequest) {
+        return null;
+      }
+
+      // Transform backend response to frontend format
+      return {
+        id: openRequest.id.toString(),
+        studentId: openRequest.studentId,
+        studentName: openRequest.student?.name || '',
+        studentEmail: openRequest.student?.email || '',
+        studentPhone: openRequest.student?.phone || '',
+        studentWhatsapp: openRequest.student?.whatsapp || '',
+        cityId: openRequest.cityId,
+        city: openRequest.city?.name || '',
+        institutionId: openRequest.institutionId,
+        institution: openRequest.institution,
+        universityTarget: openRequest.universityTarget || openRequest.institution?.name || '',
+        budgetMax: parseFloat(openRequest.budgetMax),
+        propertyTypeDesired: openRequest.propertyTypeDesired,
+        requiredAmenities: openRequest.requiredAmenities || [],
+        dealBreakers: openRequest.dealBreakers || [],
+        moveInDate: openRequest.moveInDate,
+        contractDuration: openRequest.contractDuration,
+        additionalNotes: openRequest.additionalNotes,
+        status: openRequest.status,
+        createdAt: openRequest.createdAt,
+        updatedAt: openRequest.updatedAt
+      };
+    } catch (error) {
+      console.error('Error fetching my student request:', error);
+      return null;
+    }
   },
 
   async updateStudentRequest(id: string, updates: Partial<StudentRequest>): Promise<boolean> {
-    await delay(500);
-    const requests = getStoredStudentRequests();
-    const index = requests.findIndex(r => r.id === id);
-
-    if (index !== -1) {
-      requests[index] = {
-        ...requests[index],
-        ...updates,
-        updatedAt: new Date().toISOString()
-      };
-      saveStudentRequests(requests);
+    try {
+      console.log('🔄 Updating student request:', id, updates);
+      await apiClient.put(`/student-requests/${id}`, updates);
+      console.log('✅ Student request updated successfully');
       return true;
+    } catch (error) {
+      console.error('❌ Error updating student request:', error);
+      return false;
     }
-    return false;
   },
 
   async deleteStudentRequest(id: string): Promise<boolean> {

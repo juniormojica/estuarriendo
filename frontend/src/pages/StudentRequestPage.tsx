@@ -113,21 +113,17 @@ const StudentRequestPage: React.FC = () => {
 
         const requestData = {
             studentId: currentUser.id,
-            studentName: currentUser.name,
-            studentEmail: currentUser.email,
-            studentPhone: currentUser.phone,
-            studentWhatsapp: currentUser.whatsapp,
-            cityId: selectedCity.id,  // NEW - normalized city ID (validated above)
-            institutionId: selectedInstitution?.id,  // NEW - normalized institution ID (optional)
-            universityTarget: formData.universityTarget,  // Fallback for free text
+            cityId: selectedCity.id,  // Normalized city ID (validated above)
+            institutionId: selectedInstitution?.id,  // Normalized institution ID (optional)
+            universityTarget: formData.universityTarget || undefined,  // Fallback for free text
             budgetMax: parseFloat(formData.budgetMax),
             propertyTypeDesired: formData.propertyTypeDesired as 'pension' | 'habitacion' | 'apartamento' | 'aparta-estudio',
             requiredAmenities: formData.requiredAmenities,
             dealBreakers: formData.dealBreakers,
             moveInDate: formData.moveInDate,
             contractDuration: formData.contractDuration ? parseInt(formData.contractDuration) : undefined,
-            additionalNotes: formData.additionalNotes
-        } as any;  // Type assertion to bypass TypeScript validation
+            additionalNotes: formData.additionalNotes || undefined
+        };
 
         if (existingRequest && isEditing) {
             const success = await api.updateStudentRequest(existingRequest.id, requestData);
