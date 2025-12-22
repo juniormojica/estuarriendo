@@ -21,7 +21,7 @@ export const findAll = async (options = {}) => {
             },
             {
                 model: UserIdentificationDetails,
-                as: 'identificationDetails',
+                as: 'identification',
                 attributes: ['idType', 'idNumber', 'ownerRole']
             }
         ]
@@ -47,7 +47,7 @@ export const findById = async (id, options = {}) => {
             },
             {
                 model: UserIdentificationDetails,
-                as: 'identificationDetails',
+                as: 'identification',
                 attributes: ['idType', 'idNumber', 'ownerRole']
             }
         ]

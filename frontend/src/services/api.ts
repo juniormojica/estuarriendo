@@ -520,10 +520,10 @@ export const api = {
         approvedCount: user.approvedCount || user.approved_count || 0,
         pendingCount: user.pendingCount || user.pending_count || 0,
         rejectedCount: user.rejectedCount || user.rejected_count || 0,
-        // Extract from nested identificationDetails object
-        idType: user.identificationDetails?.idType || user.idType,
-        idNumber: user.identificationDetails?.idNumber || user.idNumber,
-        role: user.identificationDetails?.ownerRole || user.role
+        // Extract from nested identification object
+        idType: user.identification?.idType || user.idType,
+        idNumber: user.identification?.idNumber || user.idNumber,
+        role: user.identification?.ownerRole || user.role
       }));
     } catch (error) {
       console.error('Error fetching users from backend:', error);
@@ -565,10 +565,10 @@ export const api = {
         approvedCount: user.approvedCount || user.approved_count || 0,
         pendingCount: user.pendingCount || user.pending_count || 0,
         rejectedCount: user.rejectedCount || user.rejected_count || 0,
-        // Extract from nested identificationDetails object
-        idType: user.identificationDetails?.idType || user.idType,
-        idNumber: user.identificationDetails?.idNumber || user.idNumber,
-        role: user.identificationDetails?.ownerRole || user.role,
+        // Extract from nested identification object
+        idType: user.identification?.idType || user.idType,
+        idNumber: user.identification?.idNumber || user.idNumber,
+        role: user.identification?.ownerRole || user.role,
         updatedAt: user.updatedAt
       };
     } catch (error: any) {
