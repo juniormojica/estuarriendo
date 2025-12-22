@@ -387,13 +387,16 @@ const PropertyDetail: React.FC = () => {
 
                       {/* University Markers */}
                       {property.institutions?.map(institution => {
+                        console.log('🏫 Institution data:', institution);
+                        console.log('📍 Coordinates:', { lat: institution?.latitude, lng: institution?.longitude });
+
                         if (institution && institution.latitude && institution.longitude) {
                           return (
                             <MarkerF
                               key={institution.id}
                               position={{
-                                lat: institution.latitude,
-                                lng: institution.longitude
+                                lat: Number(institution.latitude),
+                                lng: Number(institution.longitude)
                               }}
                               icon={{
                                 url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
@@ -412,6 +415,7 @@ const PropertyDetail: React.FC = () => {
                             </MarkerF>
                           );
                         }
+                        console.log('❌ Institution skipped - missing coordinates');
                         return null;
                       })}
                     </GoogleMap>
