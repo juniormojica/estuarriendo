@@ -106,7 +106,9 @@ export const login = async (email, password) => {
  * @returns {Promise<Object>} User object
  */
 export const getUserById = async (userId) => {
-    const user = await User.findByPk(userId);
+    // Use userRepository to get user with all relations (including identification)
+    const { findById } = await import('../repositories/userRepository.js');
+    const user = await findById(userId);
 
     if (!user) {
         const error = new Error('User not found');

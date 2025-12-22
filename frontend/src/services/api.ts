@@ -539,6 +539,41 @@ export const api = {
     return properties.filter(p => p.ownerId === userId || `user-${p.id.substring(0, 3)}` === userId);
   },
 
+  // Get current authenticated user with all relations
+  async getCurrentUser(): Promise<User> {
+    try {
+      const response = await apiClient.get('/auth/me');
+      const user = response.data;
+
+      // Transform backend response to frontend format
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        whatsapp: user.whatsapp,
+        userType: user.userType || user.user_type,
+        isActive: user.isActive ?? user.is_active ?? true,
+        joinedAt: user.joinedAt || user.joined_at,
+        plan: user.plan || 'free',
+        verificationStatus: user.verificationStatus || user.verification_status || 'not_submitted',
+        verificationSubmittedAt: user.verificationSubmittedAt || user.verification_submitted_at,
+        verificationDocuments: user.verificationDocuments || user.verification_documents,
+        propertiesCount: user.propertiesCount || user.properties_count || 0,
+        approvedCount: user.approvedCount || user.approved_count || 0,
+        pendingCount: user.pendingCount || user.pending_count || 0,
+        rejectedCount: user.rejectedCount || user.rejected_count || 0,
+        // Extract from nested identification object
+        idType: user.identification?.idType || user.idType,
+        idNumber: user.identification?.idNumber || user.idNumber,
+        role: user.identification?.ownerRole || user.role
+      };
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+      throw error;
+    }
+  },
+
   // Update user
   async updateUser(userId: string, updates: Partial<User>): Promise<User> {
     try {

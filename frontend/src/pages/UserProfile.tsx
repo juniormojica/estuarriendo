@@ -49,17 +49,14 @@ const UserProfile: React.FC = () => {
             if (authUser) {
                 // Fetch fresh user data from backend to get identification details
                 try {
-                    const users = await api.getUsers();
-                    const freshUser = users.find(u => u.id === authUser.id);
+                    const freshUser = await api.getCurrentUser();
 
-                    if (freshUser) {
-                        setUser(freshUser);
-                        setFormData(freshUser);
-                    } else {
-                        // Fallback to authUser if not found
-                        setUser(authUser);
-                        setFormData(authUser);
-                    }
+                    console.log('🔍 Fresh user data:', freshUser);
+                    console.log('🔍 idType:', freshUser?.idType);
+                    console.log('🔍 idNumber:', freshUser?.idNumber);
+
+                    setUser(freshUser);
+                    setFormData(freshUser);
                 } catch (error) {
                     console.error('Error fetching fresh user data:', error);
                     // Fallback to authUser on error
