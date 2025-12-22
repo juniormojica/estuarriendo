@@ -1,5 +1,8 @@
 import * as userRepository from '../repositories/userRepository.js';
+import { User } from '../models/index.js';
 import { VerificationStatus } from '../utils/enums.js';
+import { v4 as uuidv4 } from 'uuid';
+import { hashPassword } from '../utils/passwordUtils.js';
 
 /**
  * User Service
@@ -52,7 +55,7 @@ const sanitizeUser = (user) => {
  * @throws {ValidationError} If validation fails
  */
 const validateUserData = (userData) => {
-    const requiredFields = ['id', 'name', 'email', 'phone', 'userType'];
+    const requiredFields = ['name', 'email', 'phone', 'userType'];
     const missingFields = requiredFields.filter(field => !userData[field]);
 
     if (missingFields.length > 0) {
@@ -67,6 +70,7 @@ const validateUserData = (userData) => {
  */
 const prepareNewUserData = (userData) => {
     return {
+        id: uuidv4(), // Generate unique ID
         ...userData,
         joinedAt: new Date(),
         isActive: true,
@@ -76,7 +80,7 @@ const prepareNewUserData = (userData) => {
         approvedCount: 0,
         pendingCount: 0,
         rejectedCount: 0,
-        plan: 'free'
+        plan: userData.plan || 'free'
     };
 };
 
@@ -117,14 +121,25 @@ export const createUser = async (userData) => {
     // Validate required fields
     validateUserData(userData);
 
-    // Check if user already exists
-    const existingUser = await userRepository.findById(userData.id);
-    if (existingUser) {
-        throw new ConflictError('User already exists');
+    // Validate password is provided
+    if (!userData.password) {
+        throw new ValidationError('Password is required');
     }
 
-    // Prepare data with defaults
-    const preparedData = prepareNewUserData(userData);
+    // Check if user already exists by email
+    const existingUser = await User.findOne({ where: { email: userData.email } });
+    if (existingUser) {
+        throw new ConflictError('User with this email already exists');
+    }
+
+    // Hash password before storing
+    const hashedPassword = await hashPassword(userData.password);
+
+    // Prepare data with defaults and generated ID
+    const preparedData = prepareNewUserData({
+        ...userData,
+        password: hashedPassword
+    });
 
     // Create user
     const user = await userRepository.create(preparedData);
@@ -140,6 +155,11 @@ export const createUser = async (userData) => {
  * @throws {NotFoundError} If user not found
  */
 export const updateUser = async (id, updates) => {
+    // Hash password if it's being updated
+    if (updates.password) {
+        updates.password = await hashPassword(updates.password);
+    }
+
     // Add updated timestamp
     const updatesWithTimestamp = {
         ...updates,

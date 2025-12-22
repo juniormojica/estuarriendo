@@ -1051,6 +1051,248 @@ export const api = {
       console.error('Error creating activity log:', error);
       return false;
     }
+  },
+
+  // Super Admin CRUD Methods
+
+  // Departments
+  async getDepartments(): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/locations/departments');
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      throw error;
+    }
+  },
+
+  async createDepartment(data: { name: string; code: string; slug: string; isActive?: boolean }): Promise<any> {
+    try {
+      const response = await apiClient.post('/locations/departments', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating department:', error);
+      throw error;
+    }
+  },
+
+  async updateDepartment(id: number, data: Partial<{ name: string; code: string; slug: string; isActive: boolean }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/locations/departments/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating department:', error);
+      throw error;
+    }
+  },
+
+  async deleteDepartment(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/locations/departments/${id}`);
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      throw error;
+    }
+  },
+
+  // Cities
+  async getCities(params?: { departmentId?: number }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/locations/cities', { params });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      throw error;
+    }
+  },
+
+  async createCity(data: { name: string; departmentId: number; slug: string; isActive?: boolean }): Promise<any> {
+    try {
+      const response = await apiClient.post('/locations/cities', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating city:', error);
+      throw error;
+    }
+  },
+
+  async updateCity(id: number, data: Partial<{ name: string; departmentId: number; slug: string; isActive: boolean }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/locations/cities/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating city:', error);
+      throw error;
+    }
+  },
+
+  async deleteCity(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/locations/cities/${id}`);
+    } catch (error) {
+      console.error('Error deleting city:', error);
+      throw error;
+    }
+  },
+
+  // Institutions
+  async getInstitutions(params?: { cityId?: number; type?: string }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/institutions', { params });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+      throw error;
+    }
+  },
+
+  async createInstitution(data: { name: string; cityId: number; type: string; acronym?: string; latitude?: number; longitude?: number }): Promise<any> {
+    try {
+      const response = await apiClient.post('/institutions', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating institution:', error);
+      throw error;
+    }
+  },
+
+  async updateInstitution(id: number, data: Partial<{ name: string; cityId: number; type: string; acronym?: string; latitude?: number; longitude?: number }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/institutions/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating institution:', error);
+      throw error;
+    }
+  },
+
+  async deleteInstitution(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/institutions/${id}`);
+    } catch (error) {
+      console.error('Error deleting institution:', error);
+      throw error;
+    }
+  },
+
+  // Property Types
+  async getPropertyTypes(): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/property-types');
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching property types:', error);
+      throw error;
+    }
+  },
+
+  async createPropertyType(data: { name: string; description?: string }): Promise<any> {
+    try {
+      const response = await apiClient.post('/property-types', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating property type:', error);
+      throw error;
+    }
+  },
+
+  async updatePropertyType(id: number, data: Partial<{ name: string; description?: string }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/property-types/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating property type:', error);
+      throw error;
+    }
+  },
+
+  async deletePropertyType(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/property-types/${id}`);
+    } catch (error) {
+      console.error('Error deleting property type:', error);
+      throw error;
+    }
+  },
+
+  // Amenities (update existing methods)
+  async createAmenity(data: { name: string; icon?: string }): Promise<any> {
+    try {
+      const response = await apiClient.post('/amenities', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating amenity:', error);
+      throw error;
+    }
+  },
+
+  async updateAmenity(id: number, data: Partial<{ name: string; icon?: string }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/amenities/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating amenity:', error);
+      throw error;
+    }
+  },
+
+  async deleteAmenity(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/amenities/${id}`);
+    } catch (error) {
+      console.error('Error deleting amenity:', error);
+      throw error;
+    }
+  },
+
+  // User Management Methods
+  async getUsers(params?: { userType?: string; plan?: string; verificationStatus?: string; search?: string }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/users', { params });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+
+  async getUserById(id: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/users/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      throw error;
+    }
+  },
+
+  async createUser(userData: any): Promise<any> {
+    try {
+      const response = await apiClient.post('/users', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+
+  async updateUser(id: string, userData: any): Promise<any> {
+    try {
+      const response = await apiClient.put(`/users/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  },
+
+  async deleteUser(id: string): Promise<void> {
+    try {
+      await apiClient.delete(`/users/${id}`);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
   }
 
 }

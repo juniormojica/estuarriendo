@@ -245,6 +245,13 @@ const propertiesSlice = createSlice({
             .addCase(fetchPropertyById.fulfilled, (state, action) => {
                 state.loading = false;
                 state.currentProperty = action.payload;
+                // Also add to items array if not already present (for cache consistency)
+                const existingIndex = state.items.findIndex(p => p.id === action.payload.id);
+                if (existingIndex === -1) {
+                    state.items.push(action.payload);
+                } else {
+                    state.items[existingIndex] = action.payload;
+                }
             })
             .addCase(fetchPropertyById.rejected, (state, action) => {
                 state.loading = false;

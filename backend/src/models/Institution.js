@@ -39,14 +39,22 @@ const Institution = sequelize.define('Institution', {
         comment: 'Common acronym or initials (e.g., UPC, SENA, UNAD)'
     },
     latitude: {
-        type: DataTypes.DECIMAL(10, 8),
+        type: DataTypes.DECIMAL(10, 7),
         allowNull: true,
-        comment: 'Latitude coordinate'
+        validate: {
+            min: -90,
+            max: 90
+        },
+        comment: 'Latitude coordinate (-90 to 90)'
     },
     longitude: {
-        type: DataTypes.DECIMAL(11, 8),
+        type: DataTypes.DECIMAL(10, 7),
         allowNull: true,
-        comment: 'Longitude coordinate'
+        validate: {
+            min: -180,
+            max: 180
+        },
+        comment: 'Longitude coordinate (-180 to 180)'
     },
     createdAt: {
         type: DataTypes.DATE,

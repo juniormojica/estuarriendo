@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Property } from '../types';
-import { mockAmenities } from '../data/mockData';
+import { useAppSelector } from '../store/hooks';
 import { useFavorites } from '../context/FavoritesContext';
 import { Badge } from './ui/Badge';
 import { cn } from '../lib/utils';
@@ -20,6 +20,7 @@ interface PropertyCardProps {
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRemoveButton = false, onRemoveFavorite }) => {
   const navigate = useNavigate();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { items: amenities } = useAppSelector((state) => state.amenities);
 
   if (!property || !property.id) {
     return null;
@@ -161,10 +162,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           <div className="flex gap-2 sm:gap-3 mb-3 overflow-x-auto pb-1 scrollbar-hide">
             {property.amenities?.slice(0, 6).map((amenity, idx) => {
               const amenityName = typeof amenity === 'string'
-                ? mockAmenities.find(a => a.id === amenity)?.name
+                ? amenities.find(a => a.id === amenity)?.name
                 : amenity.name;
               const amenityIcon = typeof amenity === 'string'
-                ? mockAmenities.find(a => a.id === amenity)?.icon
+                ? amenities.find(a => a.id === amenity)?.icon
                 : amenity.icon;
 
               const IconComponent = amenityIcon ? iconMap[amenityIcon] || iconMap.default : iconMap.default;

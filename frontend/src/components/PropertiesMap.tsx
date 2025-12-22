@@ -1,7 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, AlertCircle } from 'lucide-react';
+import { MapPin, School, AlertCircle } from 'lucide-react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
 import { api } from '../services/api';
+
+interface Property {
+    id: string;
+    title: string;
+    location?: {
+        latitude?: number;
+        longitude?: number;
+        address?: string;
+        city?: string;
+    };
+}
 
 interface Institution {
     id: number;
@@ -10,21 +21,23 @@ interface Institution {
     latitude?: number;
     longitude?: number;
     type: string;
+    city?: {
+        name: string;
+    };
 }
 
-interface ReadOnlyMapProps {
-    latitude: number;
-    longitude: number;
-    address?: string;
+interface PropertiesMapProps {
+    properties: Property[];
+    selectedCity?: string;
 }
 
-const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address }) => {
+const PropertiesMap: React.FC<PropertiesMapProps> = ({ properties, selectedCity }) => {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<google.maps.Map | null>(null);
-    const institutionMarkersRef = useRef<google.maps.Marker[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string>('');
     const [institutions, setInstitutions] = useState<Institution[]>([]);
+    const markersRef = useRef<google.maps.Marker[]>([]);
 
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -32,7 +45,7 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
     useEffect(() => {
         const fetchInstitutions = async () => {
             try {
-                const data = await api.getAllInstitutions();
+                const data = await api.getInstitutions();
                 setInstitutions(data);
             } catch (err) {
                 console.error('Error fetching institutions:', err);
@@ -48,12 +61,6 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
             return;
         }
 
-        if (!latitude || !longitude || latitude === 0 || longitude === 0) {
-            setError('Coordenadas no disponibles');
-            setIsLoading(false);
-            return;
-        }
-
         const initializeMap = async () => {
             if (!mapRef.current) return;
 
@@ -63,57 +70,20 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
 
                 await loadGoogleMaps(apiKey);
 
-                const position = { lat: latitude, lng: longitude };
+                // Default center (Valledupar, Colombia)
+                const defaultCenter = { lat: 10.4633, lng: -73.2506 };
 
                 // Create map
                 const map = new google.maps.Map(mapRef.current, {
-                    center: position,
-                    zoom: 14,
-                    mapTypeControl: false,
+                    center: defaultCenter,
+                    zoom: 13,
+                    mapTypeControl: true,
                     streetViewControl: false,
                     fullscreenControl: true,
                     zoomControl: true,
-                    draggable: true,
-                    scrollwheel: true,
                 });
 
-                // Save map instance
                 mapInstanceRef.current = map;
-
-                // Create property marker (RED)
-                const propertyMarker = new google.maps.Marker({
-                    map,
-                    position,
-                    title: address || 'Ubicación de la propiedad',
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 10,
-                        fillColor: '#EF4444', // Red
-                        fillOpacity: 1,
-                        strokeColor: '#FFFFFF',
-                        strokeWeight: 3,
-                    },
-                    animation: google.maps.Animation.DROP,
-                });
-
-                // Property info window
-                const propertyInfoWindow = new google.maps.InfoWindow({
-                    content: `
-                        <div style="padding: 8px; max-width: 200px;">
-                            <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #111;">
-                                📍 Propiedad
-                            </h3>
-                            <p style="margin: 0; font-size: 12px; color: #666;">
-                                ${address || 'Ubicación de la propiedad'}
-                            </p>
-                        </div>
-                    `,
-                });
-
-                propertyMarker.addListener('click', () => {
-                    propertyInfoWindow.open(map, propertyMarker);
-                });
-
                 setIsLoading(false);
             } catch (err) {
                 console.error('Error loading map:', err);
@@ -123,17 +93,68 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
         };
 
         initializeMap();
-    }, [apiKey, latitude, longitude, address]);
+    }, [apiKey]);
 
-    // Add institution markers when institutions are loaded
+    // Update markers when properties or institutions change
     useEffect(() => {
-        if (!mapInstanceRef.current || institutions.length === 0) return;
+        if (!mapInstanceRef.current) return;
 
-        // Clear existing institution markers
-        institutionMarkersRef.current.forEach(marker => marker.setMap(null));
-        institutionMarkersRef.current = [];
+        // Clear existing markers
+        markersRef.current.forEach(marker => marker.setMap(null));
+        markersRef.current = [];
 
-        const map = mapInstanceRef.current;
+        const bounds = new google.maps.LatLngBounds();
+        let hasValidCoordinates = false;
+
+        // Add property markers (RED)
+        properties.forEach(property => {
+            const lat = property.location?.latitude;
+            const lng = property.location?.longitude;
+
+            if (lat && lng && lat !== 0 && lng !== 0) {
+                const position = { lat, lng };
+
+                const marker = new google.maps.Marker({
+                    map: mapInstanceRef.current!,
+                    position,
+                    title: property.title,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: '#EF4444', // Red
+                        fillOpacity: 0.9,
+                        strokeColor: '#FFFFFF',
+                        strokeWeight: 2,
+                    },
+                    animation: google.maps.Animation.DROP,
+                });
+
+                // Info window for properties
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 8px; max-width: 200px;">
+                            <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #111;">
+                                ${property.title}
+                            </h3>
+                            <p style="margin: 0; font-size: 12px; color: #666;">
+                                📍 ${property.location?.address || 'Dirección no disponible'}
+                            </p>
+                            <p style="margin: 4px 0 0 0; font-size: 11px; color: #EF4444; font-weight: 500;">
+                                🏠 Propiedad
+                            </p>
+                        </div>
+                    `,
+                });
+
+                marker.addListener('click', () => {
+                    infoWindow.open(mapInstanceRef.current!, marker);
+                });
+
+                markersRef.current.push(marker);
+                bounds.extend(position);
+                hasValidCoordinates = true;
+            }
+        });
 
         // Add institution markers (BLUE)
         institutions.forEach(institution => {
@@ -141,11 +162,11 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
             const lng = institution.longitude;
 
             if (lat && lng && lat !== 0 && lng !== 0) {
-                const instPosition = { lat: Number(lat), lng: Number(lng) };
+                const position = { lat: Number(lat), lng: Number(lng) };
 
-                const institutionMarker = new google.maps.Marker({
-                    map,
-                    position: instPosition,
+                const marker = new google.maps.Marker({
+                    map: mapInstanceRef.current!,
+                    position,
                     title: institution.name,
                     icon: {
                         path: google.maps.SymbolPath.CIRCLE,
@@ -155,13 +176,11 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
                         strokeColor: '#FFFFFF',
                         strokeWeight: 2,
                     },
+                    animation: google.maps.Animation.DROP,
                 });
 
-                // Save marker reference
-                institutionMarkersRef.current.push(institutionMarker);
-
-                // Institution info window
-                const institutionInfoWindow = new google.maps.InfoWindow({
+                // Info window for institutions
+                const infoWindow = new google.maps.InfoWindow({
                     content: `
                         <div style="padding: 8px; max-width: 200px;">
                             <h3 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #111;">
@@ -179,12 +198,29 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
                     `,
                 });
 
-                institutionMarker.addListener('click', () => {
-                    institutionInfoWindow.open(map, institutionMarker);
+                marker.addListener('click', () => {
+                    infoWindow.open(mapInstanceRef.current!, marker);
                 });
+
+                markersRef.current.push(marker);
+                bounds.extend(position);
+                hasValidCoordinates = true;
             }
         });
-    }, [institutions]);
+
+        // Fit bounds if we have valid coordinates
+        if (hasValidCoordinates && markersRef.current.length > 0) {
+            mapInstanceRef.current.fitBounds(bounds);
+            
+            // Don't zoom in too much if there's only one marker
+            const listener = google.maps.event.addListener(mapInstanceRef.current, 'idle', () => {
+                if (mapInstanceRef.current!.getZoom()! > 15) {
+                    mapInstanceRef.current!.setZoom(15);
+                }
+                google.maps.event.removeListener(listener);
+            });
+        }
+    }, [properties, institutions]);
 
     if (error) {
         return (
@@ -199,7 +235,7 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
 
     return (
         <div className="space-y-3">
-            <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '300px' }}>
+            <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '500px' }}>
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
                         <div className="text-center">
@@ -211,40 +247,16 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
                 <div ref={mapRef} className="w-full h-full"></div>
             </div>
 
-            {/* Coordinates Display */}
-            {latitude && longitude && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                        <MapPin size={16} className="text-emerald-600" />
-                        <h4 className="text-sm font-semibold text-gray-900">Coordenadas</h4>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <span className="text-gray-600">Latitud:</span>
-                            <span className="ml-2 font-mono text-gray-900">
-                                {typeof latitude === 'number' ? latitude.toFixed(6) : '0.000000'}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-600">Longitud:</span>
-                            <span className="ml-2 font-mono text-gray-900">
-                                {typeof longitude === 'number' ? longitude.toFixed(6) : '0.000000'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Map Legend */}
+            {/* Legend */}
             <div className="bg-white border border-gray-200 rounded-lg p-3">
                 <div className="flex items-center justify-center gap-6 text-sm">
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></div>
-                        <span className="text-gray-700 font-medium">Esta Propiedad</span>
+                        <span className="text-gray-700 font-medium">Propiedades ({properties.filter(p => p.location?.latitude && p.location?.longitude).length})</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow"></div>
-                        <span className="text-gray-700 font-medium">Instituciones Cercanas ({institutions.filter(i => i.latitude && i.longitude).length})</span>
+                        <span className="text-gray-700 font-medium">Instituciones ({institutions.filter(i => i.latitude && i.longitude).length})</span>
                     </div>
                 </div>
             </div>
@@ -252,4 +264,4 @@ const ReadOnlyMap: React.FC<ReadOnlyMapProps> = ({ latitude, longitude, address 
     );
 };
 
-export default ReadOnlyMap;
+export default PropertiesMap;
