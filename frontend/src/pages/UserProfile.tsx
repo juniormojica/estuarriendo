@@ -47,8 +47,25 @@ const UserProfile: React.FC = () => {
 
             // Use user from AuthContext
             if (authUser) {
-                setUser(authUser);
-                setFormData(authUser);
+                // Fetch fresh user data from backend to get identification details
+                try {
+                    const users = await api.getUsers();
+                    const freshUser = users.find(u => u.id === authUser.id);
+
+                    if (freshUser) {
+                        setUser(freshUser);
+                        setFormData(freshUser);
+                    } else {
+                        // Fallback to authUser if not found
+                        setUser(authUser);
+                        setFormData(authUser);
+                    }
+                } catch (error) {
+                    console.error('Error fetching fresh user data:', error);
+                    // Fallback to authUser on error
+                    setUser(authUser);
+                    setFormData(authUser);
+                }
 
                 if (authUser.paymentRequestId) {
                     const requests = await api.getPaymentRequests();
