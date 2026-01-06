@@ -16,4 +16,4 @@ EXPOSE 3000
 
 # 6. Ejecutar el servidor directamente señalando la ruta
 # IMPORTANTE: Asegúrate que el archivo se llame index.js
-CMD ["node", "backend/index.js"]
+CMD ["node", "backend/server.js"]
