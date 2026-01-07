@@ -33,16 +33,23 @@ apiClient.interceptors.response.use(
     (error) => {
         // Handle 401 Unauthorized (token expired or invalid)
         if (error.response?.status === 401) {
-            // Clear token
-            localStorage.removeItem('estuarriendo_token');
-            localStorage.removeItem('estuarriendo_current_user');
+            // Log the error but don't automatically clear tokens
+            // This prevents unwanted logouts on page reload
+            console.warn('401 Unauthorized - Authentication required');
 
-            // Only redirect if on a protected page
+            // Only clear tokens and redirect if this is an explicit auth endpoint failure
+            // or if we're on a protected route and the user is trying to access it
+            const isAuthEndpoint = error.config?.url?.includes('/auth/');
             const currentPath = window.location.pathname;
             const publicPaths = ['/', '/login', '/registro', '/forgot-password', '/reset-password', '/planes', '/favoritos'];
             const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith('/propiedad/'));
 
-            if (!isPublicPath) {
+            // Only auto-logout if:
+            // 1. It's an auth endpoint (like /auth/me) failing, OR
+            // 2. User is on a protected page and token is clearly invalid
+            if (isAuthEndpoint && !isPublicPath) {
+                localStorage.removeItem('estuarriendo_token');
+                localStorage.removeItem('estuarriendo_current_user');
                 window.location.href = '/login';
             }
         }
