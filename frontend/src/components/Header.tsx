@@ -129,13 +129,18 @@ const Header: React.FC = () => {
                   <NavLink to="/admin">Admin Panel</NavLink>
                 )}
 
+                {/* Super Admin Dashboard Link */}
+                {currentUser.userType === 'superAdmin' && (
+                  <NavLink to="/super-admin">Super Admin</NavLink>
+                )}
+
                 {/* Tenant Links */}
                 {currentUser.userType === 'tenant' && (
                   <NavLink to="/busco-inmueble">Busco Inmueble</NavLink>
                 )}
 
                 {/* Owner Links */}
-                {currentUser.userwType === 'owner' && (
+                {currentUser.userType === 'owner' && (
                   <>
                     <NavLink to="/oportunidades" badge={newOpportunitiesCount}>
                       Solicitudes
@@ -281,6 +286,10 @@ const Header: React.FC = () => {
 
                   {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
                     <NavLink to="/admin" mobile>Admin Panel</NavLink>
+                  )}
+
+                  {currentUser.userType === 'superAdmin' && (
+                    <NavLink to="/super-admin" mobile>Super Admin</NavLink>
                   )}
 
                   {currentUser.userType === 'tenant' && (

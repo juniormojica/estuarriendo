@@ -4,6 +4,7 @@ import User from '../src/models/User.js';
 import Department from '../src/models/Department.js';
 import City from '../src/models/City.js';
 import Amenity from '../src/models/Amenity.js';
+// Ajusta la ruta si es necesario
 import { UserType, VerificationStatus } from '../src/utils/enums.js';
 
 const createSuperAdmin = async () => {

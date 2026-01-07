@@ -9,6 +9,7 @@ import {
     updateUserPlan,
     getUserStatistics
 } from '../controllers/userController.js';
+import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ const router = express.Router();
 router.get('/', getAllUsers);
 router.get('/:id', getUserById);
 router.post('/', createUser);
-router.put('/:id', updateUser);
+router.put('/:id', authenticateToken, updateUser);  // Protected route
 router.delete('/:id', deleteUser);
 
 // User verification routes

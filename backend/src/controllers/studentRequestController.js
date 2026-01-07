@@ -117,12 +117,10 @@ export const createStudentRequest = async (req, res) => {
     try {
         const requestData = req.body;
 
-        // Validate required fields
+        // Validate required fields (normalized schema)
         const requiredFields = [
-            'studentName',
-            'studentEmail',
-            'city',
-            'universityTarget',
+            'studentId',        // Required - references User table
+            'cityId',           // Required - references City table
             'budgetMax',
             'propertyTypeDesired',
             'moveInDate'

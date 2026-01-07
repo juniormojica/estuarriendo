@@ -20,6 +20,7 @@ import UserProfile from './pages/UserProfile';
 import StudentRequestPage from './pages/StudentRequestPage';
 import OpportunitiesPage from './pages/OpportunitiesPage';
 import PlansPage from './pages/PlansPage';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ToastProvider } from './components/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -115,6 +116,14 @@ function AppContent() {
                   element={
                     <ProtectedRoute allowedUserTypes={['owner']}>
                       <OpportunitiesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/super-admin"
+                  element={
+                    <ProtectedRoute allowedUserTypes={['superAdmin']}>
+                      <SuperAdminDashboard />
                     </ProtectedRoute>
                   }
                 />

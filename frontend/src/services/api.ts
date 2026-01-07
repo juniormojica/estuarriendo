@@ -519,7 +519,11 @@ export const api = {
         propertiesCount: user.propertiesCount || user.properties_count || 0,
         approvedCount: user.approvedCount || user.approved_count || 0,
         pendingCount: user.pendingCount || user.pending_count || 0,
-        rejectedCount: user.rejectedCount || user.rejected_count || 0
+        rejectedCount: user.rejectedCount || user.rejected_count || 0,
+        // Extract from nested identification object
+        idType: user.identification?.idType || user.idType,
+        idNumber: user.identification?.idNumber || user.idNumber,
+        role: user.identification?.ownerRole || user.role
       }));
     } catch (error) {
       console.error('Error fetching users from backend:', error);
@@ -535,17 +539,77 @@ export const api = {
     return properties.filter(p => p.ownerId === userId || `user-${p.id.substring(0, 3)}` === userId);
   },
 
+  // Get current authenticated user with all relations
+  async getCurrentUser(): Promise<User> {
+    try {
+      const response = await apiClient.get('/auth/me');
+      const user = response.data;
+
+      // Transform backend response to frontend format
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        whatsapp: user.whatsapp,
+        userType: user.userType || user.user_type,
+        isActive: user.isActive ?? user.is_active ?? true,
+        joinedAt: user.joinedAt || user.joined_at,
+        plan: user.plan || 'free',
+        verificationStatus: user.verificationStatus || user.verification_status || 'not_submitted',
+        verificationSubmittedAt: user.verificationSubmittedAt || user.verification_submitted_at,
+        verificationDocuments: user.verificationDocuments || user.verification_documents,
+        propertiesCount: user.propertiesCount || user.properties_count || 0,
+        approvedCount: user.approvedCount || user.approved_count || 0,
+        pendingCount: user.pendingCount || user.pending_count || 0,
+        rejectedCount: user.rejectedCount || user.rejected_count || 0,
+        // Extract from nested identification object
+        idType: user.identification?.idType || user.idType,
+        idNumber: user.identification?.idNumber || user.idNumber,
+        role: user.identification?.ownerRole || user.role
+      };
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+      throw error;
+    }
+  },
+
   // Update user
-  async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
     try {
       console.log('🔄 Updating user:', userId, 'with updates:', updates);
       const response = await apiClient.put(`/users/${userId}`, updates);
-      console.log('✅ User update response:', response.data);
-      return true;
+      console.log('✅ User updated:', response.data);
+
+      // Transform backend response to frontend format
+      const user = response.data;
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        whatsapp: user.whatsapp,
+        userType: user.userType || user.user_type,
+        isActive: user.isActive ?? user.is_active ?? true,
+        joinedAt: user.joinedAt || user.joined_at,
+        plan: user.plan || 'free',
+        verificationStatus: user.verificationStatus || user.verification_status || 'not_submitted',
+        verificationSubmittedAt: user.verificationSubmittedAt || user.verification_submitted_at,
+        verificationDocuments: user.verificationDocuments || user.verification_documents,
+        propertiesCount: user.propertiesCount || user.properties_count || 0,
+        approvedCount: user.approvedCount || user.approved_count || 0,
+        pendingCount: user.pendingCount || user.pending_count || 0,
+        rejectedCount: user.rejectedCount || user.rejected_count || 0,
+        // Extract from nested identification object
+        idType: user.identification?.idType || user.idType,
+        idNumber: user.identification?.idNumber || user.idNumber,
+        role: user.identification?.ownerRole || user.role,
+        updatedAt: user.updatedAt
+      };
     } catch (error: any) {
       console.error('❌ Error updating user:', error);
       console.error('Error details:', error.response?.data);
-      return false;
+      throw error;
     }
   },
 
@@ -748,27 +812,25 @@ export const api = {
 
   // Student Request Methods
   async createStudentRequest(request: Omit<StudentRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<{ success: boolean; message: string; id?: string }> {
-    await delay(500);
+    try {
+      console.log('📤 Creating student request:', request);
 
-    // Check if student already has an open request
-    const existingRequest = await this.getMyStudentRequest(request.studentId);
-    if (existingRequest) {
-      return { success: false, message: 'Ya tienes una solicitud activa. Cierra la actual antes de crear una nueva.' };
+      const response = await apiClient.post('/student-requests', request);
+
+      console.log('✅ Student request created:', response.data);
+      return {
+        success: true,
+        message: 'Solicitud creada exitosamente',
+        id: response.data.id?.toString()
+      };
+    } catch (error: any) {
+      console.error('❌ Error creating student request:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Error al crear la solicitud';
+      return {
+        success: false,
+        message: errorMessage
+      };
     }
-
-    const requests = getStoredStudentRequests();
-    const newRequest: StudentRequest = {
-      id: Date.now().toString(),
-      ...request,
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    requests.push(newRequest);
-    saveStudentRequests(requests);
-
-    return { success: true, message: 'Solicitud creada exitosamente', id: newRequest.id };
   },
 
   async getStudentRequests(filters?: { universityTarget?: string; budgetMax?: number; propertyTypeDesired?: string }): Promise<StudentRequest[]> {
@@ -817,26 +879,61 @@ export const api = {
   },
 
   async getMyStudentRequest(studentId: string): Promise<StudentRequest | null> {
-    await delay(300);
-    const requests = getStoredStudentRequests();
-    return requests.find(r => r.studentId === studentId && r.status === 'open') || null;
+    try {
+      const response = await apiClient.get(`/student-requests/student/${studentId}`);
+
+      // Backend returns array of requests, find the open one
+      const requests = response.data;
+      if (!Array.isArray(requests) || requests.length === 0) {
+        return null;
+      }
+
+      // Find the first open request
+      const openRequest = requests.find((r: any) => r.status === 'open');
+      if (!openRequest) {
+        return null;
+      }
+
+      // Transform backend response to frontend format
+      return {
+        id: openRequest.id.toString(),
+        studentId: openRequest.studentId,
+        studentName: openRequest.student?.name || '',
+        studentEmail: openRequest.student?.email || '',
+        studentPhone: openRequest.student?.phone || '',
+        studentWhatsapp: openRequest.student?.whatsapp || '',
+        cityId: openRequest.cityId,
+        city: openRequest.city?.name || '',
+        institutionId: openRequest.institutionId,
+        institution: openRequest.institution,
+        universityTarget: openRequest.universityTarget || openRequest.institution?.name || '',
+        budgetMax: parseFloat(openRequest.budgetMax),
+        propertyTypeDesired: openRequest.propertyTypeDesired,
+        requiredAmenities: openRequest.requiredAmenities || [],
+        dealBreakers: openRequest.dealBreakers || [],
+        moveInDate: openRequest.moveInDate,
+        contractDuration: openRequest.contractDuration,
+        additionalNotes: openRequest.additionalNotes,
+        status: openRequest.status,
+        createdAt: openRequest.createdAt,
+        updatedAt: openRequest.updatedAt
+      };
+    } catch (error) {
+      console.error('Error fetching my student request:', error);
+      return null;
+    }
   },
 
   async updateStudentRequest(id: string, updates: Partial<StudentRequest>): Promise<boolean> {
-    await delay(500);
-    const requests = getStoredStudentRequests();
-    const index = requests.findIndex(r => r.id === id);
-
-    if (index !== -1) {
-      requests[index] = {
-        ...requests[index],
-        ...updates,
-        updatedAt: new Date().toISOString()
-      };
-      saveStudentRequests(requests);
+    try {
+      console.log('🔄 Updating student request:', id, updates);
+      await apiClient.put(`/student-requests/${id}`, updates);
+      console.log('✅ Student request updated successfully');
       return true;
+    } catch (error) {
+      console.error('❌ Error updating student request:', error);
+      return false;
     }
-    return false;
   },
 
   async deleteStudentRequest(id: string): Promise<boolean> {
@@ -1050,6 +1147,248 @@ export const api = {
     } catch (error) {
       console.error('Error creating activity log:', error);
       return false;
+    }
+  },
+
+  // Super Admin CRUD Methods
+
+  // Departments
+  async getDepartments(): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/locations/departments');
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      throw error;
+    }
+  },
+
+  async createDepartment(data: { name: string; code: string; slug: string; isActive?: boolean }): Promise<any> {
+    try {
+      const response = await apiClient.post('/locations/departments', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating department:', error);
+      throw error;
+    }
+  },
+
+  async updateDepartment(id: number, data: Partial<{ name: string; code: string; slug: string; isActive: boolean }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/locations/departments/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating department:', error);
+      throw error;
+    }
+  },
+
+  async deleteDepartment(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/locations/departments/${id}`);
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      throw error;
+    }
+  },
+
+  // Cities
+  async getCities(params?: { departmentId?: number }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/locations/cities', { params });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      throw error;
+    }
+  },
+
+  async createCity(data: { name: string; departmentId: number; slug: string; isActive?: boolean }): Promise<any> {
+    try {
+      const response = await apiClient.post('/locations/cities', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating city:', error);
+      throw error;
+    }
+  },
+
+  async updateCity(id: number, data: Partial<{ name: string; departmentId: number; slug: string; isActive: boolean }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/locations/cities/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating city:', error);
+      throw error;
+    }
+  },
+
+  async deleteCity(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/locations/cities/${id}`);
+    } catch (error) {
+      console.error('Error deleting city:', error);
+      throw error;
+    }
+  },
+
+  // Institutions
+  async getInstitutions(params?: { cityId?: number; type?: string }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/institutions', { params });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+      throw error;
+    }
+  },
+
+  async createInstitution(data: { name: string; cityId: number; type: string; acronym?: string; latitude?: number; longitude?: number }): Promise<any> {
+    try {
+      const response = await apiClient.post('/institutions', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating institution:', error);
+      throw error;
+    }
+  },
+
+  async updateInstitution(id: number, data: Partial<{ name: string; cityId: number; type: string; acronym?: string; latitude?: number; longitude?: number }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/institutions/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating institution:', error);
+      throw error;
+    }
+  },
+
+  async deleteInstitution(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/institutions/${id}`);
+    } catch (error) {
+      console.error('Error deleting institution:', error);
+      throw error;
+    }
+  },
+
+  // Property Types
+  async getPropertyTypes(): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/property-types');
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching property types:', error);
+      throw error;
+    }
+  },
+
+  async createPropertyType(data: { name: string; description?: string }): Promise<any> {
+    try {
+      const response = await apiClient.post('/property-types', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating property type:', error);
+      throw error;
+    }
+  },
+
+  async updatePropertyType(id: number, data: Partial<{ name: string; description?: string }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/property-types/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating property type:', error);
+      throw error;
+    }
+  },
+
+  async deletePropertyType(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/property-types/${id}`);
+    } catch (error) {
+      console.error('Error deleting property type:', error);
+      throw error;
+    }
+  },
+
+  // Amenities (update existing methods)
+  async createAmenity(data: { name: string; icon?: string }): Promise<any> {
+    try {
+      const response = await apiClient.post('/amenities', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating amenity:', error);
+      throw error;
+    }
+  },
+
+  async updateAmenity(id: number, data: Partial<{ name: string; icon?: string }>): Promise<any> {
+    try {
+      const response = await apiClient.put(`/amenities/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating amenity:', error);
+      throw error;
+    }
+  },
+
+  async deleteAmenity(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/amenities/${id}`);
+    } catch (error) {
+      console.error('Error deleting amenity:', error);
+      throw error;
+    }
+  },
+
+  // User Management Methods
+  async getUsers(params?: { userType?: string; plan?: string; verificationStatus?: string; search?: string }): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/users', { params });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+
+  async getUserById(id: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/users/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      throw error;
+    }
+  },
+
+  async createUser(userData: any): Promise<any> {
+    try {
+      const response = await apiClient.post('/users', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+
+  async updateUser(id: string, userData: any): Promise<any> {
+    try {
+      const response = await apiClient.put(`/users/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  },
+
+  async deleteUser(id: string): Promise<void> {
+    try {
+      await apiClient.delete(`/users/${id}`);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
     }
   }
 

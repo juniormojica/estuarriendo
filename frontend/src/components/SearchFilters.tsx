@@ -3,7 +3,7 @@ import { Search, Filter, X } from 'lucide-react';
 import { SearchFilters as SearchFiltersType } from '../types';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
-import { getAllCityNames } from '../data/colombiaLocations';
+import { api } from '../services/api';
 import InstitutionSearch from './InstitutionSearch';
 
 interface SearchFiltersProps {
@@ -17,6 +17,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
+  const [cities, setCities] = useState<string[]>([]);
   const [filters, setFilters] = useState<SearchFiltersType>({
     priceMin: undefined,
     priceMax: undefined
@@ -24,6 +25,21 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
 
   useEffect(() => {
     dispatch(fetchAmenities());
+    // Fetch cities from API
+    const loadCities = async () => {
+      try {
+        const citiesData = await api.getCities();
+        // Extract unique city names and sort them
+        const cityNames = citiesData
+          .filter((city: any) => city.isActive !== false)
+          .map((city: any) => city.name)
+          .sort();
+        setCities(cityNames);
+      } catch (error) {
+        console.error('Error loading cities:', error);
+      }
+    };
+    loadCities();
   }, [dispatch]);
 
   const handleFilterChange = (key: keyof SearchFiltersType, value: any) => {
@@ -89,7 +105,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
             disabled={isLoading}
           >
             <option value="">Todas las ciudades</option>
-            {getAllCityNames().map(city => (
+            {cities.map(city => (
               <option key={city} value={city}>{city}</option>
             ))}
           </select>

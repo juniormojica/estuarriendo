@@ -74,7 +74,8 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
         const newErrors: Record<string, string> = {};
 
         if (step === 1) {
-            if (!formData.city.trim()) {
+            // Check if selectedCity exists (has the cityId we need)
+            if (!selectedCity) {
                 newErrors.city = 'La ciudad es requerida';
             }
             // Check if institution is required: either selectedInstitution OR universityTarget text

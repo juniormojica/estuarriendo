@@ -3,7 +3,9 @@ import {
     getAllInstitutions,
     searchInstitutions,
     getInstitutionById,
-    createInstitution
+    createInstitution,
+    updateInstitution,
+    deleteInstitution
 } from '../controllers/institutionController.js';
 import authMiddleware from '../middleware/auth.js';
 
@@ -18,7 +20,13 @@ router.get('/search', searchInstitutions);
 // Get institution by ID
 router.get('/:id', getInstitutionById);
 
-// Create new institution (admin only - will add admin middleware later)
+// Create new institution (admin only)
 router.post('/', authMiddleware, createInstitution);
+
+// Update institution (admin only)
+router.put('/:id', authMiddleware, updateInstitution);
+
+// Delete institution (admin only)
+router.delete('/:id', authMiddleware, deleteInstitution);
 
 export default router;

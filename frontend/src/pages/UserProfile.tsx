@@ -47,8 +47,22 @@ const UserProfile: React.FC = () => {
 
             // Use user from AuthContext
             if (authUser) {
-                setUser(authUser);
-                setFormData(authUser);
+                // Fetch fresh user data from backend to get identification details
+                try {
+                    const freshUser = await api.getCurrentUser();
+
+                    console.log('🔍 Fresh user data:', freshUser);
+                    console.log('🔍 idType:', freshUser?.idType);
+                    console.log('🔍 idNumber:', freshUser?.idNumber);
+
+                    setUser(freshUser);
+                    setFormData(freshUser);
+                } catch (error) {
+                    console.error('Error fetching fresh user data:', error);
+                    // Fallback to authUser on error
+                    setUser(authUser);
+                    setFormData(authUser);
+                }
 
                 if (authUser.paymentRequestId) {
                     const requests = await api.getPaymentRequests();
@@ -74,12 +88,22 @@ const UserProfile: React.FC = () => {
         setMessage(null);
 
         try {
-            // TODO: Implement update user endpoint in backend
-            // For now, just update local state
-            setUser({ ...user, ...formData });
+            // Call backend API to update user
+            const updatedUser = await api.updateUser(user.id, {
+                name: formData.name,
+                phone: formData.phone,
+                whatsapp: formData.whatsapp,
+                idType: formData.idType,
+                idNumber: formData.idNumber
+            });
+
+            // Update local state with the response from backend
+            setUser(updatedUser);
+            setFormData(updatedUser);
             setMessage({ type: 'success', text: 'Perfil actualizado correctamente.' });
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Error inesperado.' });
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.error || 'Error al actualizar el perfil';
+            setMessage({ type: 'error', text: errorMessage });
         } finally {
             setSaving(false);
         }

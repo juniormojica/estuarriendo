@@ -335,15 +335,15 @@ export interface PaymentRequest {
 export interface StudentRequest {
   id: string;
   studentId: string;
-  studentName: string;
-  studentEmail: string;
-  studentPhone: string;
-  studentWhatsapp: string;
-  cityId: number;  // NEW - normalized city ID
-  city?: string;  // Backward compat - city name
-  institutionId?: number;  // NEW - normalized institution ID (optional)
-  institution?: Institution;  // NEW - populated by backend (optional)
-  universityTarget?: string;  // Fallback for institutions not in database
+  studentName?: string;  // Optional - populated from User relation
+  studentEmail?: string;  // Optional - populated from User relation
+  studentPhone?: string;  // Optional - populated from User relation
+  studentWhatsapp?: string;  // Optional - populated from User relation
+  cityId: number;  // Required - normalized city ID
+  city?: string;  // Optional - city name populated by backend
+  institutionId?: number;  // Optional - normalized institution ID
+  institution?: Institution;  // Optional - populated by backend
+  universityTarget?: string;  // Optional - fallback for institutions not in database
   budgetMax: number;
   propertyTypeDesired: PropertyType;
   requiredAmenities: string[];

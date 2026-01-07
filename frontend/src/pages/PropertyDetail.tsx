@@ -8,7 +8,6 @@ import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { fetchPropertyById } from '../store/slices/propertiesSlice';
-import { universities } from '../data/mockData';
 import ImageGallery from '../components/ImageGallery';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useFavorites } from '../context/FavoritesContext';
@@ -29,7 +28,7 @@ const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const { items: amenities } = useAppSelector((state) => state.amenities);
-  const { items: properties, loading: propertiesLoading } = useAppSelector((state) => state.properties);
+  const { currentProperty, loading: propertiesLoading } = useAppSelector((state) => state.properties);
 
   const [ownerDetails, setOwnerDetails] = useState<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -37,8 +36,8 @@ const PropertyDetail: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
-  // Get property from Redux state
-  const property = properties.find(p => String(p.id) === id) || null;
+  // Get property from Redux state - use currentProperty which is set by fetchPropertyById
+  const property = currentProperty;
 
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = property ? isFavorite(String(property.id)) : false;
@@ -62,7 +61,10 @@ const PropertyDetail: React.FC = () => {
         // Fetch property data from Redux
         const resultAction = await dispatch(fetchPropertyById(id));
 
+        console.log('🔍 Property fetch result:', resultAction);
+
         if (fetchPropertyById.rejected.match(resultAction)) {
+          console.log('❌ Property fetch was rejected:', resultAction);
           setError('Propiedad no encontrada');
           setIsLoading(false);
           return;
@@ -385,13 +387,16 @@ const PropertyDetail: React.FC = () => {
 
                       {/* University Markers */}
                       {property.institutions?.map(institution => {
+                        console.log('🏫 Institution data:', institution);
+                        console.log('📍 Coordinates:', { lat: institution?.latitude, lng: institution?.longitude });
+
                         if (institution && institution.latitude && institution.longitude) {
                           return (
                             <MarkerF
                               key={institution.id}
                               position={{
-                                lat: institution.latitude,
-                                lng: institution.longitude
+                                lat: Number(institution.latitude),
+                                lng: Number(institution.longitude)
                               }}
                               icon={{
                                 url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
@@ -410,6 +415,7 @@ const PropertyDetail: React.FC = () => {
                             </MarkerF>
                           );
                         }
+                        console.log('❌ Institution skipped - missing coordinates');
                         return null;
                       })}
                     </GoogleMap>
