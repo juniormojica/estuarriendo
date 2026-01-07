@@ -700,36 +700,33 @@ export const api = {
 
   // Get system configuration
   async getSystemConfig(): Promise<SystemConfig> {
-    await delay(200);
+    try {
+      const response = await apiClient.get<SystemConfig>('/system-config');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching system config from backend:', error);
 
-    const stored = localStorage.getItem('estuarriendo_system_config');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error('Error parsing system config:', e);
-        // Fallback to default
-      }
+      // Fallback to default config if backend fails
+      return {
+        commissionRate: 10,
+        featuredPropertyPrice: 50000,
+        maxImagesPerProperty: 20,
+        minPropertyPrice: 100000,
+        maxPropertyPrice: 10000000,
+        autoApprovalEnabled: false
+      };
     }
-
-    const defaultConfig: SystemConfig = {
-      commissionRate: 10,
-      featuredPropertyPrice: 50000,
-      maxImagesPerProperty: 20,
-      minPropertyPrice: 100000,
-      maxPropertyPrice: 10000000,
-      autoApprovalEnabled: false
-    };
-
-    localStorage.setItem('estuarriendo_system_config', JSON.stringify(defaultConfig));
-    return defaultConfig;
   },
 
   // Update system configuration
   async updateSystemConfig(config: SystemConfig): Promise<boolean> {
-    await delay(300);
-    localStorage.setItem('estuarriendo_system_config', JSON.stringify(config));
-    return true;
+    try {
+      await apiClient.put('/system-config', config);
+      return true;
+    } catch (error) {
+      console.error('Error updating system config:', error);
+      return false;
+    }
   },
 
   // Add amenity
