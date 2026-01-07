@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { sequelize } from '../src/config/database.js'; // Asegúrate que la ruta sea correcta desde la carpeta scripts
+import { sequelize } from '../src/config/database.js';
 import User from '../src/models/User.js';
 import Department from '../src/models/Department.js';
 import City from '../src/models/City.js';
@@ -40,7 +40,6 @@ const createSuperAdmin = async () => {
 
         if (existingAdmin) {
             console.log('⚠️  Super Admin already exists. Skipping creation.');
-            // AQUÍ QUITAMOS EL READLINE para que no se congele en Railway
             process.exit(0);
         } else {
             await createInitialData();
