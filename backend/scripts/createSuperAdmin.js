@@ -29,6 +29,7 @@ const createSuperAdmin = async () => {
             plan: 'premium',
             verificationStatus: VerificationStatus.VERIFIED,
             isActive: true,
+            isVerified: true,
             joinedAt: new Date()
         };
 
@@ -105,7 +106,6 @@ const createAdmin = async (data) => {
     const superAdmin = await User.create({ ...data, password: hashedPassword });
     console.log('✅ Super Admin created successfully!');
     console.log(`📧 Email: ${superAdmin.email}`);
-    console.log(`🔑 Password: Admin123!`);
     process.exit(0);
 };
 
