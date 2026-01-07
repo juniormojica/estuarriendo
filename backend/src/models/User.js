@@ -55,12 +55,13 @@ const User = sequelize.define('User', {
     plan: {
         type: DataTypes.ENUM('free', 'premium'),
         allowNull: false,
-        defaultValue: 'free',
-        comment: 'Current user plan (denormalized from subscriptions)'
+        defaultValue: 'premium', // Changed to premium for launch phase
+        comment: 'Current user plan - All users start with premium during launch'
     },
     premiumSince: {
         type: DataTypes.DATE,
         allowNull: true,
+        defaultValue: DataTypes.NOW, // Auto-set for new premium users
         field: 'premium_since',
         comment: 'When user first became premium'
     },
