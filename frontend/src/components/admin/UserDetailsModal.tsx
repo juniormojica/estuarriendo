@@ -248,7 +248,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                             <UserIcon className="w-5 h-5 mr-2 text-gray-500" />
                             Información Personal
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             {/* Name */}
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <p className="text-xs text-gray-500 mb-1">Nombre Completo</p>
@@ -367,7 +367,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                             <Shield className="w-5 h-5 mr-2 text-gray-500" />
                             Detalles de la Cuenta
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             <div className="bg-gray-50 p-3 rounded-lg">
                                 <p className="text-xs text-gray-500 mb-1">Fecha de Registro</p>
                                 <div className="flex items-center text-gray-900 font-medium">

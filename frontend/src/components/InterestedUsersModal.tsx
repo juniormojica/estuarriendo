@@ -87,15 +87,16 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
 
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div className="flex justify-between items-start">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                    <div className="bg-white px-4 pt-4 pb-4 sm:p-6">
+                        <div className="flex justify-between items-start gap-3">
+                            <h3 className="text-base sm:text-lg leading-6 font-medium text-gray-900 flex-1" id="modal-title">
                                 Interesados en: {propertyTitle}
                             </h3>
                             <button
                                 onClick={onClose}
-                                className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none"
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white rounded-md text-gray-400 hover:text-gray-500 active:text-gray-600 focus:outline-none"
+                                aria-label="Cerrar"
                             >
                                 <X className="h-6 w-6" />
                             </button>
@@ -113,7 +114,7 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                                     <p className="mt-2 text-sm text-gray-500">Aún no hay personas interesadas en esta propiedad.</p>
                                 </div>
                             ) : (
-                                <ul className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                <ul className="divide-y divide-gray-200 max-h-[60vh] sm:max-h-96 overflow-y-auto">
                                     {interests.map((interest) => (
                                         <li key={interest.id} className="py-4">
                                             <div className="flex items-center justify-between">
@@ -134,7 +135,7 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                                                 </div>
                                             </div>
 
-                                            <div className="mt-3 pl-13">
+                                            <div className="mt-3 sm:pl-13">
                                                 {isPremium ? (
                                                     <div className="bg-emerald-50 rounded-md p-3 space-y-2">
                                                         <div className="flex items-center text-sm text-emerald-700">
@@ -158,14 +159,14 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                                                         </a>
                                                     </div>
                                                 ) : (
-                                                    <div className="bg-gray-50 rounded-md p-4 border border-gray-200 text-center">
-                                                        <Lock className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-                                                        <p className="text-sm text-gray-600 mb-3">
+                                                    <div className="bg-gray-50 rounded-md p-3 sm:p-4 border border-gray-200 text-center">
+                                                        <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mx-auto mb-2" />
+                                                        <p className="text-xs sm:text-sm text-gray-600 mb-3">
                                                             Actualiza a Premium para ver los datos de contacto y escribirle directamente.
                                                         </p>
                                                         <Link
                                                             to="/planes"
-                                                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                                                            className="inline-flex items-center min-h-[44px] px-3 sm:px-4 py-2 border border-transparent text-xs sm:text-sm leading-4 font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                                                         >
                                                             Actualizar Plan
                                                         </Link>
@@ -178,10 +179,10 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                             )}
                         </div>
                     </div>
-                    <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end">
                         <button
                             type="button"
-                            className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                            className="w-full sm:w-auto min-h-[48px] inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                             onClick={onClose}
                         >
                             Cerrar

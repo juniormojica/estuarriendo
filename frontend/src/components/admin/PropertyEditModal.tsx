@@ -277,7 +277,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     )}
 
                     {/* Basic Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div className="col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
                             <input
@@ -341,7 +341,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     {/* Location */}
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Ubicación</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
                                 <select

@@ -75,19 +75,41 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt }) => {
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-4 h-96">
+      {/* Mobile: Single image with counter, Desktop: Grid with thumbnails */}
+      <div className="grid grid-cols-4 gap-3 sm:gap-4 h-64 sm:h-80 md:h-96">
         {/* Main Image */}
         <div className="col-span-4 md:col-span-3 relative bg-gray-900 rounded-lg overflow-hidden">
           <img
-            src={images[0]}
+            src={images[currentIndex]}
             alt={alt}
-            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => openLightbox(0)}
+            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity active:opacity-75"
+            onClick={() => openLightbox(currentIndex)}
           />
           {images.length > 1 && (
-            <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-              1 / {images.length}
-            </div>
+            <>
+              {/* Image counter */}
+              <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 bg-black/60 text-white px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
+                {currentIndex + 1} / {images.length}
+              </div>
+
+              {/* Mobile navigation arrows */}
+              <div className="md:hidden absolute inset-0 flex items-center justify-between px-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                  className="min-w-[44px] min-h-[44px] bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 transition-colors"
+                  aria-label="Imagen anterior"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                  className="min-w-[44px] min-h-[44px] bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 transition-colors"
+                  aria-label="Siguiente imagen"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            </>
           )}
         </div>
 
@@ -126,25 +148,30 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt }) => {
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
+          {/* Close button - Touch friendly */}
           <button
             onClick={() => setShowLightbox(false)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+            className="absolute top-2 sm:top-4 right-2 sm:right-4 min-w-[44px] min-h-[44px] bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 z-10 transition-colors"
+            aria-label="Cerrar galería"
           >
-            <X className="h-8 w-8" />
+            <X className="h-6 w-6 sm:h-8 sm:w-8" />
           </button>
 
+          {/* Navigation buttons - Touch friendly */}
           <button
             onClick={prevImage}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-10"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 z-10 transition-colors"
+            aria-label="Imagen anterior"
           >
-            <ChevronLeft className="h-8 w-8" />
+            <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
           </button>
 
           <button
             onClick={nextImage}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-10"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] bg-black/50 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-2 z-10 transition-colors"
+            aria-label="Siguiente imagen"
           >
-            <ChevronRight className="h-8 w-8" />
+            <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
           </button>
 
           <img
@@ -153,7 +180,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt }) => {
             className="max-w-full max-h-full object-contain"
           />
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm">
+          {/* Image counter */}
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded-full text-white text-xs sm:text-sm">
             {currentIndex + 1} / {images.length}
           </div>
         </div>
