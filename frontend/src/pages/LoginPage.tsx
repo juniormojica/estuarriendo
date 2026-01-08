@@ -39,8 +39,8 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md mx-auto">
                 <div className="flex justify-center">
                     <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-100 flex items-center justify-center">
                         <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600" />
@@ -57,8 +57,8 @@ const LoginPage = () => {
                 </p>
             </div>
 
-            <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-6 sm:py-8 px-4 sm:px-6 shadow sm:rounded-lg lg:px-10">
+            <div className="mt-6 sm:mt-8 w-full max-w-md mx-auto">
+                <div className="bg-white py-6 sm:py-8 px-5 sm:px-8 shadow rounded-lg">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {error && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700 text-sm">

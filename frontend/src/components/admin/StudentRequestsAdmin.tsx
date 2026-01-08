@@ -119,7 +119,7 @@ const StudentRequestsAdmin: React.FC = () => {
     return (
         <div className="space-y-6">
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center justify-between">
                         <div>
@@ -174,8 +174,8 @@ const StudentRequestsAdmin: React.FC = () => {
                         <button
                             onClick={() => setFilters({ ...filters, status: 'all' })}
                             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${filters.status === 'all'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             Todas
@@ -183,8 +183,8 @@ const StudentRequestsAdmin: React.FC = () => {
                         <button
                             onClick={() => setFilters({ ...filters, status: 'open' })}
                             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${filters.status === 'open'
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             Activas
@@ -192,8 +192,8 @@ const StudentRequestsAdmin: React.FC = () => {
                         <button
                             onClick={() => setFilters({ ...filters, status: 'closed' })}
                             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${filters.status === 'closed'
-                                    ? 'bg-gray-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-gray-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             Cerradas
@@ -307,8 +307,8 @@ const StudentRequestsAdmin: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${request.status === 'open'
-                                                    ? 'bg-emerald-100 text-emerald-800'
-                                                    : 'bg-gray-100 text-gray-800'
+                                                ? 'bg-emerald-100 text-emerald-800'
+                                                : 'bg-gray-100 text-gray-800'
                                                 }`}>
                                                 {request.status === 'open' ? 'Activa' : 'Cerrada'}
                                             </span>

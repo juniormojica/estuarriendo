@@ -147,7 +147,7 @@ const RegistrationPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white shadow rounded-lg sm:rounded-xl p-4 sm:p-6 lg:p-8">
+                <div className="bg-white shadow rounded-lg sm:rounded-xl p-5 sm:p-6 lg:p-8">
                     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                         {error && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700">
@@ -156,7 +156,7 @@ const RegistrationPage = () => {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             {userType === 'owner' && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Tipo de Perfil</label>
@@ -172,7 +172,7 @@ const RegistrationPage = () => {
                                 </div>
                             )}
 
-                            <div className={userType === 'tenant' ? "md:col-span-2" : ""}>
+                            <div className={userType === 'tenant' ? "sm:col-span-2" : ""}>
                                 <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
                                 <input
                                     type="text"

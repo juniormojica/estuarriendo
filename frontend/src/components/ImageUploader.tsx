@@ -165,10 +165,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-lg p-8 transition-all ${isUploading
-                        ? 'border-blue-400 bg-blue-50 cursor-wait'
-                        : isDragging
-                            ? 'border-emerald-500 bg-emerald-50 cursor-pointer'
-                            : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50 cursor-pointer'
+                    ? 'border-blue-400 bg-blue-50 cursor-wait'
+                    : isDragging
+                        ? 'border-emerald-500 bg-emerald-50 cursor-pointer'
+                        : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50 cursor-pointer'
                     }`}
             >
                 <div className="text-center">
@@ -217,9 +217,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         <h3 className="text-sm font-medium text-gray-700">
                             Imágenes ({images.length})
                         </h3>
-                        <p className="text-xs text-gray-500">Arrastra para reordenar</p>
+                        <p className="text-xs text-gray-500 hidden sm:inline">Arrastra para reordenar</p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                         {images.map((image, index) => (
                             <div
                                 key={index}
@@ -245,12 +245,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                                     {index + 1}
                                 </div>
 
-                                {/* Delete Button */}
+                                {/* Delete Button - Always visible on mobile, hover on desktop */}
                                 <button
                                     type="button"
                                     onClick={() => handleDelete(index)}
-                                    className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                                    className="absolute top-2 right-2 min-w-[32px] min-h-[32px] bg-red-600 text-white p-1.5 rounded-full sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-red-700 active:bg-red-800"
                                     title="Eliminar imagen"
+                                    aria-label="Eliminar imagen"
                                 >
                                     <X size={16} />
                                 </button>
