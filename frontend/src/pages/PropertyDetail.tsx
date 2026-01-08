@@ -49,37 +49,52 @@ const PropertyDetail: React.FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!id) return;
+      if (!id) {
+        console.log('⚠️ No property ID provided');
+        return;
+      }
 
       try {
+        console.log('🚀 Starting property load for ID:', id);
         setIsLoading(true);
         setError('');
 
         // Fetch amenities from Redux
+        console.log('📦 Fetching amenities...');
         dispatch(fetchAmenities());
 
         // Fetch property data from Redux
+        console.log('🏠 Fetching property by ID:', id);
         const resultAction = await dispatch(fetchPropertyById(id));
 
         console.log('🔍 Property fetch result:', resultAction);
+        console.log('🔍 Result type:', resultAction.type);
+        console.log('🔍 Result payload:', resultAction.payload);
 
         if (fetchPropertyById.rejected.match(resultAction)) {
-          console.log('❌ Property fetch was rejected:', resultAction);
+          console.error('❌ Property fetch was rejected:', resultAction);
+          console.error('❌ Error payload:', resultAction.payload);
           setError('Propiedad no encontrada');
           setIsLoading(false);
           return;
         }
 
-        // Property will be available in Redux state
-        // We'll get it from the selector above
+        if (fetchPropertyById.fulfilled.match(resultAction)) {
+          console.log('✅ Property fetch successful!');
+          console.log('✅ Property data:', resultAction.payload);
+        }
 
         // Get current user from localStorage
         const storedUser = localStorage.getItem('estuarriendo_current_user');
         if (storedUser) {
+          console.log('👤 Current user found in localStorage');
           setCurrentUser(JSON.parse(storedUser));
+        } else {
+          console.log('👤 No current user in localStorage');
         }
 
       } catch (err) {
+        console.error('💥 Error loading property:', err);
         setError('Error al cargar la propiedad');
       } finally {
         setIsLoading(false);
@@ -91,7 +106,10 @@ const PropertyDetail: React.FC = () => {
 
   // Fetch owner details when property is loaded
   useEffect(() => {
+    console.log('👤 Owner effect triggered, property:', property);
+
     if (property?.owner) {
+      console.log('✅ Owner data found in property:', property.owner);
       // Owner data comes with the property from backend
       setOwnerDetails({
         name: property.owner.name || '',
@@ -99,18 +117,22 @@ const PropertyDetail: React.FC = () => {
         email: property.owner.email || '',
         plan: property.owner.plan || 'free'
       });
+      console.log('✅ Owner details set successfully');
     } else if (property?.ownerId && !ownerDetails) {
+      console.warn('⚠️ Owner details not included in property response, ownerId:', property.ownerId);
       // Fallback: fetch owner details if not included
       const fetchOwner = async () => {
         try {
           // For now, we'll just use basic info from property
           // In the future, we could implement api.getOwnerContactDetails
-          console.warn('Owner details not included in property response');
+          console.warn('⚠️ Owner details not included in property response');
         } catch (err) {
-          console.error('Error fetching owner details:', err);
+          console.error('❌ Error fetching owner details:', err);
         }
       };
       fetchOwner();
+    } else {
+      console.log('ℹ️ No owner data available yet');
     }
   }, [property, ownerDetails]);
   useEffect(() => {
@@ -127,6 +149,7 @@ const PropertyDetail: React.FC = () => {
   };
 
   if (isLoading) {
+    console.log('⏳ Rendering loading state...');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner text="Cargando propiedad..." />
@@ -135,10 +158,15 @@ const PropertyDetail: React.FC = () => {
   }
 
   if (error || !property) {
+    console.error('❌ Rendering error state:', { error, hasProperty: !!property });
+    console.log('📊 Current property state:', property);
+    console.log('📊 Current loading state:', isLoading);
+    console.log('📊 Current error state:', error);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 text-lg mb-4">{error || 'Propiedad no encontrada'}</p>
+          <p className="text-sm text-gray-500 mb-4">ID de propiedad: {id}</p>
           <Link
             to="/"
             className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
@@ -199,6 +227,11 @@ const PropertyDetail: React.FC = () => {
   const isUserPremium = currentUser?.plan === 'premium';
   // Can contact if owner is premium OR user is premium
   const canContact = !isOwnerFree || isUserPremium;
+
+  console.log('🎨 Rendering property detail page for:', property.title);
+  console.log('📊 Property data:', property);
+  console.log('👤 Owner details:', ownerDetails);
+  console.log('👤 Current user:', currentUser);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12 sm:pb-16">
