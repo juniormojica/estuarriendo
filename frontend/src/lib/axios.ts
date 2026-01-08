@@ -14,6 +14,15 @@ apiClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('estuarriendo_token');
 
+        // Log the request details for debugging
+        console.log('🌐 API Request:', {
+            method: config.method?.toUpperCase(),
+            url: config.url,
+            baseURL: config.baseURL,
+            fullURL: `${config.baseURL}${config.url}`,
+            hasToken: !!token
+        });
+
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -21,6 +30,7 @@ apiClient.interceptors.request.use(
         return config;
     },
     (error) => {
+        console.error('❌ Request interceptor error:', error);
         return Promise.reject(error);
     }
 );
@@ -28,9 +38,25 @@ apiClient.interceptors.request.use(
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
     (response) => {
+        // Log successful responses
+        console.log('✅ API Response:', {
+            method: response.config.method?.toUpperCase(),
+            url: response.config.url,
+            status: response.status,
+            dataKeys: response.data ? Object.keys(response.data) : []
+        });
         return response;
     },
     (error) => {
+        // Log error responses
+        console.error('❌ API Error:', {
+            method: error.config?.method?.toUpperCase(),
+            url: error.config?.url,
+            status: error.response?.status,
+            message: error.message,
+            data: error.response?.data
+        });
+
         // Handle 401 Unauthorized (token expired or invalid)
         if (error.response?.status === 401) {
             // Log the error but don't automatically clear tokens
