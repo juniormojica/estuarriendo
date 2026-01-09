@@ -125,7 +125,10 @@ export const getUserById = async (userId) => {
  * @returns {Promise<Object>} Reset token (in production, send via email)
  */
 export const requestPasswordReset = async (email) => {
-    // Find user by email
+    // Import UserPasswordReset model
+    const { UserPasswordReset } = await import('../models/index.js');
+
+    // Find user by email and extract userId
     const user = await User.findOne({ where: { email } });
 
     // Don't reveal if user exists (security best practice)
@@ -137,12 +140,16 @@ export const requestPasswordReset = async (email) => {
         };
     }
 
+    // Extract userId for password reset
+    const userId = user.id;
+
     // Generate reset token
     const { rawToken, hashedToken } = generateResetToken();
     const expirationTime = generateTokenExpiration();
 
-    // Save hashed token and expiration to database
-    await user.update({
+    // Create or update record in user_password_reset table
+    await UserPasswordReset.upsert({
+        userId: userId,
         resetPasswordToken: hashedToken,
         resetPasswordExpires: expirationTime
     });
@@ -162,37 +169,45 @@ export const requestPasswordReset = async (email) => {
  * @returns {Promise<Object>} Token validity and user info
  */
 export const verifyResetToken = async (token) => {
+    // Import UserPasswordReset model
+    const { UserPasswordReset } = await import('../models/index.js');
+
     // Hash the provided token
     const hashedToken = hashToken(token);
 
-    // Find user with this token
-    const user = await User.findOne({
+    // Find reset token record with associated user
+    const resetRecord = await UserPasswordReset.findOne({
         where: {
             resetPasswordToken: hashedToken
-        }
+        },
+        include: [{
+            model: User,
+            as: 'user',
+            attributes: ['id', 'email']
+        }]
     });
 
-    if (!user) {
+    if (!resetRecord || !resetRecord.user) {
         const error = new Error('Token inválido o expirado');
         error.statusCode = 400;
         throw error;
     }
 
     // Check if token has expired
-    if (isTokenExpired(user.resetPasswordExpires)) {
+    if (isTokenExpired(resetRecord.resetPasswordExpires)) {
         const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
         error.statusCode = 400;
         throw error;
     }
 
     // Return masked email for security
-    const emailParts = user.email.split('@');
+    const emailParts = resetRecord.user.email.split('@');
     const maskedEmail = emailParts[0].substring(0, 2) + '***@' + emailParts[1];
 
     return {
         valid: true,
         email: maskedEmail,
-        userId: user.id
+        userId: resetRecord.user.id
     };
 };
 
@@ -203,38 +218,56 @@ export const verifyResetToken = async (token) => {
  * @returns {Promise<Object>} Success message
  */
 export const resetPassword = async (token, newPassword) => {
+    // Import UserPasswordReset model
+    const { UserPasswordReset } = await import('../models/index.js');
+
     // Hash the provided token
     const hashedToken = hashToken(token);
 
-    // Find user with this token
-    const user = await User.scope('withPassword').findOne({
+    // Find reset token record with associated user
+    const resetRecord = await UserPasswordReset.findOne({
         where: {
             resetPasswordToken: hashedToken
-        }
+        },
+        include: [{
+            model: User,
+            as: 'user',
+            attributes: ['id']
+        }]
     });
 
-    if (!user) {
+    if (!resetRecord || !resetRecord.user) {
         const error = new Error('Token inválido o expirado');
         error.statusCode = 400;
         throw error;
     }
 
     // Check if token has expired
-    if (isTokenExpired(user.resetPasswordExpires)) {
+    if (isTokenExpired(resetRecord.resetPasswordExpires)) {
         const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
         error.statusCode = 400;
+        throw error;
+    }
+
+    // Get the user with password scope to update it
+    const user = await User.scope('withPassword').findByPk(resetRecord.user.id);
+
+    if (!user) {
+        const error = new Error('Usuario no encontrado');
+        error.statusCode = 404;
         throw error;
     }
 
     // Hash new password
     const hashedPassword = await hashPassword(newPassword);
 
-    // Update password and clear reset token fields
+    // Update password in users table
     await user.update({
-        password: hashedPassword,
-        resetPasswordToken: null,
-        resetPasswordExpires: null
+        password: hashedPassword
     });
+
+    // Delete the reset token record (one-time use)
+    await resetRecord.destroy();
 
     return {
         message: 'Contraseña actualizada exitosamente'
