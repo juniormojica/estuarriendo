@@ -28,12 +28,25 @@ const PORT = process.env.PORT || 3001;
 
 // CORS configuration
 const corsOptions = {
-    origin: process.env.FRONTEND_URL
-        ? process.env.FRONTEND_URL.split(',')
-        : ['http://localhost:5173', 'https://localhost:5173'],
+    origin: function (origin, callback) {
+        // 1. Definimos los orígenes permitidos desde las variables de entorno o locales
+        const allowedOrigins = process.env.FRONTEND_URL
+            ? process.env.FRONTEND_URL.split(',')
+            : ['http://localhost:5173', 'https://localhost:5173'];
+
+        // 2. Permitimos la petición si:
+        // - No hay origin (como peticiones de servidor a servidor o Postman)
+        // - El origin está en nuestra lista permitida
+        // - El origin termina en ".netlify.app" (esto habilita todas las Previews)
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.netlify.app')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     optionsSuccessStatus: 200
-};
+}
 
 // Middleware
 app.use(cors(corsOptions));
