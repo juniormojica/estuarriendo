@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -9,6 +9,8 @@ import { Badge } from './ui/Badge';
 import { cn } from '../lib/utils';
 import { iconMap } from '../lib/icons';
 import { authService } from '../services/authService';
+import AuthModal from './AuthModal';
+import { useToast } from './ToastProvider';
 
 interface PropertyCardProps {
   property: Property;
@@ -21,6 +23,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
   const navigate = useNavigate();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { items: amenities } = useAppSelector((state) => state.amenities);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingFavoriteAction, setPendingFavoriteAction] = useState<'add' | null>(null);
+  const toast = useToast();
 
   if (!property || !property.id) {
     return null;
@@ -35,14 +40,34 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Check if user is authenticated
+    if (!authService.isAuthenticated()) {
+      setPendingFavoriteAction('add');
+      setShowAuthModal(true);
+      return;
+    }
+
+    // User is authenticated - proceed normally
     if (isFav) {
       if (onRemoveFavorite) {
         onRemoveFavorite(String(property.id));
       } else {
         removeFavorite(String(property.id));
       }
+      toast.info(`❤️ Eliminado de favoritos: ${property.title}`);
     } else {
       addFavorite(String(property.id));
+      toast.success(`❤️ Agregado a favoritos: ${property.title}`);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    if (pendingFavoriteAction === 'add') {
+      addFavorite(String(property.id));
+      toast.success(`❤️ Agregado a favoritos: ${property.title}`);
+      setPendingFavoriteAction(null);
     }
   };
 
@@ -260,6 +285,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+        defaultTab="login"
+      />
     </motion.div>
   );
 };

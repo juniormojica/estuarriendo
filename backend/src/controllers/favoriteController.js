@@ -5,7 +5,7 @@ import { Favorite, Property, PropertyImage, PropertyType, Location, User } from 
  */
 export const getUserFavorites = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
 
         const favorites = await Favorite.findAll({
             where: { userId },
@@ -55,7 +55,7 @@ export const getUserFavorites = async (req, res) => {
  */
 export const addFavorite = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { propertyId } = req.params;
 
         // Check if property exists
@@ -86,7 +86,7 @@ export const addFavorite = async (req, res) => {
             propertyId
         });
     } catch (error) {
-        console.error('Error adding favorite:', error);
+        console.error('❌ Error adding favorite:', error);
         res.status(500).json({
             message: 'Error al agregar a favoritos',
             error: error.message
@@ -99,7 +99,7 @@ export const addFavorite = async (req, res) => {
  */
 export const removeFavorite = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { propertyId } = req.params;
 
         const deleted = await Favorite.destroy({
@@ -128,7 +128,7 @@ export const removeFavorite = async (req, res) => {
  */
 export const checkFavorite = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const { propertyId } = req.params;
 
         const favorite = await Favorite.findOne({
