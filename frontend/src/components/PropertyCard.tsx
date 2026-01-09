@@ -10,6 +10,7 @@ import { cn } from '../lib/utils';
 import { iconMap } from '../lib/icons';
 import { authService } from '../services/authService';
 import AuthModal from './AuthModal';
+import { useToast } from './ToastProvider';
 
 interface PropertyCardProps {
   property: Property;
@@ -24,6 +25,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
   const { items: amenities } = useAppSelector((state) => state.amenities);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingFavoriteAction, setPendingFavoriteAction] = useState<'add' | null>(null);
+  const toast = useToast();
 
   if (!property || !property.id) {
     return null;
@@ -53,8 +55,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
       } else {
         removeFavorite(String(property.id));
       }
+      toast.info(`❤️ Eliminado de favoritos: ${property.title}`);
     } else {
       addFavorite(String(property.id));
+      toast.success(`❤️ Agregado a favoritos: ${property.title}`);
     }
   };
 
@@ -62,6 +66,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
     setShowAuthModal(false);
     if (pendingFavoriteAction === 'add') {
       addFavorite(String(property.id));
+      toast.success(`❤️ Agregado a favoritos: ${property.title}`);
       setPendingFavoriteAction(null);
     }
   };

@@ -18,6 +18,7 @@ import { iconMap } from '../lib/icons';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import AuthModal from '../components/AuthModal';
 import { authService } from '../services/authService';
+import { useToast } from '../components/ToastProvider';
 
 const mapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -45,6 +46,7 @@ const PropertyDetail: React.FC = () => {
 
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const isFav = property ? isFavorite(String(property.id)) : false;
+  const toast = useToast();
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -156,8 +158,10 @@ const PropertyDetail: React.FC = () => {
     // User is authenticated - proceed normally
     if (isFav) {
       removeFavorite(String(property.id));
+      toast.info(`❤️ Eliminado de favoritos: ${property.title}`);
     } else {
       addFavorite(String(property.id));
+      toast.success(`❤️ Agregado a favoritos: ${property.title}`);
     }
   };
 
@@ -165,6 +169,7 @@ const PropertyDetail: React.FC = () => {
     setShowAuthModal(false);
     if (pendingFavoriteAction === 'add' && property) {
       addFavorite(String(property.id));
+      toast.success(`❤️ Agregado a favoritos: ${property.title}`);
       setPendingFavoriteAction(null);
     }
   };
