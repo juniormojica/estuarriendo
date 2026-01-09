@@ -120,18 +120,27 @@ $response4.Content | ConvertFrom-Json
 
 ## 🗄️ Cambios en la Base de Datos
 
-Se agregaron 2 columnas a la tabla `users`:
+Se utiliza la tabla `user_password_reset` para almacenar tokens de recuperación:
 
 ```sql
-reset_password_token VARCHAR(255)    -- Token hasheado
-reset_password_expires TIMESTAMP     -- Fecha de expiración
+CREATE TABLE user_password_reset (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  user_id VARCHAR(255) UNIQUE NOT NULL,
+  reset_password_token VARCHAR(255) NOT NULL,    -- Token hasheado (SHA-256)
+  reset_password_expires TIMESTAMP NOT NULL,     -- Fecha de expiración
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 ```
 
-Para sincronizar la base de datos:
+**Relación:** User (1) ↔ (1) UserPasswordReset
 
-```bash
-node scripts/syncUserModel.js
-```
+Esta estructura sigue las mejores prácticas de normalización de base de datos, manteniendo la tabla `users` limpia de campos relacionados con procesos temporales.
+
+El registro en `user_password_reset`:
+- Se crea/actualiza cuando se solicita un reset
+- Se consulta para verificar el token
+- Se elimina automáticamente después de un reset exitoso (uso único)
 
 ---
 
