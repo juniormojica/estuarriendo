@@ -16,6 +16,8 @@ import { cn } from '../lib/utils';
 import RelatedProperties from '../components/RelatedProperties';
 import { iconMap } from '../lib/icons';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
+import AuthModal from '../components/AuthModal';
+import { authService } from '../services/authService';
 
 const mapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -34,6 +36,8 @@ const PropertyDetail: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingFavoriteAction, setPendingFavoriteAction] = useState<'add' | null>(null);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
   // Get property from Redux state - use currentProperty which is set by fetchPropertyById
@@ -141,10 +145,27 @@ const PropertyDetail: React.FC = () => {
 
   const toggleFavorite = () => {
     if (!property) return;
+
+    // Check if user is authenticated
+    if (!authService.isAuthenticated()) {
+      setPendingFavoriteAction('add');
+      setShowAuthModal(true);
+      return;
+    }
+
+    // User is authenticated - proceed normally
     if (isFav) {
       removeFavorite(String(property.id));
     } else {
       addFavorite(String(property.id));
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    if (pendingFavoriteAction === 'add' && property) {
+      addFavorite(String(property.id));
+      setPendingFavoriteAction(null);
     }
   };
 
@@ -631,6 +652,14 @@ const PropertyDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+        defaultTab="login"
+      />
     </div>
   );
 };
