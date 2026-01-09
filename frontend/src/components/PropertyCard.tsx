@@ -155,7 +155,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           {/* Location */}
           <div className="flex items-center text-gray-500 text-xs sm:text-sm mb-3">
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-emerald-500 flex-shrink-0" />
-            <span className="line-clamp-1">{property.location?.city}, {property.location?.department}</span>
+            <span className="line-clamp-1">{property.location?.street}, {property.location?.neighborhood}</span>
           </div>
 
           {/* Amenities Icons - Scrollable on mobile */}
