@@ -55,44 +55,31 @@ export const getUserFavorites = async (req, res) => {
  */
 export const addFavorite = async (req, res) => {
     try {
-        console.log('🔵 addFavorite called');
-        console.log('🔵 req.userId:', req.userId);
-        console.log('🔵 req.params:', req.params);
-
         const userId = req.userId;
         const { propertyId } = req.params;
 
-        console.log('🔵 userId:', userId);
-        console.log('🔵 propertyId:', propertyId);
-
         // Check if property exists
-        console.log('🔵 Checking if property exists...');
         const property = await Property.findByPk(propertyId);
-        console.log('🔵 Property found:', !!property);
 
         if (!property) {
             return res.status(404).json({ message: 'Propiedad no encontrada' });
         }
 
         // Check if already favorited
-        console.log('🔵 Checking if already favorited...');
         const existingFavorite = await Favorite.findOne({
             where: { userId, propertyId }
         });
-        console.log('🔵 Existing favorite:', !!existingFavorite);
 
         if (existingFavorite) {
             return res.status(400).json({ message: 'Esta propiedad ya está en tus favoritos' });
         }
 
         // Create favorite
-        console.log('🔵 Creating favorite...');
         await Favorite.create({
             userId,
             propertyId,
             createdAt: new Date()
         });
-        console.log('🔵 Favorite created successfully');
 
         res.status(201).json({
             message: 'Propiedad agregada a favoritos',
@@ -100,7 +87,6 @@ export const addFavorite = async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Error adding favorite:', error);
-        console.error('❌ Error stack:', error.stack);
         res.status(500).json({
             message: 'Error al agregar a favoritos',
             error: error.message
