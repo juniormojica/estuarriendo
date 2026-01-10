@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from '../../lib/axios';
-import { Property, SearchFilters } from '../types';
+import { Property, SearchFilters } from '../../types';
 
 // State interface
 interface PropertiesState {
@@ -34,12 +34,14 @@ export const fetchProperties = createAsyncThunk(
 
             if (filters?.city) params.append('city', filters.city);
             if (filters?.type) params.append('type', filters.type);
-            if (filters?.priceMin) params.append('priceMin', filters.priceMin.toString());
-            if (filters?.priceMax) params.append('priceMax', filters.priceMax.toString());
-            if (filters?.rooms) params.append('rooms', filters.rooms.toString());
-            if (filters?.bathrooms) params.append('bathrooms', filters.bathrooms.toString());
+            if (filters?.priceMin) params.append('minPrice', filters.priceMin.toString());
+            if (filters?.priceMax) params.append('maxPrice', filters.priceMax.toString());
+            if (filters?.rooms) params.append('minBedrooms', filters.rooms.toString());
+            if (filters?.bathrooms) params.append('minBathrooms', filters.bathrooms.toString());
             if (filters?.university) params.append('university', filters.university);
             if (filters?.status) params.append('status', filters.status);
+            if (filters?.institutionId) params.append('institutionId', filters.institutionId.toString());
+            if (filters?.institutionType) params.append('institutionType', filters.institutionType);
             if (filters?.amenities && filters.amenities.length > 0) {
                 params.append('amenities', filters.amenities.join(','));
             }

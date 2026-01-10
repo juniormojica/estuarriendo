@@ -308,7 +308,7 @@ export interface User {
 }
 
 export interface Amenity {
-  id: string;
+  id: number;  // Changed from string to number to match database
   name: string;
   icon: string;
 }
@@ -406,7 +406,7 @@ export interface SearchFilters {
   rooms?: number;
   bathrooms?: number;
   university?: string;
-  amenities?: string[];
+  amenities?: number[];  // Changed from string[] to number[] to match Amenity.id
   status?: 'all' | 'pending' | 'approved' | 'rejected';
   // Institution filters
   institutionId?: number;

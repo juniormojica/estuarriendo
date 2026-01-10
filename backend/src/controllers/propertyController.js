@@ -14,9 +14,14 @@ export const getAllProperties = async (req, res) => {
         const {
             status,
             typeId,
+            type,
             city,
+            cityId,
             minPrice,
             maxPrice,
+            minBedrooms,
+            minBathrooms,
+            amenities,
             ownerId,
             isFeatured,
             isRented,
@@ -27,16 +32,59 @@ export const getAllProperties = async (req, res) => {
             offset = 0
         } = req.query;
 
+        // Convert city string to cityId if needed
+        let resolvedCityId = cityId ? parseInt(cityId) : undefined;
+        if (city && !resolvedCityId) {
+            const { City } = await import('../models/index.js');
+            const cityRecord = await City.findOne({ where: { name: city } });
+            if (cityRecord) {
+                resolvedCityId = cityRecord.id;
+            }
+        }
+
+        // Convert type string to typeId if needed
+        let resolvedTypeId = typeId ? parseInt(typeId) : undefined;
+        if (type && !resolvedTypeId) {
+            const { PropertyType } = await import('../models/index.js');
+            const typeRecord = await PropertyType.findOne({ where: { name: type } });
+            if (typeRecord) {
+                resolvedTypeId = typeRecord.id;
+            }
+        }
+
+        // Parse amenities array and convert to numbers
+        let amenityIds = undefined;
+        if (amenities) {
+            const rawIds = typeof amenities === 'string'
+                ? amenities.split(',').map(id => id.trim())
+                : amenities;
+            // Convert to numbers and filter out invalid IDs
+            amenityIds = rawIds
+                .map(id => {
+                    const parsed = typeof id === 'string' ? parseInt(id) : id;
+                    return isNaN(parsed) ? null : parsed;
+                })
+                .filter(id => id !== null);
+
+            // If no valid IDs, set to undefined
+            if (amenityIds.length === 0) {
+                amenityIds = undefined;
+            }
+        }
+
         // Default to 'approved' status for public endpoint
         // This ensures only approved properties are shown on the homepage
         // Admin can override by explicitly passing status parameter
         // Use status='all' to fetch all properties regardless of status
         const filters = {
             status: status === 'all' ? undefined : (status || 'approved'),
-            typeId: typeId ? parseInt(typeId) : undefined,
-            city,
+            typeId: resolvedTypeId,
+            cityId: resolvedCityId,
             minRent: minPrice ? parseFloat(minPrice) : undefined,
             maxRent: maxPrice ? parseFloat(maxPrice) : undefined,
+            minBedrooms: minBedrooms ? parseInt(minBedrooms) : undefined,
+            minBathrooms: minBathrooms ? parseInt(minBathrooms) : undefined,
+            amenityIds,
             ownerId,
             isFeatured: isFeatured !== undefined ? isFeatured === 'true' : undefined,
             isRented: isRented !== undefined ? isRented === 'true' : undefined,

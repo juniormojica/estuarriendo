@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { SearchFilters as SearchFiltersType } from '../types';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -23,6 +23,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
     priceMax: undefined
   });
 
+  // Local state for price inputs to prevent re-renders
+  const [priceMinInput, setPriceMinInput] = useState<string>('');
+  const [priceMaxInput, setPriceMaxInput] = useState<string>('');
+  const [priceError, setPriceError] = useState<string>('');
+
   useEffect(() => {
     dispatch(fetchAmenities());
     // Fetch cities from API
@@ -42,13 +47,50 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
     loadCities();
   }, [dispatch]);
 
-  const handleFilterChange = (key: keyof SearchFiltersType, value: any) => {
+  const handleFilterChange = useCallback((key: keyof SearchFiltersType, value: any) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     onFiltersChange(newFilters);
-  };
+  }, [filters, onFiltersChange]);
 
-  const handleAmenityToggle = (amenityId: string) => {
+  // Handle price input changes WITHOUT auto-search
+  const handlePriceInputChange = useCallback((type: 'min' | 'max', value: string) => {
+    // Allow only numbers
+    const numericValue = value.replace(/[^0-9]/g, '');
+
+    if (type === 'min') {
+      setPriceMinInput(numericValue);
+    } else {
+      setPriceMaxInput(numericValue);
+    }
+
+    // Clear previous error
+    setPriceError('');
+  }, []);
+
+  // Apply price filters when user clicks the button
+  const applyPriceFilters = useCallback(() => {
+    const parsedMin = priceMinInput ? parseInt(priceMinInput) : undefined;
+    const parsedMax = priceMaxInput ? parseInt(priceMaxInput) : undefined;
+
+    // Validate range
+    if (parsedMin !== undefined && parsedMax !== undefined && parsedMin > parsedMax) {
+      setPriceError('El precio mínimo no puede ser mayor al máximo');
+      return;
+    }
+
+    // Clear error and apply filters
+    setPriceError('');
+    const newFilters = {
+      ...filters,
+      priceMin: parsedMin,
+      priceMax: parsedMax
+    };
+    setFilters(newFilters);
+    onFiltersChange(newFilters);
+  }, [priceMinInput, priceMaxInput, filters, onFiltersChange]);
+
+  const handleAmenityToggle = (amenityId: number) => {
     const currentAmenities = filters.amenities || [];
     const newAmenities = currentAmenities.includes(amenityId)
       ? currentAmenities.filter(id => id !== amenityId)
@@ -69,6 +111,12 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
     };
     setSelectedInstitution(null);
     setFilters(emptyFilters);
+
+    // Clear price input states
+    setPriceMinInput('');
+    setPriceMaxInput('');
+    setPriceError('');
+
     onFiltersChange(emptyFilters);
   };
 
@@ -172,23 +220,64 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-3">Rango de Precio (COP)</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <input
-                type="number"
-                placeholder="Precio mínimo"
-                value={filters.priceMin || ''}
-                onChange={(e) => handleFilterChange('priceMin', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-                disabled={isLoading}
-              />
-              <input
-                type="number"
-                placeholder="Precio máximo"
-                value={filters.priceMax || ''}
-                onChange={(e) => handleFilterChange('priceMax', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-                disabled={isLoading}
-              />
+              <div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ej: 500,000"
+                  value={priceMinInput ? parseInt(priceMinInput).toLocaleString('es-CO') : ''}
+                  onChange={(e) => handlePriceInputChange('min', e.target.value)}
+                  className="min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 w-full"
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-gray-500 mt-1">Precio mínimo</p>
+              </div>
+              <div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ej: 1,500,000"
+                  value={priceMaxInput ? parseInt(priceMaxInput).toLocaleString('es-CO') : ''}
+                  onChange={(e) => handlePriceInputChange('max', e.target.value)}
+                  className="min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 w-full"
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-gray-500 mt-1">Precio máximo</p>
+              </div>
             </div>
+
+            {/* Apply Button */}
+            <div className="mt-3">
+              <button
+                onClick={applyPriceFilters}
+                disabled={isLoading || (!priceMinInput && !priceMaxInput)}
+                className="w-full min-h-[44px] px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span>Aplicar Rango de Precio</span>
+              </button>
+            </div>
+
+            {priceError && (
+              <div className="mt-2 flex items-center space-x-1 text-red-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs">{priceError}</span>
+              </div>
+            )}
+            {filters.priceMin !== undefined && filters.priceMax !== undefined && !priceError && (
+              <div className="mt-2 flex items-center space-x-1 text-emerald-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs">
+                  Filtrando entre ${filters.priceMin.toLocaleString('es-CO')} y ${filters.priceMax.toLocaleString('es-CO')}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Rooms and Bathrooms */}
