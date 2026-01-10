@@ -857,23 +857,43 @@ const PropertySubmission: React.FC = () => {
                     {formData.type === 'habitacion' ? 'Características de la Habitación' : 'Comodidades'}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {amenities.map(amenity => (
-                      <label
-                        key={amenity.id}
-                        className={`flex items-center space-x-3 cursor-pointer p-3 border rounded-lg transition-all ${formData.amenities.includes(amenity.id)
-                          ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
-                          : 'border-gray-200 hover:bg-gray-50'
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.amenities.includes(amenity.id)}
-                          onChange={() => handleAmenityToggle(amenity.id)}
-                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                        />
-                        <span className="text-sm text-gray-700">{amenity.name}</span>
-                      </label>
-                    ))}
+                    {amenities
+                      .filter(amenity => {
+                        // For habitacion type, exclude amenities that appear in specific sections
+                        if (formData.type === 'habitacion') {
+                          const roomSpecificSlugs = [
+                            'bano_privado', 'bano_compartido',  // Privacidad
+                            'escritorio', 'cama', 'closet',      // Mobiliario
+                            'cocina_compartida'                  // Acceso
+                          ];
+                          return !roomSpecificSlugs.includes(amenity.slug || '');
+                        }
+                        // For pension type, exclude pension-specific amenities
+                        if (formData.type === 'pension') {
+                          const pensionSpecificSlugs = [
+                            'sala_estudio', 'comedor_comun'      // Zonas Comunes
+                          ];
+                          return !pensionSpecificSlugs.includes(amenity.slug || '');
+                        }
+                        return true;
+                      })
+                      .map(amenity => (
+                        <label
+                          key={amenity.id}
+                          className={`flex items-center space-x-3 cursor-pointer p-3 border rounded-lg transition-all ${formData.amenities.includes(amenity.id)
+                            ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
+                            : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.amenities.includes(amenity.id)}
+                            onChange={() => handleAmenityToggle(amenity.id)}
+                            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm text-gray-700">{amenity.name}</span>
+                        </label>
+                      ))}
                   </div>
                 </div>
 

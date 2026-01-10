@@ -20,6 +20,18 @@ const Amenity = sequelize.define('Amenity', {
         type: DataTypes.STRING(100),
         allowNull: true,
         comment: 'Icon identifier or URL for the amenity'
+    },
+    slug: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        unique: true,
+        comment: 'URL-friendly identifier for the amenity'
+    },
+    category: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        defaultValue: 'general',
+        comment: 'Category: general, habitacion, pension'
     }
 }, {
     tableName: 'amenities',
