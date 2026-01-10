@@ -18,6 +18,8 @@ import Location from './Location.js';
 import Contact from './Contact.js';
 import PropertyFeature from './PropertyFeature.js';
 import PropertyImage from './PropertyImage.js';
+import PropertyService from './PropertyService.js';
+import PropertyRule from './PropertyRule.js';
 import PropertyType from './PropertyType.js';
 import Institution from './Institution.js';
 import PropertyInstitution from './PropertyInstitution.js';
@@ -251,6 +253,28 @@ Amenity.belongsToMany(Property, {
     as: 'properties'
 });
 
+// Property <-> PropertyService (One-to-Many)
+Property.hasMany(PropertyService, {
+    foreignKey: 'propertyId',
+    as: 'services',
+    onDelete: 'CASCADE'
+});
+PropertyService.belongsTo(Property, {
+    foreignKey: 'propertyId',
+    as: 'property'
+});
+
+// Property <-> PropertyRule (One-to-Many)
+Property.hasMany(PropertyRule, {
+    foreignKey: 'propertyId',
+    as: 'rules',
+    onDelete: 'CASCADE'
+});
+PropertyRule.belongsTo(Property, {
+    foreignKey: 'propertyId',
+    as: 'property'
+});
+
 // City <-> StudentRequest (One-to-Many)
 City.hasMany(StudentRequest, {
     foreignKey: 'cityId',
@@ -390,6 +414,8 @@ export {
     Contact,
     PropertyFeature,
     PropertyImage,
+    PropertyService,
+    PropertyRule,
     PropertyType,
     Institution,
     PropertyInstitution,
@@ -423,6 +449,8 @@ export default {
     Contact,
     PropertyFeature,
     PropertyImage,
+    PropertyService,
+    PropertyRule,
     PropertyType,
     Institution,
     PropertyInstitution,

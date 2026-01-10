@@ -268,6 +268,8 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
  * Find property with all associations
  */
 export const findPropertyWithAssociations = async (propertyId) => {
+    const { PropertyService, PropertyRule } = await import('../models/index.js');
+
     return await Property.findByPk(propertyId, {
         include: [
             {
@@ -309,6 +311,14 @@ export const findPropertyWithAssociations = async (propertyId) => {
                 through: {
                     attributes: []
                 }
+            },
+            {
+                model: PropertyService,
+                as: 'services'
+            },
+            {
+                model: PropertyRule,
+                as: 'rules'
             }
         ]
     });
@@ -472,6 +482,17 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
             }
         });
     }
+
+    // Add services and rules (for all property types)
+    const { PropertyService, PropertyRule } = await import('../models/index.js');
+    include.push({
+        model: PropertyService,
+        as: 'services'
+    });
+    include.push({
+        model: PropertyRule,
+        as: 'rules'
+    });
 
     return await Property.findAndCountAll({
         where,

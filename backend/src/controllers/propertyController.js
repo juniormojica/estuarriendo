@@ -166,7 +166,7 @@ export const getUserProperties = async (req, res) => {
 // Create new property
 export const createProperty = async (req, res) => {
     try {
-        const { ownerId, amenityIds, ...propertyData } = req.body;
+        const { ownerId, amenityIds, services, rules, ...propertyData } = req.body;
 
         // Validate owner exists
         const owner = await User.findByPk(ownerId);
@@ -190,6 +190,38 @@ export const createProperty = async (req, res) => {
             await Property.findByPk(property.id).then(p => p.setAmenities(amenities));
         }
 
+        // Add services if provided (for pension type)
+        if (services && Array.isArray(services) && services.length > 0) {
+            const { PropertyService } = await import('../models/index.js');
+            for (const service of services) {
+                if (service.serviceType && service.isIncluded !== undefined) {
+                    await PropertyService.create({
+                        propertyId: property.id,
+                        serviceType: service.serviceType,
+                        isIncluded: service.isIncluded,
+                        additionalCost: service.additionalCost || null,
+                        description: service.description || null
+                    });
+                }
+            }
+        }
+
+        // Add rules if provided (for habitacion and pension types)
+        if (rules && Array.isArray(rules) && rules.length > 0) {
+            const { PropertyRule } = await import('../models/index.js');
+            for (const rule of rules) {
+                if (rule.ruleType && rule.isAllowed !== undefined) {
+                    await PropertyRule.create({
+                        propertyId: property.id,
+                        ruleType: rule.ruleType,
+                        isAllowed: rule.isAllowed,
+                        value: rule.value || null,
+                        description: rule.description || null
+                    });
+                }
+            }
+        }
+
         // Update owner's property count
         await owner.update({
             propertiesCount: owner.propertiesCount + 1,
@@ -210,7 +242,7 @@ export const createProperty = async (req, res) => {
                 userId: admin.id,
                 type: NotificationType.PROPERTY_SUBMITTED,
                 title: 'Nueva propiedad pendiente de revisión',
-                message: `${owner.name} ha enviado una nueva propiedad: "${property.title}"`,
+                message: `${owner.name} ha enviado una nueva propiedad: \"${property.title}\"`,
                 propertyId: property.id,
                 isRead: false
             });
