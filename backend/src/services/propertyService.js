@@ -11,6 +11,7 @@ import {
     User,
     sequelize
 } from '../models/index.js';
+import { Op } from 'sequelize';
 
 /**
  * Property Service
@@ -324,6 +325,9 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         cityId,
         minRent,
         maxRent,
+        minBedrooms,
+        minBathrooms,
+        amenityIds,
         isFeatured,
         isRented,
         institutionId,
@@ -342,8 +346,10 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
     if (status) where.status = status;
     if (ownerId) where.ownerId = ownerId;
     if (typeId) where.typeId = typeId;
-    if (minRent) where.monthlyRent = { ...where.monthlyRent, [sequelize.Op.gte]: minRent };
-    if (maxRent) where.monthlyRent = { ...where.monthlyRent, [sequelize.Op.lte]: maxRent };
+    if (minRent) where.monthlyRent = { ...where.monthlyRent, [Op.gte]: minRent };
+    if (maxRent) where.monthlyRent = { ...where.monthlyRent, [Op.lte]: maxRent };
+    if (minBedrooms) where.bedrooms = { [Op.gte]: minBedrooms };
+    if (minBathrooms) where.bathrooms = { [Op.gte]: minBathrooms };
     if (isFeatured !== undefined) where.isFeatured = isFeatured;
     if (isRented !== undefined) where.isRented = isRented;
 
@@ -373,15 +379,54 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         {
             model: PropertyType,
             as: 'type'
-        },
-        {
+        }
+    ];
+
+    // Amenities filtering - AND logic (property must have ALL selected amenities)
+    if (amenityIds && amenityIds.length > 0) {
+        // Use a subquery to find properties that have ALL selected amenities
+        // This is done by grouping by property and counting matching amenities
+        const { PropertyAmenity } = await import('../models/index.js');
+
+        // Get property IDs that have ALL the selected amenities
+        const propertiesWithAllAmenities = await PropertyAmenity.findAll({
+            attributes: ['propertyId'],
+            where: {
+                amenityId: { [Op.in]: amenityIds }
+            },
+            group: ['propertyId'],
+            having: sequelize.literal(`COUNT(DISTINCT amenity_id) = ${amenityIds.length}`),
+            raw: true
+        });
+
+        const propertyIdsWithAllAmenities = propertiesWithAllAmenities.map(p => p.propertyId);
+
+        // Add to where clause
+        if (propertyIdsWithAllAmenities.length > 0) {
+            where.id = { [Op.in]: propertyIdsWithAllAmenities };
+        } else {
+            // No properties have all the selected amenities
+            where.id = { [Op.in]: [] }; // This will return no results
+        }
+
+        // Still include amenities in the result for display
+        include.push({
             model: Amenity,
             as: 'amenities',
             through: {
-                attributes: [] // Don't need junction table fields
+                attributes: []
             }
-        }
-    ];
+        });
+    } else {
+        // Include all amenities (LEFT JOIN)
+        include.push({
+            model: Amenity,
+            as: 'amenities',
+            through: {
+                attributes: []
+            }
+        });
+    }
 
     // Institution filtering
     if (institutionId || institutionType || maxDistance) {
@@ -409,7 +454,7 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         // Filter by distance in junction table
         if (maxDistance) {
             institutionInclude.through.where = {
-                distance: { [sequelize.Op.lte]: maxDistance }
+                distance: { [Op.lte]: maxDistance }
             };
         }
 
