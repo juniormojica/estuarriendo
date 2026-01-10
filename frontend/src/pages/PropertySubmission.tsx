@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
-import { PropertyFormData, PropertyTypeEntity, City, Institution, PropertyInstitution } from '../types';
+import { PropertyFormData, PropertyTypeEntity, City, Institution, PropertyInstitution, PropertyService, PropertyRule } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -15,6 +15,8 @@ import { fetchPropertyTypes } from '../services/propertyTypeService';
 import LocationPicker from '../components/LocationPicker';
 import CityAutocomplete from '../components/CityAutocomplete';
 import InstitutionAutocomplete from '../components/InstitutionAutocomplete';
+import RoomSpecificFields from '../components/RoomSpecificFields';
+import PensionSpecificFields from '../components/PensionSpecificFields';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
@@ -69,6 +71,8 @@ const PropertySubmission: React.FC = () => {
     amenities: [],
     images: [],
     nearbyInstitutions: [],
+    services: [],
+    rules: [],
     coordinates: {
       lat: 0,
       lng: 0
@@ -295,6 +299,44 @@ const PropertySubmission: React.FC = () => {
       ...prev,
       images: images
     }));
+  };
+
+  const handleServiceChange = (service: PropertyService) => {
+    setFormData(prev => {
+      const existing = prev.services?.find(s => s.serviceType === service.serviceType);
+      if (existing) {
+        return {
+          ...prev,
+          services: prev.services?.map(s =>
+            s.serviceType === service.serviceType ? service : s
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          services: [...(prev.services || []), service]
+        };
+      }
+    });
+  };
+
+  const handleRuleChange = (rule: PropertyRule) => {
+    setFormData(prev => {
+      const existing = prev.rules?.find(r => r.ruleType === rule.ruleType);
+      if (existing) {
+        return {
+          ...prev,
+          rules: prev.rules?.map(r =>
+            r.ruleType === rule.ruleType ? rule : r
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          rules: [...(prev.rules || []), rule]
+        };
+      }
+    });
   };
 
   const validateStep = (step: number): boolean => {
@@ -834,6 +876,33 @@ const PropertySubmission: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Type-Specific Fields */}
+                {formData.type === 'habitacion' && (
+                  <div className="mt-6">
+                    <RoomSpecificFields
+                      rules={formData.rules || []}
+                      selectedAmenities={formData.amenities.map(a => typeof a === 'string' ? parseInt(a) : a)}
+                      onRuleChange={handleRuleChange}
+                      onAmenityToggle={(id) => handleAmenityToggle(id.toString())}
+                      availableAmenities={amenities}
+                    />
+                  </div>
+                )}
+
+                {formData.type === 'pension' && (
+                  <div className="mt-6">
+                    <PensionSpecificFields
+                      services={formData.services || []}
+                      rules={formData.rules || []}
+                      selectedAmenities={formData.amenities.map(a => typeof a === 'string' ? parseInt(a) : a)}
+                      onServiceChange={handleServiceChange}
+                      onRuleChange={handleRuleChange}
+                      onAmenityToggle={(id) => handleAmenityToggle(id.toString())}
+                      availableAmenities={amenities}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

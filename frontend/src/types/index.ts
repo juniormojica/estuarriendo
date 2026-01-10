@@ -206,6 +206,26 @@ export interface PropertyImage {
   isPrimary: boolean;
 }
 
+// Property Service (for pension type)
+export interface PropertyService {
+  id?: number;
+  propertyId?: number;
+  serviceType: 'breakfast' | 'lunch' | 'dinner' | 'housekeeping' | 'laundry' | 'wifi' | 'utilities';
+  isIncluded: boolean;
+  additionalCost?: number;
+  description?: string;
+}
+
+// Property Rule (for habitacion and pension types)
+export interface PropertyRule {
+  id?: number;
+  propertyId?: number;
+  ruleType: 'visits' | 'pets' | 'smoking' | 'noise' | 'curfew' | 'tenant_profile' | 'couples' | 'children';
+  isAllowed: boolean;
+  value?: string;
+  description?: string;
+}
+
 
 /**
  * =================================================================================
@@ -257,6 +277,8 @@ export interface Property {
   images?: PropertyImage[];
   institutions?: Institution[];
   amenities?: Amenity[];
+  services?: PropertyService[];
+  rules?: PropertyRule[];
   owner?: User; // If included
 }
 
@@ -442,6 +464,8 @@ export interface PropertyFormData {
   images: (string | File)[];
   nearbyInstitutions?: PropertyInstitution[];  // NEW: institutions near the property
   nearbyUniversities?: string[];  // Deprecated, use nearbyInstitutions
+  services?: PropertyService[];  // NEW: services for pension type
+  rules?: PropertyRule[];  // NEW: rules for habitacion and pension types
 
   // Optional
   ownerId?: string;
