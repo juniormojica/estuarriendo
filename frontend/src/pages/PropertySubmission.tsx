@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, AlertCircle, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
-import { PropertyFormData, PropertyTypeEntity, City, Institution, PropertyInstitution } from '../types';
+import { PropertyFormData, PropertyTypeEntity, City, Institution, PropertyInstitution, PropertyService, PropertyRule } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -15,6 +15,8 @@ import { fetchPropertyTypes } from '../services/propertyTypeService';
 import LocationPicker from '../components/LocationPicker';
 import CityAutocomplete from '../components/CityAutocomplete';
 import InstitutionAutocomplete from '../components/InstitutionAutocomplete';
+import RoomSpecificFields from '../components/RoomSpecificFields';
+import PensionSpecificFields from '../components/PensionSpecificFields';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
@@ -69,6 +71,8 @@ const PropertySubmission: React.FC = () => {
     amenities: [],
     images: [],
     nearbyInstitutions: [],
+    services: [],
+    rules: [],
     coordinates: {
       lat: 0,
       lng: 0
@@ -295,6 +299,44 @@ const PropertySubmission: React.FC = () => {
       ...prev,
       images: images
     }));
+  };
+
+  const handleServiceChange = (service: PropertyService) => {
+    setFormData(prev => {
+      const existing = prev.services?.find(s => s.serviceType === service.serviceType);
+      if (existing) {
+        return {
+          ...prev,
+          services: prev.services?.map(s =>
+            s.serviceType === service.serviceType ? service : s
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          services: [...(prev.services || []), service]
+        };
+      }
+    });
+  };
+
+  const handleRuleChange = (rule: PropertyRule) => {
+    setFormData(prev => {
+      const existing = prev.rules?.find(r => r.ruleType === rule.ruleType);
+      if (existing) {
+        return {
+          ...prev,
+          rules: prev.rules?.map(r =>
+            r.ruleType === rule.ruleType ? rule : r
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          rules: [...(prev.rules || []), rule]
+        };
+      }
+    });
   };
 
   const validateStep = (step: number): boolean => {
@@ -815,25 +857,72 @@ const PropertySubmission: React.FC = () => {
                     {formData.type === 'habitacion' ? 'Características de la Habitación' : 'Comodidades'}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {amenities.map(amenity => (
-                      <label
-                        key={amenity.id}
-                        className={`flex items-center space-x-3 cursor-pointer p-3 border rounded-lg transition-all ${formData.amenities.includes(amenity.id)
-                          ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
-                          : 'border-gray-200 hover:bg-gray-50'
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.amenities.includes(amenity.id)}
-                          onChange={() => handleAmenityToggle(amenity.id)}
-                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                        />
-                        <span className="text-sm text-gray-700">{amenity.name}</span>
-                      </label>
-                    ))}
+                    {amenities
+                      .filter(amenity => {
+                        // For habitacion type, exclude amenities that appear in specific sections
+                        if (formData.type === 'habitacion') {
+                          const roomSpecificSlugs = [
+                            'bano_privado', 'bano_compartido',  // Privacidad
+                            'escritorio', 'cama', 'closet',      // Mobiliario
+                            'cocina_compartida'                  // Acceso
+                          ];
+                          return !roomSpecificSlugs.includes(amenity.slug || '');
+                        }
+                        // For pension type, exclude pension-specific amenities
+                        if (formData.type === 'pension') {
+                          const pensionSpecificSlugs = [
+                            'sala_estudio', 'comedor_comun'      // Zonas Comunes
+                          ];
+                          return !pensionSpecificSlugs.includes(amenity.slug || '');
+                        }
+                        return true;
+                      })
+                      .map(amenity => (
+                        <label
+                          key={amenity.id}
+                          className={`flex items-center space-x-3 cursor-pointer p-3 border rounded-lg transition-all ${formData.amenities.includes(amenity.id)
+                            ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500'
+                            : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.amenities.includes(amenity.id)}
+                            onChange={() => handleAmenityToggle(amenity.id)}
+                            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm text-gray-700">{amenity.name}</span>
+                        </label>
+                      ))}
                   </div>
                 </div>
+
+                {/* Type-Specific Fields */}
+                {formData.type === 'habitacion' && (
+                  <div className="mt-6">
+                    <RoomSpecificFields
+                      rules={formData.rules || []}
+                      selectedAmenities={formData.amenities.map(a => typeof a === 'string' ? parseInt(a) : a)}
+                      onRuleChange={handleRuleChange}
+                      onAmenityToggle={(id) => handleAmenityToggle(id.toString())}
+                      availableAmenities={amenities}
+                    />
+                  </div>
+                )}
+
+                {formData.type === 'pension' && (
+                  <div className="mt-6">
+                    <PensionSpecificFields
+                      services={formData.services || []}
+                      rules={formData.rules || []}
+                      selectedAmenities={formData.amenities.map(a => typeof a === 'string' ? parseInt(a) : a)}
+                      onServiceChange={handleServiceChange}
+                      onRuleChange={handleRuleChange}
+                      onAmenityToggle={(id) => handleAmenityToggle(id.toString())}
+                      availableAmenities={amenities}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

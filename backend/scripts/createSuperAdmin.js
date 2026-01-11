@@ -310,37 +310,55 @@ const initializeAmenities = async () => {
     console.log('🏠 Initializing Amenities...');
 
     const amenities = [
-        { name: 'WiFi', icon: 'wifi' },
-        { name: 'Parqueadero', icon: 'parking' },
-        { name: 'Piscina', icon: 'pool' },
-        { name: 'Gimnasio', icon: 'gym' },
-        { name: 'Lavandería', icon: 'laundry' },
-        { name: 'Seguridad 24h', icon: 'security' },
-        { name: 'Ascensor', icon: 'elevator' },
-        { name: 'Balcón', icon: 'balcony' },
-        { name: 'Amoblado', icon: 'furnished' },
-        { name: 'Aire Acondicionado', icon: 'ac' },
-        { name: 'Calefacción', icon: 'heating' },
-        { name: 'Cocina Equipada', icon: 'kitchen' },
-        { name: 'Baño Privado', icon: 'private-bathroom' },
-        { name: 'Closet', icon: 'closet' },
-        { name: 'Abanico', icon: 'fan' },
-        { name: 'Escritorio', icon: 'desk' },
-        { name: 'Ventana Exterior', icon: 'window' },
-        { name: 'Cama Incluida', icon: 'bed' },
-        { name: 'TV', icon: 'tv' }
+        // General amenities
+        { name: 'WiFi', icon: 'wifi', slug: 'wifi', category: 'general' },
+        { name: 'Parqueadero', icon: 'parking', slug: 'parqueadero', category: 'general' },
+        { name: 'Piscina', icon: 'pool', slug: 'piscina', category: 'general' },
+        { name: 'Gimnasio', icon: 'gym', slug: 'gimnasio', category: 'general' },
+        { name: 'Lavandería', icon: 'laundry', slug: 'lavanderia', category: 'general' },
+        { name: 'Seguridad 24h', icon: 'security', slug: 'seguridad_24h', category: 'general' },
+        { name: 'Ascensor', icon: 'elevator', slug: 'ascensor', category: 'general' },
+        { name: 'Balcón', icon: 'balcony', slug: 'balcon', category: 'general' },
+        { name: 'Amoblado', icon: 'furnished', slug: 'amoblado', category: 'general' },
+        { name: 'Aire Acondicionado', icon: 'ac', slug: 'aire_acondicionado', category: 'general' },
+        { name: 'Calefacción', icon: 'heating', slug: 'calefaccion', category: 'general' },
+        { name: 'Cocina Equipada', icon: 'kitchen', slug: 'cocina_equipada', category: 'general' },
+        { name: 'Baño Privado', icon: 'private-bathroom', slug: 'bano_privado', category: 'habitacion' },
+        { name: 'Closet', icon: 'closet', slug: 'closet', category: 'habitacion' },
+        { name: 'Abanico', icon: 'fan', slug: 'abanico', category: 'general' },
+        { name: 'Escritorio', icon: 'desk', slug: 'escritorio', category: 'habitacion' },
+        { name: 'Ventana Exterior', icon: 'window', slug: 'ventana_exterior', category: 'general' },
+        { name: 'Cama Incluida', icon: 'bed', slug: 'cama', category: 'habitacion' },
+        { name: 'TV', icon: 'tv', slug: 'tv', category: 'general' },
+
+        // New amenities for habitacion (room)
+        { name: 'Baño Compartido', icon: 'bathroom', slug: 'bano_compartido', category: 'habitacion' },
+        { name: 'Cocina Compartida', icon: 'kitchen', slug: 'cocina_compartida', category: 'habitacion' },
+
+        // New amenities for pension
+        { name: 'Sala de Estudio', icon: 'book', slug: 'sala_estudio', category: 'pension' },
+        { name: 'Comedor Común', icon: 'dining', slug: 'comedor_comun', category: 'pension' }
     ];
 
     let created = 0;
+    let updated = 0;
+
     for (const amenityData of amenities) {
         const existing = await Amenity.findOne({ where: { name: amenityData.name } });
         if (!existing) {
             await Amenity.create(amenityData);
             created++;
+        } else if (!existing.slug || !existing.category) {
+            // Update existing amenities to add slug and category
+            await existing.update({
+                slug: amenityData.slug,
+                category: amenityData.category
+            });
+            updated++;
         }
     }
 
-    console.log(`  ✅ ${created} amenities created (${amenities.length - created} already existed)\n`);
+    console.log(`  ✅ ${created} amenities created, ${updated} updated (${amenities.length - created - updated} already existed)\n`);
 };
 
 // Run initialization
