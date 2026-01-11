@@ -55,6 +55,13 @@ export type NotificationType = 'property_interest' | 'payment_verified' | 'payme
 // Estados de la Solicitud de Estudiante
 export type StudentRequestStatus = 'open' | 'closed';
 
+// ===== CONTAINER ARCHITECTURE TYPES =====
+// Rental modes for properties
+export type RentalMode = 'complete' | 'by_unit' | 'single';
+
+// Room types for units
+export type RoomType = 'individual' | 'shared';
+
 
 /**
  * =================================================================================
@@ -226,6 +233,63 @@ export interface PropertyRule {
   description?: string;
 }
 
+// ===== CONTAINER ARCHITECTURE INTERFACES =====
+
+// Common Area (shared spaces in containers)
+export interface CommonArea {
+  id: number;
+  name: string;
+  icon?: string;
+  slug?: string;
+  description?: string;
+  createdAt?: string;
+}
+
+// Property Unit (room/unit within a container)
+export interface PropertyUnit {
+  id: number;
+  parentId: number;
+  title: string;
+  description?: string;
+  monthlyRent: number;
+  deposit?: number;
+  currency?: string;
+  area?: number;
+  isRented: boolean;
+  availableFrom?: string;
+  roomType: RoomType;  // 'individual' or 'shared'
+  bedsInRoom?: number;  // Number of beds if shared
+  amenities?: Amenity[];
+  images?: PropertyImage[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// Property Container (pension, apartment, aparta-estudio with units)
+export interface PropertyContainer {
+  id: number;
+  title: string;
+  description: string;
+  typeId: number;
+  type?: PropertyTypeEntity;
+  isContainer: true;
+  rentalMode: RentalMode;
+  totalUnits: number;
+  availableUnits: number;
+  requiresDeposit: boolean;
+  minimumContractMonths?: number;
+  location?: Location;
+  contact?: PropertyContact;
+  services?: PropertyService[];
+  rules?: PropertyRule[];
+  commonAreas?: CommonArea[];
+  units?: PropertyUnit[];
+  images?: PropertyImage[];
+  owner?: User;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 
 /**
  * =================================================================================
@@ -257,6 +321,17 @@ export interface Property {
   isVerified: boolean;
   isRented: boolean; // Renamed from is_rented
 
+  // ===== CONTAINER ARCHITECTURE FIELDS =====
+  parentId?: number;  // Reference to parent container (if this is a unit)
+  isContainer: boolean;  // TRUE if this is a container, FALSE if unit or independent
+  rentalMode?: RentalMode;  // 'complete', 'by_unit', 'single'
+  totalUnits?: number;  // Total number of units (for containers)
+  availableUnits?: number;  // Available units (for containers)
+  roomType?: RoomType;  // 'individual' or 'shared' (for units)
+  bedsInRoom?: number;  // Number of beds if shared room
+  requiresDeposit?: boolean;  // Whether deposit is required (container level)
+  minimumContractMonths?: number;  // Minimum contract duration (container level)
+
   // Metrics
   viewsCount: number;
   interestsCount: number;
@@ -280,6 +355,11 @@ export interface Property {
   services?: PropertyService[];
   rules?: PropertyRule[];
   owner?: User; // If included
+
+  // ===== CONTAINER ARCHITECTURE RELATIONS =====
+  units?: PropertyUnit[];  // Child units (if this is a container)
+  container?: PropertyContainer;  // Parent container (if this is a unit)
+  commonAreas?: CommonArea[];  // Shared spaces (if this is a container)
 }
 
 export interface User {
