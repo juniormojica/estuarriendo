@@ -23,6 +23,9 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import institutionRoutes from './routes/institutionRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
+import containerRoutes from './routes/containerRoutes.js';
+import unitRoutes from './routes/unitRoutes.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -104,6 +107,9 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/institutions', institutionRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/containers', containerRoutes);
+app.use('/api/units', unitRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -154,6 +160,8 @@ const startServer = async () => {
             console.log(`   - *    /api/activity-logs`);
             console.log(`   - *    /api/system-config`);
             console.log(`   - *    /api/favorites`);
+            console.log(`   - *    /api/containers`);
+            console.log(`   - *    /api/units`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);
