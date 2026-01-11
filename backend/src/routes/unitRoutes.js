@@ -1,6 +1,6 @@
 import express from 'express';
 import containerController from '../controllers/containerController.js';
-import { authenticate } from '../middleware/auth.js';
+import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -10,8 +10,8 @@ const router = express.Router();
  * All routes require authentication
  */
 
-router.put('/:id', authenticate, containerController.updateUnit);
-router.delete('/:id', authenticate, containerController.deleteUnit);
-router.patch('/:id/rental-status', authenticate, containerController.updateUnitRentalStatus);
+router.put('/:id', authMiddleware, containerController.updateUnit);
+router.delete('/:id', authMiddleware, containerController.deleteUnit);
+router.patch('/:id/rental-status', authMiddleware, containerController.updateUnitRentalStatus);
 
 export default router;

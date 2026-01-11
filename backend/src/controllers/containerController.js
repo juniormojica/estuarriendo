@@ -16,7 +16,7 @@ export const createContainer = async (req, res) => {
     try {
         const containerData = {
             ...req.body,
-            ownerId: req.user.id // From auth middleware
+            ownerId: req.userId // From auth middleware
         };
 
         const container = await containerService.createContainer(containerData, transaction);
@@ -93,8 +93,8 @@ export const updateContainer = async (req, res) => {
             });
         }
 
-        // Verify ownership
-        if (container.ownerId !== req.user.id && req.user.userType !== 'admin') {
+        // Verify ownership (simplified - only owner can update)
+        if (container.ownerId !== req.userId) {
             await transaction.rollback();
             return res.status(403).json({
                 success: false,
@@ -179,8 +179,8 @@ export const deleteContainer = async (req, res) => {
             });
         }
 
-        // Verify ownership
-        if (container.ownerId !== req.user.id && req.user.userType !== 'admin') {
+        // Verify ownership (simplified - only owner can delete)
+        if (container.ownerId !== req.userId) {
             await transaction.rollback();
             return res.status(403).json({
                 success: false,

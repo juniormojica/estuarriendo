@@ -1,6 +1,6 @@
 import express from 'express';
 import containerController from '../controllers/containerController.js';
-import { authenticate } from '../middleware/auth.js';
+import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -10,17 +10,17 @@ const router = express.Router();
  */
 
 // Container CRUD
-router.post('/', authenticate, containerController.createContainer);
+router.post('/', authMiddleware, containerController.createContainer);
 router.get('/:id', containerController.getContainer);
-router.put('/:id', authenticate, containerController.updateContainer);
-router.delete('/:id', authenticate, containerController.deleteContainer);
+router.put('/:id', authMiddleware, containerController.updateContainer);
+router.delete('/:id', authMiddleware, containerController.deleteContainer);
 
 // Container actions
-router.post('/:id/rent-complete', authenticate, containerController.rentCompleteContainer);
-router.post('/:id/change-mode', authenticate, containerController.changeRentalMode);
+router.post('/:id/rent-complete', authMiddleware, containerController.rentCompleteContainer);
+router.post('/:id/change-mode', authMiddleware, containerController.changeRentalMode);
 
 // Unit management within container
-router.post('/:containerId/units', authenticate, containerController.createUnit);
+router.post('/:containerId/units', authMiddleware, containerController.createUnit);
 router.get('/:containerId/units', containerController.getContainerUnits);
 
 export default router;
