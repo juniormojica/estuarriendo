@@ -8,6 +8,7 @@ import {
     Institution,
     PropertyInstitution,
     Amenity,
+    CommonArea,
     User,
     sequelize
 } from '../models/index.js';
@@ -319,6 +320,24 @@ export const findPropertyWithAssociations = async (propertyId) => {
             {
                 model: PropertyRule,
                 as: 'rules'
+            },
+            {
+                model: Property,
+                as: 'units',
+                include: [
+                    { model: PropertyImage, as: 'images' },
+                    { model: Amenity, as: 'amenities', through: { attributes: [] } }
+                ]
+            },
+            {
+                model: Property,
+                as: 'container',
+                attributes: ['id', 'title', 'rentalMode', 'requiresDeposit', 'minimumContractMonths']
+            },
+            {
+                model: CommonArea,
+                as: 'commonAreas',
+                through: { attributes: [] }
             }
         ]
     });
