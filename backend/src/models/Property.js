@@ -159,6 +159,75 @@ const Property = sequelize.define('Property', {
         comment: 'Number of interest expressions'
     },
 
+    // Container Architecture Fields
+    parentId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'parent_id',
+        references: {
+            model: 'properties',
+            key: 'id'
+        },
+        onDelete: 'CASCADE',
+        comment: 'Reference to parent property (container). NULL for independent units or containers.'
+    },
+    isContainer: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'is_container',
+        comment: 'TRUE if this property is a container (pension, apartment), FALSE if it is a unit (room).'
+    },
+    rentalMode: {
+        type: DataTypes.ENUM('complete', 'by_unit', 'single'),
+        allowNull: true,
+        field: 'rental_mode',
+        comment: 'How the container can be rented: complete (all units), by_unit (individual rooms), single (independent room).'
+    },
+    totalUnits: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'total_units',
+        defaultValue: 0,
+        comment: 'Total number of units in the container.'
+    },
+    availableUnits: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'available_units',
+        defaultValue: 0,
+        comment: 'Number of available (not rented) units in the container.'
+    },
+
+    // Room Type Fields (for units only)
+    roomType: {
+        type: DataTypes.ENUM('individual', 'shared'),
+        allowNull: true,
+        field: 'room_type',
+        comment: 'Type of room: individual (1 person) or shared (2+ people). Only for units.'
+    },
+    bedsInRoom: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'beds_in_room',
+        comment: 'Number of beds in the room. Required for shared rooms.'
+    },
+
+    // Contract Terms Fields
+    requiresDeposit: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'requires_deposit',
+        comment: 'Whether a security deposit is required.'
+    },
+    minimumContractMonths: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'minimum_contract_months',
+        comment: 'Minimum contract duration in months.'
+    },
+
     // Timestamps
     createdAt: {
         type: DataTypes.DATE,

@@ -23,6 +23,9 @@ import PropertyRule from './PropertyRule.js';
 import PropertyType from './PropertyType.js';
 import Institution from './Institution.js';
 import PropertyInstitution from './PropertyInstitution.js';
+import CommonArea from './CommonArea.js';
+import PropertyCommonArea from './PropertyCommonArea.js';
+
 
 // Import location normalized models
 import Department from './Department.js';
@@ -275,6 +278,33 @@ PropertyRule.belongsTo(Property, {
     as: 'property'
 });
 
+// Property <-> Property (Self-referential for Container-Unit hierarchy)
+// Container has many Units
+Property.hasMany(Property, {
+    foreignKey: 'parentId',
+    as: 'units',
+    onDelete: 'CASCADE'
+});
+// Unit belongs to Container
+Property.belongsTo(Property, {
+    foreignKey: 'parentId',
+    as: 'container'
+});
+
+// Property <-> CommonArea (Many-to-Many through PropertyCommonArea)
+Property.belongsToMany(CommonArea, {
+    through: PropertyCommonArea,
+    foreignKey: 'propertyId',
+    otherKey: 'commonAreaId',
+    as: 'commonAreas'
+});
+CommonArea.belongsToMany(Property, {
+    through: PropertyCommonArea,
+    foreignKey: 'commonAreaId',
+    otherKey: 'propertyId',
+    as: 'properties'
+});
+
 // City <-> StudentRequest (One-to-Many)
 City.hasMany(StudentRequest, {
     foreignKey: 'cityId',
@@ -419,6 +449,8 @@ export {
     PropertyType,
     Institution,
     PropertyInstitution,
+    CommonArea,
+    PropertyCommonArea,
     // Location normalized models
     Department,
     City,
@@ -454,6 +486,8 @@ export default {
     PropertyType,
     Institution,
     PropertyInstitution,
+    CommonArea,
+    PropertyCommonArea,
     // Location normalized models
     Department,
     City,
