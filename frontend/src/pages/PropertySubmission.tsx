@@ -20,12 +20,7 @@ import PensionSpecificFields from '../components/PensionSpecificFields';
 
 // ===== NEW CONTAINER COMPONENTS =====
 import PropertyTypeSelectorStep from '../components/PropertyTypeSelectorStep';
-import ContainerBasicInfo from '../components/ContainerBasicInfo';
-import RentalModeSelector from '../components/RentalModeSelector';
-import ContainerServices from '../components/ContainerServices';
-import ContainerRules from '../components/ContainerRules';
-import ContainerCommonAreas from '../components/ContainerCommonAreas';
-import UnitBuilder from '../components/UnitBuilder';
+import ContainerFlow from '../components/ContainerFlow';
 import type { RentalMode, PropertyUnit } from '../types';
 
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
@@ -35,6 +30,10 @@ const PropertySubmission: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { items: amenities } = useAppSelector((state) => state.amenities);
+
+  // ===== ALL STATE DECLARATIONS MUST BE AT THE TOP =====
+  // Check if this is a container property
+  const [isContainer, setIsContainer] = useState<boolean | null>(null);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,8 +58,7 @@ const PropertySubmission: React.FC = () => {
   const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
   const [tempDistance, setTempDistance] = useState<string>('');
 
-  // ===== NEW CONTAINER STATE =====
-  const [isContainer, setIsContainer] = useState(false);
+  // ===== CONTAINER STATE (not used in old form but must be declared) =====
   const [rentalMode, setRentalMode] = useState<RentalMode>('by_unit');
   const [containerServices, setContainerServices] = useState<PropertyService[]>([]);
   const [containerRules, setContainerRules] = useState<PropertyRule[]>([]);
@@ -96,6 +94,30 @@ const PropertySubmission: React.FC = () => {
       lng: 0
     }
   });
+
+  // ===== CONDITIONAL RENDERING AFTER ALL HOOKS =====
+  // If container type selected, use ContainerFlow
+  if (isContainer === true) {
+    return <ContainerFlow propertyId={id} />;
+  }
+
+  // If type not selected yet, show selector
+  if (isContainer === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <PropertyTypeSelectorStep
+            onSelect={(type) => {
+              const containerTypes = ['pension', 'apartamento', 'aparta-estudio'];
+              setIsContainer(containerTypes.includes(type));
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, use old form for independent rooms
 
   useEffect(() => {
     const storedUser = localStorage.getItem('estuarriendo_current_user');
@@ -722,8 +744,9 @@ const PropertySubmission: React.FC = () => {
                 <UnitBuilder
                   onNext={(unitList) => {
                     setUnits(unitList);
-                    // Navigate to step 6: Container Details (amenities, totals)
-                    setCurrentStep(6);
+                    // Skip step 6 (Details) for containers - units already defined
+                    // Go directly to step 7 (Container Images)
+                    setCurrentStep(7);
                   }}
                   onBack={() => {
                     if (rentalMode === 'by_unit') {

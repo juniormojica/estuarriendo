@@ -25,6 +25,7 @@ import { FavoritesProvider } from './context/FavoritesContext';
 import { ToastProvider } from './components/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
+import ComponentDemoPage from './pages/ComponentDemoPage';
 
 function AppContent() {
   useEffect(() => {
@@ -53,6 +54,9 @@ function AppContent() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                {/* Demo route - temporary for development */}
+                <Route path="/demo-components" element={<ComponentDemoPage />} />
 
                 {/* Protected routes - require authentication */}
                 <Route

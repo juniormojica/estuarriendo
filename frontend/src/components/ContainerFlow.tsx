@@ -1,0 +1,334 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import PropertyTypeSelectorStep from './PropertyTypeSelectorStep';
+import ContainerBasicInfo from './ContainerBasicInfo';
+import ContainerServices from './ContainerServices';
+import ContainerRules from './ContainerRules';
+import ContainerCommonAreas from './ContainerCommonAreas';
+import UnitBuilder from './UnitBuilder';
+import ImageUploader from './ImageUploader';
+import LoadingSpinner from './LoadingSpinner';
+import type { RentalMode, PropertyUnit } from '../types';
+import { createContainer, updateContainer } from '../services/containerService';
+
+interface ContainerFlowProps {
+    propertyId?: string; // For editing
+}
+
+interface ContainerData {
+    // Step 1: Basic Info
+    title: string;
+    description: string;
+    typeId: number;
+    typeName: string;
+    locationId: number;
+    cityId: number;
+    departmentId: number;
+    street: string;
+    neighborhood: string;
+    rentalMode: RentalMode;
+    requiresDeposit: boolean;
+    minimumContractMonths: number;
+
+    // Step 2-4: Container config (only if by_unit)
+    services: any[];
+    rules: any[];
+    commonAreaIds: number[];
+
+    // Step 5: Units
+    units: Partial<PropertyUnit>[];
+
+    // Step 6: Images
+    images: string[];
+}
+
+const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId }) => {
+    const navigate = useNavigate();
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const [containerData, setContainerData] = useState<Partial<ContainerData>>({
+        rentalMode: 'by_unit',
+        requiresDeposit: true,
+        minimumContractMonths: 6,
+        services: [],
+        rules: [],
+        commonAreaIds: [],
+        units: [],
+        images: []
+    });
+
+    // Load existing container data if editing
+    useEffect(() => {
+        if (propertyId) {
+            // TODO: Load container data from API
+            // const data = await getContainerById(propertyId);
+            // setContainerData(data);
+        }
+    }, [propertyId]);
+
+    const handleSubmit = async () => {
+        try {
+            setIsSubmitting(true);
+            setError(null);
+
+            // Prepare data for backend
+            const payload = {
+                // Basic info
+                title: containerData.title,
+                description: containerData.description,
+                typeId: containerData.typeId,
+                rentalMode: containerData.rentalMode,
+                requiresDeposit: containerData.requiresDeposit,
+                minimumContractMonths: containerData.minimumContractMonths,
+
+                // Location
+                location: {
+                    street: containerData.street,
+                    neighborhood: containerData.neighborhood,
+                    cityId: containerData.cityId,
+                    departmentId: containerData.departmentId
+                },
+
+                // Container config (if by_unit)
+                ...(containerData.rentalMode === 'by_unit' && {
+                    services: containerData.services,
+                    rules: containerData.rules,
+                    commonAreaIds: containerData.commonAreaIds
+                }),
+
+                // Units
+                units: containerData.units,
+
+                // Images
+                images: containerData.images
+            };
+
+            if (propertyId) {
+                await updateContainer(propertyId, payload);
+            } else {
+                await createContainer(payload);
+            }
+
+            // Success - redirect to dashboard
+            navigate('/dashboard');
+        } catch (err: any) {
+            console.error('Error submitting container:', err);
+            setError(err.message || 'Error al publicar la propiedad');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const renderStep = () => {
+        switch (currentStep) {
+            case 0:
+                // Property Type Selector
+                return (
+                    <PropertyTypeSelectorStep
+                        onSelect={(type) => {
+                            // Type already selected (container), just move to next step
+                            setCurrentStep(1);
+                        }}
+                    />
+                );
+
+            case 1:
+                // Container Basic Info
+                return (
+                    <ContainerBasicInfo
+                        onNext={(data) => {
+                            setContainerData(prev => ({ ...prev, ...data }));
+
+                            // Navigate based on rental mode
+                            if (data.rentalMode === 'by_unit') {
+                                setCurrentStep(2); // Go to Services
+                            } else {
+                                setCurrentStep(5); // Skip to UnitBuilder
+                            }
+                        }}
+                        onBack={() => setCurrentStep(0)}
+                        initialData={containerData}
+                    />
+                );
+
+            case 2:
+                // Container Services (only if by_unit)
+                if (containerData.rentalMode !== 'by_unit') {
+                    setCurrentStep(5);
+                    return null;
+                }
+                return (
+                    <ContainerServices
+                        onNext={(services) => {
+                            setContainerData(prev => ({ ...prev, services }));
+                            setCurrentStep(3);
+                        }}
+                        onBack={() => setCurrentStep(1)}
+                        initialData={containerData.services || []}
+                    />
+                );
+
+            case 3:
+                // Container Rules (only if by_unit)
+                if (containerData.rentalMode !== 'by_unit') {
+                    setCurrentStep(5);
+                    return null;
+                }
+                return (
+                    <ContainerRules
+                        onNext={(rules) => {
+                            setContainerData(prev => ({ ...prev, rules }));
+                            setCurrentStep(4);
+                        }}
+                        onBack={() => setCurrentStep(2)}
+                        initialData={containerData.rules || []}
+                    />
+                );
+
+            case 4:
+                // Container Common Areas (only if by_unit)
+                if (containerData.rentalMode !== 'by_unit') {
+                    setCurrentStep(5);
+                    return null;
+                }
+                return (
+                    <ContainerCommonAreas
+                        onNext={(areaIds) => {
+                            setContainerData(prev => ({ ...prev, commonAreaIds: areaIds }));
+                            setCurrentStep(5);
+                        }}
+                        onBack={() => setCurrentStep(3)}
+                        initialData={containerData.commonAreaIds || []}
+                    />
+                );
+
+            case 5:
+                // Unit Builder
+                return (
+                    <UnitBuilder
+                        onNext={(units) => {
+                            setContainerData(prev => ({ ...prev, units }));
+                            setCurrentStep(6);
+                        }}
+                        onBack={() => {
+                            if (containerData.rentalMode === 'by_unit') {
+                                setCurrentStep(4); // Back to Common Areas
+                            } else {
+                                setCurrentStep(1); // Back to Basic Info
+                            }
+                        }}
+                        initialData={containerData.units || []}
+                    />
+                );
+
+            case 6:
+                // Container Images
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-semibold text-gray-900">Galería de Imágenes del Contenedor</h2>
+                        <p className="text-gray-600">
+                            Sube fotos de la fachada, áreas comunes y espacios generales de la propiedad.
+                            Las fotos de cada habitación ya fueron agregadas en el paso anterior.
+                        </p>
+
+                        <ImageUploader
+                            images={containerData.images || []}
+                            onImagesChange={(images) => {
+                                setContainerData(prev => ({ ...prev, images }));
+                            }}
+                            maxImages={10}
+                        />
+
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Navigation Buttons */}
+                        <div className="flex justify-between pt-6 border-t">
+                            <button
+                                onClick={() => setCurrentStep(5)}
+                                disabled={isSubmitting}
+                                className="flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                            >
+                                <ArrowLeft className="h-5 w-5" />
+                                <span>Anterior</span>
+                            </button>
+
+                            <button
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || (containerData.images?.length || 0) === 0}
+                                className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <LoadingSpinner size="sm" />
+                                        <span>{propertyId ? 'Actualizando...' : 'Publicando...'}</span>
+                                    </>
+                                ) : (
+                                    <span>{propertyId ? 'Actualizar Propiedad' : 'Publicar Propiedad'}</span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-4xl mx-auto px-4">
+                {/* Header */}
+                <div className="mb-8">
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        <span>Volver al Dashboard</span>
+                    </button>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        {propertyId ? 'Editar Propiedad' : 'Publicar Nueva Propiedad'}
+                    </h1>
+                    <p className="text-gray-600 mt-2">
+                        Completa la información de tu pensión/residencia
+                    </p>
+                </div>
+
+                {/* Progress Indicator */}
+                {currentStep > 0 && (
+                    <div className="mb-8">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700">
+                                Paso {currentStep} de 6
+                            </span>
+                            <span className="text-sm text-gray-500">
+                                {Math.round((currentStep / 6) * 100)}% completado
+                            </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                                className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(currentStep / 6) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Step Content */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    {renderStep()}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default ContainerFlow;
