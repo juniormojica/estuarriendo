@@ -18,6 +18,15 @@ import InstitutionAutocomplete from '../components/InstitutionAutocomplete';
 import RoomSpecificFields from '../components/RoomSpecificFields';
 import PensionSpecificFields from '../components/PensionSpecificFields';
 
+// ===== NEW CONTAINER COMPONENTS =====
+import PropertyTypeSelectorStep from '../components/PropertyTypeSelectorStep';
+import RentalModeSelector from '../components/RentalModeSelector';
+import ContainerServices from '../components/ContainerServices';
+import ContainerRules from '../components/ContainerRules';
+import ContainerCommonAreas from '../components/ContainerCommonAreas';
+import UnitBuilder from '../components/UnitBuilder';
+import type { RentalMode, PropertyUnit } from '../types';
+
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
 const PropertySubmission: React.FC = () => {
@@ -48,6 +57,14 @@ const PropertySubmission: React.FC = () => {
   const [showInstitutionSelector, setShowInstitutionSelector] = useState(false);
   const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
   const [tempDistance, setTempDistance] = useState<string>('');
+
+  // ===== NEW CONTAINER STATE =====
+  const [isContainer, setIsContainer] = useState(false);
+  const [rentalMode, setRentalMode] = useState<RentalMode>('by_unit');
+  const [containerServices, setContainerServices] = useState<PropertyService[]>([]);
+  const [containerRules, setContainerRules] = useState<PropertyRule[]>([]);
+  const [commonAreaIds, setCommonAreaIds] = useState<number[]>([]);
+  const [units, setUnits] = useState<Partial<PropertyUnit>[]>([]);
 
   const maxImages = user?.plan === 'premium' ? 10 : 3;
 
@@ -555,7 +572,20 @@ const PropertySubmission: React.FC = () => {
           )}
 
           <div className="animate-fadeIn">
+            {/* STEP 0: Property Type Selector (NEW) */}
             {currentStep === 0 && (
+              <PropertyTypeSelectorStep
+                onSelect={(type) => {
+                  handleInputChange('type', type);
+                  setIsContainer(['pension', 'apartamento', 'aparta-estudio'].includes(type));
+                  setCurrentStep(1);
+                }}
+                selectedType={formData.type}
+              />
+            )}
+
+            {/* STEP 1: Basic Information (was step 0) */}
+            {currentStep === 1 && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Información Básica</h2>
                 <div className="grid grid-cols-1 gap-6">
@@ -614,7 +644,74 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {currentStep === 1 && (
+            {/* STEP 2: Rental Mode Selector (ONLY FOR CONTAINERS) */}
+            {currentStep === 2 && isContainer && (
+              <RentalModeSelector
+                onNext={(mode) => {
+                  setRentalMode(mode);
+                  setCurrentStep(3);
+                }}
+                onBack={() => setCurrentStep(1)}
+                initialMode={rentalMode}
+              />
+            )}
+
+            {/* STEP 3: Container Services (ONLY IF by_unit) */}
+            {currentStep === 3 && isContainer && rentalMode === 'by_unit' && (
+              <ContainerServices
+                onNext={(services) => {
+                  setContainerServices(services);
+                  setCurrentStep(4);
+                }}
+                onBack={() => setCurrentStep(2)}
+                initialData={containerServices}
+              />
+            )}
+
+            {/* STEP 4: Container Rules (ONLY IF by_unit) */}
+            {currentStep === 4 && isContainer && rentalMode === 'by_unit' && (
+              <ContainerRules
+                onNext={(rules) => {
+                  setContainerRules(rules);
+                  setCurrentStep(5);
+                }}
+                onBack={() => setCurrentStep(3)}
+                initialData={containerRules}
+              />
+            )}
+
+            {/* STEP 5: Common Areas (ONLY IF by_unit) */}
+            {currentStep === 5 && isContainer && rentalMode === 'by_unit' && (
+              <ContainerCommonAreas
+                onNext={(areaIds) => {
+                  setCommonAreaIds(areaIds);
+                  setCurrentStep(6);
+                }}
+                onBack={() => setCurrentStep(4)}
+                initialData={commonAreaIds}
+              />
+            )}
+
+            {/* STEP 6: Unit Builder (ONLY FOR CONTAINERS) */}
+            {currentStep === 6 && isContainer && (
+              <UnitBuilder
+                onNext={(unitList) => {
+                  setUnits(unitList);
+                  setCurrentStep(7);
+                }}
+                onBack={() => {
+                  if (rentalMode === 'by_unit') {
+                    setCurrentStep(5);
+                  } else {
+                    setCurrentStep(2);
+                  }
+                }}
+                initialData={units}
+              />
+            )}
+
+            {/* STEP 2 (independent) / 7 (container): Location */}
+            {((currentStep === 2 && !isContainer) || (currentStep === 7 && isContainer)) && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Ubicación</h2>
                 <div className="grid grid-cols-1 gap-6">
@@ -809,7 +906,8 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {currentStep === 2 && (
+            {/* STEP 3 (independent) / 8 (container): Details and Amenities */}
+            {((currentStep === 3 && !isContainer) || (currentStep === 8 && isContainer)) && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Detalles y Comodidades</h2>
 
@@ -926,7 +1024,8 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {currentStep === 3 && (
+            {/* STEP 4 (independent) / 9 (container): Images */}
+            {((currentStep === 4 && !isContainer) || (currentStep === 9 && isContainer)) && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Galería de Imágenes</h2>
 
