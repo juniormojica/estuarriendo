@@ -20,6 +20,7 @@ import PensionSpecificFields from '../components/PensionSpecificFields';
 
 // ===== NEW CONTAINER COMPONENTS =====
 import PropertyTypeSelectorStep from '../components/PropertyTypeSelectorStep';
+import ContainerBasicInfo from '../components/ContainerBasicInfo';
 import RentalModeSelector from '../components/RentalModeSelector';
 import ContainerServices from '../components/ContainerServices';
 import ContainerRules from '../components/ContainerRules';
@@ -584,8 +585,40 @@ const PropertySubmission: React.FC = () => {
               />
             )}
 
-            {/* STEP 1: Basic Information (was step 0) */}
-            {currentStep === 1 && (
+            {/* STEP 1: Container Basic Info (FOR CONTAINERS) */}
+            {currentStep === 1 && isContainer && (
+              <ContainerBasicInfo
+                onNext={(data) => {
+                  // Save container basic info including rentalMode
+                  setFormData(prev => ({ ...prev, ...data }));
+                  setRentalMode(data.rentalMode);
+
+                  // Navigate based on rental mode
+                  if (data.rentalMode === 'by_unit') {
+                    setCurrentStep(2); // Go to Services
+                  } else {
+                    setCurrentStep(2); // Go to UnitBuilder (will be rendered at step 2 for complete mode)
+                  }
+                }}
+                initialData={{
+                  title: formData.title,
+                  description: formData.description,
+                  typeId: formData.type === 'pension' ? 3 : formData.type === 'apartamento' ? 1 : 4,
+                  typeName: formData.type,
+                  locationId: 0,
+                  cityId: 0,
+                  departmentId: 0,
+                  street: formData.address.street,
+                  neighborhood: formData.address.neighborhood,
+                  rentalMode: rentalMode,
+                  requiresDeposit: true,
+                  minimumContractMonths: 6,
+                }}
+              />
+            )}
+
+            {/* STEP 1: Basic Information (FOR INDEPENDENT ROOMS) */}
+            {currentStep === 1 && !isContainer && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Información Básica</h2>
                 <div className="grid grid-cols-1 gap-6">
@@ -644,74 +677,67 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {/* STEP 2: Rental Mode Selector (ONLY FOR CONTAINERS) */}
-            {currentStep === 2 && isContainer && (
-              <RentalModeSelector
-                onNext={(mode) => {
-                  setRentalMode(mode);
-                  setCurrentStep(3);
-                }}
-                onBack={() => setCurrentStep(1)}
-                initialMode={rentalMode}
-              />
-            )}
-
-            {/* STEP 3: Container Services (ONLY IF by_unit) */}
-            {currentStep === 3 && isContainer && rentalMode === 'by_unit' && (
+            {/* STEP 2: Container Services (ONLY IF by_unit) */}
+            {currentStep === 2 && isContainer && rentalMode === 'by_unit' && (
               <ContainerServices
                 onNext={(services) => {
                   setContainerServices(services);
-                  setCurrentStep(4);
+                  setCurrentStep(3);
                 }}
-                onBack={() => setCurrentStep(2)}
+                onBack={() => setCurrentStep(1)}
                 initialData={containerServices}
               />
             )}
 
-            {/* STEP 4: Container Rules (ONLY IF by_unit) */}
-            {currentStep === 4 && isContainer && rentalMode === 'by_unit' && (
+            {/* STEP 3: Container Rules (ONLY IF by_unit) */}
+            {currentStep === 3 && isContainer && rentalMode === 'by_unit' && (
               <ContainerRules
                 onNext={(rules) => {
                   setContainerRules(rules);
-                  setCurrentStep(5);
+                  setCurrentStep(4);
                 }}
-                onBack={() => setCurrentStep(3)}
+                onBack={() => setCurrentStep(2)}
                 initialData={containerRules}
               />
             )}
 
-            {/* STEP 5: Common Areas (ONLY IF by_unit) */}
-            {currentStep === 5 && isContainer && rentalMode === 'by_unit' && (
+            {/* STEP 4: Common Areas (ONLY IF by_unit) */}
+            {currentStep === 4 && isContainer && rentalMode === 'by_unit' && (
               <ContainerCommonAreas
                 onNext={(areaIds) => {
                   setCommonAreaIds(areaIds);
-                  setCurrentStep(6);
+                  setCurrentStep(5);
                 }}
-                onBack={() => setCurrentStep(4)}
+                onBack={() => setCurrentStep(3)}
                 initialData={commonAreaIds}
               />
             )}
 
-            {/* STEP 6: Unit Builder (ONLY FOR CONTAINERS) */}
-            {currentStep === 6 && isContainer && (
-              <UnitBuilder
-                onNext={(unitList) => {
-                  setUnits(unitList);
-                  setCurrentStep(7);
-                }}
-                onBack={() => {
-                  if (rentalMode === 'by_unit') {
-                    setCurrentStep(5);
-                  } else {
-                    setCurrentStep(2);
-                  }
-                }}
-                initialData={units}
-              />
-            )}
 
-            {/* STEP 2 (independent) / 7 (container): Location */}
-            {((currentStep === 2 && !isContainer) || (currentStep === 7 && isContainer)) && (
+
+            {/* STEP 2/5: Unit Builder (ONLY FOR CONTAINERS) */}
+            {/* Step 2 if complete mode, Step 5 if by_unit mode */}
+            {((currentStep === 2 && isContainer && rentalMode === 'complete') ||
+              (currentStep === 5 && isContainer && rentalMode === 'by_unit')) && (
+                <UnitBuilder
+                  onNext={(unitList) => {
+                    setUnits(unitList);
+                    // Navigate to step 6: Container Details (amenities, totals)
+                    setCurrentStep(6);
+                  }}
+                  onBack={() => {
+                    if (rentalMode === 'by_unit') {
+                      setCurrentStep(4); // Back to Common Areas
+                    } else {
+                      setCurrentStep(1); // Back to Basic Info
+                    }
+                  }}
+                  initialData={units}
+                />
+              )}
+
+            {/* STEP 2: Location (ONLY FOR INDEPENDENT ROOMS) */}
+            {currentStep === 2 && !isContainer && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Ubicación</h2>
                 <div className="grid grid-cols-1 gap-6">
@@ -906,8 +932,8 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {/* STEP 3 (independent) / 8 (container): Details and Amenities */}
-            {((currentStep === 3 && !isContainer) || (currentStep === 8 && isContainer)) && (
+            {/* STEP 3 (independent) / 6 (container): Details and Amenities */}
+            {((currentStep === 3 && !isContainer) || (currentStep === 6 && isContainer)) && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Detalles y Comodidades</h2>
 
@@ -1024,8 +1050,8 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {/* STEP 4 (independent) / 9 (container): Images */}
-            {((currentStep === 4 && !isContainer) || (currentStep === 9 && isContainer)) && (
+            {/* STEP 4 (independent) / 7 (container): Images */}
+            {((currentStep === 4 && !isContainer) || (currentStep === 7 && isContainer)) && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Galería de Imágenes</h2>
 
@@ -1063,51 +1089,56 @@ const PropertySubmission: React.FC = () => {
             )}
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between">
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={currentStep === 0 || isSubmitting}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${currentStep === 0
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-            >
-              <ChevronLeft className="h-5 w-5" />
-              <span>Anterior</span>
-            </button>
 
-            {currentStep === STEPS.length - 1 ? (
+          {/* Navigation Buttons - Hidden for container steps 1-5 (they have their own) */}
+          {/* Steps 6-7 use main navigation buttons */}
+          {!(isContainer && currentStep >= 1 && currentStep <= 5) && (
+            <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between">
               <button
                 type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleBack}
+                disabled={currentStep === 0 || isSubmitting}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${currentStep === 0
+                  ? 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
-                {isSubmitting ? (
-                  <>
-                    <LoadingSpinner size="sm" />
-                    <span>{isEditing ? 'Actualizando...' : 'Publicando...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{isEditing ? 'Actualizar Propiedad' : 'Publicar Propiedad'}</span>
-                    <CheckCircle className="h-5 w-5" />
-                  </>
-                )}
+                <ChevronLeft className="h-5 w-5" />
+                <span>Anterior</span>
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
-              >
-                <span>Siguiente</span>
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            )}
-          </div>
+
+              {/* Determine last step: step 7 for containers, step 4 for independent */}
+              {((isContainer && currentStep === 7) || (!isContainer && currentStep === 4)) ? (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span>{isEditing ? 'Actualizando...' : 'Publicando...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{isEditing ? 'Actualizar Propiedad' : 'Publicar Propiedad'}</span>
+                      <CheckCircle className="h-5 w-5" />
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
