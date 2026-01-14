@@ -413,6 +413,8 @@ export interface Amenity {
   id: number;  // Changed from string to number to match database
   name: string;
   icon: string;
+  slug?: string;
+  category?: 'general' | 'habitacion' | 'pension';
 }
 
 export interface PaymentRequest {

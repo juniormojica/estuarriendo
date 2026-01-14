@@ -34,6 +34,7 @@ const PropertySubmission: React.FC = () => {
   // ===== ALL STATE DECLARATIONS MUST BE AT THE TOP =====
   // Check if this is a container property
   const [isContainer, setIsContainer] = useState<boolean | null>(null);
+  const [selectedPropertyType, setSelectedPropertyType] = useState<string>('');
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,31 +96,11 @@ const PropertySubmission: React.FC = () => {
     }
   });
 
-  // ===== CONDITIONAL RENDERING AFTER ALL HOOKS =====
-  // If container type selected, use ContainerFlow
-  if (isContainer === true) {
-    return <ContainerFlow propertyId={id} />;
-  }
-
-  // If type not selected yet, show selector
-  if (isContainer === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <PropertyTypeSelectorStep
-            onSelect={(type) => {
-              const containerTypes = ['pension', 'apartamento', 'aparta-estudio'];
-              setIsContainer(containerTypes.includes(type));
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Otherwise, use old form for independent rooms
-
+  // ===== ALL HOOKS MUST RUN BEFORE ANY CONDITIONAL RETURNS =====
   useEffect(() => {
+    // Skip this effect for containers - they use ContainerFlow
+    if (isContainer === true) return;
+
     const storedUser = localStorage.getItem('estuarriendo_current_user');
     if (!storedUser) {
       navigate('/login');
@@ -150,7 +131,33 @@ const PropertySubmission: React.FC = () => {
       setIsEditing(true);
       loadProperty(id);
     }
-  }, [id, dispatch, navigate]);
+  }, [id, dispatch, navigate, isContainer]);
+
+  // ===== CONDITIONAL RENDERING AFTER ALL HOOKS =====
+  // If container type selected, use ContainerFlow
+  if (isContainer === true) {
+    return <ContainerFlow propertyId={id} initialPropertyType={selectedPropertyType} />;
+  }
+
+  // If type not selected yet, show selector
+  if (isContainer === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <PropertyTypeSelectorStep
+            onSelect={(type) => {
+              const containerTypes = ['pension', 'apartamento', 'aparta-estudio'];
+              setSelectedPropertyType(type);
+              setIsContainer(containerTypes.includes(type));
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, use old form for independent rooms
+
 
   const loadProperty = async (propertyId: string) => {
     setIsLoadingProperty(true);

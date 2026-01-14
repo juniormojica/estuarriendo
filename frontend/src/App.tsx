@@ -8,7 +8,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import PropertyDetail from './pages/PropertyDetail';
-import PropertySubmission from './pages/PropertySubmission';
+import PropertySubmissionRouter from './pages/PropertySubmissionRouter';
 import AdminDashboard from './pages/AdminDashboard';
 import FavoritesPage from './pages/FavoritesPage';
 import RegistrationPage from './pages/RegistrationPage';
@@ -63,7 +63,7 @@ function AppContent() {
                   path="/publicar"
                   element={
                     <ProtectedRoute>
-                      <PropertySubmission />
+                      <PropertySubmissionRouter />
                     </ProtectedRoute>
                   }
                 />
@@ -71,7 +71,7 @@ function AppContent() {
                   path="/editar-propiedad/:id"
                   element={
                     <ProtectedRoute>
-                      <PropertySubmission />
+                      <PropertySubmissionRouter />
                     </ProtectedRoute>
                   }
                 />

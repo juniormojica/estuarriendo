@@ -5,7 +5,9 @@ import type { RentalMode } from '../types';
 
 interface ContainerBasicInfoProps {
     onNext: (data: ContainerBasicInfoData) => void;
+    onBack: () => void;
     initialData?: ContainerBasicInfoData;
+    propertyType?: string;
 }
 
 export interface ContainerBasicInfoData {
@@ -23,10 +25,11 @@ export interface ContainerBasicInfoData {
     minimumContractMonths?: number;
 }
 
-const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, initialData }) => {
+const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack, initialData, propertyType: propPropertyType }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const propertyType = location.state?.propertyType || 'pension';
+    // Prioritize prop over location.state, with fallback to 'pension'
+    const propertyType = propPropertyType || location.state?.propertyType || 'pension';
 
     const [formData, setFormData] = useState<ContainerBasicInfoData>(
         initialData || {
@@ -148,7 +151,7 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, initial
                             <p className="mt-1 text-sm text-red-600">{errors.title}</p>
                         )}
                         <p className="mt-1 text-sm text-gray-500">
-                            {formData.title.length}/100 caracteres
+                            {(formData.title || '').length}/100 caracteres
                         </p>
                     </div>
 
@@ -169,7 +172,7 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, initial
                             <p className="mt-1 text-sm text-red-600">{errors.description}</p>
                         )}
                         <p className="mt-1 text-sm text-gray-500">
-                            {formData.description.length}/500 caracteres
+                            {(formData.description || '').length}/500 caracteres
                         </p>
                     </div>
 
@@ -313,7 +316,7 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, initial
                     <div className="flex justify-between pt-6">
                         <button
                             type="button"
-                            onClick={() => navigate(-1)}
+                            onClick={onBack}
                             className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5" />

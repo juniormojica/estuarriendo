@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock
+  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock,
+  Clock, Users, Ban, Volume2, Utensils, Coffee, Wifi, Zap, Home
 } from 'lucide-react';
 import { Property, User } from '../types';
 import { api } from '../services/api';
@@ -390,6 +391,253 @@ const PropertyDetail: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Rules Section - For habitacion and pension */}
+            {property.rules && property.rules.length > 0 && (property.type?.name === 'habitacion' || property.type?.name === 'pension') && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Reglas de Convivencia</h2>
+                <div className="space-y-3 sm:space-y-4">
+                  {property.rules.map((rule, index) => {
+                    const getRuleIcon = (ruleType: string) => {
+                      switch (ruleType) {
+                        case 'smoking': return <Ban className="h-5 w-5" />;
+                        case 'pets': return <Ban className="h-5 w-5" />;
+                        case 'visits': return <Users className="h-5 w-5" />;
+                        case 'noise': return <Volume2 className="h-5 w-5" />;
+                        case 'curfew': return <Clock className="h-5 w-5" />;
+                        default: return <Ban className="h-5 w-5" />;
+                      }
+                    };
+
+                    const getRuleLabel = (ruleType: string) => {
+                      switch (ruleType) {
+                        case 'smoking': return 'Fumar';
+                        case 'pets': return 'Mascotas';
+                        case 'visits': return 'Visitas';
+                        case 'noise': return 'Horario de silencio';
+                        case 'curfew': return 'Hora límite de llegada';
+                        case 'tenant_profile': return 'Perfil de inquilino';
+                        case 'couples': return 'Parejas';
+                        case 'children': return 'Niños';
+                        default: return ruleType;
+                      }
+                    };
+
+                    return (
+                      <div key={index} className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
+                        <div className="flex-shrink-0 p-2 bg-white rounded-lg shadow-sm text-emerald-600">
+                          {getRuleIcon(rule.ruleType)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                              {getRuleLabel(rule.ruleType)}
+                            </h3>
+                            {(rule.ruleType === 'smoking' || rule.ruleType === 'pets' || rule.ruleType === 'couples' || rule.ruleType === 'children') && (
+                              <span className={`text-xs sm:text-sm font-medium px-2 py-1 rounded-full ${rule.isAllowed
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                                }`}>
+                                {rule.isAllowed ? 'Permitido' : 'No permitido'}
+                              </span>
+                            )}
+                          </div>
+                          {rule.value && (
+                            <p className="text-sm text-gray-700 font-medium mb-1">
+                              {rule.value}
+                            </p>
+                          )}
+                          {rule.description && (
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              {rule.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Services Section - For pension and habitacion */}
+            {property.services && property.services.length > 0 && (property.type?.name === 'pension' || property.type?.name === 'habitacion') && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Servicios Incluidos</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {property.services.map((service, index) => {
+                    const getServiceIcon = (serviceType: string) => {
+                      switch (serviceType) {
+                        case 'breakfast': return <Coffee className="h-5 w-5" />;
+                        case 'lunch': return <Utensils className="h-5 w-5" />;
+                        case 'dinner': return <Utensils className="h-5 w-5" />;
+                        case 'housekeeping': return <Home className="h-5 w-5" />;
+                        case 'laundry': return <Home className="h-5 w-5" />;
+                        case 'wifi': return <Wifi className="h-5 w-5" />;
+                        case 'utilities': return <Zap className="h-5 w-5" />;
+                        default: return <Home className="h-5 w-5" />;
+                      }
+                    };
+
+                    const getServiceLabel = (serviceType: string) => {
+                      switch (serviceType) {
+                        case 'breakfast': return 'Desayuno';
+                        case 'lunch': return 'Almuerzo';
+                        case 'dinner': return 'Cena';
+                        case 'housekeeping': return 'Limpieza';
+                        case 'laundry': return 'Lavandería';
+                        case 'wifi': return 'WiFi';
+                        case 'utilities': return 'Servicios públicos';
+                        default: return serviceType;
+                      }
+                    };
+
+                    return (
+                      <div key={index} className={`flex items-start space-x-3 p-3 sm:p-4 rounded-lg border ${service.isIncluded
+                        ? 'bg-emerald-50 border-emerald-200'
+                        : 'bg-gray-50 border-gray-200'
+                        }`}>
+                        <div className={`flex-shrink-0 p-2 rounded-lg shadow-sm ${service.isIncluded ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                          {getServiceIcon(service.serviceType)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                              {getServiceLabel(service.serviceType)}
+                            </h3>
+                            {service.isIncluded ? (
+                              <span className="text-xs font-medium px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+                                Incluido
+                              </span>
+                            ) : service.additionalCost ? (
+                              <span className="text-xs font-medium px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
+                                +${service.additionalCost.toLocaleString()}
+                              </span>
+                            ) : null}
+                          </div>
+                          {service.description && (
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              {service.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Common Areas Section - For containers */}
+            {property.commonAreas && property.commonAreas.length > 0 && property.isContainer && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Áreas Comunes</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {property.commonAreas.map((area) => {
+                    const IconComponent = area.icon ? iconMap[area.icon] : Home;
+                    return (
+                      <div key={area.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-600 flex-shrink-0">
+                          {IconComponent ? (
+                            <IconComponent className="h-4 w-4" />
+                          ) : (
+                            <Home className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-gray-700">{area.name}</span>
+                          {area.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">{area.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Units Section - For containers rented by unit */}
+            {property.units && property.units.length > 0 && property.rentalMode === 'by_unit' && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
+                  Habitaciones Disponibles ({property.availableUnits || 0} de {property.totalUnits || property.units.length})
+                </h2>
+                <div className="space-y-4">
+                  {property.units.map((unit) => (
+                    <div key={unit.id} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="p-4 sm:p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">{unit.title}</h3>
+                            {unit.description && (
+                              <p className="text-sm text-gray-600 line-clamp-2">{unit.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${unit.isRented
+                              ? 'bg-gray-100 text-gray-600'
+                              : 'bg-emerald-100 text-emerald-700'
+                              }`}>
+                              {unit.isRented ? 'Rentada' : 'Disponible'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                          <div className="bg-gray-50 p-2.5 rounded-lg">
+                            <p className="text-xs text-gray-500 mb-0.5">Precio/mes</p>
+                            <p className="text-sm font-bold text-emerald-600">
+                              ${unit.monthlyRent.toLocaleString()}
+                            </p>
+                          </div>
+                          {unit.area && (
+                            <div className="bg-gray-50 p-2.5 rounded-lg">
+                              <p className="text-xs text-gray-500 mb-0.5">Área</p>
+                              <p className="text-sm font-bold text-gray-900">{unit.area}m²</p>
+                            </div>
+                          )}
+                          <div className="bg-gray-50 p-2.5 rounded-lg">
+                            <p className="text-xs text-gray-500 mb-0.5">Tipo</p>
+                            <p className="text-sm font-bold text-gray-900">
+                              {unit.roomType === 'individual' ? 'Individual' : 'Compartida'}
+                            </p>
+                          </div>
+                          {unit.roomType === 'shared' && unit.bedsInRoom && (
+                            <div className="bg-gray-50 p-2.5 rounded-lg">
+                              <p className="text-xs text-gray-500 mb-0.5">Camas</p>
+                              <p className="text-sm font-bold text-gray-900">{unit.bedsInRoom}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {unit.amenities && unit.amenities.length > 0 && (
+                          <div className="pt-3 border-t border-gray-100">
+                            <p className="text-xs text-gray-500 mb-2">Amenidades:</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {unit.amenities.slice(0, 6).map((amenity) => {
+                                const amenityDetails = typeof amenity === 'object' ? amenity : getAmenityDetails(amenity);
+                                return amenityDetails ? (
+                                  <span key={amenityDetails.id} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                                    {amenityDetails.name}
+                                  </span>
+                                ) : null;
+                              })}
+                              {unit.amenities.length > 6 && (
+                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                                  +{unit.amenities.length - 6} más
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Map Section - Mobile Optimized */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">

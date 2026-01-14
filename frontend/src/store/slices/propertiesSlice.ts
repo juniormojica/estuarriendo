@@ -93,9 +93,21 @@ export const fetchUserProperties = createAsyncThunk(
  */
 export const createProperty = createAsyncThunk(
     'properties/createProperty',
-    async (propertyData: Partial<Property>, { rejectWithValue }) => {
+    async (propertyData: Partial<Property>, { rejectWithValue, getState }) => {
         try {
-            const response = await axios.post('/properties', propertyData);
+            // Get the current user's ID from auth state
+            const state = getState() as any;
+            const ownerId = state.auth.user?.id;
+
+            if (!ownerId) {
+                return rejectWithValue('User not authenticated');
+            }
+
+            // Include ownerId in the request
+            const response = await axios.post('/properties', {
+                ...propertyData,
+                ownerId
+            });
             return response.data.data as Property;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Failed to create property');

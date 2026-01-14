@@ -14,6 +14,7 @@ import { createContainer, updateContainer } from '../services/containerService';
 
 interface ContainerFlowProps {
     propertyId?: string; // For editing
+    initialPropertyType?: string; // Skip type selector if already selected
 }
 
 interface ContainerData {
@@ -43,11 +44,13 @@ interface ContainerData {
     images: string[];
 }
 
-const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId }) => {
+const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialPropertyType }) => {
     const navigate = useNavigate();
-    const [currentStep, setCurrentStep] = useState(0);
+    // If initialPropertyType is provided, start at step 1 (skip type selector)
+    const [currentStep, setCurrentStep] = useState(initialPropertyType ? 1 : 0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedPropertyType, setSelectedPropertyType] = useState<string>(initialPropertyType || 'pension');
 
     const [containerData, setContainerData] = useState<Partial<ContainerData>>({
         rentalMode: 'by_unit',
@@ -129,9 +132,12 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId }) => {
                 return (
                     <PropertyTypeSelectorStep
                         onSelect={(type) => {
-                            // Type already selected (container), just move to next step
+                            // Store the selected property type
+                            setSelectedPropertyType(type);
+                            // Move to next step
                             setCurrentStep(1);
                         }}
+                        selectedType={selectedPropertyType as any}
                     />
                 );
 
@@ -151,6 +157,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId }) => {
                         }}
                         onBack={() => setCurrentStep(0)}
                         initialData={containerData}
+                        propertyType={selectedPropertyType}
                     />
                 );
 
