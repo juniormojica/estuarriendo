@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock,
-  Clock, Users, Ban, Volume2, Utensils, Coffee, Wifi, Zap, Home
+  Clock, Users, Ban, Volume2, Utensils, Coffee, Wifi, Zap, Home, ArrowRight
 } from 'lucide-react';
 import { Property, User } from '../types';
 import { api } from '../services/api';
@@ -245,7 +245,7 @@ const PropertyDetail: React.FC = () => {
     console.log('Button clicked! property:', property, 'currentUser:', currentUser, 'ownerDetails:', ownerDetails);
     if (!property || !currentUser || !currentUser.id || !ownerDetails) return;
     try {
-      await api.notifyOwnerInterest(property.ownerId, property.id, currentUser.id);
+      await api.notifyOwnerInterest(property.ownerId, property.id.toString(), currentUser.id);
       alert('Se ha notificado al propietario de tu interés.');
     } catch (error) {
       console.error('Error notifying owner:', error);
@@ -296,6 +296,26 @@ const PropertyDetail: React.FC = () => {
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
               {/* Header Section - Mobile Optimized */}
               <div className="flex flex-col gap-4 mb-4 sm:mb-6">
+
+                {/* Parent Container Banner - For Individual Rooms */}
+                {property.parentId && property.container && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 mb-2 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="bg-amber-100 p-2 rounded-full flex-shrink-0">
+                      <Home className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-amber-900">
+                        Esta habitacion pertenece a <span className="font-semibold">{property.container.title}</span>.
+                      </p>
+                      <Link
+                        to={`/propiedad/${property.parentId}`}
+                        className="text-xs sm:text-sm text-amber-700 font-medium hover:text-amber-800 hover:underline flex items-center mt-0.5 group"
+                      >
+                        Ver pensión completa y otras habitaciones <ArrowRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-3 sm:space-y-4">
                   {/* Badges - Responsive */}
                   <div className="flex flex-wrap items-center gap-2">
@@ -472,53 +492,59 @@ const PropertyDetail: React.FC = () => {
                   </div>
                 )}
 
-                {/* Common Areas Section */}
-                {property.commonAreas && property.commonAreas.length > 0 && (
-                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Áreas Comunes</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {property.commonAreas.map((area) => {
-                        const IconComponent = area.icon ? iconMap[area.icon] : Home;
-                        return (
-                          <div key={area.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
-                            <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-600 flex-shrink-0">
-                              {IconComponent ? (
-                                <IconComponent className="h-4 w-4" />
-                              ) : (
-                                <Home className="h-4 w-4" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-sm font-medium text-gray-700">{area.name}</span>
-                              {area.description && (
-                                <p className="text-xs text-gray-500 mt-0.5">{area.description}</p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Gallery of Common Areas - ONLY FOR CONTAINERS */}
-                {property.images && property.images.length > 0 && (
-                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-                    <div className="p-4 sm:p-6 lg:p-8 pb-0">
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Fotos de Áreas Comunes y Fachada</h2>
-                    </div>
-                    <ImageGallery images={(property.images || []).map(img => typeof img === 'string' ? img : img.url)} alt={property.title} />
-                  </div>
-                )}
               </>
             )}
 
+            {/* Common Areas Section - Shared logic for Container and Units */}
+            {((property.commonAreas && property.commonAreas.length > 0) || (property.container?.commonAreas && property.container.commonAreas.length > 0)) && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Áreas Comunes</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(property.commonAreas && property.commonAreas.length > 0 ? property.commonAreas : property.container?.commonAreas || []).map((area) => {
+                    const IconComponent = area.icon ? iconMap[area.icon] : Home;
+                    return (
+                      <div key={area.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-600 flex-shrink-0">
+                          {IconComponent ? (
+                            <IconComponent className="h-4 w-4" />
+                          ) : (
+                            <Home className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-gray-700">{area.name}</span>
+                          {area.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">{area.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Gallery of Common Areas - Shared logic */}
+            {((property.isContainer && property.images && property.images.length > 0) || (property.container?.images && property.container.images.length > 0)) && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                <div className="p-4 sm:p-6 lg:p-8 pb-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+                    {property.isContainer ? 'Fotos de Áreas Comunes y Fachada' : `Fotos de Áreas Comunes (${property.container?.title})`}
+                  </h2>
+                </div>
+                <ImageGallery
+                  images={(property.isContainer ? (property.images || []) : (property.container?.images || [])).map(img => typeof img === 'string' ? img : img.url)}
+                  alt={property.isContainer ? property.title : property.container?.title || 'Common Areas'}
+                />
+              </div>
+            )}
+
             {/* Rules Section - For habitacion and pension */}
-            {property.rules && property.rules.length > 0 && (property.type?.name === 'habitacion' || property.type?.name === 'pension') && (
+            {((property.rules && property.rules.length > 0) || (property.container?.rules && property.container.rules.length > 0)) && (property.type?.name === 'habitacion' || property.type?.name === 'pension' || property.parentId) && (
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Reglas de Convivencia</h2>
                 <div className="space-y-3 sm:space-y-4">
-                  {property.rules.map((rule, index) => {
+                  {(property.rules && property.rules.length > 0 ? property.rules : property.container?.rules || []).map((rule, index) => {
                     const getRuleIcon = (ruleType: string) => {
                       switch (ruleType) {
                         case 'smoking': return <Ban className="h-5 w-5" />;
@@ -582,11 +608,11 @@ const PropertyDetail: React.FC = () => {
             )}
 
             {/* Services Section - For pension and habitacion */}
-            {property.services && property.services.length > 0 && (property.type?.name === 'pension' || property.type?.name === 'habitacion') && (
+            {((property.services && property.services.length > 0) || (property.container?.services && property.container.services.length > 0)) && (property.type?.name === 'pension' || property.type?.name === 'habitacion' || property.parentId) && (
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Servicios Incluidos</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {property.services.map((service, index) => {
+                  {(property.services && property.services.length > 0 ? property.services : property.container?.services || []).map((service, index) => {
                     const getServiceIcon = (serviceType: string) => {
                       switch (serviceType) {
                         case 'breakfast': return <Coffee className="h-5 w-5" />;

@@ -87,7 +87,7 @@ export const createContainer = async (req, res) => {
                     parentId: container.id,
                     isContainer: false,
                     locationId: container.locationId,
-                    typeId: container.typeId,
+                    typeId: 1, // Units within a container are always 'habitacion' (ID 1)
                     ownerId: container.ownerId
                 }, { transaction });
 

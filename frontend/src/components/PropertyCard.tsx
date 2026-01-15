@@ -142,10 +142,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
         </div>
 
         {/* Type Badge - Top Right */}
-        <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-1.5 sm:gap-2 items-end">
           <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm shadow-sm text-xs">
             {getTypeLabel(property.type?.name || 'apartamento')}
           </Badge>
+
+          {/* Container Badge - specific for individual rooms */}
+          {property.parentId && property.container && (
+            <Badge variant="outline" className="bg-amber-50/90 backdrop-blur-sm shadow-sm text-[10px] sm:text-xs border-amber-200 text-amber-700">
+              Parte de {property.container.title}
+            </Badge>
+          )}
         </div>
 
         {/* Favorite Button - Bottom Right - Touch-friendly & Centered */}
@@ -220,23 +227,34 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
 
         {/* Property Details */}
         <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-50">
-          {property.bedrooms && property.type?.name !== 'habitacion' && (
-            <div className="flex items-center" title="Habitaciones">
-              <Bed className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-              <span>{property.bedrooms}</span>
+          {property.isContainer && property.rentalMode === 'by_unit' ? (
+            <div className="flex items-center" title="Habitaciones Disponibles">
+              <Bed className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-emerald-600" />
+              <span className="font-medium text-emerald-700">
+                {property.availableUnits || 0} de {property.totalUnits || property.units?.length || 0} hab.
+              </span>
             </div>
-          )}
-          {property.bathrooms && (
-            <div className="flex items-center" title="Baños">
-              <Bath className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-              <span>{property.bathrooms}</span>
-            </div>
-          )}
-          {property.area && (
-            <div className="flex items-center" title="Área">
-              <Square className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-              <span>{property.area}m²</span>
-            </div>
+          ) : (
+            <>
+              {property.bedrooms && property.type?.name !== 'habitacion' && (
+                <div className="flex items-center" title="Habitaciones">
+                  <Bed className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
+                  <span>{property.bedrooms}</span>
+                </div>
+              )}
+              {property.bathrooms && (
+                <div className="flex items-center" title="Baños">
+                  <Bath className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
+                  <span>{property.bathrooms}</span>
+                </div>
+              )}
+              {property.area && (
+                <div className="flex items-center" title="Área">
+                  <Square className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
+                  <span>{property.area}m²</span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -246,9 +264,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-xs text-gray-400 font-medium">Precio</span>
             <div className="flex items-baseline">
-              <span className="text-lg sm:text-xl font-bold text-emerald-600 truncate">
-                {formatPrice(property.monthlyRent)}
-              </span>
+              {property.isContainer && property.rentalMode === 'by_unit' && property.minUnitRent ? (
+                <>
+                  <span className="text-xs text-gray-500 mr-1">Desde</span>
+                  <span className="text-lg sm:text-xl font-bold text-emerald-600 truncate">
+                    {formatPrice(property.minUnitRent)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-lg sm:text-xl font-bold text-emerald-600 truncate">
+                  {formatPrice(property.monthlyRent)}
+                </span>
+              )}
               <span className="text-xs text-gray-500 ml-1 flex-shrink-0">/mes</span>
             </div>
           </div>

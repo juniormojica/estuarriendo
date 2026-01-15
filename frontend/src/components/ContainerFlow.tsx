@@ -54,8 +54,15 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
     const [error, setError] = useState<string | null>(null);
     const [selectedPropertyType, setSelectedPropertyType] = useState<string>(initialPropertyType || 'pension');
 
+    const propertyTypeIds: Record<string, number> = {
+        'habitacion': 1,
+        'pension': 2,
+        'apartamento': 3,
+        'aparta-estudio': 4
+    };
+
     const [containerData, setContainerData] = useState<Partial<ContainerData>>({
-        typeId: selectedPropertyType === 'pension' ? 3 : selectedPropertyType === 'apartamento' ? 1 : 4,
+        typeId: propertyTypeIds[selectedPropertyType] || 2, // Default to pension (2)
         coordinates: { lat: 0, lng: 0 },
         rentalMode: 'by_unit',
         requiresDeposit: true,
@@ -66,6 +73,12 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
         units: [],
         images: []
     });
+
+    // Update typeId when selectedPropertyType changes
+    useEffect(() => {
+        const typeId = propertyTypeIds[selectedPropertyType] || 2;
+        setContainerData(prev => ({ ...prev, typeId }));
+    }, [selectedPropertyType]);
 
     // Load existing container data if editing
     useEffect(() => {
@@ -91,7 +104,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                 // Basic info
                 title: containerData.title,
                 description: containerData.description,
-                typeId: containerData.typeId || 3, // Default to pension
+                typeId: containerData.typeId || 2, // Default to pension (2)
                 locationId: containerData.locationId || 0, // Will be created by backend
                 currency: 'COP',
                 status: 'pending',

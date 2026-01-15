@@ -137,6 +137,8 @@ export interface Institution {
   cityId: number;
   city?: City;
   type: 'universidad' | 'corporacion' | 'instituto';
+  latitude?: number;
+  longitude?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -343,6 +345,9 @@ export interface Property {
   reviewedAt?: string;
   rejectionReason?: string;
   availableFrom?: string;
+
+  // Calculated fields (via backend attributes)
+  minUnitRent?: number;
 
   // Relations (populated by backend includes)
   location?: Location;

@@ -332,7 +332,13 @@ export const findPropertyWithAssociations = async (propertyId) => {
             {
                 model: Property,
                 as: 'container',
-                attributes: ['id', 'title', 'rentalMode', 'requiresDeposit', 'minimumContractMonths']
+                include: [
+                    { model: PropertyImage, as: 'images' },
+                    { model: CommonArea, as: 'commonAreas', through: { attributes: [] } },
+                    { model: PropertyService, as: 'services' },
+                    { model: PropertyRule, as: 'rules' },
+                    { model: Location, as: 'location' }
+                ]
             },
             {
                 model: CommonArea,
@@ -372,15 +378,65 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
 
     const where = {};
 
+    // ============================================================
+    // CONTAINER/UNIT LOGIC:
+    // - When filtering by 'pension' type: show containers only
+    // - Otherwise: show individual rooms + regular properties
+    //   (exclude containers with rentalMode='by_unit')
+    // ============================================================
+
+    // Resolve typeId if it's a string name (e.g., 'pension' sent from frontend)
+    let resolvedTypeId = typeId;
+    if (typeId && isNaN(parseInt(typeId))) {
+        const type = await PropertyType.findOne({ where: { name: typeId } });
+        if (type) resolvedTypeId = type.id;
+    } else if (typeId) {
+        resolvedTypeId = parseInt(typeId);
+    }
+
+    // Check if we're filtering by 'pension' type
+    let isPensionTypeFilter = false;
+    if (resolvedTypeId) {
+        const pensionType = await PropertyType.findOne({ where: { name: 'pension' } });
+        isPensionTypeFilter = pensionType && resolvedTypeId === pensionType.id;
+    }
+
+    if (isPensionTypeFilter) {
+        // When filtering by 'pension', show only containers
+        where.isContainer = true;
+        where.typeId = resolvedTypeId;
+    } else {
+        // For other cases:
+        // 1. Show regular properties (not containers, no parent - like standalone apartamentos)
+        // 2. Show containers with rentalMode != 'by_unit' (rent the whole thing)
+        // 3. Show individual rooms (parentId not null) from by_unit containers
+        // 4. Exclude containers with rentalMode = 'by_unit' (their rooms are shown individually)
+
+        where[Op.or] = [
+            // Regular properties (not containers, not units - standalone properties)
+            { isContainer: false, parentId: null },
+            // Containers that rent as complete (not by unit)
+            { isContainer: true, rentalMode: { [Op.or]: ['complete', 'single', null] } },
+            // Individual rooms from by_unit containers
+            { parentId: { [Op.ne]: null } }
+        ];
+
+        // Apply typeId filter if provided (but not pension)
+        if (resolvedTypeId) {
+            where.typeId = resolvedTypeId;
+        }
+    }
+
     if (status) where.status = status;
     if (ownerId) where.ownerId = ownerId;
-    if (typeId) where.typeId = typeId;
     if (minRent) where.monthlyRent = { ...where.monthlyRent, [Op.gte]: minRent };
     if (maxRent) where.monthlyRent = { ...where.monthlyRent, [Op.lte]: maxRent };
     if (minBedrooms) where.bedrooms = { [Op.gte]: minBedrooms };
     if (minBathrooms) where.bathrooms = { [Op.gte]: minBathrooms };
     if (isFeatured !== undefined) where.isFeatured = isFeatured;
     if (isRented !== undefined) where.isRented = isRented;
+
+    const { PropertyService, PropertyRule } = await import('../models/index.js');
 
     const include = [
         {
@@ -408,6 +464,12 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         {
             model: PropertyType,
             as: 'type'
+        },
+        // Include parent container for rooms (minimal info for display)
+        {
+            model: Property,
+            as: 'container',
+            attributes: ['id', 'title']
         }
     ];
 
@@ -503,7 +565,6 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
     }
 
     // Add services and rules (for all property types)
-    const { PropertyService, PropertyRule } = await import('../models/index.js');
     include.push({
         model: PropertyService,
         as: 'services'
@@ -514,6 +575,19 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
     });
 
     return await Property.findAndCountAll({
+        attributes: {
+            include: [
+                [
+                    sequelize.literal(`(
+                        SELECT MIN("monthly_rent")
+                        FROM "properties" AS "unit"
+                        WHERE "unit"."parent_id" = "Property"."id"
+                        AND "unit"."is_container" = false
+                    )`),
+                    'minUnitRent'
+                ]
+            ]
+        },
         where,
         include,
         limit,
