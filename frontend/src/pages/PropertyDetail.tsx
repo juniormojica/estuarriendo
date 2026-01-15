@@ -20,6 +20,8 @@ import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-m
 import AuthModal from '../components/AuthModal';
 import { authService } from '../services/authService';
 import { useToast } from '../components/ToastProvider';
+import RoomCard from '../components/RoomCard';
+import RoomModal from '../components/RoomModal';
 
 const mapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -41,6 +43,8 @@ const PropertyDetail: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingFavoriteAction, setPendingFavoriteAction] = useState<'add' | null>(null);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+  const [showRoomModal, setShowRoomModal] = useState(false);
 
   // Get property from Redux state - use currentProperty which is set by fetchPropertyById
   const property = currentProperty;
@@ -279,10 +283,14 @@ const PropertyDetail: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
-            {/* Image Gallery - Mobile Optimized */}
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-              <ImageGallery images={(property.images || []).map(img => typeof img === 'string' ? img : img.url)} alt={property.title} />
-            </div>
+
+            {/* FOR CONTAINERS: Title and Description First (no gallery) */}
+            {/* FOR REGULAR PROPERTIES: Gallery First */}
+            {!property.isContainer && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                <ImageGallery images={(property.images || []).map(img => typeof img === 'string' ? img : img.url)} alt={property.title} />
+              </div>
+            )}
 
             {/* Property Info - Responsive Padding */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
@@ -324,35 +332,37 @@ const PropertyDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Key Stats Grid - Mobile Optimized */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {property.bedrooms && property.type?.name !== 'habitacion' && (
+              {/* Key Stats Grid - Mobile Optimized - ONLY FOR NON-CONTAINERS */}
+              {!property.isContainer && (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                  {property.bedrooms && property.type?.name !== 'habitacion' && (
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
+                      <Bed className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                      <p className="text-xs sm:text-sm text-gray-500 mb-1">Habitaciones</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900">{property.bedrooms}</p>
+                    </div>
+                  )}
+                  {property.bathrooms && (
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
+                      <Bath className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                      <p className="text-xs sm:text-sm text-gray-500 mb-1">Baños</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900">{property.bathrooms}</p>
+                    </div>
+                  )}
+                  {property.area && (
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
+                      <Square className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                      <p className="text-xs sm:text-sm text-gray-500 mb-1">Área</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900">{property.area}m²</p>
+                    </div>
+                  )}
                   <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                    <Bed className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Habitaciones</p>
-                    <p className="text-base sm:text-lg font-bold text-gray-900">{property.bedrooms}</p>
+                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Publicado</p>
+                    <p className="text-sm sm:text-base font-bold text-gray-900">{formatDate(property.createdAt)}</p>
                   </div>
-                )}
-                {property.bathrooms && (
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                    <Bath className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Baños</p>
-                    <p className="text-base sm:text-lg font-bold text-gray-900">{property.bathrooms}</p>
-                  </div>
-                )}
-                {property.area && (
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                    <Square className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Área</p>
-                    <p className="text-base sm:text-lg font-bold text-gray-900">{property.area}m²</p>
-                  </div>
-                )}
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                  <p className="text-xs sm:text-sm text-gray-500 mb-1">Publicado</p>
-                  <p className="text-sm sm:text-base font-bold text-gray-900">{formatDate(property.createdAt)}</p>
                 </div>
-              </div>
+              )}
 
               {/* Description - Responsive */}
               <div className="mb-6 sm:mb-8">
@@ -362,8 +372,8 @@ const PropertyDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Amenities - Mobile Optimized */}
-              {(property.amenities && property.amenities.length > 0) && (
+              {/* Amenities - Mobile Optimized - ONLY FOR NON-CONTAINERS */}
+              {!property.isContainer && (property.amenities && property.amenities.length > 0) && (
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
                     {property.type?.name === 'habitacion' ? 'Características' : 'Comodidades'}
@@ -391,6 +401,117 @@ const PropertyDetail: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* FOR CONTAINERS: Banner + Rooms Section */}
+            {property.isContainer && property.rentalMode === 'by_unit' && (
+              <>
+                {/* Container Type Banner */}
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      <Home className="h-8 w-8" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl sm:text-3xl font-bold">
+                        {getTypeLabel(property.type?.name || 'apartamento')}
+                      </h2>
+                      <p className="text-emerald-100 mt-1">
+                        Esta propiedad tiene {property.totalUnits || property.units?.length || 0} habitaciones que se arriendan individualmente
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Units Section - Visual Room Cards */}
+                {property.units && property.units.length > 0 && (
+                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+                          Habitaciones Disponibles
+                        </h2>
+                        <p className="text-sm sm:text-base text-gray-600">
+                          {property.availableUnits || 0} de {property.totalUnits || property.units.length} habitaciones disponibles
+                        </p>
+                      </div>
+                      <div className="flex sm:hidden items-center space-x-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200 self-start">
+                        <Bed className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs font-semibold text-emerald-700">
+                          {property.units.length} opciones
+                        </span>
+                      </div>
+                      <div className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <Bed className="h-5 w-5 text-emerald-600" />
+                        <span className="text-sm font-semibold text-emerald-700">
+                          {property.units.length} opciones
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Room Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                      {property.units.map((unit) => (
+                        <RoomCard
+                          key={unit.id}
+                          room={unit}
+                          onClick={() => {
+                            setSelectedRoom(unit);
+                            setShowRoomModal(true);
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Info Banner */}
+                    <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start space-x-3">
+                      <ShieldCheck className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-blue-800">
+                        <span className="font-semibold">Tip:</span> Haz clic en cualquier habitación para ver su galería de fotos completa, amenidades y detalles.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Common Areas Section */}
+                {property.commonAreas && property.commonAreas.length > 0 && (
+                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Áreas Comunes</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {property.commonAreas.map((area) => {
+                        const IconComponent = area.icon ? iconMap[area.icon] : Home;
+                        return (
+                          <div key={area.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+                            <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-600 flex-shrink-0">
+                              {IconComponent ? (
+                                <IconComponent className="h-4 w-4" />
+                              ) : (
+                                <Home className="h-4 w-4" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-medium text-gray-700">{area.name}</span>
+                              {area.description && (
+                                <p className="text-xs text-gray-500 mt-0.5">{area.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Gallery of Common Areas - ONLY FOR CONTAINERS */}
+                {property.images && property.images.length > 0 && (
+                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                    <div className="p-4 sm:p-6 lg:p-8 pb-0">
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Fotos de Áreas Comunes y Fachada</h2>
+                    </div>
+                    <ImageGallery images={(property.images || []).map(img => typeof img === 'string' ? img : img.url)} alt={property.title} />
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Rules Section - For habitacion and pension */}
             {property.rules && property.rules.length > 0 && (property.type?.name === 'habitacion' || property.type?.name === 'pension') && (
@@ -525,116 +646,6 @@ const PropertyDetail: React.FC = () => {
                       </div>
                     );
                   })}
-                </div>
-              </div>
-            )}
-
-            {/* Common Areas Section - For containers */}
-            {property.commonAreas && property.commonAreas.length > 0 && property.isContainer && (
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Áreas Comunes</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {property.commonAreas.map((area) => {
-                    const IconComponent = area.icon ? iconMap[area.icon] : Home;
-                    return (
-                      <div key={area.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-600 flex-shrink-0">
-                          {IconComponent ? (
-                            <IconComponent className="h-4 w-4" />
-                          ) : (
-                            <Home className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium text-gray-700">{area.name}</span>
-                          {area.description && (
-                            <p className="text-xs text-gray-500 mt-0.5">{area.description}</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Units Section - For containers rented by unit */}
-            {property.units && property.units.length > 0 && property.rentalMode === 'by_unit' && (
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
-                  Habitaciones Disponibles ({property.availableUnits || 0} de {property.totalUnits || property.units.length})
-                </h2>
-                <div className="space-y-4">
-                  {property.units.map((unit) => (
-                    <div key={unit.id} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="p-4 sm:p-5">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-                          <div className="flex-1">
-                            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">{unit.title}</h3>
-                            {unit.description && (
-                              <p className="text-sm text-gray-600 line-clamp-2">{unit.description}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${unit.isRented
-                              ? 'bg-gray-100 text-gray-600'
-                              : 'bg-emerald-100 text-emerald-700'
-                              }`}>
-                              {unit.isRented ? 'Rentada' : 'Disponible'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                          <div className="bg-gray-50 p-2.5 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-0.5">Precio/mes</p>
-                            <p className="text-sm font-bold text-emerald-600">
-                              ${unit.monthlyRent.toLocaleString()}
-                            </p>
-                          </div>
-                          {unit.area && (
-                            <div className="bg-gray-50 p-2.5 rounded-lg">
-                              <p className="text-xs text-gray-500 mb-0.5">Área</p>
-                              <p className="text-sm font-bold text-gray-900">{unit.area}m²</p>
-                            </div>
-                          )}
-                          <div className="bg-gray-50 p-2.5 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-0.5">Tipo</p>
-                            <p className="text-sm font-bold text-gray-900">
-                              {unit.roomType === 'individual' ? 'Individual' : 'Compartida'}
-                            </p>
-                          </div>
-                          {unit.roomType === 'shared' && unit.bedsInRoom && (
-                            <div className="bg-gray-50 p-2.5 rounded-lg">
-                              <p className="text-xs text-gray-500 mb-0.5">Camas</p>
-                              <p className="text-sm font-bold text-gray-900">{unit.bedsInRoom}</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {unit.amenities && unit.amenities.length > 0 && (
-                          <div className="pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-500 mb-2">Amenidades:</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {unit.amenities.slice(0, 6).map((amenity) => {
-                                const amenityDetails = typeof amenity === 'object' ? amenity : getAmenityDetails(amenity);
-                                return amenityDetails ? (
-                                  <span key={amenityDetails.id} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                                    {amenityDetails.name}
-                                  </span>
-                                ) : null;
-                              })}
-                              {unit.amenities.length > 6 && (
-                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                                  +{unit.amenities.length - 6} más
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             )}
@@ -812,11 +823,40 @@ const PropertyDetail: React.FC = () => {
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 {/* Price - Responsive */}
                 <div className="text-center mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-100">
-                  <p className="text-xs sm:text-sm text-gray-500 mb-1">Precio de alquiler</p>
-                  <div className="flex items-center justify-center text-emerald-600">
-                    <span className="text-3xl sm:text-4xl font-bold">{formatPrice(property.monthlyRent)}</span>
-                  </div>
-                  <p className="text-sm sm:text-base text-gray-500 mt-1">/ mes</p>
+                  <p className="text-xs sm:text-sm text-gray-500 mb-1">
+                    {property.isContainer && property.rentalMode === 'by_unit'
+                      ? 'Rango de precios de habitaciones'
+                      : 'Precio de alquiler'}
+                  </p>
+
+                  {property.isContainer && property.rentalMode === 'by_unit' && property.units && property.units.length > 0 ? (
+                    // Show price range for containers rented by unit
+                    <>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="bg-emerald-50 p-3 sm:p-4 rounded-xl border border-emerald-100">
+                          <p className="text-xs text-emerald-600 font-medium mb-1">Desde</p>
+                          <p className="text-xl sm:text-2xl font-bold text-emerald-600">
+                            {formatPrice(Math.min(...property.units.map(u => u.monthlyRent)))}
+                          </p>
+                        </div>
+                        <div className="bg-emerald-50 p-3 sm:p-4 rounded-xl border border-emerald-100">
+                          <p className="text-xs text-emerald-600 font-medium mb-1">Hasta</p>
+                          <p className="text-xl sm:text-2xl font-bold text-emerald-600">
+                            {formatPrice(Math.max(...property.units.map(u => u.monthlyRent)))}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-500">por habitación / mes</p>
+                    </>
+                  ) : (
+                    // Show single price for regular properties
+                    <>
+                      <div className="flex items-center justify-center text-emerald-600">
+                        <span className="text-3xl sm:text-4xl font-bold">{formatPrice(property.monthlyRent)}</span>
+                      </div>
+                      <p className="text-sm sm:text-base text-gray-500 mt-1">/ mes</p>
+                    </>
+                  )}
 
                   {/* Owner Plan Message - Responsive */}
                   <div className="mt-3 sm:mt-4 px-1 sm:px-2">
@@ -905,6 +945,18 @@ const PropertyDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Room Modal */}
+      {selectedRoom && (
+        <RoomModal
+          isOpen={showRoomModal}
+          onClose={() => {
+            setShowRoomModal(false);
+            setSelectedRoom(null);
+          }}
+          room={selectedRoom}
+        />
+      )}
 
       {/* Auth Modal */}
       <AuthModal
