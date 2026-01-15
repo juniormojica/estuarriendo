@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import PropertyTypeSelectorStep from './PropertyTypeSelectorStep';
 import ContainerBasicInfo from './ContainerBasicInfo';
+import ContainerLocation from './ContainerLocation';
 import ContainerServices from './ContainerServices';
 import ContainerRules from './ContainerRules';
 import ContainerCommonAreas from './ContainerCommonAreas';
@@ -28,6 +29,7 @@ interface ContainerData {
     departmentId: number;
     street: string;
     neighborhood: string;
+    coordinates: { lat: number; lng: number };
     rentalMode: RentalMode;
     requiresDeposit: boolean;
     minimumContractMonths: number;
@@ -53,6 +55,8 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
     const [selectedPropertyType, setSelectedPropertyType] = useState<string>(initialPropertyType || 'pension');
 
     const [containerData, setContainerData] = useState<Partial<ContainerData>>({
+        typeId: selectedPropertyType === 'pension' ? 3 : selectedPropertyType === 'apartamento' ? 1 : 4,
+        coordinates: { lat: 0, lng: 0 },
         rentalMode: 'by_unit',
         requiresDeposit: true,
         minimumContractMonths: 6,
@@ -72,6 +76,11 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
         }
     }, [propertyId]);
 
+    // Scroll to top when step changes
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentStep]);
+
     const handleSubmit = async () => {
         try {
             setIsSubmitting(true);
@@ -82,7 +91,10 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                 // Basic info
                 title: containerData.title,
                 description: containerData.description,
-                typeId: containerData.typeId,
+                typeId: containerData.typeId || 3, // Default to pension
+                locationId: containerData.locationId || 0, // Will be created by backend
+                currency: 'COP',
+                status: 'pending',
                 rentalMode: containerData.rentalMode,
                 requiresDeposit: containerData.requiresDeposit,
                 minimumContractMonths: containerData.minimumContractMonths,
@@ -92,7 +104,9 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                     street: containerData.street,
                     neighborhood: containerData.neighborhood,
                     cityId: containerData.cityId,
-                    departmentId: containerData.departmentId
+                    departmentId: containerData.departmentId,
+                    latitude: containerData.coordinates?.lat,
+                    longitude: containerData.coordinates?.lng
                 },
 
                 // Container config (if by_unit)
@@ -102,17 +116,21 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                     commonAreaIds: containerData.commonAreaIds
                 }),
 
-                // Units
-                units: containerData.units,
+                // Units - replicate container coordinates to each unit
+                units: containerData.units?.map(unit => ({
+                    ...unit,
+                    latitude: containerData.coordinates?.lat,
+                    longitude: containerData.coordinates?.lng
+                })),
 
                 // Images
                 images: containerData.images
             };
 
             if (propertyId) {
-                await updateContainer(propertyId, payload);
+                await updateContainer(propertyId, payload as any);
             } else {
-                await createContainer(payload);
+                await createContainer(payload as any);
             }
 
             // Success - redirect to dashboard
@@ -147,13 +165,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                     <ContainerBasicInfo
                         onNext={(data) => {
                             setContainerData(prev => ({ ...prev, ...data }));
-
-                            // Navigate based on rental mode
-                            if (data.rentalMode === 'by_unit') {
-                                setCurrentStep(2); // Go to Services
-                            } else {
-                                setCurrentStep(5); // Skip to UnitBuilder
-                            }
+                            setCurrentStep(2); // Go to Location
                         }}
                         onBack={() => setCurrentStep(0)}
                         initialData={containerData}
@@ -162,76 +174,95 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                 );
 
             case 2:
+                // Container Location
+                return (
+                    <ContainerLocation
+                        onNext={(data) => {
+                            setContainerData(prev => ({ ...prev, ...data }));
+
+                            // Navigate based on rental mode
+                            if (containerData.rentalMode === 'by_unit') {
+                                setCurrentStep(3); // Go to Services
+                            } else {
+                                setCurrentStep(6); // Skip to UnitBuilder
+                            }
+                        }}
+                        onBack={() => setCurrentStep(1)}
+                        initialData={containerData}
+                    />
+                );
+
+            case 3:
                 // Container Services (only if by_unit)
                 if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(5);
+                    setCurrentStep(6);
                     return null;
                 }
                 return (
                     <ContainerServices
                         onNext={(services) => {
                             setContainerData(prev => ({ ...prev, services }));
-                            setCurrentStep(3);
+                            setCurrentStep(4);
                         }}
-                        onBack={() => setCurrentStep(1)}
+                        onBack={() => setCurrentStep(2)}
                         initialData={containerData.services || []}
                     />
                 );
 
-            case 3:
+            case 4:
                 // Container Rules (only if by_unit)
                 if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(5);
+                    setCurrentStep(6);
                     return null;
                 }
                 return (
                     <ContainerRules
                         onNext={(rules) => {
                             setContainerData(prev => ({ ...prev, rules }));
-                            setCurrentStep(4);
+                            setCurrentStep(5);
                         }}
-                        onBack={() => setCurrentStep(2)}
+                        onBack={() => setCurrentStep(3)}
                         initialData={containerData.rules || []}
                     />
                 );
 
-            case 4:
+            case 5:
                 // Container Common Areas (only if by_unit)
                 if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(5);
+                    setCurrentStep(6);
                     return null;
                 }
                 return (
                     <ContainerCommonAreas
                         onNext={(areaIds) => {
                             setContainerData(prev => ({ ...prev, commonAreaIds: areaIds }));
-                            setCurrentStep(5);
+                            setCurrentStep(6);
                         }}
-                        onBack={() => setCurrentStep(3)}
+                        onBack={() => setCurrentStep(4)}
                         initialData={containerData.commonAreaIds || []}
                     />
                 );
 
-            case 5:
+            case 6:
                 // Unit Builder
                 return (
                     <UnitBuilder
                         onNext={(units) => {
                             setContainerData(prev => ({ ...prev, units }));
-                            setCurrentStep(6);
+                            setCurrentStep(7);
                         }}
                         onBack={() => {
                             if (containerData.rentalMode === 'by_unit') {
-                                setCurrentStep(4); // Back to Common Areas
+                                setCurrentStep(5); // Back to Common Areas
                             } else {
-                                setCurrentStep(1); // Back to Basic Info
+                                setCurrentStep(2); // Back to Location
                             }
                         }}
                         initialData={containerData.units || []}
                     />
                 );
 
-            case 6:
+            case 7:
                 // Container Images
                 return (
                     <div className="space-y-6">
@@ -243,7 +274,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
 
                         <ImageUploader
                             images={containerData.images || []}
-                            onImagesChange={(images) => {
+                            onChange={(images) => {
                                 setContainerData(prev => ({ ...prev, images }));
                             }}
                             maxImages={10}
@@ -258,9 +289,9 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                         {/* Navigation Buttons */}
                         <div className="flex justify-between pt-6 border-t">
                             <button
-                                onClick={() => setCurrentStep(5)}
+                                onClick={() => setCurrentStep(6)}
                                 disabled={isSubmitting}
-                                className="flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                                className="flex items-center space-x-2 px-6 py-3 min-h-[44px] rounded-lg font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                             >
                                 <ArrowLeft className="h-5 w-5" />
                                 <span>Anterior</span>
@@ -269,7 +300,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || (containerData.images?.length || 0) === 0}
-                                className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? (
                                     <>
@@ -314,16 +345,16 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                     <div className="mb-8">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-gray-700">
-                                Paso {currentStep} de 6
+                                Paso {currentStep} de 7
                             </span>
                             <span className="text-sm text-gray-500">
-                                {Math.round((currentStep / 6) * 100)}% completado
+                                {Math.round((currentStep / 7) * 100)}% completado
                             </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                             <div
                                 className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${(currentStep / 6) * 100}%` }}
+                                style={{ width: `${(currentStep / 7) * 100}%` }}
                             />
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from '../lib/axios';
 import type { PropertyContainer, PropertyUnit, CommonArea } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -38,7 +38,7 @@ export const createContainer = async (containerData: {
     }>;
     commonAreaIds?: number[];
 }): Promise<PropertyContainer> => {
-    const response = await axios.post(`${API_URL}/containers`, containerData);
+    const response = await apiClient.post('/containers', containerData);
     return response.data.data;
 };
 
@@ -46,7 +46,7 @@ export const createContainer = async (containerData: {
  * Get container with all units and associations
  */
 export const getContainer = async (id: number): Promise<PropertyContainer> => {
-    const response = await axios.get(`${API_URL}/containers/${id}`);
+    const response = await apiClient.get(`/containers/${id}`);
     return response.data.data;
 };
 
@@ -73,7 +73,7 @@ export const updateContainer = async (
         commonAreaIds: number[];
     }>
 ): Promise<PropertyContainer> => {
-    const response = await axios.put(`${API_URL}/containers/${id}`, updateData);
+    const response = await apiClient.put(`/containers/${id}`, updateData);
     return response.data.data;
 };
 
@@ -81,14 +81,14 @@ export const updateContainer = async (
  * Delete container and all its units
  */
 export const deleteContainer = async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/containers/${id}`);
+    await apiClient.delete(`/containers/${id}`);
 };
 
 /**
  * Rent complete container (all units marked as rented)
  */
 export const rentCompleteContainer = async (id: number): Promise<PropertyContainer> => {
-    const response = await axios.post(`${API_URL}/containers/${id}/rent-complete`);
+    const response = await apiClient.post(`/containers/${id}/rent-complete`);
     return response.data.data;
 };
 
@@ -99,7 +99,7 @@ export const changeRentalMode = async (
     id: number,
     mode: 'by_unit' | 'complete'
 ): Promise<PropertyContainer> => {
-    const response = await axios.post(`${API_URL}/containers/${id}/change-mode`, { mode });
+    const response = await apiClient.post(`/containers/${id}/change-mode`, { mode });
     return response.data.data;
 };
 
@@ -122,7 +122,7 @@ export const createUnit = async (
         status?: string;
     }
 ): Promise<PropertyUnit> => {
-    const response = await axios.post(`${API_URL}/containers/${containerId}/units`, unitData);
+    const response = await apiClient.post(`/containers/${containerId}/units`, unitData);
     return response.data.data;
 };
 
@@ -130,7 +130,7 @@ export const createUnit = async (
  * Get all units of a container
  */
 export const getContainerUnits = async (containerId: number): Promise<PropertyUnit[]> => {
-    const response = await axios.get(`${API_URL}/containers/${containerId}/units`);
+    const response = await apiClient.get(`/containers/${containerId}/units`);
     return response.data.data;
 };
 
@@ -149,7 +149,7 @@ export const updateUnit = async (
         bedsInRoom: number;
     }>
 ): Promise<PropertyUnit> => {
-    const response = await axios.put(`${API_URL}/units/${id}`, updateData);
+    const response = await apiClient.put(`/units/${id}`, updateData);
     return response.data.data;
 };
 
@@ -157,7 +157,7 @@ export const updateUnit = async (
  * Delete a unit
  */
 export const deleteUnit = async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/units/${id}`);
+    await apiClient.delete(`/units/${id}`);
 };
 
 /**
@@ -167,7 +167,7 @@ export const updateUnitRentalStatus = async (
     id: number,
     isRented: boolean
 ): Promise<PropertyUnit> => {
-    const response = await axios.patch(`${API_URL}/units/${id}/rental-status`, { isRented });
+    const response = await apiClient.patch(`/units/${id}/rental-status`, { isRented });
     return response.data.data;
 };
 
@@ -177,7 +177,7 @@ export const updateUnitRentalStatus = async (
  * Get all available common areas
  */
 export const getCommonAreas = async (): Promise<CommonArea[]> => {
-    const response = await axios.get(`${API_URL}/common-areas`);
+    const response = await apiClient.get('/common-areas');
     return response.data.data;
 };
 

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { MapPin, Home, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Home, ArrowLeft, ArrowRight } from 'lucide-react';
 import type { RentalMode } from '../types';
 
 interface ContainerBasicInfoProps {
@@ -15,18 +15,12 @@ export interface ContainerBasicInfoData {
     description: string;
     typeId: number;
     typeName: string;
-    locationId: number;
-    cityId: number;
-    departmentId: number;
-    street: string;
-    neighborhood: string;
     rentalMode: RentalMode;
     requiresDeposit: boolean;
     minimumContractMonths?: number;
 }
 
 const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack, initialData, propertyType: propPropertyType }) => {
-    const navigate = useNavigate();
     const location = useLocation();
     // Prioritize prop over location.state, with fallback to 'pension'
     const propertyType = propPropertyType || location.state?.propertyType || 'pension';
@@ -37,11 +31,6 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
             description: '',
             typeId: propertyType === 'pension' ? 3 : propertyType === 'apartamento' ? 1 : 4,
             typeName: propertyType,
-            locationId: 0,
-            cityId: 0,
-            departmentId: 0,
-            street: '',
-            neighborhood: '',
             rentalMode: 'by_unit',
             requiresDeposit: true,
             minimumContractMonths: 6,
@@ -67,14 +56,6 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
 
         if (!formData.description || formData.description.length < 50) {
             newErrors.description = 'La descripción debe tener al menos 50 caracteres';
-        }
-
-        if (!formData.street) {
-            newErrors.street = 'La dirección es obligatoria';
-        }
-
-        if (!formData.neighborhood) {
-            newErrors.neighborhood = 'El barrio es obligatorio';
         }
 
         if (formData.minimumContractMonths && formData.minimumContractMonths < 1) {
@@ -176,50 +157,6 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                         </p>
                     </div>
 
-                    {/* Location */}
-                    <div className="bg-white rounded-lg shadow-sm p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <MapPin className="w-5 h-5 text-blue-600" />
-                            <h3 className="text-lg font-semibold text-gray-900">Ubicación</h3>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Dirección *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.street}
-                                    onChange={(e) => handleChange('street', e.target.value)}
-                                    placeholder="Ej: Calle 85 #13-45"
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.street ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                />
-                                {errors.street && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.street}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Barrio *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.neighborhood}
-                                    onChange={(e) => handleChange('neighborhood', e.target.value)}
-                                    placeholder="Ej: Chapinero"
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.neighborhood ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                />
-                                {errors.neighborhood && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.neighborhood}</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Rental Mode */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -317,7 +254,7 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                         <button
                             type="button"
                             onClick={onBack}
-                            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5" />
                             Atrás
@@ -325,15 +262,15 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
 
                         <button
                             type="submit"
-                            className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >
                             Siguiente
                             <ArrowRight className="w-5 h-5" />
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

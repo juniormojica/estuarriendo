@@ -234,14 +234,14 @@ const ContainerServices: React.FC<ContainerServicesProps> = ({ onNext, onBack, i
                 <div className="flex justify-between pt-6">
                     <button
                         onClick={onBack}
-                        className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         Atrás
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
                         Siguiente
                         <ArrowRight className="w-5 h-5" />

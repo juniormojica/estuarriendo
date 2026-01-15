@@ -1,4 +1,5 @@
 import containerService from '../services/containerService.js';
+import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
 
 /**
@@ -14,19 +15,122 @@ export const createContainer = async (req, res) => {
     const transaction = await sequelize.transaction();
 
     try {
-        const containerData = {
-            ...req.body,
-            ownerId: req.userId // From auth middleware
-        };
+        const {
+            services = [],
+            rules = [],
+            commonAreaIds = [],
+            units = [],
+            location,
+            images,
+            ...propertyData
+        } = req.body;
 
-        const container = await containerService.createContainer(containerData, transaction);
+        const ownerId = req.userId; // From auth middleware
+
+        // Import all required models once
+        const { Property, PropertyService, PropertyRule, PropertyImage, Amenity } = await import('../models/index.js');
+
+        // For containers rented by_unit, monthlyRent should be 0 (price is per unit)
+        // For containers rented complete, use provided monthlyRent or default to 0
+        const monthlyRent = propertyData.rentalMode === 'by_unit'
+            ? 0
+            : (propertyData.monthlyRent || 0);
+
+        // 1. Create container using propertyService (handles location and images)
+        const container = await propertyService.createPropertyWithAssociations({
+            ...propertyData,
+            monthlyRent,
+            location,
+            images,
+            ownerId,
+            isContainer: true,
+            totalUnits: 0,
+            availableUnits: 0
+        });
+
+        // 2. Add services if provided
+        if (services.length > 0) {
+            const servicePromises = services.map(service =>
+                PropertyService.create({
+                    propertyId: container.id,
+                    ...service
+                }, { transaction })
+            );
+            await Promise.all(servicePromises);
+        }
+
+        // 3. Add rules if provided
+        if (rules.length > 0) {
+            const rulePromises = rules.map(rule =>
+                PropertyRule.create({
+                    propertyId: container.id,
+                    ...rule
+                }, { transaction })
+            );
+            await Promise.all(rulePromises);
+        }
+
+        // 4. Add common areas if provided
+        if (commonAreaIds.length > 0) {
+            const containerRecord = await Property.findByPk(container.id, { transaction });
+            await containerRecord.setCommonAreas(commonAreaIds, { transaction });
+        }
+
+        // 5. Create units if provided
+        if (units.length > 0) {
+            for (const unitData of units) {
+                const { images: unitImages, amenityIds, ...coreUnitData } = unitData;
+
+                // Create unit
+                const unit = await Property.create({
+                    ...coreUnitData,
+                    parentId: container.id,
+                    isContainer: false,
+                    locationId: container.locationId,
+                    typeId: container.typeId,
+                    ownerId: container.ownerId
+                }, { transaction });
+
+                // Add unit images
+                if (unitImages && unitImages.length > 0) {
+                    const imageRecords = unitImages.map((img, index) => ({
+                        propertyId: unit.id,
+                        url: typeof img === 'string' ? img : img.url,
+                        isFeatured: typeof img === 'string' ? index === 0 : (img.isFeatured || index === 0),
+                        orderPosition: typeof img === 'string' ? index : (img.orderPosition || index)
+                    }));
+                    await PropertyImage.bulkCreate(imageRecords, { transaction });
+                }
+
+                // Add amenities to unit
+                if (amenityIds && amenityIds.length > 0) {
+                    const amenities = await Amenity.findAll({
+                        where: { id: amenityIds },
+                        transaction
+                    });
+                    await unit.setAmenities(amenities, { transaction });
+                }
+            }
+
+            // Update container unit counts
+            await Property.update({
+                totalUnits: units.length,
+                availableUnits: units.length
+            }, {
+                where: { id: container.id },
+                transaction
+            });
+        }
 
         await transaction.commit();
+
+        // Fetch complete container with all associations
+        const completeContainer = await containerService.findContainerWithUnits(container.id);
 
         res.status(201).json({
             success: true,
             message: 'Container created successfully',
-            data: container
+            data: completeContainer
         });
     } catch (error) {
         await transaction.rollback();

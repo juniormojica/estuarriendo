@@ -76,7 +76,7 @@ const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onB
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {commonAreas.map(area => (
                             <label
                                 key={area.id}
@@ -110,11 +110,11 @@ const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onB
                 </div>
 
                 <div className="flex justify-between pt-6">
-                    <button onClick={onBack} className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <button onClick={onBack} className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg hover:bg-gray-50">
                         <ArrowLeft className="w-5 h-5" />
                         Atrás
                     </button>
-                    <button onClick={handleSubmit} className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <button onClick={handleSubmit} className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         Siguiente
                         <ArrowRight className="w-5 h-5" />
                     </button>

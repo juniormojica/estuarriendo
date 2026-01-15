@@ -36,17 +36,24 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
 
     const handleAmenityToggle = (amenity: Amenity) => {
         const amenityIds = formData.amenities || [];
-        const isSelected = amenityIds.some(a => typeof a === 'object' ? a.id === amenity.id : a === amenity.id.toString());
+        // Check if amenity ID is already in the array
+        const isSelected = amenityIds.some(a =>
+            typeof a === 'object' ? a.id === amenity.id : Number(a) === amenity.id
+        );
 
         if (isSelected) {
             setFormData(prev => ({
                 ...prev,
-                amenities: amenityIds.filter(a => typeof a === 'object' ? a.id !== amenity.id : a !== amenity.id.toString())
+                // Remove by ID
+                amenities: amenityIds.filter(a =>
+                    typeof a === 'object' ? a.id !== amenity.id : Number(a) !== amenity.id
+                )
             }));
         } else {
             setFormData(prev => ({
                 ...prev,
-                amenities: [...amenityIds, amenity]
+                // Store only the ID, not the full object
+                amenities: [...amenityIds, amenity.id]
             }));
         }
     };
@@ -101,7 +108,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                 {/* Header */}
                 <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-gray-900">
@@ -238,28 +245,30 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Amenidades
                         </label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {amenities.filter(a => ['bed', 'closet', 'desk', 'bathroom', 'balcony', 'ac'].includes(a.slug || '')).map(amenity => {
-                                const isSelected = (formData.amenities || []).some(a =>
-                                    typeof a === 'object' ? a.id === amenity.id : a === amenity.id.toString()
-                                );
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                            {amenities
+                                .filter(a => a.category === 'habitacion' || a.category === 'general')
+                                .map(amenity => {
+                                    const isSelected = (formData.amenities || []).some(a =>
+                                        typeof a === 'object' ? a.id === amenity.id : Number(a) === amenity.id
+                                    );
 
-                                return (
-                                    <label
-                                        key={amenity.id}
-                                        className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
-                                            }`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => handleAmenityToggle(amenity)}
-                                            className="mr-2"
-                                        />
-                                        <span className="text-sm">{amenity.name}</span>
-                                    </label>
-                                );
-                            })}
+                                    return (
+                                        <label
+                                            key={amenity.id}
+                                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                                                }`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => handleAmenityToggle(amenity)}
+                                                className="mr-2"
+                                            />
+                                            <span className="text-sm">{amenity.name}</span>
+                                        </label>
+                                    );
+                                })}
                         </div>
                     </div>
 
@@ -284,7 +293,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                             )}
 
                             {(formData.images || []).length > 0 && (
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     {(formData.images || []).map((img, index) => (
                                         <div key={index} className="relative group">
                                             <img src={typeof img === 'string' ? img : ''} alt={`Preview ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
@@ -306,13 +315,13 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                 <div className="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                        className="px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg hover:bg-gray-100"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        className="px-6 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
                         {initialData?.id ? 'Guardar Cambios' : 'Agregar Habitación'}
                     </button>

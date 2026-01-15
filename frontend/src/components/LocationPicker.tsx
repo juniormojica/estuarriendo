@@ -241,7 +241,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             <div className="relative">
                 <div
                     ref={mapRef}
-                    className="w-full h-96 rounded-lg border-2 border-gray-300 overflow-hidden"
+                    className="w-full h-80 sm:h-96 rounded-lg border-2 border-gray-300 overflow-hidden"
                 />
                 {isLoading && (
                     <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg">
