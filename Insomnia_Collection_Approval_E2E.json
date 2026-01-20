@@ -1,0 +1,211 @@
+{
+    "_type": "export",
+    "__export_format": 4,
+    "__export_date": "2026-01-19T20:37:00.000Z",
+    "__export_source": "insomnia.desktop.app:v2023.5.8",
+    "resources": [
+        {
+            "_id": "wrk_approval_e2e",
+            "_type": "workspace",
+            "name": "Sistema Aprobación E2E",
+            "description": "Pruebas end-to-end del sistema de aprobación",
+            "scope": "collection"
+        },
+        {
+            "_id": "env_base",
+            "_type": "environment",
+            "name": "Base Environment",
+            "data": {
+                "base_url": "http://localhost:3001/api",
+                "owner_token": "",
+                "admin_token": "",
+                "container_id": "",
+                "container2_id": "",
+                "unit1_id": "",
+                "unit2_id": "",
+                "unit3_id": ""
+            },
+            "parentId": "wrk_approval_e2e"
+        },
+        {
+            "_id": "req_1",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "1. Login Propietario",
+            "method": "POST",
+            "url": "{{ _.base_url }}/auth/login",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\"email\":\"test1@gmail.com\",\"password\":\"Owner123!\"}"
+            }
+        },
+        {
+            "_id": "req_2",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "2. Crear Contenedor Valledupar",
+            "method": "POST",
+            "url": "{{ _.base_url }}/containers",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.owner_token }}"
+                }
+            ],
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\"title\":\"Pensión Test Valledupar\",\"description\":\"Pensión de prueba para testing en Valledupar\",\"typeId\":2,\"isContainer\":true,\"rentalMode\":\"by_unit\",\"location\":{\"street\":\"Calle 15 # 5-25\",\"neighborhood\":\"Centro\",\"cityId\":1,\"departmentId\":1,\"zipCode\":\"200001\",\"latitude\":10.4631,\"longitude\":-73.2532},\"images\":[\"https://via.placeholder.com/800x600\"],\"services\":[{\"serviceType\":\"wifi\",\"isIncluded\":true},{\"serviceType\":\"utilities\",\"isIncluded\":true},{\"serviceType\":\"laundry\",\"isIncluded\":true}],\"rules\":[{\"ruleType\":\"smoking\",\"isAllowed\":false},{\"ruleType\":\"pets\",\"isAllowed\":true},{\"ruleType\":\"visits\",\"isAllowed\":true}],\"units\":[{\"title\":\"Habitación 101\",\"description\":\"Habitación individual con baño privado y aire acondicionado\",\"monthlyRent\":450000,\"area\":15,\"roomType\":\"individual\",\"images\":[\"https://via.placeholder.com/600x400\"]},{\"title\":\"Habitación 102\",\"description\":\"Habitación compartida para 2 personas\",\"monthlyRent\":300000,\"area\":20,\"roomType\":\"shared\",\"bedsInRoom\":2,\"images\":[\"https://via.placeholder.com/600x400\"]},{\"title\":\"Habitación 103\",\"description\":\"Habitación individual económica\",\"monthlyRent\":400000,\"area\":12,\"roomType\":\"individual\",\"images\":[\"https://via.placeholder.com/600x400\"]}]}"
+            }
+        },
+        {
+            "_id": "req_3",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "3. Login Admin",
+            "method": "POST",
+            "url": "{{ _.base_url }}/auth/login",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\"email\":\"juniormojica26@gmail.com\",\"password\":\"Admin123!\"}"
+            }
+        },
+        {
+            "_id": "req_4",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "4. Get Pendientes",
+            "method": "GET",
+            "url": "{{ _.base_url }}/containers/pending",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.admin_token }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_5",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "5. Aprobar Unidad 1",
+            "method": "PUT",
+            "url": "{{ _.base_url }}/units/{{ _.unit1_id }}/approve",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.admin_token }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_6",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "6. Rechazar Unidad 2",
+            "method": "PUT",
+            "url": "{{ _.base_url }}/units/{{ _.unit2_id }}/reject",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.admin_token }}"
+                }
+            ],
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\"reason\":\"Fotos de mala calidad\"}"
+            }
+        },
+        {
+            "_id": "req_7",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "7. Aprobar Unidad 3 (Auto-Aprobación)",
+            "method": "PUT",
+            "url": "{{ _.base_url }}/units/{{ _.unit3_id }}/approve",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.admin_token }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_8",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "8. Crear Contenedor 2",
+            "method": "POST",
+            "url": "{{ _.base_url }}/containers",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.owner_token }}"
+                }
+            ],
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\"title\":\"Pensión Test 2 - Aprobar Completo\",\"description\":\"Para probar aprobación completa\",\"typeId\":2,\"isContainer\":true,\"rentalMode\":\"by_unit\",\"location\":{\"street\":\"Calle 20 # 10-50\",\"neighborhood\":\"La Paz\",\"cityId\":1,\"departmentId\":1,\"zipCode\":\"200001\",\"latitude\":10.4631,\"longitude\":-73.2532},\"images\":[\"https://via.placeholder.com/800x600\"],\"services\":[{\"serviceType\":\"wifi\",\"isIncluded\":true},{\"serviceType\":\"utilities\",\"isIncluded\":true}],\"rules\":[{\"ruleType\":\"smoking\",\"isAllowed\":false}],\"units\":[{\"title\":\"Habitación 201\",\"description\":\"Habitación 1\",\"monthlyRent\":450000,\"area\":15,\"roomType\":\"individual\",\"images\":[\"https://via.placeholder.com/600x400\"]},{\"title\":\"Habitación 202\",\"description\":\"Habitación 2\",\"monthlyRent\":450000,\"area\":15,\"roomType\":\"individual\",\"images\":[\"https://via.placeholder.com/600x400\"]}]}"
+            }
+        },
+        {
+            "_id": "req_9",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "9. Aprobar Contenedor Completo (NUEVO)",
+            "method": "PUT",
+            "url": "{{ _.base_url }}/containers/{{ _.container2_id }}/approve",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.admin_token }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_10",
+            "_type": "request",
+            "parentId": "wrk_approval_e2e",
+            "name": "10. Validación - Rechazar sin Razón",
+            "method": "PUT",
+            "url": "{{ _.base_url }}/units/{{ _.unit1_id }}/reject",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{ _.admin_token }}"
+                }
+            ],
+            "body": {
+                "mimeType": "application/json",
+                "text": "{}"
+            }
+        }
+    ]
+}
