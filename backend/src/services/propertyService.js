@@ -373,7 +373,8 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
     const {
         limit = 50,
         offset = 0,
-        order = [['createdAt', 'DESC']]
+        order = [['createdAt', 'DESC']],
+        includeUnits = false
     } = options;
 
     const where = {};
@@ -572,6 +573,25 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         model: PropertyRule,
         as: 'rules'
     });
+
+    // Include units (child properties) for containers if requested
+    if (includeUnits) {
+        include.push({
+            model: Property,
+            as: 'units',
+            include: [
+                {
+                    model: PropertyImage,
+                    as: 'images'
+                },
+                {
+                    model: Amenity,
+                    as: 'amenities',
+                    through: { attributes: [] }
+                }
+            ]
+        });
+    }
 
     return await Property.findAndCountAll({
         attributes: {

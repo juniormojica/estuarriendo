@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Home, Edit, Trash2, AlertCircle, CheckCircle, Clock, XCircle, Users, CheckSquare, Square, Eye } from 'lucide-react';
+import { Plus, Home, AlertCircle } from 'lucide-react';
 import { Property } from '../types';
 import { authService } from '../services/authService';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchUserProperties, deleteProperty, toggleRented } from '../store/slices/propertiesSlice';
+import { fetchUserProperties, deleteProperty, toggleRented, toggleUnitRented } from '../store/slices/propertiesSlice';
 import LoadingSpinner from '../components/LoadingSpinner';
 import InterestedUsersModal from '../components/InterestedUsersModal';
+import PropertyStatusFilters from '../components/owner/PropertyStatusFilters';
+import OwnerPropertyCard from '../components/owner/OwnerPropertyCard';
+import OwnerContainerDetail from '../components/owner/OwnerContainerDetail';
 
 const OwnerDashboard: React.FC = () => {
     const dispatch = useAppDispatch();
     const { items: properties, loading, error: reduxError } = useAppSelector((state) => state.properties);
 
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+    const [expandedContainers, setExpandedContainers] = useState<Set<number>>(new Set());
 
     // State for Interested Users Modal
     const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
@@ -50,6 +55,23 @@ const OwnerDashboard: React.FC = () => {
         }
     };
 
+    const handleToggleUnitRented = async (unitId: string) => {
+        try {
+            // Find the unit to get its current status
+            const container = properties.find(p => p.units?.some(u => u.id === parseInt(unitId)));
+            const unit = container?.units?.find(u => u.id === parseInt(unitId));
+
+            if (unit) {
+                await dispatch(toggleUnitRented({
+                    unitId,
+                    isRented: !unit.isRented
+                }));
+            }
+        } catch (err) {
+            console.error('Error toggling unit rented status:', err);
+        }
+    };
+
     const handleOpenInterests = (propertyId: string, propertyTitle: string) => {
         setSelectedPropertyId(propertyId);
         setSelectedPropertyTitle(propertyTitle);
@@ -62,32 +84,35 @@ const OwnerDashboard: React.FC = () => {
         setSelectedPropertyTitle('');
     };
 
-    const getStatusBadge = (status: Property['status']) => {
-        switch (status) {
-            case 'approved':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Aprobada
-                    </span>
-                );
-            case 'pending':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Pendiente
-                    </span>
-                );
-            case 'rejected':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Rechazada
-                    </span>
-                );
-            default:
-                return null;
-        }
+    const handleToggleExpand = (propertyId: number) => {
+        setExpandedContainers(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(propertyId)) {
+                newSet.delete(propertyId);
+            } else {
+                newSet.add(propertyId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleViewUnit = (unitId: string) => {
+        // For now, just log - could navigate to unit detail page
+        console.log('View unit:', unitId);
+    };
+
+    // Filter properties by status
+    const filteredProperties = properties.filter(property => {
+        if (activeFilter === 'all') return true;
+        return property.status === activeFilter;
+    });
+
+    // Calculate counts for filters
+    const counts = {
+        all: properties.length,
+        pending: properties.filter(p => p.status === 'pending').length,
+        approved: properties.filter(p => p.status === 'approved').length,
+        rejected: properties.filter(p => p.status === 'rejected').length
     };
 
     if (loading) {
@@ -124,6 +149,15 @@ const OwnerDashboard: React.FC = () => {
                     </div>
                 )}
 
+                {/* Status Filters */}
+                {properties.length > 0 && (
+                    <PropertyStatusFilters
+                        counts={counts}
+                        activeFilter={activeFilter}
+                        onChange={setActiveFilter}
+                    />
+                )}
+
                 {properties.length === 0 ? (
                     <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
                         <Home className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
@@ -141,143 +175,40 @@ const OwnerDashboard: React.FC = () => {
                             </Link>
                         </div>
                     </div>
+                ) : filteredProperties.length === 0 ? (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                        <p className="text-gray-500">No hay propiedades con el estado seleccionado.</p>
+                    </div>
                 ) : (
-                    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                        <ul className="divide-y divide-gray-200">
-                            {properties.map((property) => (
-                                <li key={property.id}>
-                                    <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors">
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                            <div className="flex items-center min-w-0 flex-1">
-                                                <div className="flex-shrink-0 h-16 w-16 rounded-lg overflow-hidden bg-gray-100">
-                                                    <img
-                                                        className="h-16 w-16 object-cover"
-                                                        src={(property.images && property.images.length > 0) ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0]?.url) : 'https://via.placeholder.com/64x64'}
-                                                        alt={property.title}
-                                                    />
-                                                </div>
-                                                <div className="min-w-0 flex-1 px-4 md:grid md:grid-cols-2 md:gap-4">
-                                                    <div>
-                                                        <p className="text-sm font-medium text-emerald-600 truncate">
-                                                            {property.title}
-                                                        </p>
-                                                        <p className="mt-1 flex items-center text-sm text-gray-500">
-                                                            <span className="truncate">
-                                                                {property.location?.city}, {property.location?.department}
-                                                            </span>
-                                                        </p>
-                                                        {property.status === 'rejected' && property.rejectionReason && (
-                                                            <div className="mt-2 p-2 bg-red-50 rounded-md border border-red-100">
-                                                                <p className="text-xs text-red-700 font-medium">
-                                                                    Razón de rechazo:
-                                                                </p>
-                                                                <p className="text-xs text-red-600 mt-1">
-                                                                    {property.rejectionReason}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="hidden md:block">
-                                                        <div className="flex items-center text-sm text-gray-500">
-                                                            Precio: ${property.monthlyRent.toLocaleString()} {property.currency}
-                                                        </div>
-                                                        <div className="mt-1 flex items-center text-sm text-gray-500">
-                                                            Publicado: {new Date(property.createdAt).toLocaleDateString()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 sm:ml-4">
-                                                {getStatusBadge(property.status)}
+                    <div className="space-y-4">
+                        {filteredProperties.map((property) => (
+                            <div key={property.id}>
+                                <OwnerPropertyCard
+                                    property={property}
+                                    onToggleRented={handleToggleRented}
+                                    onDelete={(id) => {
+                                        if (deleteId === id) {
+                                            handleDelete(id);
+                                        } else {
+                                            setDeleteId(id);
+                                        }
+                                    }}
+                                    onViewInterests={handleOpenInterests}
+                                    isExpanded={expandedContainers.has(property.id)}
+                                    onToggleExpand={property.isContainer ? () => handleToggleExpand(property.id) : undefined}
+                                    isDeleting={deleteId === String(property.id)}
+                                />
 
-                                                {/* Rental Status Toggle */}
-                                                {property.status === 'approved' && (
-                                                    <button
-                                                        onClick={() => handleToggleRented(property.id)}
-                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${property.isRented
-                                                            ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                                                            : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                                            }`}
-                                                        title={property.isRented ? 'Marcar como disponible' : 'Marcar como rentada'}
-                                                    >
-                                                        {property.isRented ? (
-                                                            <>
-                                                                <CheckSquare className="w-3 h-3 mr-1" />
-                                                                Rentada
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Square className="w-3 h-3 mr-1" />
-                                                                Disponible
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                )}
-
-                                                <div className="flex items-center gap-2">
-                                                    {/* View Property Button */}
-                                                    <Link
-                                                        to={`/propiedad/${property.id}`}
-                                                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-emerald-600 active:text-emerald-700 transition-colors rounded-lg hover:bg-emerald-50"
-                                                        title="Ver Propiedad"
-                                                    >
-                                                        <Eye className="h-5 w-5" />
-                                                    </Link>
-
-                                                    <button
-                                                        onClick={() => handleOpenInterests(String(property.id), property.title)}
-                                                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-blue-600 active:text-blue-700 transition-colors rounded-lg hover:bg-blue-50"
-                                                        title="Ver Interesados"
-                                                    >
-                                                        <Users className="h-5 w-5" />
-                                                    </button>
-
-                                                    {/* Edit Button - More prominent for rejected properties */}
-                                                    <Link
-                                                        to={`/editar-propiedad/${property.id}`}
-                                                        className={`p-2 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors rounded-lg ${property.status === 'rejected'
-                                                            ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 active:bg-orange-100 ring-2 ring-orange-300'
-                                                            : 'text-gray-400 hover:text-emerald-600 active:text-emerald-700 hover:bg-emerald-50'
-                                                            }`}
-                                                        title={property.status === 'rejected'
-                                                            ? 'Editar y reenviar para revisión'
-                                                            : 'Editar'}
-                                                    >
-                                                        <Edit className="h-5 w-5" />
-                                                    </Link>
-
-                                                    {deleteId === String(property.id) ? (
-                                                        <div className="flex items-center space-x-2 animate-fadeIn">
-                                                            <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-                                                            <button
-                                                                onClick={() => handleDelete(property.id)}
-                                                                className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
-                                                            >
-                                                                Sí
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setDeleteId(null)}
-                                                                className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
-                                                            >
-                                                                No
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => setDeleteId(String(property.id))}
-                                                            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-red-600 active:text-red-700 transition-colors rounded-lg hover:bg-red-50"
-                                                            title="Eliminar"
-                                                        >
-                                                            <Trash2 className="h-5 w-5" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                                {/* Show units if container is expanded */}
+                                {property.isContainer && expandedContainers.has(property.id) && (
+                                    <OwnerContainerDetail
+                                        container={property}
+                                        onToggleUnitRented={handleToggleUnitRented}
+                                        onViewUnit={handleViewUnit}
+                                    />
+                                )}
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

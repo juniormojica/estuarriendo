@@ -144,9 +144,16 @@ export const getUserProperties = async (req, res) => {
     try {
         const { userId } = req.params;
 
+        // Import necessary models
+        const { PropertyImage, Amenity } = await import('../models/index.js');
+
         const result = await propertyService.findPropertiesWithAssociations(
             { ownerId: userId },
-            { order: [['createdAt', 'DESC']] }
+            {
+                order: [['createdAt', 'DESC']],
+                // Include units for containers
+                includeUnits: true
+            }
         );
 
         res.json({

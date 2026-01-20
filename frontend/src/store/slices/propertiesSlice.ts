@@ -213,6 +213,22 @@ export const toggleRented = createAsyncThunk(
     }
 );
 
+/**
+ * Toggle unit rented status (owner only)
+ * PATCH /api/units/:id/rental-status
+ */
+export const toggleUnitRented = createAsyncThunk(
+    'properties/toggleUnitRented',
+    async ({ unitId, isRented }: { unitId: string; isRented: boolean }, { rejectWithValue }) => {
+        try {
+            const response = await axios.patch(`/units/${unitId}/rental-status`, { isRented });
+            return { unitId, isRented: response.data.data?.isRented ?? isRented };
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to toggle unit rented status');
+        }
+    }
+);
+
 // ==================== SLICE ====================
 
 const propertiesSlice = createSlice({
@@ -412,6 +428,37 @@ const propertiesSlice = createSlice({
                 }
             })
             .addCase(toggleRented.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
+
+        // Toggle Unit Rented
+        builder
+            .addCase(toggleUnitRented.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(toggleUnitRented.fulfilled, (state, action) => {
+                state.loading = false;
+                const { unitId, isRented } = action.payload;
+
+                // Find the container that has this unit
+                const containerIndex = state.items.findIndex(p =>
+                    p.units?.some(u => u.id === parseInt(unitId))
+                );
+
+                if (containerIndex !== -1) {
+                    const container = state.items[containerIndex];
+                    if (container.units) {
+                        const unitIndex = container.units.findIndex(u => u.id === parseInt(unitId));
+                        if (unitIndex !== -1) {
+                            // Update the unit's rental status
+                            container.units[unitIndex].isRented = isRented;
+                        }
+                    }
+                }
+            })
+            .addCase(toggleUnitRented.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });
