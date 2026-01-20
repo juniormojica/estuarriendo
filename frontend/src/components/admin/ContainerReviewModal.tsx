@@ -394,31 +394,6 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                             <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{container.description}</p>
                         </div>
 
-                        {/* Common Areas Images */}
-                        {container.images && container.images.length > 0 && (
-                            <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <Home size={20} className="text-emerald-600" />
-                                    Fotos Áreas Comunes ({container.images.length})
-                                </h4>
-                                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                    {container.images.map((img, idx) => (
-                                        <div
-                                            key={idx}
-                                            className="aspect-square cursor-pointer rounded-lg overflow-hidden border-2 border-gray-200 hover:border-emerald-500 transition-all hover:shadow-lg"
-                                            onClick={() => setSelectedImage(typeof img === 'string' ? img : img.url)}
-                                        >
-                                            <img
-                                                src={typeof img === 'string' ? img : img.url}
-                                                alt={`Área Común ${idx + 1}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
                         {/* Location & Map */}
                         <div className="bg-white border border-gray-200 rounded-lg p-5">
                             <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -549,6 +524,31 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                         >
                                             {area.name}
                                         </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Common Areas Images - SECTION 4 */}
+                        {container.images && container.images.length > 0 && (
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <Home size={20} className="text-emerald-600" />
+                                    Fotos de Áreas Comunes ({container.images.length})
+                                </h4>
+                                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                    {container.images.map((img, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="aspect-square cursor-pointer rounded-lg overflow-hidden border-2 border-gray-200 hover:border-emerald-500 transition-all hover:shadow-lg"
+                                            onClick={() => setSelectedImage(typeof img === 'string' ? img : img.url)}
+                                        >
+                                            <img
+                                                src={typeof img === 'string' ? img : img.url}
+                                                alt={`Área Común ${idx + 1}`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             </div>

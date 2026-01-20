@@ -264,6 +264,7 @@ export const findContainerWithUnits = async (containerId) => {
                         { model: Amenity, as: 'amenities' }
                     ]
                 },
+                { model: PropertyImage, as: 'images' }, // <<< ADDED: Common area photos for container
                 { model: PropertyService, as: 'services' },
                 { model: PropertyRule, as: 'rules' },
                 { model: CommonArea, as: 'commonAreas' },
