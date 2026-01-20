@@ -10,6 +10,8 @@ import {
     Contact,
     PropertyType,
     User,
+    City,
+    Department,
     sequelize
 } from '../models/index.js';
 import { Op } from 'sequelize';
@@ -265,7 +267,14 @@ export const findContainerWithUnits = async (containerId) => {
                 { model: PropertyService, as: 'services' },
                 { model: PropertyRule, as: 'rules' },
                 { model: CommonArea, as: 'commonAreas' },
-                { model: Location, as: 'location' },
+                {
+                    model: Location,
+                    as: 'location',
+                    include: [
+                        { model: City, as: 'city', attributes: ['id', 'name'] },
+                        { model: Department, as: 'department', attributes: ['id', 'name'] }
+                    ]
+                },
                 { model: Contact, as: 'contact' },
                 { model: PropertyType, as: 'type' },
                 { model: User, as: 'owner' }
