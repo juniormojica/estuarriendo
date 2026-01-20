@@ -250,6 +250,7 @@ export interface CommonArea {
 // Property Unit (room/unit within a container)
 export interface PropertyUnit {
   id: number;
+  status: PropertyStatus; // Added status field
   parentId: number;
   title: string;
   description?: string;

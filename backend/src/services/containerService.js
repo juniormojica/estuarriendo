@@ -280,6 +280,20 @@ export const findContainerWithUnits = async (containerId) => {
             throw new Error('Property is not a container');
         }
 
+        // Calculate unit statistics
+        if (container.units) {
+            const pendingUnits = container.units.filter(u => u.status === 'pending').length;
+            const approvedUnits = container.units.filter(u => u.status === 'approved').length;
+            const rejectedUnits = container.units.filter(u => u.status === 'rejected').length;
+
+            container.dataValues.unitStats = {
+                pending: pendingUnits,
+                approved: approvedUnits,
+                rejected: rejectedUnits,
+                total: container.units.length
+            };
+        }
+
         return container;
     } catch (error) {
         throw new Error(`Error finding container: ${error.message}`);

@@ -368,14 +368,19 @@ export const approveProperty = async (req, res) => {
         }
 
         // Notify owner about property approval
-        await Notification.create({
-            userId: property.ownerId,
-            type: NotificationType.PROPERTY_APPROVED,
-            title: '¡Propiedad aprobada!',
-            message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para estudiantes.`,
-            propertyId: property.id,
-            isRead: false
-        });
+        try {
+            await Notification.create({
+                userId: property.ownerId,
+                type: NotificationType.PROPERTY_APPROVED,
+                title: '¡Propiedad aprobada!',
+                message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para estudiantes.`,
+                propertyId: property.id,
+                isRead: false
+            });
+        } catch (notifError) {
+            console.warn('Failed to send approval notification:', notifError);
+            // Continue execution, approval was successful
+        }
 
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);

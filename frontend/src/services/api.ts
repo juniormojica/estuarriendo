@@ -299,89 +299,90 @@ export const api = {
     return properties.filter(p => p.status === 'pending');
   },
 
-  async approveProperty(id: string): Promise<boolean> {
-    await delay(500);
-    const properties = getStoredProperties();
-    const property = properties.find(p => p.id === id);
-    if (property) {
-      property.status = 'approved';
-      saveProperties(properties);
-
-      // Create notification for owner
-      const ownerId = property.ownerId;
-      if (ownerId) {
-        const notifications = localStorage.getItem('estuarriendo_notifications');
-        let parsedNotifications: Notification[] = [];
-        if (notifications) {
-          try {
-            parsedNotifications = JSON.parse(notifications);
-          } catch (e) {
-            console.error('Error parsing notifications', e);
-          }
-        }
-
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          userId: ownerId,
-          type: 'property_approved',
-          title: 'Propiedad Aprobada',
-          message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para los estudiantes.`,
-          propertyId: id,
-          propertyTitle: property.title,
-          read: false,
-          createdAt: new Date().toISOString()
-        };
-
-        parsedNotifications.unshift(newNotification);
-        localStorage.setItem('estuarriendo_notifications', JSON.stringify(parsedNotifications));
-      }
-
-      return true;
+  async getPendingContainers(): Promise<Property[]> {
+    try {
+      const response = await apiClient.get('/containers/pending');
+      return response.data.data || response.data || [];
+    } catch (error) {
+      console.error('Error fetching pending containers:', error);
+      return [];
     }
-    return false;
+  },
+
+  async approveProperty(id: string): Promise<boolean> {
+    try {
+      console.log(`🔄 Approving property/unit ID: ${id}`);
+      const response = await apiClient.put(`/properties/${id}/approve`);
+      console.log('✅ Property approved:', response.data);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error approving property:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return false;
+    }
   },
 
   async rejectProperty(id: string, reason: string): Promise<boolean> {
-    await delay(500);
-    const properties = getStoredProperties();
-    const index = properties.findIndex(p => p.id === id);
-    if (index !== -1) {
-      properties[index].status = 'rejected';
-      properties[index].rejectionReason = reason;
-      saveProperties(properties);
-
-      // Create notification for owner
-      const ownerId = properties[index].ownerId;
-      if (ownerId) {
-        const notifications = localStorage.getItem('estuarriendo_notifications');
-        let parsedNotifications: Notification[] = [];
-        if (notifications) {
-          try {
-            parsedNotifications = JSON.parse(notifications);
-          } catch (e) {
-            console.error('Error parsing notifications', e);
-          }
-        }
-
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          userId: ownerId,
-          type: 'property_rejected',
-          title: 'Propiedad Rechazada',
-          message: `Tu propiedad "${properties[index].title}" ha sido rechazada. Razón: ${reason}`,
-          propertyId: id,
-          propertyTitle: properties[index].title,
-          read: false,
-          createdAt: new Date().toISOString()
-        };
-
-        parsedNotifications.unshift(newNotification);
-        localStorage.setItem('estuarriendo_notifications', JSON.stringify(parsedNotifications));
-      }
-
+    try {
+      console.log(`🚫 Rejecting property/unit ID: ${id}, Reason: ${reason}`);
+      const response = await apiClient.put(`/properties/${id}/reject`, { reason });
+      console.log('✅ Property rejected:', response.data);
       return true;
+    } catch (error: any) {
+      console.error('❌ Error rejecting property:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return false;
     }
-    return false;
+  },
+
+  async approveUnit(unitId: string): Promise<{ success: boolean; containerApproved?: boolean }> {
+    try {
+      console.log(`🔄 Approving unit ID: ${unitId}`);
+      const response = await apiClient.put(`/units/${unitId}/approve`);
+      console.log('✅ Unit approved:', response.data);
+      return {
+        success: true,
+        containerApproved: response.data.data?.containerApproved
+      };
+    } catch (error: any) {
+      console.error('❌ Error approving unit:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return { success: false };
+    }
+  },
+
+  async rejectUnit(unitId: string, reason: string): Promise<boolean> {
+    try {
+      console.log(`🚫 Rejecting unit ID: ${unitId}, Reason: ${reason}`);
+      await apiClient.put(`/units/${unitId}/reject`, { reason });
+      console.log('✅ Unit rejected');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error rejecting unit:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return false;
+    }
+  },
+
+  async approveContainer(containerId: string): Promise<{ success: boolean; approvedUnitsCount?: number }> {
+    try {
+      console.log(`🔄 Approving container ID: ${containerId}`);
+      const response = await apiClient.put(`/containers/${containerId}/approve`);
+      console.log('✅ Container approved:', response.data);
+      return {
+        success: true,
+        approvedUnitsCount: response.data.data?.approvedUnitsCount
+      };
+    } catch (error: any) {
+      console.error('❌ Error approving container:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return { success: false };
+    }
   },
 
   // Get cities that have at least one approved property

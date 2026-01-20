@@ -5,7 +5,7 @@ import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities, createAmenity, updateAmenity, deleteAmenity } from '../store/slices/amenitiesSlice';
 import { fetchProperties, approveProperty, rejectProperty, deleteProperty, toggleFeatured } from '../store/slices/propertiesSlice';
-import PropertyReviewModal from '../components/PropertyReviewModal';
+import ContainerReviewModal from '../components/admin/ContainerReviewModal';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminStats from '../components/admin/AdminStats';
 import PropertiesTable from '../components/admin/PropertiesTable';
@@ -14,6 +14,7 @@ import ActivityFeed from '../components/admin/ActivityFeed';
 import AdminConfig from '../components/admin/AdminConfig';
 import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
 import PropertyEditModal from '../components/admin/PropertyEditModal';
+import PropertyReviewModal from '../components/PropertyReviewModal';
 import UserDetailsModal from '../components/admin/UserDetailsModal';
 import ConfirmationModal from '../components/admin/ConfirmationModal';
 import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
@@ -47,9 +48,27 @@ const AdminDashboard = () => {
     const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
     const [pendingVerifications, setPendingVerifications] = useState<User[]>([]);
     const [studentRequestsCount, setStudentRequestsCount] = useState(0);
+    const [pendingContainers, setPendingContainers] = useState<Property[]>([]); // New state
 
     // Calculate filtered properties from Redux
-    const pendingProperties = properties.filter(p => p.status === 'pending');
+    const pendingProperties = React.useMemo(() => {
+        const storePending = properties.filter(p => p.status === 'pending');
+        const map = new Map();
+
+        // 1. Add store pending, filtering out child units
+        storePending.forEach(p => {
+            // Only add if it's not a child unit (no parentId)
+            if (!p.parentId) {
+                map.set(p.id, p);
+            }
+        });
+
+        // 2. Add pending containers (takes precedence to ensure we have units)
+        pendingContainers.forEach(p => map.set(p.id, p));
+
+        return Array.from(map.values());
+    }, [properties, pendingContainers]);
+
     const approvedProperties = properties.filter(p => p.status === 'approved');
     const rejectedProperties = properties.filter(p => p.status === 'rejected');
     const allProperties = properties;
@@ -96,13 +115,14 @@ const AdminDashboard = () => {
 
             // Fetch other data that still uses api methods
             // TODO: These should also be migrated to Redux eventually
-            const [usersData, activitiesData, configData, paymentsData, verificationsData, studentRequests] = await Promise.all([
+            const [usersData, activitiesData, configData, paymentsData, verificationsData, studentRequests, containers] = await Promise.all([
                 api.getUsers(),
                 api.getActivityLog(),
                 api.getSystemConfig(),
                 api.getPaymentRequests(),
                 api.getPendingVerifications(),
-                api.getStudentRequests()
+                api.getStudentRequests(),
+                api.getPendingContainers()
             ]);
 
             setUsers(usersData);
@@ -111,6 +131,7 @@ const AdminDashboard = () => {
             setPaymentRequests(paymentsData);
             setPendingVerifications(verificationsData);
             setStudentRequestsCount(studentRequests.filter(r => r.status === 'open').length);
+            setPendingContainers(containers);
         } catch (error) {
             console.error('Error loading admin data:', error);
         } finally {
@@ -134,6 +155,10 @@ const AdminDashboard = () => {
     const refreshData = async () => {
         // Refresh properties from Redux with all statuses
         await dispatch(fetchProperties({ status: 'all' }));
+
+        // Refresh pending containers
+        const containers = await api.getPendingContainers();
+        setPendingContainers(containers);
 
         // Refresh other data
         const [usersData, paymentsData, verificationsData] = await Promise.all([
@@ -700,15 +725,33 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Property Review Modal */}
+            {/* Modal de revisión */}
             {selectedProperty && (
-                <PropertyReviewModal
-                    property={selectedProperty}
-                    onClose={() => setSelectedProperty(null)}
-                    onApprove={() => handleApprove(String(selectedProperty.id))}
-                    onReject={(id, reason) => handleReject(id, reason)}
-                    onDeleteImage={handleDeleteImage}
-                />
+                selectedProperty.isContainer ? (
+                    <ContainerReviewModal
+                        container={selectedProperty}
+                        onClose={() => setSelectedProperty(null)}
+                        onUpdate={() => {
+                            dispatch(fetchProperties({ status: 'all' }));
+                            // Reload pending containers and update selected property
+                            api.getPendingContainers().then(containers => {
+                                setPendingContainers(containers);
+                                if (selectedProperty) {
+                                    const updated = containers.find(c => c.id === selectedProperty.id);
+                                    if (updated) setSelectedProperty(updated);
+                                }
+                            });
+                        }}
+                    />
+                ) : (
+                    <PropertyReviewModal
+                        property={selectedProperty}
+                        onClose={() => setSelectedProperty(null)}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        onDeleteImage={handleDeleteImage}
+                    />
+                )
             )}
 
             {/* Delete Confirmation Modal */}

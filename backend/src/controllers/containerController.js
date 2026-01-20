@@ -11,8 +11,65 @@ import { sequelize } from '../models/index.js';
  * Create a new container (pension, apartment, aparta-estudio)
  * POST /api/containers
  */
+/**
+ * Get containers that are pending or have pending units
+ * GET /api/containers/pending
+ */
+export const getPendingContainers = async (req, res) => {
+    try {
+        const { Property } = await import('../models/index.js');
+
+        // 1. Find containers with pending units
+        const containersWithPendingUnits = await Property.findAll({
+            where: { isContainer: true },
+            include: [{
+                model: Property,
+                as: 'units',
+                where: { status: 'pending' },
+                attributes: ['id'],
+                required: true
+            }]
+        });
+
+        // 2. Find containers that are pending themselves
+        const pendingContainers = await Property.findAll({
+            where: {
+                isContainer: true,
+                status: 'pending'
+            },
+            attributes: ['id']
+        });
+
+        // 3. Combine unique IDs
+        const containerIds = [...new Set([
+            ...containersWithPendingUnits.map(c => c.id),
+            ...pendingContainers.map(c => c.id)
+        ])];
+
+        if (containerIds.length === 0) {
+            return res.json({ success: true, data: [] });
+        }
+
+        // 4. Fetch full details using service (which includes our new stats)
+        const result = await Promise.all(
+            containerIds.map(id => containerService.findContainerWithUnits(id))
+        );
+
+        res.json({ success: true, data: result });
+    } catch (error) {
+        console.error('Error getting pending containers:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting pending containers',
+            error: error.message
+        });
+    }
+};
+
 export const createContainer = async (req, res) => {
     const transaction = await sequelize.transaction();
+
+
 
     try {
         const {
@@ -550,8 +607,227 @@ export const updateUnitRentalStatus = async (req, res) => {
     }
 };
 
+/**
+ * Approve unit and check if container should be auto-approved
+ * PUT /api/units/:id/approve
+ */
+export const approveUnit = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const { Property, Notification } = await import('../models/index.js');
+
+        const unit = await Property.findByPk(id, { transaction });
+        if (!unit) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, message: 'Unit not found' });
+        }
+
+        if (!unit.parentId) {
+            await transaction.rollback();
+            return res.status(400).json({ success: false, message: 'Property is not a unit' });
+        }
+
+        const oldStatus = unit.status;
+
+        // Update unit status
+        await unit.update({
+            status: 'approved',
+            isVerified: true,
+            reviewedAt: new Date(),
+            rejectionReason: null
+        }, { transaction });
+
+        // Check if all units of container are now approved
+        const container = await Property.findByPk(unit.parentId, {
+            include: [{ model: Property, as: 'units' }],
+            transaction
+        });
+
+        const allUnitsApproved = container.units.every(u =>
+            u.id === unit.id ? true : u.status === 'approved'
+        );
+
+        let containerApproved = false;
+        if (allUnitsApproved && container.status !== 'approved') {
+            await container.update({
+                status: 'approved',
+                isVerified: true,
+                reviewedAt: new Date()
+            }, { transaction });
+            containerApproved = true;
+
+            // Notify owner about container approval
+            await Notification.create({
+                userId: container.ownerId,
+                type: 'property_approved',
+                title: '¡Pensión aprobada!',
+                message: `Tu pensión "${container.title}" ha sido aprobada completamente.`,
+                propertyId: container.id,
+                isRead: false
+            }, { transaction });
+        } else if (oldStatus !== 'approved') {
+            // Notify about individual unit approval
+            await Notification.create({
+                userId: container.ownerId,
+                type: 'property_approved',
+                title: 'Habitación aprobada',
+                message: `La habitación "${unit.title}" de tu pensión "${container.title}" ha sido aprobada.`,
+                propertyId: unit.id,
+                isRead: false
+            }, { transaction });
+        }
+
+        await transaction.commit();
+
+        res.json({
+            success: true,
+            message: 'Unit approved successfully',
+            data: { unit, containerApproved }
+        });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error approving unit:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * Reject unit
+ * PUT /api/units/:id/reject
+ */
+export const rejectUnit = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        if (!reason) {
+            return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+        }
+
+        const { Property, Notification } = await import('../models/index.js');
+
+        const unit = await Property.findByPk(id, { transaction });
+        if (!unit) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, message: 'Unit not found' });
+        }
+
+        if (!unit.parentId) {
+            await transaction.rollback();
+            return res.status(400).json({ success: false, message: 'Property is not a unit' });
+        }
+
+        await unit.update({
+            status: 'rejected',
+            isVerified: false,
+            reviewedAt: new Date(),
+            rejectionReason: reason
+        }, { transaction });
+
+        // Get container for notification
+        const container = await Property.findByPk(unit.parentId, { transaction });
+
+        // Notify owner about unit rejection
+        await Notification.create({
+            userId: container.ownerId,
+            type: 'property_rejected',
+            title: 'Habitación rechazada',
+            message: `La habitación "${unit.title}" de tu pensión "${container.title}" ha sido rechazada. Motivo: ${reason}`,
+            propertyId: unit.id,
+            isRead: false
+        }, { transaction });
+
+        await transaction.commit();
+
+        res.json({
+            success: true,
+            message: 'Unit rejected',
+            data: unit
+        });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error rejecting unit:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * Approve container and all its pending units
+ * PUT /api/containers/:id/approve
+ */
+export const approveContainer = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const { Property, Notification } = await import('../models/index.js');
+
+        // Get container with all units
+        const container = await Property.findByPk(id, {
+            include: [{ model: Property, as: 'units' }],
+            transaction
+        });
+
+        if (!container) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, message: 'Container not found' });
+        }
+
+        if (!container.isContainer) {
+            await transaction.rollback();
+            return res.status(400).json({ success: false, message: 'Property is not a container' });
+        }
+
+        // Approve all pending units
+        const pendingUnits = container.units.filter(u => u.status === 'pending');
+        for (const unit of pendingUnits) {
+            await unit.update({
+                status: 'approved',
+                isVerified: true,
+                reviewedAt: new Date(),
+                rejectionReason: null
+            }, { transaction });
+        }
+
+        // Approve container itself
+        await container.update({
+            status: 'approved',
+            isVerified: true,
+            reviewedAt: new Date(),
+            rejectionReason: null
+        }, { transaction });
+
+        // Send notification to owner
+        await Notification.create({
+            userId: container.ownerId,
+            type: 'property_approved',
+            title: '¡Pensión aprobada!',
+            message: `Tu pensión "${container.title}" y todas sus habitaciones han sido aprobadas.`,
+            propertyId: container.id,
+            isRead: false
+        }, { transaction });
+
+        await transaction.commit();
+
+        res.json({
+            success: true,
+            message: 'Container and all units approved successfully',
+            data: {
+                container,
+                approvedUnitsCount: pendingUnits.length
+            }
+        });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error approving container:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export default {
     createContainer,
+    getPendingContainers,
     getContainer,
     updateContainer,
     deleteContainer,
@@ -561,5 +837,8 @@ export default {
     getContainerUnits,
     updateUnit,
     deleteUnit,
-    updateUnitRentalStatus
+    updateUnitRentalStatus,
+    approveUnit,
+    rejectUnit,
+    approveContainer
 };

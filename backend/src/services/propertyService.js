@@ -407,16 +407,15 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         where.typeId = resolvedTypeId;
     } else {
         // For other cases:
-        // 1. Show regular properties (not containers, no parent - like standalone apartamentos)
-        // 2. Show containers with rentalMode != 'by_unit' (rent the whole thing)
-        // 3. Show individual rooms (parentId not null) from by_unit containers
-        // 4. Exclude containers with rentalMode = 'by_unit' (their rooms are shown individually)
+        // 1. Show regular properties
+        // 2. Show ALL containers (including by_unit like Pensions)
+        // 3. Show individual rooms (units)
 
         where[Op.or] = [
             // Regular properties (not containers, not units - standalone properties)
             { isContainer: false, parentId: null },
-            // Containers that rent as complete (not by unit)
-            { isContainer: true, rentalMode: { [Op.or]: ['complete', 'single', null] } },
+            // ALL Containers
+            { isContainer: true },
             // Individual rooms from by_unit containers
             { parentId: { [Op.ne]: null } }
         ];

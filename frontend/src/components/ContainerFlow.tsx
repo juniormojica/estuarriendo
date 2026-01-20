@@ -12,6 +12,8 @@ import ImageUploader from './ImageUploader';
 import LoadingSpinner from './LoadingSpinner';
 import type { RentalMode, PropertyUnit } from '../types';
 import { createContainer, updateContainer } from '../services/containerService';
+import { useAppDispatch } from '../store/hooks';
+import { fetchAmenities } from '../store/slices/amenitiesSlice';
 
 interface ContainerFlowProps {
     propertyId?: string; // For editing
@@ -48,6 +50,13 @@ interface ContainerData {
 
 const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialPropertyType }) => {
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+
+    // Load amenities on mount
+    useEffect(() => {
+        dispatch(fetchAmenities());
+    }, [dispatch]);
+
     // If initialPropertyType is provided, start at step 1 (skip type selector)
     const [currentStep, setCurrentStep] = useState(initialPropertyType ? 1 : 0);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,6 +141,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                 // Units - replicate container coordinates to each unit
                 units: containerData.units?.map(unit => ({
                     ...unit,
+                    amenityIds: unit.amenities, // Backend expects amenityIds
                     latitude: containerData.coordinates?.lat,
                     longitude: containerData.coordinates?.lng
                 })),

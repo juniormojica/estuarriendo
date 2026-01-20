@@ -199,6 +199,11 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                                 {property.isFeatured && (
                                                     <Star size={16} className="text-yellow-500 fill-yellow-500" />
                                                 )}
+                                                {property.isContainer && (
+                                                    <span className="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded border border-blue-200">
+                                                        Contenedor
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="text-sm text-gray-500">ID: {property.id}</div>
                                         </div>
