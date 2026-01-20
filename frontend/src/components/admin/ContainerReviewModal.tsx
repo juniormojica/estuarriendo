@@ -253,9 +253,142 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Container Info Review - Enhanced */}
+                    {/* Container Info Review - OPTIMIZED LAYOUT */}
                     <div className="space-y-6">
-                        {/* Description */}
+                        {/* SECTION 1: Container Details - CRITICAL INFO FIRST */}
+                        <div className="bg-gradient-to-br from-emerald-50 to-blue-50 border-2 border-emerald-200 rounded-xl p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <Building size={22} className="text-emerald-600" />
+                                Detalles del Contenedor
+                            </h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {container.monthlyRent && (
+                                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <DollarSign size={16} className="text-emerald-600" />
+                                            <p className="text-xs text-gray-500">Pensión Completa</p>
+                                        </div>
+                                        <p className="text-lg font-bold text-emerald-600">
+                                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: container.currency }).format(container.monthlyRent)}
+                                        </p>
+                                    </div>
+                                )}
+                                {container.rentalMode && (
+                                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Home size={16} className="text-blue-600" />
+                                            <p className="text-xs text-gray-500">Modo de Arriendo</p>
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-900 capitalize">
+                                            {container.rentalMode === 'by_unit' ? 'Por habitación' : container.rentalMode}
+                                        </p>
+                                    </div>
+                                )}
+                                {container.totalUnits !== undefined && (
+                                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Users size={16} className="text-purple-600" />
+                                            <p className="text-xs text-gray-500">Total Unidades</p>
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-900">{container.totalUnits}</p>
+                                    </div>
+                                )}
+                                {container.minimumContractMonths !== undefined && (
+                                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Calendar size={16} className="text-orange-600" />
+                                            <p className="text-xs text-gray-500">Contrato Mínimo</p>
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-900">{container.minimumContractMonths} mes(es)</p>
+                                    </div>
+                                )}
+                                {container.deposit !== undefined && container.deposit > 0 && (
+                                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <DollarSign size={16} className="text-green-600" />
+                                            <p className="text-xs text-gray-500">Depósito</p>
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: container.currency }).format(container.deposit)}
+                                        </p>
+                                    </div>
+                                )}
+                                {container.requiresDeposit !== undefined && (
+                                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Shield size={16} className="text-indigo-600" />
+                                            <p className="text-xs text-gray-500">Requiere Depósito</p>
+                                        </div>
+                                        <p className={`text-sm font-semibold ${container.requiresDeposit ? 'text-green-600' : 'text-gray-500'}`}>
+                                            {container.requiresDeposit ? 'Sí' : 'No'}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* SECTION 2: Owner/Contact Information */}
+                        {(container.owner || container.contact) && (
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <User size={20} className="text-emerald-600" />
+                                    Información del Propietario
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {container.owner && (
+                                        <>
+                                            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+                                                <User size={18} className="text-gray-400 flex-shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="text-xs text-gray-500">Nombre</p>
+                                                    <p className="font-medium text-gray-900 truncate">{container.owner.name}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+                                                <Mail size={18} className="text-gray-400 flex-shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="text-xs text-gray-500">Correo</p>
+                                                    <p className="font-medium text-gray-900 truncate">{container.owner.email}</p>
+                                                </div>
+                                            </div>
+                                            {container.owner.phone && (
+                                                <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+                                                    <Phone size={18} className="text-gray-400 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs text-gray-500">Teléfono</p>
+                                                        <p className="font-medium text-gray-900 truncate">{container.owner.phone}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                    {container.contact && !container.owner && (
+                                        <>
+                                            {container.contact.email && (
+                                                <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+                                                    <Mail size={18} className="text-gray-400 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs text-gray-500">Correo de Contacto</p>
+                                                        <p className="font-medium text-gray-900 truncate">{container.contact.email}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {container.contact.phone && (
+                                                <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+                                                    <Phone size={18} className="text-gray-400 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs text-gray-500">Teléfono de Contacto</p>
+                                                        <p className="font-medium text-gray-900 truncate">{container.contact.phone}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SECTION 3: Description */}
                         <div className="bg-white border border-gray-200 rounded-lg p-5">
                             <h3 className="text-lg font-semibold text-gray-900 mb-3">Descripción</h3>
                             <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{container.description}</p>
@@ -421,147 +554,6 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                             </div>
                         )}
 
-                        {/* Container Details */}
-                        <div className="bg-white border border-gray-200 rounded-lg p-5">
-                            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                <Building size={20} className="text-emerald-600" />
-                                Detalles del Contenedor
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                {container.rentalMode && (
-                                    <div className="flex items-center gap-2">
-                                        <Home size={16} className="text-gray-400" />
-                                        <div>
-                                            <p className="text-xs text-gray-500">Modo</p>
-                                            <p className="text-sm font-medium text-gray-900 capitalize">
-                                                {container.rentalMode === 'by_unit' ? 'Por habitación' : container.rentalMode}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                {container.totalUnits !== undefined && (
-                                    <div className="flex items-center gap-2">
-                                        <Users size={16} className="text-gray-400" />
-                                        <div>
-                                            <p className="text-xs text-gray-500">Total unidades</p>
-                                            <p className="text-sm font-medium text-gray-900">{container.totalUnits}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {container.minimumContractMonths !== undefined && (
-                                    <div className="flex items-center gap-2">
-                                        <Calendar size={16} className="text-gray-400" />
-                                        <div>
-                                            <p className="text-xs text-gray-500">Contrato mínimo</p>
-                                            <p className="text-sm font-medium text-gray-900">{container.minimumContractMonths} mes(es)</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {container.requiresDeposit !== undefined && (
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign size={16} className="text-gray-400" />
-                                        <div>
-                                            <p className="text-xs text-gray-500">Requiere depósito</p>
-                                            <p className={`text-sm font-medium ${container.requiresDeposit ? 'text-green-600' : 'text-gray-500'}`}>
-                                                {container.requiresDeposit ? 'Sí' : 'No'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                {container.deposit !== undefined && container.deposit > 0 && (
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign size={16} className="text-gray-400" />
-                                        <div>
-                                            <p className="text-xs text-gray-500">Depósito</p>
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: container.currency }).format(container.deposit)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                {container.monthlyRent && (
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign size={16} className="text-gray-400" />
-                                        <div>
-                                            <p className="text-xs text-gray-500">Precio pensión completa</p>
-                                            <p className="text-sm font-medium text-emerald-600">
-                                                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: container.currency }).format(container.monthlyRent)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Owner/Contact Information */}
-                        {(container.owner || container.contact) && (
-                            <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                    <User size={20} className="text-emerald-600" />
-                                    Información del Propietario
-                                </h4>
-                                <div className="space-y-3">
-                                    {container.owner && (
-                                        <>
-                                            <div className="flex items-center gap-3 py-2 border-b border-gray-100">
-                                                <User size={18} className="text-gray-400" />
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Nombre</p>
-                                                    <p className="font-medium text-gray-900">{container.owner.name}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3 py-2 border-b border-gray-100">
-                                                <Mail size={18} className="text-gray-400" />
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Correo</p>
-                                                    <p className="font-medium text-gray-900">{container.owner.email}</p>
-                                                </div>
-                                            </div>
-                                            {container.owner.phone && (
-                                                <div className="flex items-center gap-3 py-2">
-                                                    <Phone size={18} className="text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm text-gray-500">Teléfono</p>
-                                                        <p className="font-medium text-gray-900">{container.owner.phone}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-                                    {container.contact && !container.owner && (
-                                        <>
-                                            {container.contact.contactName && (
-                                                <div className="flex items-center gap-3 py-2 border-b border-gray-100">
-                                                    <User size={18} className="text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm text-gray-500">Contacto</p>
-                                                        <p className="font-medium text-gray-900">{container.contact.contactName}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {container.contact.email && (
-                                                <div className="flex items-center gap-3 py-2 border-b border-gray-100">
-                                                    <Mail size={18} className="text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm text-gray-500">Correo</p>
-                                                        <p className="font-medium text-gray-900">{container.contact.email}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {container.contact.phone && (
-                                                <div className="flex items-center gap-3 py-2">
-                                                    <Phone size={18} className="text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm text-gray-500">Teléfono</p>
-                                                        <p className="font-medium text-gray-900">{container.contact.phone}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     {/* Units List */}
