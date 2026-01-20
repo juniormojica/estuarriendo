@@ -102,6 +102,15 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 typeof img === 'object' ? img.url : img
             ) || [];
 
+            // Handle city and department - can be string or object with name
+            const cityValue = typeof property.location?.city === 'object'
+                ? (property.location.city as any)?.name || ''
+                : property.location?.city || '';
+
+            const deptValue = typeof property.location?.department === 'object'
+                ? (property.location.department as any)?.name || ''
+                : property.location?.department || '';
+
             setFormData({
                 title: property.title || '',
                 description: property.description || '',
@@ -113,8 +122,8 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 area: property.area,
                 floor: property.floor,
                 locationId: property.location?.id,
-                department: property.location?.department || '',
-                city: property.location?.city || '',
+                department: deptValue,
+                city: cityValue,
                 street: property.location?.street || '',
                 neighborhood: property.location?.neighborhood,
                 latitude: property.location?.latitude,
@@ -127,7 +136,11 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
 
             // Initialize available cities
             if (property.location?.department) {
-                const dept = departments.find(d => d.name === property.location?.department);
+                const deptName = typeof property.location.department === 'object'
+                    ? (property.location.department as any)?.name
+                    : property.location.department;
+
+                const dept = departments.find(d => d.name === deptName);
                 if (dept) {
                     const cities = getCitiesByDepartment(dept.id);
                     setAvailableCities(cities.map(c => c.name));

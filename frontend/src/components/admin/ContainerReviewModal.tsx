@@ -26,6 +26,14 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
         setLocalUnits(container.units || []);
     }, [container.units]);
 
+    // Helper to get city/department name from object or string
+    const getLocationValue = (value: any): string => {
+        if (!value) return '';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'object' && value.name) return value.name;
+        return '';
+    };
+
     // Helper to get unit price
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('es-CO', {
@@ -179,7 +187,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                             {container.title}
                         </h2>
                         <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                            <span className="flex items-center gap-1"><MapPin size={14} /> {container.location?.city}</span>
+                            <span className="flex items-center gap-1"><MapPin size={14} /> {getLocationValue(container.location?.city)}</span>
                             <span className="flex items-center gap-1"><Layout size={14} /> {container.units?.length || 0} Habitaciones</span>
                         </div>
                     </div>

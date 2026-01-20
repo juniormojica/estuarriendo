@@ -237,6 +237,14 @@ const PropertyDetail: React.FC = () => {
     });
   };
 
+  // Helper to get city/department name from object or string
+  const getLocationValue = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.name) return value.name;
+    return '';
+  };
+
   const getAmenityDetails = (amenityId: string | number) => {
     return amenities.find(a => String(a.id) === String(amenityId));
   };
@@ -347,7 +355,9 @@ const PropertyDetail: React.FC = () => {
                   {/* Location - Responsive */}
                   <div className="flex items-start sm:items-center text-gray-600">
                     <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-emerald-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-                    <span className="text-sm sm:text-base lg:text-lg">{property.location?.street}, {property.location?.city}, {property.location?.department}</span>
+                    <span className="text-sm sm:text-base lg:text-lg">
+                      {property.location?.street}, {getLocationValue(property.location?.city)}, {getLocationValue(property.location?.department)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -790,11 +800,11 @@ const PropertyDetail: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Ciudad</p>
-                  <p className="font-semibold text-gray-900">{property.location?.city}</p>
+                  <p className="font-semibold text-gray-900">{getLocationValue(property.location?.city)}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Departamento</p>
-                  <p className="font-semibold text-gray-900">{property.location?.department}</p>
+                  <p className="font-semibold text-gray-900">{getLocationValue(property.location?.department)}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Dirección</p>
@@ -837,7 +847,7 @@ const PropertyDetail: React.FC = () => {
             {/* Related Properties */}
             <RelatedProperties
               currentPropertyId={String(property.id)}
-              city={property.location?.city || ''}
+              city={getLocationValue(property.location?.city) || ''}
               type={property.type?.name || 'apartamento'}
             />
           </div>
