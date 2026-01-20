@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize } from 'lucide-react';
+import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize, User, Phone, Mail, Clock, Calendar, DollarSign, Users, Coffee, Utensils, Wifi, Droplets, ShowerHead, Sofa, CheckCircle, XCircle, Building, Shield } from 'lucide-react';
 import { Property } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 import ReadOnlyMap from './ReadOnlyMap';
@@ -399,6 +399,240 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                                 {institution.name}
                                             </span>
                                         ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Services Section */}
+                            {property.services && property.services.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Coffee size={20} className="text-emerald-600" />
+                                        Servicios
+                                    </h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {property.services.map((service, index) => {
+                                            const serviceLabels: Record<string, string> = {
+                                                breakfast: 'Desayuno',
+                                                lunch: 'Almuerzo',
+                                                dinner: 'Cena',
+                                                housekeeping: 'Aseo',
+                                                laundry: 'Lavandería',
+                                                wifi: 'WiFi',
+                                                utilities: 'Servicios públicos'
+                                            };
+                                            return (
+                                                <div
+                                                    key={service.id || index}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${service.isIncluded
+                                                            ? 'bg-green-50 text-green-700'
+                                                            : 'bg-gray-50 text-gray-500'
+                                                        }`}
+                                                >
+                                                    {service.isIncluded ? (
+                                                        <CheckCircle size={16} className="text-green-600" />
+                                                    ) : (
+                                                        <XCircle size={16} className="text-gray-400" />
+                                                    )}
+                                                    <span className="font-medium">
+                                                        {serviceLabels[service.serviceType] || service.serviceType}
+                                                    </span>
+                                                    {service.additionalCost && service.additionalCost > 0 && (
+                                                        <span className="text-xs text-gray-500">
+                                                            (+${service.additionalCost.toLocaleString()})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Rules Section */}
+                            {property.rules && property.rules.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Shield size={20} className="text-emerald-600" />
+                                        Reglas de la Propiedad
+                                    </h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {property.rules.map((rule, index) => {
+                                            const ruleLabels: Record<string, string> = {
+                                                visits: 'Visitas',
+                                                pets: 'Mascotas',
+                                                smoking: 'Fumar',
+                                                noise: 'Ruido',
+                                                curfew: 'Hora límite',
+                                                tenant_profile: 'Perfil inquilino',
+                                                couples: 'Parejas',
+                                                children: 'Niños'
+                                            };
+                                            return (
+                                                <div
+                                                    key={rule.id || index}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${rule.isAllowed
+                                                            ? 'bg-green-50 text-green-700'
+                                                            : 'bg-red-50 text-red-700'
+                                                        }`}
+                                                >
+                                                    {rule.isAllowed ? (
+                                                        <CheckCircle size={16} className="text-green-600" />
+                                                    ) : (
+                                                        <XCircle size={16} className="text-red-500" />
+                                                    )}
+                                                    <span className="font-medium">
+                                                        {ruleLabels[rule.ruleType] || rule.ruleType}
+                                                    </span>
+                                                    {rule.value && (
+                                                        <span className="text-xs text-gray-500">({rule.value})</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Common Areas Section (for containers) */}
+                            {property.isContainer && property.commonAreas && property.commonAreas.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Sofa size={20} className="text-emerald-600" />
+                                        Zonas Comunes
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {property.commonAreas.map((area) => (
+                                            <span
+                                                key={area.id}
+                                                className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-sm font-medium"
+                                            >
+                                                {area.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Container Details Section */}
+                            {property.isContainer && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Building size={20} className="text-emerald-600" />
+                                        Detalles del Contenedor
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {property.rentalMode && (
+                                            <div className="flex items-center gap-2">
+                                                <Home size={16} className="text-gray-400" />
+                                                <span className="text-sm text-gray-600">Modo:</span>
+                                                <span className="text-sm font-medium text-gray-900 capitalize">
+                                                    {property.rentalMode === 'by_unit' ? 'Por habitación' : property.rentalMode}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {property.totalUnits !== undefined && (
+                                            <div className="flex items-center gap-2">
+                                                <Users size={16} className="text-gray-400" />
+                                                <span className="text-sm text-gray-600">Total unidades:</span>
+                                                <span className="text-sm font-medium text-gray-900">{property.totalUnits}</span>
+                                            </div>
+                                        )}
+                                        {property.minimumContractMonths !== undefined && (
+                                            <div className="flex items-center gap-2">
+                                                <Calendar size={16} className="text-gray-400" />
+                                                <span className="text-sm text-gray-600">Contrato mínimo:</span>
+                                                <span className="text-sm font-medium text-gray-900">{property.minimumContractMonths} mes(es)</span>
+                                            </div>
+                                        )}
+                                        {property.requiresDeposit !== undefined && (
+                                            <div className="flex items-center gap-2">
+                                                <DollarSign size={16} className="text-gray-400" />
+                                                <span className="text-sm text-gray-600">Requiere depósito:</span>
+                                                <span className={`text-sm font-medium ${property.requiresDeposit ? 'text-green-600' : 'text-gray-500'}`}>
+                                                    {property.requiresDeposit ? 'Sí' : 'No'}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {property.deposit !== undefined && property.deposit > 0 && (
+                                            <div className="flex items-center gap-2">
+                                                <DollarSign size={16} className="text-gray-400" />
+                                                <span className="text-sm text-gray-600">Depósito:</span>
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: property.currency }).format(property.deposit)}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Owner/Contact Information */}
+                            {(property.owner || property.contact) && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <User size={20} className="text-emerald-600" />
+                                        Información del Propietario
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {property.owner && (
+                                            <>
+                                                <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                    <User size={18} className="text-gray-400" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Nombre</p>
+                                                        <p className="font-medium text-gray-900">{property.owner.name}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                    <Mail size={18} className="text-gray-400" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Correo</p>
+                                                        <p className="font-medium text-gray-900">{property.owner.email}</p>
+                                                    </div>
+                                                </div>
+                                                {property.owner.phone && (
+                                                    <div className="flex items-center gap-3 py-2">
+                                                        <Phone size={18} className="text-gray-400" />
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Teléfono</p>
+                                                            <p className="font-medium text-gray-900">{property.owner.phone}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                        {property.contact && !property.owner && (
+                                            <>
+                                                {property.contact.contactName && (
+                                                    <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                        <User size={18} className="text-gray-400" />
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Contacto</p>
+                                                            <p className="font-medium text-gray-900">{property.contact.contactName}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {property.contact.email && (
+                                                    <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                        <Mail size={18} className="text-gray-400" />
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Correo</p>
+                                                            <p className="font-medium text-gray-900">{property.contact.email}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {property.contact.phone && (
+                                                    <div className="flex items-center gap-3 py-2">
+                                                        <Phone size={18} className="text-gray-400" />
+                                                        <div>
+                                                            <p className="text-sm text-gray-500">Teléfono</p>
+                                                            <p className="font-medium text-gray-900">{property.contact.phone}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}

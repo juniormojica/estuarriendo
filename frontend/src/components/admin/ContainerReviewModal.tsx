@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Property, PropertyUnit } from '../../types';
-import { X, Check, CheckCircle, XCircle, Home, MapPin, Wifi, Layout, Users, Bed, BedDouble } from 'lucide-react';
+import { X, Check, CheckCircle, XCircle, Home, MapPin, Wifi, Layout, Users, Bed, BedDouble, User, Phone, Mail, Calendar, DollarSign, Coffee, Shield, Sofa, Building } from 'lucide-react';
 import { api } from '../../services/api';
 import { useToast } from '../ToastProvider';
+import ReadOnlyMap from '../ReadOnlyMap';
 
 interface ContainerReviewModalProps {
     container: Property;
@@ -252,25 +253,31 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Container Info Review */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <h3 className="font-semibold text-gray-900 mb-3">Información General</h3>
-                        <p className="text-gray-600 text-sm mb-4">{container.description}</p>
+                    {/* Container Info Review - Enhanced */}
+                    <div className="space-y-6">
+                        {/* Description */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-5">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Descripción</h3>
+                            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{container.description}</p>
+                        </div>
 
                         {/* Common Areas Images */}
                         {container.images && container.images.length > 0 && (
-                            <div className="mb-6">
-                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Fotos Áreas Comunes</h4>
-                                <div className="flex gap-2 overflow-x-auto pb-2">
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <Home size={20} className="text-emerald-600" />
+                                    Fotos Áreas Comunes ({container.images.length})
+                                </h4>
+                                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                     {container.images.map((img, idx) => (
                                         <div
                                             key={idx}
-                                            className="w-24 h-24 flex-shrink-0 cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity"
+                                            className="aspect-square cursor-pointer rounded-lg overflow-hidden border-2 border-gray-200 hover:border-emerald-500 transition-all hover:shadow-lg"
                                             onClick={() => setSelectedImage(typeof img === 'string' ? img : img.url)}
                                         >
                                             <img
                                                 src={typeof img === 'string' ? img : img.url}
-                                                alt={`Area Común ${idx + 1}`}
+                                                alt={`Área Común ${idx + 1}`}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
@@ -279,30 +286,282 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Servicios</h4>
+                        {/* Location & Map */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-5">
+                            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <MapPin size={20} className="text-emerald-600" />
+                                Ubicación
+                            </h4>
+                            <div className="space-y-4">
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <p className="font-medium text-gray-900">{container.location?.street}</p>
+                                    <p className="text-gray-600">{getLocationValue(container.location?.city)}, {getLocationValue(container.location?.department)}</p>
+                                    {container.location?.postalCode && <p className="text-sm text-gray-500">CP: {container.location.postalCode}</p>}
+                                </div>
+                                {container.location?.latitude && container.location?.longitude ? (
+                                    <ReadOnlyMap
+                                        latitude={typeof container.location.latitude === 'string' ? parseFloat(container.location.latitude) : container.location.latitude}
+                                        longitude={typeof container.location.longitude === 'string' ? parseFloat(container.location.longitude) : container.location.longitude}
+                                        address={`${container.location.street}, ${getLocationValue(container.location.city)}`}
+                                    />
+                                ) : (
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                        <p className="text-sm text-yellow-800">⚠️ Esta propiedad no tiene coordenadas de ubicación.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Services */}
+                            {container.services && container.services.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Coffee size={20} className="text-emerald-600" />
+                                        Servicios
+                                    </h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {container.services.map((service, idx) => {
+                                            const serviceLabels: Record<string, string> = {
+                                                breakfast: 'Desayuno',
+                                                lunch: 'Almuerzo',
+                                                dinner: 'Cena',
+                                                housekeeping: 'Aseo',
+                                                laundry: 'Lavandería',
+                                                wifi: 'WiFi',
+                                                utilities: 'Servicios públicos'
+                                            };
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${service.isIncluded ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-500'
+                                                        }`}
+                                                >
+                                                    {service.isIncluded ? (
+                                                        <CheckCircle size={16} className="text-green-600" />
+                                                    ) : (
+                                                        <XCircle size={16} className="text-gray-400" />
+                                                    )}
+                                                    <span className="font-medium">
+                                                        {serviceLabels[service.serviceType] || service.serviceType}
+                                                    </span>
+                                                    {service.additionalCost && service.additionalCost > 0 && (
+                                                        <span className="text-xs text-gray-500">
+                                                            (+${service.additionalCost.toLocaleString()})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Rules */}
+                            {container.rules && container.rules.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Shield size={20} className="text-emerald-600" />
+                                        Reglas
+                                    </h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {container.rules.map((rule, idx) => {
+                                            const ruleLabels: Record<string, string> = {
+                                                visits: 'Visitas',
+                                                pets: 'Mascotas',
+                                                smoking: 'Fumar',
+                                                noise: 'Ruido',
+                                                curfew: 'Hora límite',
+                                                tenant_profile: 'Perfil inquilino',
+                                                couples: 'Parejas',
+                                                children: 'Niños'
+                                            };
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${rule.isAllowed ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                                        }`}
+                                                >
+                                                    {rule.isAllowed ? (
+                                                        <CheckCircle size={16} className="text-green-600" />
+                                                    ) : (
+                                                        <XCircle size={16} className="text-red-500" />
+                                                    )}
+                                                    <span className="font-medium">
+                                                        {ruleLabels[rule.ruleType] || rule.ruleType}
+                                                    </span>
+                                                    {rule.value && (
+                                                        <span className="text-xs text-gray-500">({rule.value})</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Common Areas */}
+                        {container.commonAreas && container.commonAreas.length > 0 && (
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                    <Sofa size={20} className="text-emerald-600" />
+                                    Zonas Comunes
+                                </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {container.services?.map((service, idx) => (
-                                        <span key={idx} className="bg-white border border-gray-200 px-2 py-1 rounded text-xs text-gray-600 flex items-center gap-1">
-                                            {service.isIncluded ? <Check size={10} className="text-green-500" /> : <X size={10} className="text-red-500" />}
-                                            {service.serviceType}
+                                    {container.commonAreas.map((area) => (
+                                        <span
+                                            key={area.id}
+                                            className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-sm font-medium"
+                                        >
+                                            {area.name}
                                         </span>
                                     ))}
                                 </div>
                             </div>
-                            <div>
-                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Reglas</h4>
-                                <ul className="text-sm text-gray-600 space-y-1">
-                                    {container.rules?.map((rule, idx) => (
-                                        <li key={idx} className="flex items-center gap-2">
-                                            {rule.isAllowed ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}
-                                            {rule.ruleType}
-                                        </li>
-                                    ))}
-                                </ul>
+                        )}
+
+                        {/* Container Details */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-5">
+                            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <Building size={20} className="text-emerald-600" />
+                                Detalles del Contenedor
+                            </h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {container.rentalMode && (
+                                    <div className="flex items-center gap-2">
+                                        <Home size={16} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Modo</p>
+                                            <p className="text-sm font-medium text-gray-900 capitalize">
+                                                {container.rentalMode === 'by_unit' ? 'Por habitación' : container.rentalMode}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {container.totalUnits !== undefined && (
+                                    <div className="flex items-center gap-2">
+                                        <Users size={16} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Total unidades</p>
+                                            <p className="text-sm font-medium text-gray-900">{container.totalUnits}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {container.minimumContractMonths !== undefined && (
+                                    <div className="flex items-center gap-2">
+                                        <Calendar size={16} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Contrato mínimo</p>
+                                            <p className="text-sm font-medium text-gray-900">{container.minimumContractMonths} mes(es)</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {container.requiresDeposit !== undefined && (
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign size={16} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Requiere depósito</p>
+                                            <p className={`text-sm font-medium ${container.requiresDeposit ? 'text-green-600' : 'text-gray-500'}`}>
+                                                {container.requiresDeposit ? 'Sí' : 'No'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {container.deposit !== undefined && container.deposit > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign size={16} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Depósito</p>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: container.currency }).format(container.deposit)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {container.monthlyRent && (
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign size={16} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Precio pensión completa</p>
+                                            <p className="text-sm font-medium text-emerald-600">
+                                                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: container.currency }).format(container.monthlyRent)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
+
+                        {/* Owner/Contact Information */}
+                        {(container.owner || container.contact) && (
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                    <User size={20} className="text-emerald-600" />
+                                    Información del Propietario
+                                </h4>
+                                <div className="space-y-3">
+                                    {container.owner && (
+                                        <>
+                                            <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                <User size={18} className="text-gray-400" />
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Nombre</p>
+                                                    <p className="font-medium text-gray-900">{container.owner.name}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                <Mail size={18} className="text-gray-400" />
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Correo</p>
+                                                    <p className="font-medium text-gray-900">{container.owner.email}</p>
+                                                </div>
+                                            </div>
+                                            {container.owner.phone && (
+                                                <div className="flex items-center gap-3 py-2">
+                                                    <Phone size={18} className="text-gray-400" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Teléfono</p>
+                                                        <p className="font-medium text-gray-900">{container.owner.phone}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                    {container.contact && !container.owner && (
+                                        <>
+                                            {container.contact.contactName && (
+                                                <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                    <User size={18} className="text-gray-400" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Contacto</p>
+                                                        <p className="font-medium text-gray-900">{container.contact.contactName}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {container.contact.email && (
+                                                <div className="flex items-center gap-3 py-2 border-b border-gray-100">
+                                                    <Mail size={18} className="text-gray-400" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Correo</p>
+                                                        <p className="font-medium text-gray-900">{container.contact.email}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {container.contact.phone && (
+                                                <div className="flex items-center gap-3 py-2">
+                                                    <Phone size={18} className="text-gray-400" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Teléfono</p>
+                                                        <p className="font-medium text-gray-900">{container.contact.phone}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Units List */}
