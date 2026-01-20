@@ -86,6 +86,8 @@ const AdminDashboard = () => {
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; userId: string | null; action: 'approve' | 'reject' | null }>({ isOpen: false, userId: null, action: null });
+    const [rejectionReason, setRejectionReason] = useState('');
 
     // Use React Router's useLocation hook
     const location = useLocation();
@@ -399,31 +401,40 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleApproveVerification = async (userId: string) => {
-        if (window.confirm('¿Estás seguro de aprobar esta verificación?')) {
-            try {
-                const success = await api.updateVerificationStatus(userId, 'verified');
-                if (success) {
-                    await refreshData();
-                }
-            } catch (error) {
-                console.error('Error approving verification:', error);
+    const handleApproveVerification = (userId: string) => {
+        setVerificationModal({ isOpen: true, userId, action: 'approve' });
+    };
+
+    const handleConfirmApproveVerification = async () => {
+        if (!verificationModal.userId) return;
+        setVerificationModal({ isOpen: false, userId: null, action: null });
+        try {
+            const success = await api.updateVerificationStatus(verificationModal.userId, 'verified');
+            if (success) {
+                await refreshData();
             }
+        } catch (error) {
+            console.error('Error approving verification:', error);
         }
     };
 
-    const handleRejectVerification = async (userId: string) => {
-        const reason = window.prompt('Por favor ingresa la razón del rechazo:');
-        if (reason) {
-            try {
-                const success = await api.updateVerificationStatus(userId, 'rejected', reason);
-                if (success) {
-                    await refreshData();
-                }
-            } catch (error) {
-                console.error('Error rejecting verification:', error);
+    const handleRejectVerification = (userId: string) => {
+        setVerificationModal({ isOpen: true, userId, action: 'reject' });
+        setRejectionReason('');
+    };
+
+    const handleConfirmRejectVerification = async () => {
+        if (!verificationModal.userId || !rejectionReason.trim()) return;
+        setVerificationModal({ isOpen: false, userId: null, action: null });
+        try {
+            const success = await api.updateVerificationStatus(verificationModal.userId, 'rejected', rejectionReason);
+            if (success) {
+                await refreshData();
             }
+        } catch (error) {
+            console.error('Error rejecting verification:', error);
         }
+        setRejectionReason('');
     };
 
     const renderContent = () => {
@@ -798,6 +809,92 @@ const AdminDashboard = () => {
                     type={paymentConfirmModal.type === 'verify' ? 'success' : 'danger'}
                     isProcessing={isProcessingPayment}
                 />
+            )}
+
+            {/* Verification Approval Modal */}
+            {verificationModal.isOpen && verificationModal.action === 'approve' && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-start gap-4 mb-4">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                    ¿Aprobar verificación?
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                    Esto verificará al usuario y le permitirá acceder a funciones adicionales de la plataforma.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setVerificationModal({ isOpen: false, userId: null, action: null })}
+                                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmApproveVerification}
+                                className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors shadow-lg shadow-green-600/30"
+                            >
+                                Aprobar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Verification Rejection Modal */}
+            {verificationModal.isOpen && verificationModal.action === 'reject' && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-start gap-4 mb-4">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                    Rechazar verificación
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-4">
+                                    Por favor, proporciona una razón para el rechazo. Esto ayudará al usuario a entender qué debe corregir.
+                                </p>
+                                <textarea
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    placeholder="Ej: Los documentos no son legibles, falta información..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                                    rows={3}
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => {
+                                    setVerificationModal({ isOpen: false, userId: null, action: null });
+                                    setRejectionReason('');
+                                }}
+                                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmRejectVerification}
+                                disabled={!rejectionReason.trim()}
+                                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/30"
+                            >
+                                Rechazar
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

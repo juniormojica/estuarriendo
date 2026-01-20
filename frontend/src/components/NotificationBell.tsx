@@ -57,8 +57,8 @@ const NotificationBell: React.FC = () => {
                 navigate('/admin?section=payments');
                 break;
             case 'property_submitted':
-                // Admin: Navigate to admin dashboard properties section
-                navigate('/admin?section=properties');
+                // Admin: Navigate to admin dashboard pending properties section
+                navigate('/admin?section=pending');
                 break;
             case 'property_approved':
                 // Owner: Navigate to my properties page

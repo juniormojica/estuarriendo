@@ -121,13 +121,48 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
 
     const [selectedUnit, setSelectedUnit] = useState<PropertyUnit | null>(null);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
+    const [showApproveContainerConfirm, setShowApproveContainerConfirm] = useState(false);
 
-    const handleApproveAll = async () => {
+    // Handle ESC key to close modal
+    React.useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                // Close confirmation modals first if open
+                if (showApproveAllConfirm) {
+                    setShowApproveAllConfirm(false);
+                } else if (showApproveContainerConfirm) {
+                    setShowApproveContainerConfirm(false);
+                } else if (rejectionModal.isOpen) {
+                    setRejectionModal({ isOpen: false, unitId: null });
+                    setRejectionReason('');
+                } else if (selectedUnit) {
+                    setSelectedUnit(null);
+                } else if (selectedImage) {
+                    setSelectedImage(null);
+                } else {
+                    // Close main modal
+                    onClose();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showApproveAllConfirm, showApproveContainerConfirm, rejectionModal.isOpen, selectedUnit, selectedImage, onClose]);
+
+    const handleApproveAllClick = () => {
         const pendingUnits = localUnits.filter(u => u.status === 'pending');
-        if (pendingUnits.length === 0) return;
+        if (pendingUnits.length === 0) {
+            toast.info('No hay habitaciones pendientes para aprobar');
+            return;
+        }
+        setShowApproveAllConfirm(true);
+    };
 
-        if (!confirm(`¿Estás seguro de aprobar las ${pendingUnits.length} habitaciones pendientes? Esto también aprobará el contenedor si todas las unidades están listas.`)) return;
-
+    const handleConfirmApproveAll = async () => {
+        const pendingUnits = localUnits.filter(u => u.status === 'pending');
+        setShowApproveAllConfirm(false);
         setProcessingId('all');
         try {
             let containerApproved = false;
@@ -153,12 +188,12 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
         }
     };
 
-    const handleApproveContainer = async () => {
-        const pendingUnits = localUnits.filter(u => u.status === 'pending');
-        const totalUnits = localUnits.length;
+    const handleApproveContainerClick = () => {
+        setShowApproveContainerConfirm(true);
+    };
 
-        if (!confirm(`¿Estás seguro de aprobar la pensión completa?\n\nEsto aprobará:\n- El contenedor principal\n- ${pendingUnits.length} habitación(es) pendiente(s)\n\nTotal: ${totalUnits} habitación(es)`)) return;
-
+    const handleConfirmApproveContainer = async () => {
+        setShowApproveContainerConfirm(false);
         setProcessingId('container');
         try {
             const result = await api.approveContainer(String(container.id));
@@ -178,7 +213,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
                 {/* Header */}
                 <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-start z-10">
                     <div>
@@ -280,7 +315,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                             {container.units?.some(u => u.status === 'pending') && (
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={handleApproveContainer}
+                                        onClick={handleApproveContainerClick}
                                         disabled={!!processingId}
                                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors disabled:opacity-50"
                                         title="Aprueba el contenedor y todas sus habitaciones de una vez"
@@ -289,7 +324,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                         Aprobar Pensión Completa
                                     </button>
                                     <button
-                                        onClick={handleApproveAll}
+                                        onClick={handleApproveAllClick}
                                         disabled={!!processingId}
                                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors disabled:opacity-50"
                                         title="Aprueba todas las habitaciones pendientes (una por una)"
@@ -308,7 +343,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                     className={`border rounded-lg p-4 transition-colors cursor-pointer hover:border-blue-300 ${unit.status === 'pending' ? 'bg-white border-yellow-200 shadow-sm' : 'bg-gray-50 border-gray-200 opacity-75'}`}
                                     onClick={() => setSelectedUnit(unit)}
                                 >
-                                    <div className="flex flex-col md:flex-row gap-4">
+                                    <div className="flex flex-col md:flex-row gap-4 min-w-0">
                                         {/* Image */}
                                         <div className="w-full md:w-32 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                                             {unit.images && unit.images.length > 0 ? (
@@ -325,7 +360,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                         </div>
 
                                         {/* Content */}
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-start">
                                                 <div>
                                                     <h4 className="font-semibold text-gray-900">{unit.title}</h4>
@@ -334,7 +369,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                                 {getStatusBadge(unit.status)}
                                             </div>
 
-                                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{unit.description}</p>
+                                            <p className="text-sm text-gray-600 mt-2 line-clamp-2 break-words">{unit.description}</p>
 
                                             <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-gray-500">
                                                 <div className="flex items-center gap-1">
@@ -348,7 +383,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
 
                                         {/* Actions */}
                                         {unit.status === 'pending' && (
-                                            <div className="flex flex-row md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-4" onClick={e => e.stopPropagation()}>
+                                            <div className="flex flex-row md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-4 flex-shrink-0" onClick={e => e.stopPropagation()}>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleUnitAction(unit.id, 'approve'); }}
                                                     disabled={!!processingId}
@@ -523,6 +558,90 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Rechazar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Approve All Confirmation Modal */}
+            {showApproveAllConfirm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-start gap-4 mb-4">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                                <CheckCircle className="text-green-600" size={24} />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                    ¿Aprobar todas las habitaciones pendientes?
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-3">
+                                    Esto aprobará <span className="font-semibold text-gray-900">{localUnits.filter(u => u.status === 'pending').length} habitación(es)</span> pendiente(s).
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                    Si todas las unidades quedan aprobadas, el contenedor también será aprobado automáticamente.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setShowApproveAllConfirm(false)}
+                                disabled={!!processingId}
+                                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmApproveAll}
+                                disabled={!!processingId}
+                                className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50 shadow-lg shadow-green-600/30"
+                            >
+                                {processingId === 'all' ? 'Aprobando...' : 'Aprobar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Approve Container Confirmation Modal */}
+            {showApproveContainerConfirm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-start gap-4 mb-4">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                <Home className="text-blue-600" size={24} />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                    ¿Aprobar la pensión completa?
+                                </h3>
+                                <div className="text-sm text-gray-600 space-y-2">
+                                    <p>Esto aprobará:</p>
+                                    <ul className="list-disc list-inside space-y-1 ml-2">
+                                        <li>El contenedor principal</li>
+                                        <li><span className="font-semibold text-gray-900">{localUnits.filter(u => u.status === 'pending').length} habitación(es)</span> pendiente(s)</li>
+                                    </ul>
+                                    <p className="pt-2 border-t border-gray-200 font-medium text-gray-900">
+                                        Total: {localUnits.length} habitación(es)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setShowApproveContainerConfirm(false)}
+                                disabled={!!processingId}
+                                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmApproveContainer}
+                                disabled={!!processingId}
+                                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 shadow-lg shadow-blue-600/30"
+                            >
+                                {processingId === 'container' ? 'Aprobando...' : 'Aprobar Pensión'}
                             </button>
                         </div>
                     </div>
