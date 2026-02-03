@@ -173,7 +173,7 @@ export const getUserProperties = async (req, res) => {
 // Create new property
 export const createProperty = async (req, res) => {
     try {
-        const { ownerId, amenityIds, services, rules, ...propertyData } = req.body;
+        const { ownerId, amenityIds, services, rules, nearbyInstitutions, ...propertyData } = req.body;
 
         // Validate owner exists
         const owner = await User.findByPk(ownerId);
@@ -241,6 +241,20 @@ export const createProperty = async (req, res) => {
                         isAllowed: rule.isAllowed,
                         value: rule.value || null,
                         description: rule.description || null
+                    });
+                }
+            }
+        }
+
+        // Add nearby institutions if provided
+        if (nearbyInstitutions && Array.isArray(nearbyInstitutions) && nearbyInstitutions.length > 0) {
+            const { PropertyInstitution } = await import('../models/index.js');
+            for (const ni of nearbyInstitutions) {
+                if (ni.institutionId) {
+                    await PropertyInstitution.create({
+                        propertyId: property.id,
+                        institutionId: ni.institutionId,
+                        distance: ni.distance || null
                     });
                 }
             }

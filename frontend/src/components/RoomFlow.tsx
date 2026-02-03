@@ -233,6 +233,11 @@ const RoomFlow: React.FC = () => {
     };
 
     const handleNext = () => {
+        // Auto-add institution if user selected one but didn't click "Agregar Institución"
+        if (currentStep === 3 && tempInstitution) {
+            handleAddInstitution();
+        }
+
         if (validateStep()) {
             setCurrentStep(prev => prev + 1);
             window.scrollTo(0, 0);
