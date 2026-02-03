@@ -24,7 +24,9 @@ export const uploadImage = async (base64Image, folder = 'estuarriendo') => {
             publicId: result.public_id,
             width: result.width,
             height: result.height,
-            format: result.format
+            format: result.format,
+            resourceType: result.resource_type,
+            createdAt: result.created_at
         };
     } catch (error) {
         console.error('Error uploading image to Cloudinary:', error);

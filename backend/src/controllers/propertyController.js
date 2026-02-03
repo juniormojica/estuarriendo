@@ -181,6 +181,23 @@ export const createProperty = async (req, res) => {
             return res.status(404).json({ error: 'Owner not found' });
         }
 
+        // Validate images
+        const images = propertyData.images;
+        if (!images || !Array.isArray(images) || images.length === 0) {
+            return res.status(400).json({
+                error: 'Al menos una imagen es requerida',
+                message: 'Debes agregar al menos una imagen de la propiedad'
+            });
+        }
+
+        // Validate maximum images limit
+        if (images.length > 10) {
+            return res.status(400).json({
+                error: 'Demasiadas imágenes',
+                message: 'El máximo de imágenes permitidas es 10'
+            });
+        }
+
         // Create property with all associations
         const property = await propertyService.createPropertyWithAssociations({
             ...propertyData,
