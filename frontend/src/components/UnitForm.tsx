@@ -96,6 +96,14 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
             newErrors.bedsInRoom = 'Una habitación compartida debe tener al menos 2 camas';
         }
 
+        // Validate images
+        const imageCount = (formData.images || []).length;
+        if (imageCount < 1) {
+            newErrors.images = 'Debes subir al menos 1 imagen de la habitación';
+        } else if (imageCount > 10) {
+            newErrors.images = 'No puedes subir más de 10 imágenes';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -103,6 +111,9 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
     const handleSubmit = () => {
         if (validate()) {
             onSave(formData);
+        } else {
+            // Scroll to top to show errors
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
@@ -275,10 +286,10 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                     {/* Images */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Imágenes (máx. 5)
+                            Imágenes * (mín. 1, máx. 10)
                         </label>
                         <div className="space-y-4">
-                            {(formData.images || []).length < 5 && (
+                            {(formData.images || []).length < 10 && (
                                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500">
                                     <Upload className="w-8 h-8 text-gray-400 mb-2" />
                                     <span className="text-sm text-gray-600">Subir imagen</span>
@@ -308,6 +319,9 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                                 </div>
                             )}
                         </div>
+                        {errors.images && (
+                            <p className="mt-2 text-sm text-red-600">{errors.images}</p>
+                        )}
                     </div>
                 </div>
 
