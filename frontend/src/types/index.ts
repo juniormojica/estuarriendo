@@ -139,6 +139,9 @@ export interface Institution {
   type: 'universidad' | 'corporacion' | 'instituto';
   latitude?: number;
   longitude?: number;
+  PropertyInstitution?: {
+    distance?: number | null;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -180,6 +183,7 @@ export interface PropertyTypeEntity {
 export interface PropertyContact {
   id: number;
   propertyId: number;
+  contactName?: string;
   phone?: string;
   whatsapp?: string;
   email?: string;

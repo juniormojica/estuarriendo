@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize, User, Phone, Mail, Clock, Calendar, DollarSign, Users, Coffee, Utensils, Wifi, Droplets, ShowerHead, Sofa, CheckCircle, XCircle, Building, Shield } from 'lucide-react';
+import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize, User, Phone, Mail, Calendar, DollarSign, Users, Coffee, Sofa, CheckCircle, XCircle, Building, Shield } from 'lucide-react';
 import { Property } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 import ReadOnlyMap from './ReadOnlyMap';
@@ -26,6 +26,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
         if (typeof value === 'object' && value.name) return value.name;
         return '';
     };
+
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const [localImages, setLocalImages] = useState(property.images || []);
@@ -390,14 +391,19 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                             {property.institutions && property.institutions.length > 0 && (
                                 <div className="bg-white border border-gray-200 rounded-lg p-5">
                                     <h4 className="text-lg font-semibold text-gray-900 mb-3">Instituciones Cercanas</h4>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="space-y-2">
                                         {property.institutions.map((institution) => (
-                                            <span
+                                            <div
                                                 key={institution.id}
-                                                className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium"
+                                                className="bg-blue-50 border border-blue-200 rounded-lg p-3"
                                             >
-                                                {institution.name}
-                                            </span>
+                                                <p className="font-medium text-blue-900">{institution.name}</p>
+                                                {institution.PropertyInstitution?.distance && (
+                                                    <p className="text-sm text-blue-600 mt-1">
+                                                        📍 {institution.PropertyInstitution.distance} metros
+                                                    </p>
+                                                )}
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
@@ -425,8 +431,8 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                                 <div
                                                     key={service.id || index}
                                                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${service.isIncluded
-                                                            ? 'bg-green-50 text-green-700'
-                                                            : 'bg-gray-50 text-gray-500'
+                                                        ? 'bg-green-50 text-green-700'
+                                                        : 'bg-gray-50 text-gray-500'
                                                         }`}
                                                 >
                                                     {service.isIncluded ? (
@@ -472,8 +478,8 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                                 <div
                                                     key={rule.id || index}
                                                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${rule.isAllowed
-                                                            ? 'bg-green-50 text-green-700'
-                                                            : 'bg-red-50 text-red-700'
+                                                        ? 'bg-green-50 text-green-700'
+                                                        : 'bg-red-50 text-red-700'
                                                         }`}
                                                 >
                                                     {rule.isAllowed ? (
