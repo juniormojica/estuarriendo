@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { MapPin, ArrowLeft, ArrowRight } from 'lucide-react';
 import CityAutocomplete from './CityAutocomplete';
+import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
-import type { City } from '../types';
+import type { City, Institution } from '../types';
 
 interface ContainerLocationProps {
     onNext: (data: ContainerLocationData) => void;
@@ -16,6 +17,7 @@ export interface ContainerLocationData {
     street: string;
     neighborhood: string;
     coordinates: { lat: number; lng: number };
+    nearbyInstitutions: Array<{ institutionId: number; distance: number | null }>;
 }
 
 const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, initialData }) => {
@@ -26,11 +28,20 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
             street: '',
             neighborhood: '',
             coordinates: { lat: 0, lng: 0 },
+            nearbyInstitutions: [],
         }
     );
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [selectedCity, setSelectedCity] = useState<City | null>(null);
+
+    // Nearby institutions state
+    const [nearbyInstitutions, setNearbyInstitutions] = useState<Array<{
+        institution: Institution;
+        distance: number | null;
+    }>>([]);
+    const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
+    const [tempDistance, setTempDistance] = useState<string>('');
 
     const handleChange = (field: keyof ContainerLocationData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -38,6 +49,24 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: '' }));
         }
+    };
+
+    const handleAddInstitution = () => {
+        if (tempInstitution) {
+            setNearbyInstitutions(prev => [
+                ...prev,
+                {
+                    institution: tempInstitution,
+                    distance: tempDistance ? parseInt(tempDistance) : null
+                }
+            ]);
+            setTempInstitution(null);
+            setTempDistance('');
+        }
+    };
+
+    const handleRemoveInstitution = (index: number) => {
+        setNearbyInstitutions(prev => prev.filter((_, i) => i !== index));
     };
 
     const validate = (): boolean => {
@@ -66,7 +95,15 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (validate()) {
-            onNext(formData);
+            // Transform institutions data before passing to parent
+            const dataToSubmit = {
+                ...formData,
+                nearbyInstitutions: nearbyInstitutions.map(ni => ({
+                    institutionId: ni.institution.id,
+                    distance: ni.distance
+                }))
+            };
+            onNext(dataToSubmit);
         }
     };
 
@@ -185,6 +222,64 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                                     )}
                                 </div>
                             )}
+
+                            {/* Nearby Institutions */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-4">
+                                    Instituciones Cercanas
+                                </label>
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Agrega universidades, colegios u otras instituciones educativas cercanas a tu propiedad
+                                </p>
+
+                                {nearbyInstitutions.length > 0 && (
+                                    <div className="space-y-2 mb-4">
+                                        {nearbyInstitutions.map((ni, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                <div>
+                                                    <p className="font-medium text-gray-900">{ni.institution.name}</p>
+                                                    {ni.distance && (
+                                                        <p className="text-sm text-gray-600">{ni.distance} metros</p>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveInstitution(index)}
+                                                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="space-y-3">
+                                    <InstitutionAutocomplete
+                                        value={tempInstitution}
+                                        onChange={setTempInstitution}
+                                        cityId={formData.cityId}
+                                        placeholder="Buscar institución..."
+                                    />
+
+                                    <input
+                                        type="number"
+                                        value={tempDistance}
+                                        onChange={(e) => setTempDistance(e.target.value)}
+                                        placeholder="Distancia en metros (opcional)"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={handleAddInstitution}
+                                        disabled={!tempInstitution}
+                                        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Agregar Institución
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

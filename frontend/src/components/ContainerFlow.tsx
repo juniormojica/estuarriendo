@@ -32,6 +32,7 @@ interface ContainerData {
     street: string;
     neighborhood: string;
     coordinates: { lat: number; lng: number };
+    nearbyInstitutions: Array<{ institutionId: number; distance: number | null }>;
     rentalMode: RentalMode;
     requiresDeposit: boolean;
     minimumContractMonths: number;
@@ -73,6 +74,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
     const [containerData, setContainerData] = useState<Partial<ContainerData>>({
         typeId: propertyTypeIds[selectedPropertyType] || 2, // Default to pension (2)
         coordinates: { lat: 0, lng: 0 },
+        nearbyInstitutions: [],
         rentalMode: 'by_unit',
         requiresDeposit: true,
         minimumContractMonths: 6,
@@ -130,6 +132,9 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                     latitude: containerData.coordinates?.lat,
                     longitude: containerData.coordinates?.lng
                 },
+
+                // Nearby institutions
+                nearbyInstitutions: containerData.nearbyInstitutions || [],
 
                 // Container config (if by_unit)
                 ...(containerData.rentalMode === 'by_unit' && {
@@ -211,7 +216,14 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                             }
                         }}
                         onBack={() => setCurrentStep(1)}
-                        initialData={containerData}
+                        initialData={containerData.cityId ? {
+                            cityId: containerData.cityId,
+                            departmentId: containerData.departmentId || 0,
+                            street: containerData.street || '',
+                            neighborhood: containerData.neighborhood || '',
+                            coordinates: containerData.coordinates || { lat: 0, lng: 0 },
+                            nearbyInstitutions: containerData.nearbyInstitutions || []
+                        } : undefined}
                     />
                 );
 
