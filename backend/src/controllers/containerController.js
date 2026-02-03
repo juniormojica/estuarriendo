@@ -86,6 +86,7 @@ export const createContainer = async (req, res) => {
 
         // Import all required models once
         const { Property, PropertyService, PropertyRule, PropertyImage, Amenity } = await import('../models/index.js');
+        const { uploadMultipleImages } = await import('../utils/cloudinaryUtils.js');
 
         // For containers rented by_unit, monthlyRent should be 0 (price is per unit)
         // For containers rented complete, use provided monthlyRent or default to 0
@@ -148,15 +149,33 @@ export const createContainer = async (req, res) => {
                     ownerId: container.ownerId
                 }, { transaction });
 
-                // Add unit images
+                // Add unit images - upload to Cloudinary first
                 if (unitImages && unitImages.length > 0) {
-                    const imageRecords = unitImages.map((img, index) => ({
-                        propertyId: unit.id,
-                        url: typeof img === 'string' ? img : img.url,
-                        isFeatured: typeof img === 'string' ? index === 0 : (img.isFeatured || index === 0),
-                        orderPosition: typeof img === 'string' ? index : (img.orderPosition || index)
-                    }));
-                    await PropertyImage.bulkCreate(imageRecords, { transaction });
+                    // Filter valid base64 images
+                    const validImages = unitImages.filter(img =>
+                        (typeof img === 'string' && img.startsWith('data:image')) ||
+                        (img.url && img.url.startsWith('data:image'))
+                    );
+
+                    if (validImages.length > 0) {
+                        // Extract base64 strings
+                        const base64Images = validImages.map(img =>
+                            typeof img === 'string' ? img : img.url
+                        );
+
+                        // Upload to Cloudinary
+                        const uploadedUrls = await uploadMultipleImages(base64Images, 'properties');
+
+                        // Create image records with Cloudinary URLs
+                        const imageRecords = uploadedUrls.map((result, index) => ({
+                            propertyId: unit.id,
+                            url: result.url, // Extract url from result object
+                            isFeatured: index === 0,
+                            orderPosition: index
+                        }));
+
+                        await PropertyImage.bulkCreate(imageRecords, { transaction });
+                    }
                 }
 
                 // Add amenities to unit
