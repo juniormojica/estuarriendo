@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Property, PropertyUnit } from '../../types';
-import { X, Check, CheckCircle, XCircle, Home, MapPin, Wifi, Layout, Users, Bed, BedDouble, User, Phone, Mail, Calendar, DollarSign, Coffee, Shield, Sofa, Building } from 'lucide-react';
+import { X, Check, CheckCircle, XCircle, Home, MapPin, Wifi, Layout, Users, Bed, BedDouble, User, Phone, Mail, Calendar, DollarSign, Coffee, Shield, Sofa, Building, GraduationCap } from 'lucide-react';
 import { api } from '../../services/api';
 import { useToast } from '../ToastProvider';
 import ReadOnlyMap from '../ReadOnlyMap';
@@ -419,6 +419,33 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                 )}
                             </div>
                         </div>
+
+                        {/* Nearby Institutions */}
+                        {container.institutions && container.institutions.length > 0 && (
+                            <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <GraduationCap size={20} className="text-emerald-600" />
+                                    Instituciones Cercanas
+                                </h4>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {container.institutions.map(institution => (
+                                        <div key={institution.id} className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                    <GraduationCap className="h-5 w-5 text-emerald-600" />
+                                                </div>
+                                                <span className="font-medium text-gray-900">{institution.name}</span>
+                                            </div>
+                                            {institution.PropertyInstitution?.distance && (
+                                                <span className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full border border-gray-200">
+                                                    {institution.PropertyInstitution.distance}m
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Services */}

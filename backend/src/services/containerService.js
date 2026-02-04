@@ -12,6 +12,7 @@ import {
     User,
     City,
     Department,
+    Institution,
     sequelize
 } from '../models/index.js';
 import { Op } from 'sequelize';
@@ -268,6 +269,11 @@ export const findContainerWithUnits = async (containerId) => {
                 { model: PropertyService, as: 'services' },
                 { model: PropertyRule, as: 'rules' },
                 { model: CommonArea, as: 'commonAreas' },
+                {
+                    model: Institution,
+                    as: 'institutions',
+                    through: { attributes: ['distance'] }
+                },
                 {
                     model: Location,
                     as: 'location',
