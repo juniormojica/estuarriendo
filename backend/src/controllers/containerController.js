@@ -79,6 +79,7 @@ export const createContainer = async (req, res) => {
             units = [],
             location,
             images,
+            nearbyInstitutions = [],
             ...propertyData
         } = req.body;
 
@@ -100,6 +101,7 @@ export const createContainer = async (req, res) => {
             monthlyRent,
             location,
             images,
+            institutions: nearbyInstitutions,
             ownerId,
             isContainer: true,
             totalUnits: 0,

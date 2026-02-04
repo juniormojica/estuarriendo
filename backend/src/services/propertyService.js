@@ -140,10 +140,10 @@ export const createPropertyWithAssociations = async (propertyData) => {
 
         // 6. Associate institutions (N:M)
         if (institutionsData && institutionsData.length > 0) {
-            // institutionsData can be array of IDs or array of objects with {id, distance}
+            // institutionsData can be array of IDs or array of objects with {id, distance} or {institutionId, distance}
             const institutionAssociations = institutionsData.map(inst => ({
                 propertyId: property.id,
-                institutionId: typeof inst === 'number' ? inst : inst.id,
+                institutionId: typeof inst === 'number' ? inst : (inst.institutionId || inst.id),
                 distance: typeof inst === 'object' ? inst.distance : null
             }));
 
@@ -246,7 +246,7 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
             if (institutionsData.length > 0) {
                 const institutionAssociations = institutionsData.map(inst => ({
                     propertyId,
-                    institutionId: typeof inst === 'number' ? inst : inst.id,
+                    institutionId: typeof inst === 'number' ? inst : (inst.institutionId || inst.id),
                     distance: typeof inst === 'object' ? inst.distance : null
                 }));
 
