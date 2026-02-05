@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, ArrowLeft, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowLeft, ArrowRight, School, X } from 'lucide-react';
 import CityAutocomplete from './CityAutocomplete';
 import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
@@ -136,7 +136,7 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Location */}
+                    {/* Location Information Card */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <div className="space-y-4">
                             {/* City Autocomplete */}
@@ -222,63 +222,91 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                                     )}
                                 </div>
                             )}
+                        </div>
+                    </div>
 
-                            {/* Nearby Institutions */}
+                    {/* Nearby Institutions Card - Separate and Distinct */}
+                    <div className="bg-white rounded-lg shadow-md border border-emerald-100 p-6">
+                        {/* Header with Icon */}
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                <School className="w-5 h-5 text-emerald-600" />
+                            </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900">
                                     Instituciones Cercanas
-                                </label>
-                                <p className="text-sm text-gray-500 mb-4">
-                                    Agrega universidades, colegios u otras instituciones educativas cercanas a tu propiedad
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                    Agrega universidades, colegios u otras instituciones educativas
                                 </p>
+                            </div>
+                        </div>
 
-                                {nearbyInstitutions.length > 0 && (
-                                    <div className="space-y-2 mb-4">
-                                        {nearbyInstitutions.map((ni, index) => (
-                                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                                <div>
-                                                    <p className="font-medium text-gray-900">{ni.institution.name}</p>
-                                                    {ni.distance && (
-                                                        <p className="text-sm text-gray-600">{ni.distance} metros</p>
-                                                    )}
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemoveInstitution(index)}
-                                                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                                                >
-                                                    Eliminar
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                <div className="space-y-3">
-                                    <InstitutionAutocomplete
-                                        value={tempInstitution}
-                                        onChange={setTempInstitution}
-                                        cityId={formData.cityId}
-                                        placeholder="Buscar institución..."
-                                    />
-
-                                    <input
-                                        type="number"
-                                        value={tempDistance}
-                                        onChange={(e) => setTempDistance(e.target.value)}
-                                        placeholder="Distancia en metros (opcional)"
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-
-                                    <button
-                                        type="button"
-                                        onClick={handleAddInstitution}
-                                        disabled={!tempInstitution}
-                                        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        {/* List of Added Institutions */}
+                        {nearbyInstitutions.length > 0 && (
+                            <div className="space-y-3 mb-5 mt-5">
+                                {nearbyInstitutions.map((ni, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center justify-between p-4 bg-white border border-emerald-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                                     >
-                                        Agregar Institución
-                                    </button>
-                                </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <School className="w-5 h-5 text-emerald-600" />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-gray-900">{ni.institution.name}</p>
+                                                {ni.distance && (
+                                                    <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                                                        <MapPin className="w-3 h-3" />
+                                                        <span>{ni.distance} metros</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveInstitution(index)}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                            aria-label="Eliminar institución"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Add Institution Form */}
+                        <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl p-5 border-2 border-dashed border-emerald-200 mt-4">
+                            <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                                <span className="text-emerald-600">➕</span>
+                                Agregar nueva institución
+                            </p>
+                            <div className="space-y-3">
+                                <InstitutionAutocomplete
+                                    value={tempInstitution}
+                                    onChange={setTempInstitution}
+                                    cityId={formData.cityId}
+                                    placeholder="🔍 Buscar institución..."
+                                />
+
+                                <input
+                                    type="number"
+                                    value={tempDistance}
+                                    onChange={(e) => setTempDistance(e.target.value)}
+                                    placeholder="📏 Distancia en metros (opcional)"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={handleAddInstitution}
+                                    disabled={!tempInstitution}
+                                    className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+                                >
+                                    Agregar Institución
+                                </button>
                             </div>
                         </div>
                     </div>
