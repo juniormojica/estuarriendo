@@ -4,8 +4,8 @@ import { z } from 'zod';
  * Schema para la ubicación de una propiedad
  */
 export const locationSchema = z.object({
-    cityId: z.coerce.number().int().positive('Debes seleccionar una ciudad'),
-    departmentId: z.coerce.number().int().positive(),
+    cityId: z.number().int().positive('Debes seleccionar una ciudad'),
+    departmentId: z.number().int().positive(),
     street: z.string().min(5, 'La dirección debe tener al menos 5 caracteres'),
     neighborhood: z.string().min(3, 'El barrio debe tener al menos 3 caracteres'),
     coordinates: z.object({

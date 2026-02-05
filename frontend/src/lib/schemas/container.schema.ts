@@ -20,9 +20,9 @@ export const containerBasicInfoSchema = basicPropertyInfoSchema.extend({
  */
 export const containerLocationSchema = locationSchema.extend({
     nearbyInstitutions: z.array(z.object({
-        institutionId: z.coerce.number().int().positive(),
-        distance: z.coerce.number().int().positive().nullable(),
-    })).optional().default([]),
+        institutionId: z.number().int().positive(),
+        distance: z.union([z.number().int().positive(), z.null()]),
+    })).default([]),
 });
 
 /**

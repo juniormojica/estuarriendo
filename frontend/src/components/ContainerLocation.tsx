@@ -1,38 +1,41 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { MapPin, ArrowLeft, ArrowRight, School, X } from 'lucide-react';
 import CityAutocomplete from './CityAutocomplete';
 import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
+import { FormInput } from './forms';
+import { containerLocationSchema, type ContainerLocationData } from '../lib/schemas/container.schema';
 import type { City, Institution } from '../types';
 
 interface ContainerLocationProps {
     onNext: (data: ContainerLocationData) => void;
     onBack: () => void;
-    initialData?: ContainerLocationData;
-}
-
-export interface ContainerLocationData {
-    cityId: number;
-    departmentId: number;
-    street: string;
-    neighborhood: string;
-    coordinates: { lat: number; lng: number };
-    nearbyInstitutions: Array<{ institutionId: number; distance: number | null }>;
+    initialData?: Partial<z.infer<typeof containerLocationSchema>>;
 }
 
 const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, initialData }) => {
-    const [formData, setFormData] = useState<ContainerLocationData>(
-        initialData || {
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm<z.infer<typeof containerLocationSchema>>({
+        resolver: zodResolver(containerLocationSchema) as any,
+        mode: 'onBlur',
+        defaultValues: initialData || {
             cityId: 0,
             departmentId: 0,
             street: '',
             neighborhood: '',
             coordinates: { lat: 0, lng: 0 },
             nearbyInstitutions: [],
-        }
-    );
+        },
+    });
 
-    const [errors, setErrors] = useState<Record<string, string>>({});
     const [selectedCity, setSelectedCity] = useState<City | null>(null);
 
     // Nearby institutions state
@@ -43,11 +46,17 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
     const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
     const [tempDistance, setTempDistance] = useState<string>('');
 
-    const handleChange = (field: keyof ContainerLocationData, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        // Clear error when user starts typing
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
+    // Watch values for validation feedback
+    const street = watch('street');
+    const neighborhood = watch('neighborhood');
+    const coordinates = watch('coordinates');
+    const cityId = watch('cityId');
+
+    const handleCityChange = (city: City | null) => {
+        setSelectedCity(city);
+        if (city) {
+            setValue('cityId', city.id, { shouldValidate: true });
+            setValue('departmentId', city.departmentId, { shouldValidate: true });
         }
     };
 
@@ -69,43 +78,18 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
         setNearbyInstitutions(prev => prev.filter((_, i) => i !== index));
     };
 
-    const validate = (): boolean => {
-        const newErrors: Record<string, string> = {};
-
-        if (!formData.cityId) {
-            newErrors.cityId = 'La ciudad es obligatoria';
-        }
-
-        if (!formData.street) {
-            newErrors.street = 'La dirección es obligatoria';
-        }
-
-        if (!formData.neighborhood) {
-            newErrors.neighborhood = 'El barrio es obligatorio';
-        }
-
-        if (!formData.coordinates.lat || !formData.coordinates.lng) {
-            newErrors.coordinates = 'Debes seleccionar la ubicación en el mapa';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+    const onSubmit = (data: any) => {
+        // Transform institutions data before passing to parent
+        const dataToSubmit = {
+            ...data,
+            nearbyInstitutions: nearbyInstitutions.map(ni => ({
+                institutionId: ni.institution.id,
+                distance: ni.distance
+            }))
+        };
+        onNext(dataToSubmit as ContainerLocationData);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (validate()) {
-            // Transform institutions data before passing to parent
-            const dataToSubmit = {
-                ...formData,
-                nearbyInstitutions: nearbyInstitutions.map(ni => ({
-                    institutionId: ni.institution.id,
-                    distance: ni.distance
-                }))
-            };
-            onNext(dataToSubmit);
-        }
-    };
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -135,7 +119,7 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
                     {/* Location Information Card */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <div className="space-y-4">
@@ -146,53 +130,33 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                                 </label>
                                 <CityAutocomplete
                                     value={selectedCity}
-                                    onChange={(city: City | null) => {
-                                        if (city) {
-                                            setSelectedCity(city);
-                                            handleChange('cityId', city.id);
-                                            handleChange('departmentId', city.departmentId);
-                                        }
-                                    }}
+                                    onChange={handleCityChange}
                                     placeholder="Buscar ciudad..."
                                     required
                                 />
                                 {errors.cityId && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.cityId}</p>
+                                    <p className="mt-1 text-sm text-red-600" role="alert">{errors.cityId.message}</p>
                                 )}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Dirección *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.street}
-                                    onChange={(e) => handleChange('street', e.target.value)}
+                                <FormInput
+                                    label="Dirección"
+                                    {...register('street')}
+                                    error={errors.street}
                                     placeholder="Ej: Calle 85 #13-45"
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.street ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                    required
                                 />
-                                {errors.street && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.street}</p>
-                                )}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Barrio *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.neighborhood}
-                                    onChange={(e) => handleChange('neighborhood', e.target.value)}
+                                <FormInput
+                                    label="Barrio"
+                                    {...register('neighborhood')}
+                                    error={errors.neighborhood}
                                     placeholder="Ej: Chapinero"
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.neighborhood ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                    required
                                 />
-                                {errors.neighborhood && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.neighborhood}</p>
-                                )}
                             </div>
 
                             {/* Location Picker */}
@@ -203,22 +167,24 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                                     </label>
                                     <LocationPicker
                                         address={{
-                                            street: formData.street,
+                                            street: street || '',
                                             city: selectedCity.name,
                                             department: selectedCity.department?.name || '',
                                             country: 'Colombia',
-                                            neighborhood: formData.neighborhood
+                                            neighborhood: neighborhood || ''
                                         }}
-                                        coordinates={formData.coordinates}
+                                        coordinates={coordinates}
                                         onCoordinatesChange={(lat: number, lng: number) => {
-                                            handleChange('coordinates', { lat, lng });
+                                            setValue('coordinates', { lat, lng }, { shouldValidate: true });
                                         }}
                                     />
                                     <p className="mt-2 text-sm text-gray-500">
                                         Arrastra el marcador para seleccionar la ubicación exacta de tu propiedad
                                     </p>
                                     {errors.coordinates && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.coordinates}</p>
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
+                                            {errors.coordinates.lat?.message || errors.coordinates.lng?.message || 'Debes seleccionar la ubicación en el mapa'}
+                                        </p>
                                     )}
                                 </div>
                             )}
@@ -287,7 +253,7 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                                 <InstitutionAutocomplete
                                     value={tempInstitution}
                                     onChange={setTempInstitution}
-                                    cityId={formData.cityId}
+                                    cityId={cityId}
                                     placeholder="🔍 Buscar institución..."
                                 />
 
@@ -316,7 +282,8 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                         <button
                             type="button"
                             onClick={onBack}
-                            className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ArrowLeft className="w-5 h-5" />
                             Atrás
@@ -324,9 +291,10 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
 
                         <button
                             type="submit"
-                            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Siguiente
+                            {isSubmitting ? 'Guardando...' : 'Siguiente'}
                             <ArrowRight className="w-5 h-5" />
                         </button>
                     </div>
