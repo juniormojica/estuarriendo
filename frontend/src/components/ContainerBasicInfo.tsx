@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocation } from 'react-router-dom';
 import { Home, ArrowLeft, ArrowRight } from 'lucide-react';
-import type { RentalMode } from '../types';
+import { containerBasicInfoSchema, type ContainerBasicInfoData } from '../lib/schemas/container.schema';
+import { FormInput, FormTextarea } from './forms';
+
 
 interface ContainerBasicInfoProps {
     onNext: (data: ContainerBasicInfoData) => void;
@@ -10,68 +13,39 @@ interface ContainerBasicInfoProps {
     propertyType?: string;
 }
 
-export interface ContainerBasicInfoData {
-    title: string;
-    description: string;
-    typeId: number;
-    typeName: string;
-    rentalMode: RentalMode;
-    requiresDeposit: boolean;
-    minimumContractMonths?: number;
-}
-
 const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack, initialData, propertyType: propPropertyType }) => {
     const location = useLocation();
     // Prioritize prop over location.state, with fallback to 'pension'
     const propertyType = propPropertyType || location.state?.propertyType || 'pension';
 
-    const [formData, setFormData] = useState<ContainerBasicInfoData>(
-        initialData || {
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm<ContainerBasicInfoData>({
+        resolver: zodResolver(containerBasicInfoSchema),
+        mode: 'onBlur', // Validate on blur for better UX
+        defaultValues: initialData || {
             title: '',
             description: '',
             typeId: propertyType === 'pension' ? 3 : propertyType === 'apartamento' ? 1 : 4,
-            typeName: propertyType,
+            typeName: propertyType as 'pension' | 'apartamento' | 'aparta-estudio',
             rentalMode: 'by_unit',
             requiresDeposit: true,
             minimumContractMonths: 6,
-        }
-    );
+        },
+    });
 
-    const [errors, setErrors] = useState<Record<string, string>>({});
-
-    const handleChange = (field: keyof ContainerBasicInfoData, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        // Clear error when user starts typing
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
-        }
+    const onSubmit = (data: ContainerBasicInfoData) => {
+        onNext(data);
     };
 
-    const validate = (): boolean => {
-        const newErrors: Record<string, string> = {};
+    // Watch values for character counters
+    const title = watch('title');
+    const description = watch('description');
+    const rentalMode = watch('rentalMode');
 
-        if (!formData.title || formData.title.length < 10) {
-            newErrors.title = 'El título debe tener al menos 10 caracteres';
-        }
-
-        if (!formData.description || formData.description.length < 50) {
-            newErrors.description = 'La descripción debe tener al menos 50 caracteres';
-        }
-
-        if (formData.minimumContractMonths && formData.minimumContractMonths < 1) {
-            newErrors.minimumContractMonths = 'Debe ser al menos 1 mes';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (validate()) {
-            onNext(formData);
-        }
-    };
 
     const getPropertyTypeLabel = () => {
         switch (propertyType) {
@@ -114,47 +88,30 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
                     {/* Title */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Título de la publicación *
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.title}
-                            onChange={(e) => handleChange('title', e.target.value)}
+                        <FormInput
+                            label="Título de la publicación"
+                            {...register('title')}
+                            error={errors.title}
+                            helperText={`${title?.length || 0}/100 caracteres`}
                             placeholder="Ej: Pensión Universitaria Central - Cerca de Universidades"
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.title ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                            required
                         />
-                        {errors.title && (
-                            <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-                        )}
-                        <p className="mt-1 text-sm text-gray-500">
-                            {(formData.title || '').length}/100 caracteres
-                        </p>
                     </div>
 
                     {/* Description */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Descripción *
-                        </label>
-                        <textarea
-                            value={formData.description}
-                            onChange={(e) => handleChange('description', e.target.value)}
+                        <FormTextarea
+                            label="Descripción"
+                            {...register('description')}
+                            error={errors.description}
+                            helperText={`${description?.length || 0}/500 caracteres`}
                             placeholder="Describe tu propiedad, sus características principales y lo que la hace especial..."
                             rows={6}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.description ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                            required
                         />
-                        {errors.description && (
-                            <p className="mt-1 text-sm text-red-600">{errors.description}</p>
-                        )}
-                        <p className="mt-1 text-sm text-gray-500">
-                            {(formData.description || '').length}/500 caracteres
-                        </p>
                     </div>
 
                     {/* Rental Mode */}
@@ -167,10 +124,8 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                             <label className="flex items-start p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors">
                                 <input
                                     type="radio"
-                                    name="rentalMode"
                                     value="by_unit"
-                                    checked={formData.rentalMode === 'by_unit'}
-                                    onChange={(e) => handleChange('rentalMode', e.target.value as RentalMode)}
+                                    {...register('rentalMode')}
                                     className="mt-1 mr-3"
                                 />
                                 <div>
@@ -186,10 +141,8 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                             <label className="flex items-start p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors">
                                 <input
                                     type="radio"
-                                    name="rentalMode"
                                     value="complete"
-                                    checked={formData.rentalMode === 'complete'}
-                                    onChange={(e) => handleChange('rentalMode', e.target.value as RentalMode)}
+                                    {...register('rentalMode')}
                                     className="mt-1 mr-3"
                                 />
                                 <div>
@@ -203,7 +156,7 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                             </label>
                         </div>
 
-                        {formData.rentalMode === 'by_unit' && (
+                        {rentalMode === 'by_unit' && (
                             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p className="text-sm text-blue-800">
                                     ℹ️ Al arrendar por habitaciones, deberás definir servicios, reglas y áreas comunes en los siguientes pasos.
@@ -222,29 +175,22 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                             <label className="flex items-center">
                                 <input
                                     type="checkbox"
-                                    checked={formData.requiresDeposit}
-                                    onChange={(e) => handleChange('requiresDeposit', e.target.checked)}
+                                    {...register('requiresDeposit')}
                                     className="mr-3 w-5 h-5 text-blue-600"
                                 />
                                 <span className="text-gray-700">Requiere depósito</span>
                             </label>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Duración mínima del contrato (meses)
-                                </label>
-                                <input
+                                <FormInput
+                                    label="Duración mínima del contrato (meses)"
                                     type="number"
+                                    {...register('minimumContractMonths')}
+                                    error={errors.minimumContractMonths}
+                                    placeholder="6"
                                     min="1"
                                     max="24"
-                                    value={formData.minimumContractMonths || ''}
-                                    onChange={(e) => handleChange('minimumContractMonths', parseInt(e.target.value) || undefined)}
-                                    placeholder="6"
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
-                                {errors.minimumContractMonths && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.minimumContractMonths}</p>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -254,7 +200,8 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                         <button
                             type="button"
                             onClick={onBack}
-                            className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ArrowLeft className="w-5 h-5" />
                             Atrás
@@ -262,9 +209,10 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
 
                         <button
                             type="submit"
-                            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Siguiente
+                            {isSubmitting ? 'Guardando...' : 'Siguiente'}
                             <ArrowRight className="w-5 h-5" />
                         </button>
                     </div>
