@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { basicPropertyInfoSchema, locationSchema, propertyServiceSchema } from './property-common.schema';
+import { basicPropertyInfoSchema, locationSchema, propertyServiceSchema, propertyRuleSchema } from './property-common.schema';
 
 /**
  * Schema para información básica de un contenedor (Pensión/Apartamento/Aparta-estudio)
@@ -33,8 +33,16 @@ export const containerServicesSchema = z.object({
 });
 
 /**
+ * Schema para reglas de contenedor
+ */
+export const containerRulesSchema = z.object({
+    rules: z.array(propertyRuleSchema).min(1, 'Debes seleccionar al menos una regla'),
+});
+
+/**
  * Tipos TypeScript inferidos de los schemas
  */
 export type ContainerBasicInfoData = z.infer<typeof containerBasicInfoSchema>;
 export type ContainerLocationData = z.infer<typeof containerLocationSchema>;
 export type ContainerServicesData = z.infer<typeof containerServicesSchema>;
+export type ContainerRulesData = z.infer<typeof containerRulesSchema>;
