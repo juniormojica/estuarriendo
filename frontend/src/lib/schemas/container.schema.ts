@@ -5,12 +5,12 @@ import { basicPropertyInfoSchema, locationSchema } from './property-common.schem
  * Schema para información básica de un contenedor (Pensión/Apartamento/Aparta-estudio)
  */
 export const containerBasicInfoSchema = basicPropertyInfoSchema.extend({
-    typeId: z.number().int().positive(),
+    typeId: z.coerce.number().int().positive(),
     typeName: z.enum(['pension', 'apartamento', 'aparta-estudio']),
     rentalMode: z.enum(['by_unit', 'complete']),
     requiresDeposit: z.boolean(),
     minimumContractMonths: z.union([
-        z.number().int().min(1, 'Debe ser al menos 1 mes').max(24, 'Máximo 24 meses'),
+        z.coerce.number().int().min(1, 'Debe ser al menos 1 mes').max(24, 'Máximo 24 meses'),
         z.undefined(),
     ]).optional(),
 });

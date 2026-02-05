@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocation } from 'react-router-dom';
@@ -22,9 +23,10 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
         register,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors, isSubmitting },
     } = useForm<ContainerBasicInfoData>({
-        resolver: zodResolver(containerBasicInfoSchema),
+        resolver: zodResolver(containerBasicInfoSchema) as any,
         mode: 'onBlur', // Validate on blur for better UX
         defaultValues: initialData || {
             title: '',
@@ -36,6 +38,14 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
             minimumContractMonths: 6,
         },
     });
+
+    // Set typeId and typeName when propertyType changes
+    useEffect(() => {
+        const typeId = propertyType === 'pension' ? 3 : propertyType === 'apartamento' ? 1 : 4;
+        const typeName = propertyType as 'pension' | 'apartamento' | 'aparta-estudio';
+        setValue('typeId', typeId);
+        setValue('typeName', typeName);
+    }, [propertyType, setValue]);
 
     const onSubmit = (data: ContainerBasicInfoData) => {
         onNext(data);
@@ -88,7 +98,15 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+                <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    noValidate
+                    className="space-y-6"
+                >
+                    {/* Hidden fields for typeId and typeName */}
+                    <input type="hidden" {...register('typeId')} />
+                    <input type="hidden" {...register('typeName')} />
+
                     {/* Title */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <FormInput
