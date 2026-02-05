@@ -40,9 +40,17 @@ export const containerRulesSchema = z.object({
 });
 
 /**
+ * Schema para áreas comunes de contenedor
+ */
+export const containerCommonAreasSchema = z.object({
+    commonAreaIds: z.array(z.number().int().positive()).min(1, 'Debes seleccionar al menos un área común'),
+});
+
+/**
  * Tipos TypeScript inferidos de los schemas
  */
 export type ContainerBasicInfoData = z.infer<typeof containerBasicInfoSchema>;
 export type ContainerLocationData = z.infer<typeof containerLocationSchema>;
 export type ContainerServicesData = z.infer<typeof containerServicesSchema>;
 export type ContainerRulesData = z.infer<typeof containerRulesSchema>;
+export type ContainerCommonAreasData = z.infer<typeof containerCommonAreasSchema>;

@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { containerCommonAreasSchema, type ContainerCommonAreasData } from '../lib/schemas/container.schema';
 import type { CommonArea } from '../types';
 import containerService from '../services/containerService';
 
@@ -10,9 +13,24 @@ interface ContainerCommonAreasProps {
 }
 
 const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onBack, initialData }) => {
-    const [selectedIds, setSelectedIds] = useState<number[]>(initialData || []);
     const [commonAreas, setCommonAreas] = useState<CommonArea[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const {
+        control,
+        handleSubmit,
+        watch,
+        setValue,
+        formState: { errors, isSubmitting },
+    } = useForm<ContainerCommonAreasData>({
+        resolver: zodResolver(containerCommonAreasSchema) as any,
+        mode: 'onBlur',
+        defaultValues: {
+            commonAreaIds: initialData || [],
+        },
+    });
+
+    const selectedIds = watch('commonAreaIds');
 
     useEffect(() => {
         loadCommonAreas();
@@ -40,17 +58,15 @@ const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onB
     };
 
     const toggleArea = (id: number) => {
-        setSelectedIds(prev =>
-            prev.includes(id) ? prev.filter(areaId => areaId !== id) : [...prev, id]
-        );
+        const currentIds = selectedIds || [];
+        const newIds = currentIds.includes(id)
+            ? currentIds.filter(areaId => areaId !== id)
+            : [...currentIds, id];
+        setValue('commonAreaIds', newIds, { shouldValidate: true });
     };
 
-    const handleSubmit = () => {
-        if (selectedIds.length === 0) {
-            alert('Debes seleccionar al menos un área común');
-            return;
-        }
-        onNext(selectedIds);
+    const onSubmit = (data: ContainerCommonAreasData) => {
+        onNext(data.commonAreaIds);
     };
 
     if (loading) {
@@ -62,11 +78,11 @@ const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onB
             <div className="max-w-3xl mx-auto">
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Paso 5 de 8</span>
+                        <span className="text-sm font-medium text-gray-700">Paso 5 de 5</span>
                         <span className="text-sm text-gray-500">Áreas Comunes</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '62.5%' }}></div>
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '100%' }}></div>
                     </div>
                 </div>
 
@@ -75,50 +91,70 @@ const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onB
                     <p className="text-gray-600">Selecciona los espacios compartidos disponibles</p>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        {commonAreas.map(area => (
-                            <label
-                                key={area.id}
-                                className={`
-                  flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all
-                  ${selectedIds.includes(area.id)
-                                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                                        : 'border-gray-200 hover:border-blue-300'
-                                    }
-                `}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selectedIds.includes(area.id)}
-                                    onChange={() => toggleArea(area.id)}
-                                    className="sr-only"
-                                />
-                                <div className="text-4xl mb-2">{area.icon}</div>
-                                <div className="text-sm font-medium text-center text-gray-900">
-                                    {area.name}
-                                </div>
-                            </label>
-                        ))}
+                <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {commonAreas.map(area => (
+                                <label
+                                    key={area.id}
+                                    className={`
+                                        flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all
+                                        ${selectedIds?.includes(area.id)
+                                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                                            : 'border-gray-200 hover:border-blue-300'
+                                        }
+                                    `}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds?.includes(area.id) || false}
+                                        onChange={() => toggleArea(area.id)}
+                                        className="sr-only"
+                                    />
+                                    <div className="text-4xl mb-2">{area.icon}</div>
+                                    <div className="text-sm font-medium text-center text-gray-900">
+                                        {area.name}
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <p className="text-sm text-blue-900">
-                        💡 <strong>Tip:</strong> Las áreas comunes ayudan a los estudiantes a entender qué espacios compartirán con otros inquilinos.
-                    </p>
-                </div>
+                    {/* Error message */}
+                    {errors.commonAreaIds && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                            <p className="text-sm text-red-600" role="alert">
+                                {errors.commonAreaIds.message || 'Debes seleccionar al menos un área común'}
+                            </p>
+                        </div>
+                    )}
 
-                <div className="flex justify-between pt-6">
-                    <button onClick={onBack} className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg hover:bg-gray-50">
-                        <ArrowLeft className="w-5 h-5" />
-                        Atrás
-                    </button>
-                    <button onClick={handleSubmit} className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        Siguiente
-                        <ArrowRight className="w-5 h-5" />
-                    </button>
-                </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <p className="text-sm text-blue-900">
+                            💡 <strong>Tip:</strong> Las áreas comunes ayudan a los estudiantes a entender qué espacios compartirán con otros inquilinos.
+                        </p>
+                    </div>
+
+                    <div className="flex justify-between pt-6">
+                        <button
+                            type="button"
+                            onClick={onBack}
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                            Atrás
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? 'Guardando...' : 'Siguiente'}
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
