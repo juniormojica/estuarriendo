@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Coffee, Wifi, Zap, Droplet, Wind } from 'lucide-react';
+import { containerServicesSchema, type ContainerServicesData } from '../lib/schemas/container.schema';
 import type { PropertyService } from '../types';
 
 interface ContainerServicesProps {
@@ -16,7 +18,24 @@ interface ServiceOption {
 }
 
 const ContainerServices: React.FC<ContainerServicesProps> = ({ onNext, onBack, initialData }) => {
-    const [services, setServices] = useState<PropertyService[]>(initialData || []);
+    const {
+        control,
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm<ContainerServicesData>({
+        resolver: zodResolver(containerServicesSchema) as any,
+        mode: 'onBlur',
+        defaultValues: {
+            services: initialData || [],
+        },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: 'services',
+    });
 
     const serviceOptions: ServiceOption[] = [
         { serviceType: 'breakfast', label: 'Desayuno', icon: <Coffee className="w-5 h-5" />, category: 'food' },
@@ -28,27 +47,27 @@ const ContainerServices: React.FC<ContainerServicesProps> = ({ onNext, onBack, i
         { serviceType: 'housekeeping', label: 'Limpieza', icon: <Wind className="w-5 h-5" />, category: 'other' },
     ];
 
+    const services = watch('services');
+
     const toggleService = (serviceType: PropertyService['serviceType']) => {
-        const exists = services.find(s => s.serviceType === serviceType);
-        if (exists) {
-            setServices(services.filter(s => s.serviceType !== serviceType));
+        const existingIndex = fields.findIndex(field => field.serviceType === serviceType);
+        if (existingIndex >= 0) {
+            remove(existingIndex);
         } else {
-            setServices([...services, { serviceType, isIncluded: true, additionalCost: 0 }]);
+            append({ serviceType, isIncluded: true, additionalCost: 0 });
         }
     };
 
-    const updateService = (serviceType: PropertyService['serviceType'], field: keyof PropertyService, value: any) => {
-        setServices(services.map(s =>
-            s.serviceType === serviceType ? { ...s, [field]: value } : s
-        ));
+    const isServiceSelected = (serviceType: PropertyService['serviceType']) => {
+        return fields.some(field => field.serviceType === serviceType);
     };
 
-    const handleSubmit = () => {
-        if (services.length === 0) {
-            alert('Debes seleccionar al menos un servicio');
-            return;
-        }
-        onNext(services);
+    const getServiceIndex = (serviceType: PropertyService['serviceType']) => {
+        return fields.findIndex(field => field.serviceType === serviceType);
+    };
+
+    const onSubmit = (data: ContainerServicesData) => {
+        onNext(data.services);
     };
 
     const groupedServices = {
@@ -57,17 +76,74 @@ const ContainerServices: React.FC<ContainerServicesProps> = ({ onNext, onBack, i
         other: serviceOptions.filter(s => s.category === 'other'),
     };
 
+    const renderServiceCard = (option: ServiceOption, index: number) => {
+        const isSelected = isServiceSelected(option.serviceType);
+        const serviceIndex = getServiceIndex(option.serviceType);
+        const service = serviceIndex >= 0 ? services[serviceIndex] : null;
+
+        return (
+            <div key={option.serviceType} className="border rounded-lg p-4">
+                <label className="flex items-center cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleService(option.serviceType)}
+                        className="mr-3 w-5 h-5"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                        {option.icon}
+                        <span className="font-medium">{option.label}</span>
+                    </div>
+                </label>
+
+                {isSelected && service && serviceIndex >= 0 && (
+                    <div className="mt-3 ml-8 space-y-2">
+                        {/* Hidden field for serviceType */}
+                        <input type="hidden" {...register(`services.${serviceIndex}.serviceType`)} />
+
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                {...register(`services.${serviceIndex}.isIncluded`)}
+                                className="w-4 h-4"
+                            />
+                            <span className="text-sm">Incluido en el precio</span>
+                        </label>
+
+                        {!service.isIncluded && (
+                            <input
+                                type="number"
+                                placeholder="Costo adicional"
+                                {...register(`services.${serviceIndex}.additionalCost`)}
+                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                            />
+                        )}
+
+                        {(option.category === 'food' || option.category === 'other') && (
+                            <input
+                                type="text"
+                                placeholder="Descripción (opcional)"
+                                {...register(`services.${serviceIndex}.description`)}
+                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                            />
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
                 {/* Progress */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Paso 2 de 5</span>
+                        <span className="text-sm font-medium text-gray-700">Paso 3 de 5</span>
                         <span className="text-sm text-gray-500">Servicios Incluidos</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '40%' }}></div>
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '60%' }}></div>
                     </div>
                 </div>
 
@@ -76,177 +152,61 @@ const ContainerServices: React.FC<ContainerServicesProps> = ({ onNext, onBack, i
                     <p className="text-gray-600">Selecciona los servicios que ofreces</p>
                 </div>
 
-                {/* Alimentación */}
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Alimentación</h3>
-                    <div className="space-y-3">
-                        {groupedServices.food.map(option => {
-                            const service = services.find(s => s.serviceType === option.serviceType);
-                            const isSelected = !!service;
-
-                            return (
-                                <div key={option.serviceType} className="border rounded-lg p-4">
-                                    <label className="flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => toggleService(option.serviceType)}
-                                            className="mr-3 w-5 h-5"
-                                        />
-                                        <div className="flex items-center gap-2 flex-1">
-                                            {option.icon}
-                                            <span className="font-medium">{option.label}</span>
-                                        </div>
-                                    </label>
-
-                                    {isSelected && (
-                                        <div className="mt-3 ml-8 space-y-2">
-                                            <label className="flex items-center gap-2">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={service.isIncluded}
-                                                    onChange={(e) => updateService(option.serviceType, 'isIncluded', e.target.checked)}
-                                                    className="w-4 h-4"
-                                                />
-                                                <span className="text-sm">Incluido en el precio</span>
-                                            </label>
-
-                                            {!service.isIncluded && (
-                                                <input
-                                                    type="number"
-                                                    placeholder="Costo adicional"
-                                                    value={service.additionalCost || ''}
-                                                    onChange={(e) => updateService(option.serviceType, 'additionalCost', parseInt(e.target.value) || 0)}
-                                                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                                                />
-                                            )}
-
-                                            <input
-                                                type="text"
-                                                placeholder="Descripción (opcional)"
-                                                value={service.description || ''}
-                                                onChange={(e) => updateService(option.serviceType, 'description', e.target.value)}
-                                                className="w-full px-3 py-2 border rounded-lg text-sm"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+                    {/* Alimentación */}
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Alimentación</h3>
+                        <div className="space-y-3">
+                            {groupedServices.food.map((option, idx) => renderServiceCard(option, idx))}
+                        </div>
                     </div>
-                </div>
 
-                {/* Servicios Básicos */}
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Servicios Básicos</h3>
-                    <div className="space-y-3">
-                        {groupedServices.utilities.map(option => {
-                            const service = services.find(s => s.serviceType === option.serviceType);
-                            const isSelected = !!service;
-
-                            return (
-                                <div key={option.serviceType} className="border rounded-lg p-4">
-                                    <label className="flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => toggleService(option.serviceType)}
-                                            className="mr-3 w-5 h-5"
-                                        />
-                                        <div className="flex items-center gap-2">
-                                            {option.icon}
-                                            <span className="font-medium">{option.label}</span>
-                                        </div>
-                                    </label>
-
-                                    {isSelected && (
-                                        <div className="mt-3 ml-8">
-                                            <label className="flex items-center gap-2">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={service.isIncluded}
-                                                    onChange={(e) => updateService(option.serviceType, 'isIncluded', e.target.checked)}
-                                                    className="w-4 h-4"
-                                                />
-                                                <span className="text-sm">Incluido en el precio</span>
-                                            </label>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                    {/* Servicios Básicos */}
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Servicios Básicos</h3>
+                        <div className="space-y-3">
+                            {groupedServices.utilities.map((option, idx) => renderServiceCard(option, idx))}
+                        </div>
                     </div>
-                </div>
 
-                {/* Servicios Adicionales */}
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Servicios Adicionales</h3>
-                    <div className="space-y-3">
-                        {groupedServices.other.map(option => {
-                            const service = services.find(s => s.serviceType === option.serviceType);
-                            const isSelected = !!service;
-
-                            return (
-                                <div key={option.serviceType} className="border rounded-lg p-4">
-                                    <label className="flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => toggleService(option.serviceType)}
-                                            className="mr-3 w-5 h-5"
-                                        />
-                                        <div className="flex items-center gap-2">
-                                            {option.icon}
-                                            <span className="font-medium">{option.label}</span>
-                                        </div>
-                                    </label>
-
-                                    {isSelected && (
-                                        <div className="mt-3 ml-8 space-y-2">
-                                            <label className="flex items-center gap-2">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={service.isIncluded}
-                                                    onChange={(e) => updateService(option.serviceType, 'isIncluded', e.target.checked)}
-                                                    className="w-4 h-4"
-                                                />
-                                                <span className="text-sm">Incluido en el precio</span>
-                                            </label>
-
-                                            {!service.isIncluded && (
-                                                <input
-                                                    type="number"
-                                                    placeholder="Costo adicional"
-                                                    value={service.additionalCost || ''}
-                                                    onChange={(e) => updateService(option.serviceType, 'additionalCost', parseInt(e.target.value) || 0)}
-                                                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                                                />
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                    {/* Servicios Adicionales */}
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Servicios Adicionales</h3>
+                        <div className="space-y-3">
+                            {groupedServices.other.map((option, idx) => renderServiceCard(option, idx))}
+                        </div>
                     </div>
-                </div>
 
-                {/* Navigation */}
-                <div className="flex justify-between pt-6">
-                    <button
-                        onClick={onBack}
-                        className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                        Atrás
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        Siguiente
-                        <ArrowRight className="w-5 h-5" />
-                    </button>
-                </div>
+                    {/* Error message */}
+                    {errors.services && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p className="text-sm text-red-600" role="alert">
+                                {errors.services.message || 'Debes seleccionar al menos un servicio'}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Navigation */}
+                    <div className="flex justify-between pt-6">
+                        <button
+                            type="button"
+                            onClick={onBack}
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-6 py-3 min-h-[44px] border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                            Atrás
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? 'Guardando...' : 'Siguiente'}
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
