@@ -6,7 +6,7 @@ import { MapPin, ArrowLeft, ArrowRight, School, X } from 'lucide-react';
 import CityAutocomplete from './CityAutocomplete';
 import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
-import { FormInput } from './forms';
+import { FormInput, FormNumericInput } from './forms';
 import { containerLocationSchema, type ContainerLocationData } from '../lib/schemas/container.schema';
 import type { City, Institution } from '../types';
 
@@ -257,8 +257,8 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                                     placeholder="🔍 Buscar institución..."
                                 />
 
-                                <input
-                                    type="number"
+                                <FormNumericInput
+                                    label=""
                                     value={tempDistance}
                                     onChange={(e) => setTempDistance(e.target.value)}
                                     placeholder="📏 Distancia en metros (opcional)"

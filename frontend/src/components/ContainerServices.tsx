@@ -2,6 +2,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Coffee, Wifi, Zap, Droplet, Wind } from 'lucide-react';
 import { containerServicesSchema, type ContainerServicesData } from '../lib/schemas/container.schema';
+import { FormCurrencyInput } from './forms';
 import type { PropertyService } from '../types';
 
 interface ContainerServicesProps {
@@ -111,11 +112,11 @@ const ContainerServices: React.FC<ContainerServicesProps> = ({ onNext, onBack, i
                         </label>
 
                         {!service.isIncluded && (
-                            <input
-                                type="number"
+                            <FormCurrencyInput
+                                label=""
                                 placeholder="Costo adicional"
-                                {...register(`services.${serviceIndex}.additionalCost`)}
-                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                {...register(`services.${serviceIndex}.additionalCost`, { valueAsNumber: true })}
+                                className="w-full"
                             />
                         )}
 

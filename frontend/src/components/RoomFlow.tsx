@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { createProperty } from '../store/slices/propertiesSlice';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { roomCompleteSchema, type RoomFormData } from '../lib/schemas/room.schema';
-import { FormInput, FormTextarea } from './forms';
+import { FormInput, FormTextarea, FormCurrencyInput, FormNumericInput } from './forms';
 import ImageUploader from './ImageUploader';
 import CityAutocomplete from './CityAutocomplete';
 import InstitutionAutocomplete from './InstitutionAutocomplete';
@@ -314,9 +314,8 @@ const RoomFlow: React.FC = () => {
                                         required
                                     />
 
-                                    <FormInput
+                                    <FormCurrencyInput
                                         label="Precio mensual (COP)"
-                                        type="number"
                                         {...register('monthlyRent', { valueAsNumber: true })}
                                         error={errors.monthlyRent}
                                         required
@@ -402,12 +401,12 @@ const RoomFlow: React.FC = () => {
                                 <p className="text-gray-600 mb-6">Información adicional sobre la habitación</p>
 
                                 <div className="space-y-4">
-                                    <FormInput
+                                    <FormNumericInput
                                         label="Área (m²) - Opcional"
-                                        type="number"
                                         {...register('area', { valueAsNumber: true })}
                                         error={errors.area}
                                         helperText="Si no conoces el área exacta, puedes dejarlo en blanco"
+                                        placeholder="Ej: 25"
                                     />
 
                                     <div>
@@ -421,9 +420,8 @@ const RoomFlow: React.FC = () => {
                                                 <div className="flex-1">
                                                     <p className="text-sm font-medium">Institución ID: {field.institutionId}</p>
                                                 </div>
-                                                <FormInput
+                                                <FormNumericInput
                                                     label=""
-                                                    type="number"
                                                     placeholder="Distancia (m)"
                                                     {...register(`nearbyInstitutions.${index}.distance`, { valueAsNumber: true })}
                                                     className="w-32"
@@ -542,11 +540,11 @@ const RoomFlow: React.FC = () => {
                                                         </label>
 
                                                         {!service.isIncluded && (
-                                                            <input
-                                                                type="number"
+                                                            <FormCurrencyInput
+                                                                label=""
                                                                 placeholder="Costo adicional"
                                                                 {...register(`services.${serviceIndex}.additionalCost`, { valueAsNumber: true })}
-                                                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                                className="w-full"
                                                             />
                                                         )}
 

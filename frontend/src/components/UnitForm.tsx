@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Upload, Trash2 } from 'lucide-react';
 import type { PropertyUnit, RoomType, Amenity } from '../types';
 import { useAppSelector } from '../store/hooks';
+import { FormCurrencyInput, FormNumericInput } from './forms';
 
 interface UnitFormProps {
     onSave: (unit: Partial<PropertyUnit>) => void;
@@ -16,9 +17,9 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
     const [formData, setFormData] = useState<Partial<PropertyUnit>>(initialData || {
         title: `Habitación ${unitNumber}`,
         description: '',
-        monthlyRent: 0,
-        deposit: 0,
-        area: 0,
+        monthlyRent: undefined,
+        deposit: undefined,
+        area: undefined,
         roomType: 'individual',
         bedsInRoom: 1,
         amenities: [],
@@ -89,7 +90,20 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
         }
 
         if (!formData.monthlyRent || formData.monthlyRent <= 0) {
-            newErrors.monthlyRent = 'El precio mensual es obligatorio';
+            newErrors.monthlyRent = 'El precio mensual es obligatorio y debe ser mayor a 0';
+        }
+
+        // Validar que no sean negativos
+        if (formData.monthlyRent && formData.monthlyRent < 0) {
+            newErrors.monthlyRent = 'El precio no puede ser negativo';
+        }
+
+        if (formData.deposit && formData.deposit < 0) {
+            newErrors.deposit = 'El depósito no puede ser negativo';
+        }
+
+        if (formData.area && formData.area < 0) {
+            newErrors.area = 'El área no puede ser negativa';
         }
 
         if (formData.roomType === 'shared' && (!formData.bedsInRoom || formData.bedsInRoom < 2)) {
@@ -163,46 +177,38 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
 
                     {/* Price and Deposit */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Precio Mensual * (COP)
-                            </label>
-                            <input
-                                type="number"
-                                value={formData.monthlyRent}
-                                onChange={(e) => handleChange('monthlyRent', parseInt(e.target.value) || 0)}
-                                className={`w-full px-4 py-2 border rounded-lg ${errors.monthlyRent ? 'border-red-500' : 'border-gray-300'}`}
-                                placeholder="800000"
-                            />
-                            {errors.monthlyRent && <p className="mt-1 text-sm text-red-600">{errors.monthlyRent}</p>}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Depósito (COP)
-                            </label>
-                            <input
-                                type="number"
-                                value={formData.deposit}
-                                onChange={(e) => handleChange('deposit', parseInt(e.target.value) || 0)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                placeholder="800000"
-                            />
-                        </div>
+                        <FormCurrencyInput
+                            label="Precio Mensual (COP)"
+                            value={formData.monthlyRent || ''}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value) || undefined;
+                                handleChange('monthlyRent', value);
+                            }}
+                            error={errors.monthlyRent ? { message: errors.monthlyRent } as any : undefined}
+                            required
+                        />
+                        <FormCurrencyInput
+                            label="Depósito (COP)"
+                            value={formData.deposit || ''}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value) || undefined;
+                                handleChange('deposit', value);
+                            }}
+                            error={errors.deposit ? { message: errors.deposit } as any : undefined}
+                        />
                     </div>
 
                     {/* Area */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Área (m²)
-                        </label>
-                        <input
-                            type="number"
-                            value={formData.area}
-                            onChange={(e) => handleChange('area', parseInt(e.target.value) || 0)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                            placeholder="12"
-                        />
-                    </div>
+                    <FormNumericInput
+                        label="Área (m²)"
+                        value={formData.area?.toString() || ''}
+                        onChange={(e) => {
+                            const value = parseInt(e.target.value) || undefined;
+                            handleChange('area', value);
+                        }}
+                        error={errors.area ? { message: errors.area } as any : undefined}
+                        placeholder="Ej: 25"
+                    />
 
                     {/* Room Type */}
                     <div>

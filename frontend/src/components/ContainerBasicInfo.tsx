@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocation } from 'react-router-dom';
 import { Home, ArrowLeft, ArrowRight } from 'lucide-react';
 import { containerBasicInfoSchema, type ContainerBasicInfoData } from '../lib/schemas/container.schema';
-import { FormInput, FormTextarea } from './forms';
+import { FormInput, FormTextarea, FormNumericInput } from './forms';
 
 
 interface ContainerBasicInfoProps {
@@ -200,14 +200,11 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
                             </label>
 
                             <div>
-                                <FormInput
+                                <FormNumericInput
                                     label="Duración mínima del contrato (meses)"
-                                    type="number"
-                                    {...register('minimumContractMonths')}
+                                    {...register('minimumContractMonths', { valueAsNumber: true })}
                                     error={errors.minimumContractMonths}
-                                    placeholder="6"
-                                    min="1"
-                                    max="24"
+                                    placeholder="Ej: 6"
                                 />
                             </div>
                         </div>
