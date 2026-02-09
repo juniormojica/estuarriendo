@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { X, Upload, Trash2 } from 'lucide-react';
+import {
+    X, Upload, Trash2, Wind, Snowflake, Wifi, Tv, Bed, Bath, Briefcase,
+    Waves, Dumbbell, Lock, Sun, Sofa, ChevronsUp, Utensils, Droplet, Zap, Home
+} from 'lucide-react';
 import type { PropertyUnit, RoomType, Amenity } from '../types';
 import { useAppSelector } from '../store/hooks';
 import { FormCurrencyInput, FormNumericInput } from './forms';
+import ImageUploader from './ImageUploader';
 
 interface UnitFormProps {
     onSave: (unit: Partial<PropertyUnit>) => void;
@@ -59,27 +63,27 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
         }
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files) return;
+    const getAmenityIcon = (name: string) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('abanico') || lowerName.includes('ventilador')) return <Wind className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('aire')) return <Snowflake className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('wifi') || lowerName.includes('internet')) return <Wifi className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('tv') || lowerName.includes('televis')) return <Tv className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('cama')) return <Bed className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('baño')) return <Bath className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('espacio') || lowerName.includes('trabajo') || lowerName.includes('escritorio')) return <Briefcase className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('piscina')) return <Waves className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('gimnasio')) return <Dumbbell className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('seguridad') || lowerName.includes('vigilancia')) return <Lock className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('balcón') || lowerName.includes('terraza')) return <Sun className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('amoblado') || lowerName.includes('muebles')) return <Sofa className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('ascensor')) return <ChevronsUp className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('cocina')) return <Utensils className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('lavadora') || lowerName.includes('lavandería')) return <Droplet className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('luz') || lowerName.includes('energía')) return <Zap className="w-5 h-5 text-gray-600" />;
+        if (lowerName.includes('agua')) return <Droplet className="w-5 h-5 text-gray-600" />;
 
-        Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({
-                    ...prev,
-                    images: [...(prev.images || []), reader.result as string]
-                }));
-            };
-            reader.readAsDataURL(file);
-        });
-    };
-
-    const removeImage = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: (prev.images || []).filter((_, i) => i !== index)
-        }));
+        return <Home className="w-5 h-5 text-gray-600" />;
     };
 
     const validate = (): boolean => {
@@ -192,8 +196,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                         <FormCurrencyInput
                             label="Precio Mensual (COP)"
                             value={formData.monthlyRent || ''}
-                            onChange={(e) => {
-                                const value = parseInt(e.target.value) || undefined;
+                            onValueChange={(value) => {
                                 handleChange('monthlyRent', value);
                             }}
                             error={errors.monthlyRent ? { message: errors.monthlyRent } as any : undefined}
@@ -202,8 +205,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                         <FormCurrencyInput
                             label="Depósito (COP)"
                             value={formData.deposit || ''}
-                            onChange={(e) => {
-                                const value = parseInt(e.target.value) || undefined;
+                            onValueChange={(value) => {
                                 handleChange('deposit', value);
                             }}
                             error={errors.deposit ? { message: errors.deposit } as any : undefined}
@@ -212,7 +214,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
 
                     {/* Area */}
                     <FormNumericInput
-                        label="Área (m²)"
+                        label="Área (m²) - Opcional"
                         value={formData.area?.toString() || ''}
                         onChange={(e) => {
                             const value = parseInt(e.target.value) || undefined;
@@ -285,16 +287,19 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                                     return (
                                         <label
                                             key={amenity.id}
-                                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                                            className={`flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer transition-all h-24 text-center gap-2 ${isSelected ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 hover:border-emerald-300'
                                                 }`}
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
                                                 onChange={() => handleAmenityToggle(amenity)}
-                                                className="mr-2"
+                                                className="sr-only" // Hide default checkbox
                                             />
-                                            <span className="text-sm">{amenity.name}</span>
+                                            <div className={isSelected ? 'text-emerald-600' : 'text-gray-500'}>
+                                                {getAmenityIcon(amenity.name)}
+                                            </div>
+                                            <span className="text-xs font-medium">{amenity.name}</span>
                                         </label>
                                     );
                                 })}
@@ -307,35 +312,16 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                             Imágenes * (mín. 1, máx. 10)
                         </label>
                         <div className="space-y-4">
-                            {(formData.images || []).length < 10 && (
-                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500">
-                                    <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                                    <span className="text-sm text-gray-600">Subir imagen</span>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={handleImageUpload}
-                                        className="hidden"
-                                    />
-                                </label>
-                            )}
-
-                            {(formData.images || []).length > 0 && (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {(formData.images || []).map((img, index) => (
-                                        <div key={index} className="relative group">
-                                            <img src={typeof img === 'string' ? img : ''} alt={`Preview ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                                            <button
-                                                onClick={() => removeImage(index)}
-                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <ImageUploader
+                                images={formData.images || []}
+                                onChange={(newImages) => {
+                                    setFormData(prev => ({ ...prev, images: newImages }));
+                                    if (errors.images) {
+                                        setErrors(prev => ({ ...prev, images: '' }));
+                                    }
+                                }}
+                                maxImages={10}
+                            />
                         </div>
                         {errors.images && (
                             <p className="mt-2 text-sm text-red-600">{errors.images}</p>

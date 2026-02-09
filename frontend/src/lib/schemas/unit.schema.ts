@@ -52,19 +52,15 @@ export const unitSchema = z.object({
             }
         }),
 
-    deposit: z.coerce.number()
-        .int('El depósito debe ser un número entero')
-        .nonnegative('El depósito no puede ser negativo')
-        .optional()
-        .or(z.literal(0).transform(() => undefined)),
+    deposit: z.preprocess(
+        (val) => (val === '' || val === null || isNaN(Number(val))) ? undefined : Number(val),
+        z.number().int('El depósito debe ser un número entero').nonnegative('El depósito no puede ser negativo').optional()
+    ),
 
-    area: z.coerce.number()
-        .int('El área debe ser un número entero')
-        .positive('El área debe ser mayor a 0')
-        .min(5, 'El área mínima es 5 m²')
-        .max(200, 'El área máxima es 200 m²')
-        .optional()
-        .or(z.literal(0).transform(() => undefined)),
+    area: z.preprocess(
+        (val) => (val === '' || val === null || isNaN(Number(val))) ? undefined : Number(val),
+        z.number().int('El área debe ser un número entero').positive('El área debe ser mayor a 0').min(5, 'El área mínima es 5 m²').max(200, 'El área máxima es 200 m²').optional()
+    ),
 
     roomType: z.enum(['individual', 'shared']),
 

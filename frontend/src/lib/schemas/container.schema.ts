@@ -21,7 +21,10 @@ export const containerBasicInfoSchema = basicPropertyInfoSchema.extend({
 export const containerLocationSchema = locationSchema.extend({
     nearbyInstitutions: z.array(z.object({
         institutionId: z.number().int().positive(),
-        distance: z.union([z.number().int().positive(), z.null()]),
+        distance: z.preprocess(
+            (val) => (val === '' || val === null || isNaN(Number(val))) ? null : Number(val),
+            z.number().int().positive().nullable()
+        )
     })).default([]),
 });
 

@@ -57,16 +57,25 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
         if (city) {
             setValue('cityId', city.id, { shouldValidate: true });
             setValue('departmentId', city.departmentId, { shouldValidate: true });
+        } else {
+            setValue('cityId', 0, { shouldValidate: true });
+            setValue('departmentId', 0, { shouldValidate: true });
         }
     };
 
     const handleAddInstitution = () => {
         if (tempInstitution) {
+            const parsedDistance = tempDistance ? parseInt(tempDistance) : null;
+            if (tempDistance && isNaN(Number(tempDistance))) {
+                // Should show error, but for now just don't add
+                return;
+            }
+
             setNearbyInstitutions(prev => [
                 ...prev,
                 {
                     institution: tempInstitution,
-                    distance: tempDistance ? parseInt(tempDistance) : null
+                    distance: parsedDistance
                 }
             ]);
             setTempInstitution(null);
