@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Plus, Edit, Trash2, DollarSign, Bed } from 'lucide-react';
+import { useAppSelector } from '../store/hooks';
 import type { PropertyUnit } from '../types';
 import UnitForm from './UnitForm';
 
@@ -11,6 +12,7 @@ interface UnitBuilderProps {
 
 const UnitBuilder: React.FC<UnitBuilderProps> = ({ onNext, onBack, initialData }) => {
     const [units, setUnits] = useState<Partial<PropertyUnit>[]>(initialData || []);
+    const { items: amenitiesList } = useAppSelector((state) => state.amenities);
     const [showForm, setShowForm] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -56,6 +58,15 @@ const UnitBuilder: React.FC<UnitBuilderProps> = ({ onNext, onBack, initialData }
             currency: 'COP',
             minimumFractionDigits: 0
         }).format(amount);
+    };
+
+    const getAmenityName = (idOrObj: number | string | { name: string }) => {
+        if (typeof idOrObj === 'object' && idOrObj !== null && 'name' in idOrObj) {
+            return idOrObj.name;
+        }
+        const id = Number(idOrObj);
+        const found = amenitiesList.find(a => a.id === id);
+        return found ? found.name : idOrObj;
     };
 
     return (
@@ -134,7 +145,7 @@ const UnitBuilder: React.FC<UnitBuilderProps> = ({ onNext, onBack, initialData }
                                                         key={i}
                                                         className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                                                     >
-                                                        {typeof amenity === 'object' ? amenity.name : amenity}
+                                                        {getAmenityName(amenity)}
                                                     </span>
                                                 ))}
                                                 {unit.amenities.length > 5 && (
@@ -227,8 +238,8 @@ const UnitBuilder: React.FC<UnitBuilderProps> = ({ onNext, onBack, initialData }
                         onClick={handleSubmit}
                         disabled={units.length === 0}
                         className={`flex items-center gap-2 px-8 py-3 rounded-lg font-medium transition-colors ${units.length === 0
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                     >
                         Siguiente
