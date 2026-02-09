@@ -152,26 +152,36 @@ export const createContainer = async (req, res) => {
                 }, { transaction });
 
                 // Add unit images - upload to Cloudinary first
+                // Add unit images
                 if (unitImages && unitImages.length > 0) {
-                    // Filter valid base64 images
-                    const validImages = unitImages.filter(img =>
+                    const imagesToSave = [];
+
+                    // 1. Separate base64 (need upload) from URLs (already uploaded)
+                    const base64Images = unitImages.filter(img =>
                         (typeof img === 'string' && img.startsWith('data:image')) ||
                         (img.url && img.url.startsWith('data:image'))
-                    );
+                    ).map(img => typeof img === 'string' ? img : img.url);
 
-                    if (validImages.length > 0) {
-                        // Extract base64 strings
-                        const base64Images = validImages.map(img =>
-                            typeof img === 'string' ? img : img.url
-                        );
+                    const existingUrls = unitImages.filter(img =>
+                        (typeof img === 'string' && img.startsWith('http')) ||
+                        (img.url && img.url.startsWith('http'))
+                    ).map(img => typeof img === 'string' ? img : img.url);
 
-                        // Upload to Cloudinary
-                        const uploadedUrls = await uploadMultipleImages(base64Images, 'properties');
+                    // 2. Upload new base64 images
+                    if (base64Images.length > 0) {
+                        const uploaded = await uploadMultipleImages(base64Images, 'properties');
+                        const newUrls = uploaded.map(result => result.url);
+                        imagesToSave.push(...newUrls);
+                    }
 
-                        // Create image records with Cloudinary URLs
-                        const imageRecords = uploadedUrls.map((result, index) => ({
+                    // 3. Add existing URLs
+                    imagesToSave.push(...existingUrls);
+
+                    // 4. Save to database
+                    if (imagesToSave.length > 0) {
+                        const imageRecords = imagesToSave.map((url, index) => ({
                             propertyId: unit.id,
-                            url: result.url, // Extract url from result object
+                            url: url,
                             isFeatured: index === 0,
                             orderPosition: index
                         }));
