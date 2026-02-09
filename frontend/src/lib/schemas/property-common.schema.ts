@@ -19,7 +19,10 @@ export const locationSchema = z.object({
  */
 export const nearbyInstitutionSchema = z.object({
     institutionId: z.coerce.number().int().positive(),
-    distance: z.coerce.number().int().positive().nullable(),
+    distance: z.preprocess(
+        (val) => (val === '' || val === null || isNaN(Number(val))) ? null : Number(val),
+        z.number().int().positive().nullable()
+    ),
 });
 
 /**

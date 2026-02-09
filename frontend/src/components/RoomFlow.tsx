@@ -28,6 +28,7 @@ const RoomFlow: React.FC = () => {
     const [selectedCity, setSelectedCity] = useState<City | null>(null);
     const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
     const [tempDistance, setTempDistance] = useState<string>('');
+    const [institutionNames, setInstitutionNames] = useState<Record<number, string>>({});
 
     const {
         register,
@@ -94,7 +95,7 @@ const RoomFlow: React.FC = () => {
         switch (step) {
             case 1: return ['title', 'description', 'monthlyRent'];
             case 2: return ['cityId', 'departmentId', 'street', 'neighborhood', 'coordinates'];
-            case 3: return ['nearbyInstitutions']; // area is optional
+            case 3: return ['nearbyInstitutions', 'area']; // area is optional
             case 4: return ['amenities'];
             case 5: return ['services'];
             case 6: return ['rules'];
@@ -105,11 +106,16 @@ const RoomFlow: React.FC = () => {
 
     const handleNext = async () => {
         // Auto-add institution if user selected one but didn't click add
+        // Auto-add institution if user selected one but didn't click add
         if (currentStep === 3 && tempInstitution) {
             appendInstitution({
                 institutionId: tempInstitution.id,
                 distance: tempDistance ? parseInt(tempDistance) : null,
             });
+            setInstitutionNames(prev => ({
+                ...prev,
+                [tempInstitution.id]: tempInstitution.name
+            }));
             setTempInstitution(null);
             setTempDistance('');
         }
@@ -429,9 +435,8 @@ const RoomFlow: React.FC = () => {
 
                                         {institutionFields.map((field, index) => (
                                             <div key={field.id} className="flex items-center gap-2 mb-2 p-3 bg-gray-50 rounded-lg">
-                                                <input type="hidden" {...register(`nearbyInstitutions.${index}.institutionId`)} />
                                                 <div className="flex-1">
-                                                    <p className="text-sm font-medium">Institución ID: {field.institutionId}</p>
+                                                    <p className="text-sm font-medium">{institutionNames[field.institutionId] || `Institución ID: ${field.institutionId}`}</p>
                                                 </div>
                                                 <FormNumericInput
                                                     label=""
@@ -475,6 +480,10 @@ const RoomFlow: React.FC = () => {
                                                             institutionId: tempInstitution.id,
                                                             distance: tempDistance ? parseInt(tempDistance) : null,
                                                         });
+                                                        setInstitutionNames(prev => ({
+                                                            ...prev,
+                                                            [tempInstitution.id]: tempInstitution.name
+                                                        }));
                                                         setTempInstitution(null);
                                                         setTempDistance('');
                                                     }
