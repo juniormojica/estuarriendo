@@ -57,13 +57,10 @@ export const roomBasicInfoSchema = basicPropertyInfoSchema.extend({
  * NOTA: El campo area es completamente opcional ya que muchas personas no conocen este dato
  */
 export const roomDetailsSchema = z.object({
-    area: z.coerce.number()
-        .int()
-        .positive()
-        .min(5, 'El área mínima es 5 m²')
-        .max(200, 'El área máxima es 200 m²')
-        .optional()
-        .or(z.literal(0).transform(() => undefined)), // Permite 0 y lo convierte a undefined
+    area: z.preprocess(
+        (val) => (val === '' || val === null || isNaN(Number(val))) ? undefined : Number(val),
+        z.number().int().positive().min(5, 'El área mínima es 5 m²').max(200, 'El área máxima es 200 m²').optional()
+    ),
     nearbyInstitutions: z.array(nearbyInstitutionSchema).optional().default([]),
 });
 
