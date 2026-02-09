@@ -722,7 +722,7 @@ const RoomFlow: React.FC = () => {
 
                                 <ImageUploader
                                     maxImages={10}
-                                    onImagesChange={(newImages) => {
+                                    onChange={(newImages) => {
                                         setValue('images', newImages, { shouldValidate: true });
                                     }}
                                     images={images || []}
