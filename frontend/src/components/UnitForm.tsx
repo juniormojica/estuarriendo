@@ -191,6 +191,28 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                         />
                     </div>
 
+                    {/* Images - Moved up for better visibility */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Imágenes * (mín. 1, máx. 10)
+                        </label>
+                        <div className="space-y-4">
+                            <ImageUploader
+                                images={formData.images || []}
+                                onChange={(newImages) => {
+                                    setFormData(prev => ({ ...prev, images: newImages }));
+                                    if (errors.images) {
+                                        setErrors(prev => ({ ...prev, images: '' }));
+                                    }
+                                }}
+                                maxImages={10}
+                            />
+                        </div>
+                        {errors.images && (
+                            <p className="mt-2 text-sm text-red-600 font-medium bg-red-50 p-2 rounded">{errors.images}</p>
+                        )}
+                    </div>
+
                     {/* Price and Deposit */}
                     <div className="grid grid-cols-2 gap-4">
                         <FormCurrencyInput
@@ -306,27 +328,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                         </div>
                     </div>
 
-                    {/* Images */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Imágenes * (mín. 1, máx. 10)
-                        </label>
-                        <div className="space-y-4">
-                            <ImageUploader
-                                images={formData.images || []}
-                                onChange={(newImages) => {
-                                    setFormData(prev => ({ ...prev, images: newImages }));
-                                    if (errors.images) {
-                                        setErrors(prev => ({ ...prev, images: '' }));
-                                    }
-                                }}
-                                maxImages={10}
-                            />
-                        </div>
-                        {errors.images && (
-                            <p className="mt-2 text-sm text-red-600">{errors.images}</p>
-                        )}
-                    </div>
+
                 </div>
 
                 {/* Footer */}
