@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, CheckCircle, Clock, Users, Ban, Volume2, Coffee, Utensils, Home, Wifi, Zap, Droplet, Wind, X } from 'lucide-react';
+import {
+    ArrowLeft, ArrowRight, CheckCircle, Clock, Users, Ban, Volume2, Coffee, Utensils,
+    Home, Wifi, Zap, Droplet, Wind, X, Snowflake, Tv, Bed, Bath, Briefcase, Waves,
+    Dumbbell, Lock, Sun, Sofa, ChevronsUp
+} from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { createProperty } from '../store/slices/propertiesSlice';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -263,6 +267,29 @@ const RoomFlow: React.FC = () => {
             </div>
         );
     }
+
+    const getAmenityIcon = (name: string) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('abanico') || lowerName.includes('ventilador')) return <Wind className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('aire')) return <Snowflake className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('wifi') || lowerName.includes('internet')) return <Wifi className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('tv') || lowerName.includes('televis')) return <Tv className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('cama')) return <Bed className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('baño')) return <Bath className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('espacio') || lowerName.includes('trabajo') || lowerName.includes('escritorio')) return <Briefcase className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('piscina')) return <Waves className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('gimnasio')) return <Dumbbell className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('seguridad') || lowerName.includes('vigilancia')) return <Lock className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('balcón') || lowerName.includes('terraza')) return <Sun className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('amoblado') || lowerName.includes('muebles')) return <Sofa className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('ascensor')) return <ChevronsUp className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('cocina')) return <Utensils className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('lavadora') || lowerName.includes('lavandería')) return <Droplet className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('luz') || lowerName.includes('energía')) return <Zap className="w-8 h-8 mb-2 text-gray-700" />;
+        if (lowerName.includes('agua')) return <Droplet className="w-8 h-8 mb-2 text-gray-700" />;
+
+        return <Home className="w-8 h-8 mb-2 text-gray-700" />;
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -531,7 +558,7 @@ const RoomFlow: React.FC = () => {
                                                 }}
                                                 className="sr-only"
                                             />
-                                            <Home className="w-8 h-8 mb-2 text-gray-700" />
+                                            {getAmenityIcon(amenity.name)}
                                             <span className="text-sm font-medium text-center">{amenity.name}</span>
                                         </label>
                                     ))}
