@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, CheckCircle, Clock, Users, Ban, Volume2, Coffee, Utensils, Home, Wifi, Zap, Droplet, Wind, X } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -10,7 +10,6 @@ import { roomCompleteSchema, type RoomFormData } from '../lib/schemas/room.schem
 import { FormInput, FormTextarea, FormCurrencyInput, FormNumericInput } from './forms';
 import ImageUploader from './ImageUploader';
 import CityAutocomplete from './CityAutocomplete';
-import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
 import LoadingSpinner from './LoadingSpinner';
 import type { City, Institution, PropertyRule, Amenity, PropertyService } from '../types';
@@ -39,11 +38,11 @@ const RoomFlow: React.FC = () => {
         formState: { errors, isSubmitting },
     } = useForm<RoomFormData>({
         resolver: zodResolver(roomCompleteSchema) as any,
-        mode: 'onBlur',
+        mode: 'onChange',
         defaultValues: {
             title: '',
             description: '',
-            monthlyRent: 0,
+            monthlyRent: undefined,
             cityId: 0,
             departmentId: 0,
             street: '',
@@ -314,11 +313,20 @@ const RoomFlow: React.FC = () => {
                                         required
                                     />
 
-                                    <FormCurrencyInput
-                                        label="Precio mensual (COP)"
-                                        {...register('monthlyRent', { valueAsNumber: true })}
-                                        error={errors.monthlyRent}
-                                        required
+                                    <Controller
+                                        name="monthlyRent"
+                                        control={control}
+                                        render={({ field: { onChange, value, ref, ...field } }) => (
+                                            <FormCurrencyInput
+                                                {...field}
+                                                label="Precio mensual (COP)"
+                                                value={value}
+                                                onValueChange={onChange}
+                                                ref={ref}
+                                                error={errors.monthlyRent}
+                                                required
+                                            />
+                                        )}
                                     />
                                 </div>
                             </div>

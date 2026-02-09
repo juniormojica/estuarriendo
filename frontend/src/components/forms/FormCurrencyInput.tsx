@@ -7,31 +7,34 @@ interface FormCurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInpu
     helperText?: string;
     required?: boolean;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onValueChange?: (value: number | undefined) => void;
     value?: number | string;
 }
 
 export const FormCurrencyInput = forwardRef<HTMLInputElement, FormCurrencyInputProps>(
-    ({ label, error, helperText, required, onChange, value, className, ...props }, ref) => {
+    ({ label, error, helperText, required, onChange, onValueChange, value, className, ...props }, ref) => {
         const [displayValue, setDisplayValue] = useState('');
 
         // Formatear número a COP (1500000 → "1.500.000")
         const formatCOP = (num: number | string): string => {
-            if (!num && num !== 0) return '';
+            if (num === undefined || num === null || num === '') return '';
             const numbers = num.toString().replace(/\D/g, '');
             if (!numbers) return '';
             return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         };
 
         // Parsear COP a número ("1.500.000" → 1500000)
-        const parseCOP = (formatted: string): number => {
+        const parseCOP = (formatted: string): number | undefined => {
             const numbers = formatted.replace(/\D/g, '');
-            return numbers ? parseInt(numbers, 10) : 0;
+            return numbers ? parseInt(numbers, 10) : undefined;
         };
 
         // Sincronizar displayValue cuando value cambia externamente
         useEffect(() => {
             if (value !== undefined && value !== null) {
                 setDisplayValue(formatCOP(value));
+            } else {
+                setDisplayValue('');
             }
         }, [value]);
 
@@ -45,23 +48,20 @@ export const FormCurrencyInput = forwardRef<HTMLInputElement, FormCurrencyInputP
             const formatted = formatCOP(numbers);
             setDisplayValue(formatted);
 
-            // Crear evento sintético con valor numérico para React Hook Form
+            // Obtener valor numérico real
             const numericValue = parseCOP(formatted);
 
-            // Modificar el evento para que React Hook Form reciba el número
-            Object.defineProperty(e.target, 'value', {
-                writable: true,
-                value: numericValue.toString(),
-            });
-            Object.defineProperty(e.target, 'valueAsNumber', {
-                writable: true,
-                value: numericValue,
-            });
+            // Priorizar onValueChange para control directo
+            if (onValueChange) {
+                onValueChange(numericValue);
+            }
 
-            onChange?.(e);
+            // Mantener compatibilidad con onChange estándar (sin hacks de evento)
+            if (onChange) {
+                onChange(e);
+            }
         };
 
-        // Deshabilitar rueda del mouse
         const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
             e.currentTarget.blur();
         };

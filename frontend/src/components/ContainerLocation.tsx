@@ -126,7 +126,7 @@ const ContainerLocation: React.FC<ContainerLocationProps> = ({ onNext, onBack, i
                             {/* City Autocomplete */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Ciudad
+                                    {/* Ciudad */}
                                 </label>
                                 <CityAutocomplete
                                     value={selectedCity}

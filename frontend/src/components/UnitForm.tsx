@@ -89,20 +89,32 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
             newErrors.title = 'El título debe tener al menos 5 caracteres';
         }
 
-        if (!formData.monthlyRent || formData.monthlyRent <= 0) {
+        // Convertir a número para validación consistente
+        const monthlyRent = typeof formData.monthlyRent === 'string'
+            ? parseInt(formData.monthlyRent)
+            : formData.monthlyRent;
+
+        if (!monthlyRent || monthlyRent <= 0) {
             newErrors.monthlyRent = 'El precio mensual es obligatorio y debe ser mayor a 0';
+        } else if (monthlyRent < 100000) {
+            newErrors.monthlyRent = 'El precio mínimo es $100,000 COP';
         }
 
-        // Validar que no sean negativos
-        if (formData.monthlyRent && formData.monthlyRent < 0) {
-            newErrors.monthlyRent = 'El precio no puede ser negativo';
-        }
+        // Validar depósito
+        const deposit = typeof formData.deposit === 'string'
+            ? parseInt(formData.deposit)
+            : formData.deposit;
 
-        if (formData.deposit && formData.deposit < 0) {
+        if (deposit && deposit < 0) {
             newErrors.deposit = 'El depósito no puede ser negativo';
         }
 
-        if (formData.area && formData.area < 0) {
+        // Validar área
+        const area = typeof formData.area === 'string'
+            ? parseInt(formData.area)
+            : formData.area;
+
+        if (area && area < 0) {
             newErrors.area = 'El área no puede ser negativa';
         }
 

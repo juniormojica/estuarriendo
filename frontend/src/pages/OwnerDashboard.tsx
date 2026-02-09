@@ -117,35 +117,38 @@ const OwnerDashboard: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-stone-50">
                 <LoadingSpinner size="lg" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
+        <div className="min-h-screen bg-stone-50 py-6 sm:py-8 lg:py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Mis Propiedades</h1>
-                        <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                        <h1 className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">
+                            Mis Propiedades
+                        </h1>
+                        <p className="mt-2 text-sm text-stone-600">
                             Gestiona tus publicaciones y revisa su estado
                         </p>
                     </div>
                     <Link
                         to="/publicar"
-                        className="inline-flex items-center justify-center min-h-[48px] px-4 sm:px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm sm:text-base font-medium text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                        className="inline-flex items-center justify-center px-4 py-2.5 border border-teal-600 rounded-lg text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all shadow-sm"
                     >
-                        <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                        <Plus className="h-4 w-4 mr-2" />
                         Nueva Propiedad
                     </Link>
                 </div>
 
                 {reduxError && (
-                    <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4 flex items-center">
-                        <AlertCircle className="h-5 w-5 text-red-400 mr-3" />
-                        <span className="text-red-700">{reduxError}</span>
+                    <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+                        <AlertCircle className="h-5 w-5 text-red-400 mr-3 flex-shrink-0" />
+                        <span className="text-sm text-red-700">{reduxError}</span>
                     </div>
                 )}
 
@@ -159,25 +162,25 @@ const OwnerDashboard: React.FC = () => {
                 )}
 
                 {properties.length === 0 ? (
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
-                        <Home className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm sm:text-base font-medium text-gray-900">No tienes propiedades</h3>
-                        <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                    <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-12 text-center">
+                        <Home className="mx-auto h-12 w-12 text-stone-400" />
+                        <h3 className="mt-4 text-base font-medium text-stone-900">No tienes propiedades</h3>
+                        <p className="mt-2 text-sm text-stone-500">
                             Comienza publicando tu primera propiedad para arriendo.
                         </p>
-                        <div className="mt-4 sm:mt-6">
+                        <div className="mt-6">
                             <Link
                                 to="/publicar"
-                                className="inline-flex items-center min-h-[48px] px-6 py-3 border border-transparent shadow-sm text-sm sm:text-base font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
+                                className="inline-flex items-center px-4 py-2.5 border border-teal-600 rounded-lg text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all shadow-sm"
                             >
-                                <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                                <Plus className="h-4 w-4 mr-2" />
                                 Publicar Propiedad
                             </Link>
                         </div>
                     </div>
                 ) : filteredProperties.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                        <p className="text-gray-500">No hay propiedades con el estado seleccionado.</p>
+                    <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-8 text-center">
+                        <p className="text-sm text-stone-500">No hay propiedades con el estado seleccionado.</p>
                     </div>
                 ) : (
                     <div className="space-y-4">

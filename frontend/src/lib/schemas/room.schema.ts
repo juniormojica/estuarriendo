@@ -12,9 +12,44 @@ import {
  */
 export const roomBasicInfoSchema = basicPropertyInfoSchema.extend({
     monthlyRent: z.coerce.number()
-        .int('El precio debe ser un número entero')
-        .positive('El precio debe ser mayor a 0')
-        .min(100000, 'El precio mínimo es $100,000 COP'),
+        .optional()
+        .superRefine((val, ctx) => {
+            // Validar que no sea undefined/null/NaN
+            if (val === undefined || val === null || isNaN(val)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'El precio mensual es obligatorio',
+                });
+                return; // Detener validaciones adicionales
+            }
+
+            // Validar que sea mayor a 0
+            if (val <= 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'El precio debe ser mayor a 0',
+                });
+                return;
+            }
+
+            // Validar que sea entero
+            if (!Number.isInteger(val)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'El precio debe ser un número entero',
+                });
+                return;
+            }
+
+            // Validar precio mínimo
+            if (val < 100000) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'El precio mínimo es $100,000 COP',
+                });
+                return;
+            }
+        }),
 });
 
 /**
