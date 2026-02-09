@@ -31,7 +31,7 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
         defaultValues: initialData || {
             title: '',
             description: '',
-            typeId: propertyType === 'pension' ? 3 : propertyType === 'apartamento' ? 1 : 4,
+            typeId: propertyType === 'pension' ? 2 : propertyType === 'apartamento' ? 3 : 4,
             typeName: propertyType as 'pension' | 'apartamento' | 'aparta-estudio',
             rentalMode: 'by_unit',
             requiresDeposit: true,
@@ -41,7 +41,7 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
 
     // Set typeId and typeName when propertyType changes
     useEffect(() => {
-        const typeId = propertyType === 'pension' ? 3 : propertyType === 'apartamento' ? 1 : 4;
+        const typeId = propertyType === 'pension' ? 2 : propertyType === 'apartamento' ? 3 : 4;
         const typeName = propertyType as 'pension' | 'apartamento' | 'aparta-estudio';
         setValue('typeId', typeId);
         setValue('typeName', typeName);
