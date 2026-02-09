@@ -10,6 +10,7 @@ import { roomCompleteSchema, type RoomFormData } from '../lib/schemas/room.schem
 import { FormInput, FormTextarea, FormCurrencyInput, FormNumericInput } from './forms';
 import ImageUploader from './ImageUploader';
 import CityAutocomplete from './CityAutocomplete';
+import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
 import LoadingSpinner from './LoadingSpinner';
 import type { City, Institution, PropertyRule, Amenity, PropertyService } from '../types';
@@ -35,6 +36,7 @@ const RoomFlow: React.FC = () => {
         setValue,
         trigger,
         control,
+        getValues,
         formState: { errors, isSubmitting },
     } = useForm<RoomFormData>({
         resolver: zodResolver(roomCompleteSchema) as any,
@@ -91,7 +93,7 @@ const RoomFlow: React.FC = () => {
     const getFieldsForStep = (step: number): (keyof RoomFormData)[] => {
         switch (step) {
             case 1: return ['title', 'description', 'monthlyRent'];
-            case 2: return ['cityId', 'street', 'neighborhood', 'coordinates'];
+            case 2: return ['cityId', 'departmentId', 'street', 'neighborhood', 'coordinates'];
             case 3: return ['nearbyInstitutions']; // area is optional
             case 4: return ['amenities'];
             case 5: return ['services'];
@@ -346,8 +348,8 @@ const RoomFlow: React.FC = () => {
                                             Ciudad <span className="text-red-500">*</span>
                                         </label>
                                         <CityAutocomplete
-                                            selectedCity={selectedCity}
-                                            onCityChange={(city) => {
+                                            value={selectedCity}
+                                            onChange={(city) => {
                                                 setSelectedCity(city);
                                                 if (city) {
                                                     setValue('cityId', city.id, { shouldValidate: true });
@@ -383,11 +385,14 @@ const RoomFlow: React.FC = () => {
                                         <LocationPicker
                                             address={{
                                                 street: street || '',
-                                                neighborhood: neighborhood || ''
+                                                neighborhood: neighborhood || '',
+                                                city: selectedCity?.name || '',
+                                                department: selectedCity?.department?.name || '',
+                                                country: 'Colombia'
                                             }}
                                             coordinates={coordinates}
-                                            onCoordinatesChange={(coords) => {
-                                                setValue('coordinates', coords, { shouldValidate: true });
+                                            onCoordinatesChange={(lat, lng) => {
+                                                setValue('coordinates', { lat, lng }, { shouldValidate: true });
                                             }}
                                         />
                                         {(errors.coordinates?.lat || errors.coordinates?.lng) && (
@@ -444,22 +449,42 @@ const RoomFlow: React.FC = () => {
                                             </div>
                                         ))}
 
-                                        <InstitutionAutocomplete
-                                            selectedInstitution={tempInstitution}
-                                            onInstitutionChange={setTempInstitution}
-                                            distance={tempDistance}
-                                            onDistanceChange={setTempDistance}
-                                            onAdd={() => {
-                                                if (tempInstitution) {
-                                                    appendInstitution({
-                                                        institutionId: tempInstitution.id,
-                                                        distance: tempDistance ? parseInt(tempDistance) : null,
-                                                    });
-                                                    setTempInstitution(null);
-                                                    setTempDistance('');
-                                                }
-                                            }}
-                                        />
+                                        <div className="flex gap-2">
+                                            <div className="flex-1">
+                                                <InstitutionAutocomplete
+                                                    value={tempInstitution}
+                                                    onChange={setTempInstitution}
+                                                    cityId={getValues('cityId')}
+                                                    placeholder="Buscar institución..."
+                                                    disabled={!getValues('cityId')}
+                                                />
+                                            </div>
+                                            <div className="w-32">
+                                                <FormNumericInput
+                                                    label=""
+                                                    value={tempDistance}
+                                                    onChange={(e) => setTempDistance(e.target.value)}
+                                                    placeholder="Distancia (m)"
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (tempInstitution) {
+                                                        appendInstitution({
+                                                            institutionId: tempInstitution.id,
+                                                            distance: tempDistance ? parseInt(tempDistance) : null,
+                                                        });
+                                                        setTempInstitution(null);
+                                                        setTempDistance('');
+                                                    }
+                                                }}
+                                                disabled={!tempInstitution}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                            >
+                                                Agregar
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
