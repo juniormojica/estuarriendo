@@ -10,6 +10,8 @@ import {
     Amenity,
     CommonArea,
     User,
+    City,
+    Department,
     sequelize
 } from '../models/index.js';
 import { Op } from 'sequelize';
@@ -185,10 +187,10 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
             corePropertyData.locationId = location.id;
         }
 
-        // Check if property is currently rejected and reset status to pending
+        // Check if property is currently rejected or approved and reset status to pending
         const currentProperty = await Property.findByPk(propertyId);
-        if (currentProperty && currentProperty.status === 'rejected') {
-            // Reset status to pending when a rejected property is updated
+        if (currentProperty && (currentProperty.status === 'rejected' || currentProperty.status === 'approved')) {
+            // Reset status to pending when a rejected or approved property is updated
             corePropertyData.status = 'pending';
             corePropertyData.rejectionReason = null; // Clear rejection reason
         }
@@ -280,7 +282,11 @@ export const findPropertyWithAssociations = async (propertyId) => {
             },
             {
                 model: Location,
-                as: 'location'
+                as: 'location',
+                include: [
+                    { model: City, as: 'city' },
+                    { model: Department, as: 'department' }
+                ]
             },
             {
                 model: Contact,
