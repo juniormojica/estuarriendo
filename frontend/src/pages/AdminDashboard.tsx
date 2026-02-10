@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchAmenities, createAmenity, updateAmenity, deleteAmenity } from '../store/slices/amenitiesSlice';
+import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { fetchProperties, approveProperty, rejectProperty, deleteProperty, toggleFeatured } from '../store/slices/propertiesSlice';
 import ContainerReviewModal from '../components/admin/ContainerReviewModal';
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -27,7 +27,7 @@ import { useToast } from '../components/ToastProvider';
 const AdminDashboard = () => {
     const dispatch = useAppDispatch();
     const toast = useToast();
-    const { items: amenities } = useAppSelector((state) => state.amenities);
+
     const { items: properties } = useAppSelector((state) => state.properties);
 
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
@@ -359,36 +359,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleAddAmenity = async (amenity: Omit<Amenity, 'id'>) => {
-        try {
-            await dispatch(createAmenity(amenity)).unwrap();
-            alert('Amenidad agregada exitosamente');
-        } catch (error) {
-            console.error('Error adding amenity:', error);
-            alert('Error al agregar amenidad');
-        }
-    };
 
-    const handleUpdateAmenity = async (id: string, data: Partial<Amenity>) => {
-        try {
-            await dispatch(updateAmenity({ id, data })).unwrap();
-            alert('Amenidad actualizada exitosamente');
-        } catch (error) {
-            console.error('Error updating amenity:', error);
-            alert('Error al actualizar amenidad');
-        }
-    };
-
-    const handleDeleteAmenity = async (id: string) => {
-        if (window.confirm('¿Estás seguro de eliminar esta amenidad?')) {
-            try {
-                await dispatch(deleteAmenity(id)).unwrap();
-            } catch (error) {
-                console.error('Error deleting amenity:', error);
-                alert('Error al eliminar amenidad');
-            }
-        }
-    };
 
     const handleApproveVerification = (userId: string) => {
         setVerificationModal({ isOpen: true, userId, action: 'approve' });
@@ -684,10 +655,6 @@ const AdminDashboard = () => {
                             <AdminConfig
                                 config={systemConfig}
                                 onSaveConfig={handleSaveConfig}
-                                amenities={amenities}
-                                onAddAmenity={handleAddAmenity}
-                                onUpdateAmenity={handleUpdateAmenity}
-                                onDeleteAmenity={handleDeleteAmenity}
                             />
                         )}
                     </div>
