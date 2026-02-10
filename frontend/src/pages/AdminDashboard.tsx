@@ -96,7 +96,7 @@ const AdminDashboard = () => {
         // Check for section query parameter
         const params = new URLSearchParams(location.search);
         const section = params.get('section');
-        if (section && ['dashboard', 'properties', 'users', 'payments', 'amenities', 'config', 'student-requests', 'activity-logs'].includes(section)) {
+        if (section && ['dashboard', 'pending', 'properties', 'users', 'payments', 'amenities', 'config', 'student-requests', 'activity', 'all-properties', 'verifications'].includes(section)) {
             setCurrentSection(section as AdminSection);
         }
     }, [location.search]);
