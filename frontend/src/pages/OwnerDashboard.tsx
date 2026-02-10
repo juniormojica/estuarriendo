@@ -101,10 +101,28 @@ const OwnerDashboard: React.FC = () => {
         console.log('View unit:', unitId);
     };
 
-    // Filter properties by status
+    // Filter properties by status and hierarchy (show only parents)
     const filteredProperties = properties.filter(property => {
         if (!property) return false;
+
+        // Hierarchy check: Only show top-level items (no parentId)
+        if (property.parentId) return false;
+
         if (activeFilter === 'all') return true;
+
+        // For containers, if the filter is 'all', show them.
+        // If specific filter is active, check if container matches OR if it has units with that status
+        if (property.isContainer) {
+            if (property.status === activeFilter) return true;
+            // Optional: Also show container if it has units in this status? 
+            // For now, let's stick to the container's own status or maybe purely container status.
+            // Let's keep it simple: Filter by the container's main status for now,
+            // or check if any unit matches. 
+            // User wants to see "what they have". Usually containers are "approved" if they exist.
+            // Let's iterate: Check if property status matches OR if any unit matches.
+            return property.status === activeFilter || property.units?.some(u => u.status === activeFilter);
+        }
+
         return property.status === activeFilter;
     });
 
@@ -125,21 +143,21 @@ const OwnerDashboard: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-stone-50 py-6 sm:py-8 lg:py-12">
+        <div className="min-h-screen bg-gray-50 py-6 sm:py-8 lg:py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight">
                             Mis Propiedades
                         </h1>
-                        <p className="mt-2 text-sm text-stone-600">
+                        <p className="mt-2 text-sm text-gray-600">
                             Gestiona tus publicaciones y revisa su estado
                         </p>
                     </div>
                     <Link
                         to="/publicar"
-                        className="inline-flex items-center justify-center px-4 py-2.5 border border-teal-600 rounded-lg text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all shadow-sm"
+                        className="inline-flex items-center justify-center px-4 py-2.5 border border-primary-600 rounded-lg text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 transition-all shadow-sm"
                     >
                         <Plus className="h-4 w-4 mr-2" />
                         Nueva Propiedad
@@ -163,16 +181,16 @@ const OwnerDashboard: React.FC = () => {
                 )}
 
                 {properties.length === 0 ? (
-                    <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-12 text-center">
-                        <Home className="mx-auto h-12 w-12 text-stone-400" />
-                        <h3 className="mt-4 text-base font-medium text-stone-900">No tienes propiedades</h3>
-                        <p className="mt-2 text-sm text-stone-500">
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-12 text-center">
+                        <Home className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-4 text-base font-medium text-gray-900">No tienes propiedades</h3>
+                        <p className="mt-2 text-sm text-gray-500">
                             Comienza publicando tu primera propiedad para arriendo.
                         </p>
                         <div className="mt-6">
                             <Link
                                 to="/publicar"
-                                className="inline-flex items-center px-4 py-2.5 border border-teal-600 rounded-lg text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all shadow-sm"
+                                className="inline-flex items-center px-4 py-2.5 border border-primary-600 rounded-lg text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 transition-all shadow-sm"
                             >
                                 <Plus className="h-4 w-4 mr-2" />
                                 Publicar Propiedad
@@ -180,8 +198,8 @@ const OwnerDashboard: React.FC = () => {
                         </div>
                     </div>
                 ) : filteredProperties.length === 0 ? (
-                    <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-8 text-center">
-                        <p className="text-sm text-stone-500">No hay propiedades con el estado seleccionado.</p>
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
+                        <p className="text-sm text-gray-500">No hay propiedades con el estado seleccionado.</p>
                     </div>
                 ) : (
                     <div className="space-y-4">

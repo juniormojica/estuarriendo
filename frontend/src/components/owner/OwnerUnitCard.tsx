@@ -56,10 +56,10 @@ const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({
     };
 
     return (
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+        <div className="bg-white rounded-lg p-4 border border-gray-200 hover:border-primary-300 transition-colors shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 {/* Thumbnail */}
-                <div className="w-full sm:w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-full sm:w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
                     {unit.images && unit.images.length > 0 ? (
                         <img
                             src={typeof unit.images[0] === 'string' ? unit.images[0] : unit.images[0].url}
@@ -67,7 +67,7 @@ const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
                             <Bed size={24} />
                         </div>
                     )}
@@ -82,10 +82,10 @@ const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({
 
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
-                            <Users size={14} />
+                            <Users size={14} className="text-gray-400" />
                             <span>{getRoomTypeLabel()}</span>
                         </div>
-                        <div className="font-semibold text-blue-600">
+                        <div className="font-semibold text-primary-600">
                             {formatPrice(unit.monthlyRent)}
                         </div>
                     </div>
@@ -99,11 +99,11 @@ const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({
                             onClick={() => onToggleRented(String(unit.id))}
                             className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${unit.isRented
                                 ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                : 'bg-primary-50 text-primary-700 hover:bg-primary-100'
                                 }`}
                             title={unit.isRented ? 'Marcar como disponible' : 'Marcar como rentada'}
                         >
-                            <DoorOpen size={14} className="mr-1" />
+                            <DoorOpen size={14} className="mr-1.5" />
                             {unit.isRented ? 'Rentada' : 'Disponible'}
                         </button>
                     )}
@@ -111,7 +111,7 @@ const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({
                     {/* View Button */}
                     <button
                         onClick={() => onView(String(unit.id))}
-                        className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-gray-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-100"
+                        className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-gray-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50"
                         title="Ver detalles"
                     >
                         <Eye className="h-4 w-4" />

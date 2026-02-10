@@ -47,7 +47,7 @@ const PropertyStatusFilters: React.FC<PropertyStatusFiltersProps> = ({
     return (
         <div className="mb-6">
             {/* Segmented Control - Desktop */}
-            <div className="hidden sm:inline-flex bg-white border border-stone-200 rounded-lg p-1 shadow-sm">
+            <div className="hidden sm:inline-flex bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
                 {filters.map((filter) => {
                     const Icon = filter.icon;
                     const isActive = activeFilter === filter.key;
@@ -59,8 +59,8 @@ const PropertyStatusFilters: React.FC<PropertyStatusFiltersProps> = ({
                             className={`
                                 flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
                                 ${isActive
-                                    ? 'bg-stone-900 text-white shadow-sm'
-                                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
+                                    ? 'bg-primary-600 text-white shadow-sm'
+                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                                 }
                             `}
                         >
@@ -69,7 +69,7 @@ const PropertyStatusFilters: React.FC<PropertyStatusFiltersProps> = ({
                             {filter.count > 0 && (
                                 <span className={`
                                     ml-1 px-2 py-0.5 rounded-full text-xs font-bold tabular-nums
-                                    ${isActive ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-700'}
+                                    ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'}
                                 `}>
                                     {filter.count}
                                 </span>
@@ -92,8 +92,8 @@ const PropertyStatusFilters: React.FC<PropertyStatusFiltersProps> = ({
                             className={`
                                 w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all
                                 ${isActive
-                                    ? 'bg-stone-900 text-white border-stone-900 shadow-sm'
-                                    : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'
+                                    ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                                 }
                             `}
                         >
@@ -104,7 +104,7 @@ const PropertyStatusFilters: React.FC<PropertyStatusFiltersProps> = ({
                             {filter.count > 0 && (
                                 <span className={`
                                     px-2.5 py-1 rounded-full text-xs font-bold tabular-nums
-                                    ${isActive ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-700'}
+                                    ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'}
                                 `}>
                                     {filter.count}
                                 </span>

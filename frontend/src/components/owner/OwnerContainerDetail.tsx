@@ -28,19 +28,27 @@ const OwnerContainerDetail: React.FC<OwnerContainerDetailProps> = ({
     });
 
     return (
-        <div className="mt-4 space-y-3 pl-4 border-l-4 border-blue-200">
-            <div className="text-sm font-medium text-gray-700 mb-3">
-                Habitaciones ({container.units.length})
+        <div className="mt-[-8px] mx-4 bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 shadow-inner">
+            <div className="flex items-center justify-between mb-4 px-2">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Listado de Habitaciones
+                </h4>
+                <div className="text-xs text-gray-400">
+                    Total: {container.units.length}
+                </div>
             </div>
-            {sortedUnits.map((unit) => (
-                <OwnerUnitCard
-                    key={unit.id}
-                    unit={unit}
-                    containerId={container.id}
-                    onToggleRented={onToggleUnitRented}
-                    onView={onViewUnit}
-                />
-            ))}
+
+            <div className="space-y-3">
+                {sortedUnits.map((unit) => (
+                    <OwnerUnitCard
+                        key={unit.id}
+                        unit={unit}
+                        containerId={container.id}
+                        onToggleRented={onToggleUnitRented}
+                        onView={onViewUnit}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

@@ -79,180 +79,165 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
     const statusDisplay = getStatusDisplay();
 
     return (
-        <div className="bg-white border border-stone-200 rounded-lg shadow-sm hover:shadow transition-shadow">
-            <div className="p-6">
-                {/* Header - Title + Status */}
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold text-stone-900 truncate">
-                                {property.title}
-                            </h3>
-                            {isContainer && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                                    <Building2 size={12} className="mr-1" />
-                                    Contenedor
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex items-center text-sm text-stone-500 mb-1">
-                            <MapPin size={14} className="mr-1 flex-shrink-0" />
-                            <span className="truncate">{getLocationDisplay()}</span>
-                        </div>
+        <div className={`bg-white border rounded-lg shadow-sm transition-all ${isExpanded ? 'border-primary-500 ring-1 ring-primary-500 shadow-md' : 'border-gray-200 hover:shadow-md'
+            }`}>
+            <div className="p-5">
+                {/* Type Badge & Status */}
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        {isContainer ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                <Building2 size={12} className="mr-1.5" />
+                                Contenedor
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                <MapPin size={12} className="mr-1.5" />
+                                Propiedad Individual
+                            </span>
+                        )}
+                        <span className="text-xs text-gray-400 font-medium">#{property.id}</span>
                     </div>
-
-                    {/* Status - Subtle, right-aligned */}
                     <div className={statusDisplay.className}>
                         {statusDisplay.text}
                     </div>
                 </div>
 
-                {/* Price (if not container) */}
-                {!isContainer && (
-                    <div className="text-xl font-bold text-stone-900 tabular-nums mb-4">
-                        {formatPrice(property.monthlyRent)}
-                    </div>
-                )}
-
-                {/* Container Stats */}
-                {isContainer && totalUnits > 0 && (
-                    <div className="grid grid-cols-3 gap-3 pt-4 mb-4 border-t border-stone-200">
-                        {/* Total Units */}
-                        <div>
-                            <div className="text-2xl font-bold text-stone-900 tabular-nums">
-                                {totalUnits}
-                            </div>
-                            <div className="text-xs text-stone-500 uppercase tracking-wide">
-                                Habitaciones
-                            </div>
-                        </div>
-
-                        {/* Pending */}
-                        <div>
-                            <div className="text-2xl font-bold text-amber-700 tabular-nums">
-                                {pendingUnits}
-                            </div>
-                            <div className="text-xs text-stone-500 uppercase tracking-wide">
-                                Pendientes
-                            </div>
-                        </div>
-
-                        {/* Rented */}
-                        <div>
-                            <div className="text-2xl font-bold text-green-700 tabular-nums">
-                                {rentedUnits}
-                            </div>
-                            <div className="text-xs text-stone-500 uppercase tracking-wide">
-                                Rentadas
-                            </div>
+                {/* Main Content Row */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-gray-900 truncate mb-1">
+                            {property.title}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-500">
+                            <MapPin size={14} className="mr-1 flex-shrink-0 text-gray-400" />
+                            <span className="truncate">{getLocationDisplay()}</span>
                         </div>
                     </div>
-                )}
+
+                    {/* Price or Unit Count */}
+                    <div className="text-right flex-shrink-0">
+                        {!isContainer ? (
+                            <div className="text-xl font-bold text-gray-900 tabular-nums">
+                                {formatPrice(property.monthlyRent)}
+                                <span className="text-sm font-normal text-gray-500 ml-1">/mes</span>
+                            </div>
+                        ) : (
+                            <div className="text-right">
+                                <div className="text-sm font-medium text-gray-900">
+                                    {totalUnits} Habitaciones
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    {pendingUnits > 0 && <span className="text-amber-600 font-medium">{pendingUnits} Pendientes</span>}
+                                    {pendingUnits > 0 && rentedUnits > 0 && <span className="mx-1">•</span>}
+                                    {rentedUnits > 0 && <span className="text-green-600 font-medium">{rentedUnits} Rentadas</span>}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                 {/* Rejection Reason */}
                 {property.status === 'rejected' && property.rejectionReason && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                        <p className="text-xs font-semibold text-red-900 mb-1">
-                            Razón de rechazo:
-                        </p>
-                        <p className="text-xs text-red-700">
-                            {property.rejectionReason}
-                        </p>
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+                        <XCircle size={16} className="text-red-500 mt-0.5 mr-2 flex-shrink-0" />
+                        <div>
+                            <p className="text-xs font-semibold text-red-900">Motivo de rechazo:</p>
+                            <p className="text-xs text-red-700 mt-0.5">{property.rejectionReason}</p>
+                        </div>
                     </div>
                 )}
 
-                {/* Actions - Grouped Hierarchy */}
-                <div className="flex items-center justify-between pt-4 border-t border-stone-200">
-                    {/* Primary Actions (left) */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {/* Status Toggle */}
+                {/* Actions Bar */}
+                <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                        {/* Edit Button */}
+                        <Link
+                            to={`/editar-propiedad/${property.id}`}
+                            className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                        >
+                            <Edit size={14} className="mr-1.5" />
+                            Editar
+                        </Link>
+
+                        {/* Public View */}
+                        <Link
+                            to={`/propiedad/${property.id}`}
+                            className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-primary-600 hover:bg-primary-50"
+                        >
+                            <Eye size={14} className="mr-1.5" />
+                            Ver
+                        </Link>
+
+                        {/* Toggle Status (Only for Approved Single Properties) */}
                         {property.status === 'approved' && !isContainer && (
                             <button
                                 onClick={() => onToggleRented(String(property.id))}
                                 className={`
-                                    px-3 py-1.5 rounded-md text-xs font-medium border transition-all
+                                    inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors
                                     ${property.isRented
-                                        ? 'border-stone-300 text-stone-700 bg-stone-50 hover:bg-stone-100'
-                                        : 'border-teal-600 text-teal-700 bg-teal-50 hover:bg-teal-100'
+                                        ? 'text-gray-600 hover:bg-gray-50'
+                                        : 'text-primary-600 hover:bg-primary-50'
                                     }
                                 `}
                             >
-                                <DoorOpen size={14} className="inline mr-1" />
-                                {property.isRented ? 'Rentada' : 'Disponible'}
+                                <DoorOpen size={14} className="mr-1.5" />
+                                {property.isRented ? 'Marcar Disponible' : 'Marcar Rentada'}
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {/* Delete Button */}
+                        {isDeleting ? (
+                            <div className="flex items-center gap-2 bg-red-50 px-2 py-1 rounded-md">
+                                <span className="text-xs text-red-700 font-medium">¿Confirmar?</span>
+                                <button
+                                    onClick={() => onDelete(String(property.id))}
+                                    className="text-xs bg-red-600 text-white px-2 py-0.5 rounded hover:bg-red-700 transition-colors"
+                                >
+                                    Si
+                                </button>
+                                <button
+                                    onClick={() => {/* Cancel handled by parent */ }}
+                                    className="text-xs bg-white text-gray-600 border border-gray-200 px-2 py-0.5 rounded hover:bg-gray-50 transition-colors"
+                                >
+                                    No
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => onDelete(String(property.id))}
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Eliminar Propiedad"
+                            >
+                                <Trash2 size={16} />
                             </button>
                         )}
 
-                        {/* Edit (destacado si rechazada) */}
-                        <Link
-                            to={`/editar-propiedad/${property.id}`}
-                            className={`
-                                px-3 py-1.5 rounded-md text-xs font-medium border transition-all inline-flex items-center
-                                ${property.status === 'rejected'
-                                    ? 'border-orange-500 text-orange-700 bg-orange-50 hover:bg-orange-100 shadow-sm'
-                                    : 'border-stone-300 text-stone-700 hover:bg-stone-50'
-                                }
-                            `}
-                        >
-                            <Edit size={14} className="mr-1" />
-                            Editar
-                        </Link>
-                    </div>
-
-                    {/* Secondary Actions (right) */}
-                    <div className="flex items-center gap-1">
-                        <Link
-                            to={`/propiedad/${property.id}`}
-                            className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
-                            title="Ver Propiedad"
-                        >
-                            <Eye size={16} />
-                        </Link>
-
-                        <button
-                            onClick={() => onViewInterests(String(property.id), property.title)}
-                            className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors"
-                            title="Ver Interesados"
-                        >
-                            <Users size={16} />
-                        </button>
-
-                        {/* Destructive (separado visualmente) */}
-                        <div className="ml-2 pl-2 border-l border-stone-200">
-                            {isDeleting ? (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-                                    <button
-                                        onClick={() => onDelete(String(property.id))}
-                                        className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                                    >
-                                        Sí
-                                    </button>
-                                    <button
-                                        onClick={() => {/* Cancel handled by parent */ }}
-                                        className="text-xs bg-stone-200 text-stone-700 px-3 py-1 rounded hover:bg-stone-300"
-                                    >
-                                        No
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => onDelete(String(property.id))}
-                                    className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                    title="Eliminar"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Expand Button for Containers */}
+                        {/* Expand/Collapse Button (Main Action for Containers) */}
                         {isContainer && totalUnits > 0 && onToggleExpand && (
                             <button
                                 onClick={onToggleExpand}
-                                className="ml-2 pl-2 border-l border-stone-200 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-teal-600 hover:bg-teal-50 transition-colors rounded-md"
-                                title={isExpanded ? 'Ocultar habitaciones' : 'Ver habitaciones'}
+                                className={`
+                                    flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ml-2
+                                    ${isExpanded
+                                        ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }
+                                `}
                             >
-                                {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                {isExpanded ? (
+                                    <>
+                                        <ChevronUp size={16} />
+                                        Ocultar Habitaciones
+                                    </>
+                                ) : (
+                                    <>
+                                        <ChevronDown size={16} />
+                                        Ver Habitaciones ({totalUnits})
+                                    </>
+                                )}
                             </button>
                         )}
                     </div>
