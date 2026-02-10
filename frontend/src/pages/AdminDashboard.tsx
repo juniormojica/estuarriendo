@@ -21,14 +21,14 @@ import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
 import ActivityLogsAdmin from '../components/admin/ActivityLogsAdmin';
 import PendingActionsCard from '../components/admin/PendingActionsCard';
 import UserStatsCard from '../components/admin/UserStatsCard';
-import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, FileText } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
 const AdminDashboard = () => {
     const dispatch = useAppDispatch();
     const toast = useToast();
     const { items: amenities } = useAppSelector((state) => state.amenities);
-    const { items: properties, loading: propertiesLoading } = useAppSelector((state) => state.properties);
+    const { items: properties } = useAppSelector((state) => state.properties);
 
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
     const [loading, setLoading] = useState(true);
@@ -69,8 +69,6 @@ const AdminDashboard = () => {
         return Array.from(map.values());
     }, [properties, pendingContainers]);
 
-    const approvedProperties = properties.filter(p => p.status === 'approved');
-    const rejectedProperties = properties.filter(p => p.status === 'rejected');
     const allProperties = properties;
 
     // UI states
@@ -290,16 +288,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleViewUserProperties = async (userId: string) => {
-        try {
-            const userProperties = await api.getUserProperties(userId);
-            // For now, just switch to all properties view
-            // In a more advanced version, we could filter the table
-            setCurrentSection('all-properties');
-        } catch (error) {
-            console.error('Error loading user properties:', error);
-        }
-    };
+
 
     const handleVerifyPayment = (requestId: string) => {
         const request = paymentRequests.find(r => r.id === requestId);
@@ -438,7 +427,6 @@ const AdminDashboard = () => {
     };
 
     const renderContent = () => {
-        console.log('AdminDashboard - renderContent called with currentSection:', currentSection);
 
         if (loading) {
             return (
