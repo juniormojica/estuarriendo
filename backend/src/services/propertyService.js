@@ -26,7 +26,41 @@ import { Op } from 'sequelize';
  * Prevents duplicate locations for properties in the same building
  */
 export const findOrCreateLocation = async (locationData, transaction = null) => {
-    const { street, neighborhood, cityId, departmentId, zipCode, latitude, longitude } = locationData;
+    let { street, neighborhood, cityId, departmentId, zipCode, latitude, longitude, city, department } = locationData;
+
+    // Resolve IDs if missing but names are provided
+    if ((!departmentId && department) || (!cityId && city)) {
+        try {
+            // 1. Resolve Department
+            if (!departmentId && department) {
+                const deptRecord = await Department.findOne({
+                    where: { name: department },
+                    attributes: ['id']
+                });
+                if (deptRecord) departmentId = deptRecord.id;
+            }
+
+            // 2. Resolve City
+            if (!cityId && city) {
+                const whereClause = { name: city };
+                if (departmentId) whereClause.departmentId = departmentId;
+
+                const cityRecord = await City.findOne({
+                    where: whereClause,
+                    attributes: ['id', 'departmentId']
+                });
+
+                if (cityRecord) {
+                    cityId = cityRecord.id;
+                    // If departmentId was still unknown, use the one from the city
+                    if (!departmentId) departmentId = cityRecord.departmentId;
+                }
+            }
+        } catch (error) {
+            console.error('Error resolving location IDs:', error);
+            // Continue execution, will likely fail in findOrCreate if essential IDs are missing
+        }
+    }
 
     // Try to find existing location
     const [location, created] = await Location.findOrCreate({
