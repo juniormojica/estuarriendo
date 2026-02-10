@@ -103,6 +103,7 @@ const OwnerDashboard: React.FC = () => {
 
     // Filter properties by status
     const filteredProperties = properties.filter(property => {
+        if (!property) return false;
         if (activeFilter === 'all') return true;
         return property.status === activeFilter;
     });
@@ -110,9 +111,9 @@ const OwnerDashboard: React.FC = () => {
     // Calculate counts for filters
     const counts = {
         all: properties.length,
-        pending: properties.filter(p => p.status === 'pending').length,
-        approved: properties.filter(p => p.status === 'approved').length,
-        rejected: properties.filter(p => p.status === 'rejected').length
+        pending: properties.filter(p => p && p.status === 'pending').length,
+        approved: properties.filter(p => p && p.status === 'approved').length,
+        rejected: properties.filter(p => p && p.status === 'rejected').length
     };
 
     if (loading) {

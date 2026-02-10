@@ -108,7 +108,9 @@ export const createProperty = createAsyncThunk(
                 ...propertyData,
                 ownerId
             });
-            return response.data.data as Property;
+            // Handle potentially different response structures
+            // Some endpoints return { data: ... } while others return object directly
+            return (response.data.data || response.data) as Property;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Failed to create property');
         }
