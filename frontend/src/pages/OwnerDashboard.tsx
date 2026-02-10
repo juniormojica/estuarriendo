@@ -215,6 +215,7 @@ const OwnerDashboard: React.FC = () => {
                                             setDeleteId(id);
                                         }
                                     }}
+                                    onCancelDelete={() => setDeleteId(null)}
                                     onViewInterests={handleOpenInterests}
                                     isExpanded={expandedContainers.has(property.id)}
                                     onToggleExpand={property.isContainer ? () => handleToggleExpand(property.id) : undefined}

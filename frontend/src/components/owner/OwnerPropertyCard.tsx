@@ -11,6 +11,7 @@ interface OwnerPropertyCardProps {
     property: Property;
     onToggleRented: (id: string) => void;
     onDelete: (id: string) => void;
+    onCancelDelete?: () => void;
     onViewInterests: (id: string, title: string) => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
@@ -21,6 +22,7 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
     property,
     onToggleRented,
     onDelete,
+    onCancelDelete,
     onViewInterests,
     isExpanded = false,
     onToggleExpand,
@@ -190,7 +192,7 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
                     <div className="flex items-center gap-2">
                         {/* Delete Button */}
                         {isDeleting ? (
-                            <div className="flex items-center gap-2 bg-red-50 px-2 py-1 rounded-md">
+                            <div className="flex items-center gap-2 bg-red-50 px-2 py-1 rounded-md animate-fadeIn">
                                 <span className="text-xs text-red-700 font-medium">¿Confirmar?</span>
                                 <button
                                     onClick={() => onDelete(String(property.id))}
@@ -199,7 +201,7 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
                                     Si
                                 </button>
                                 <button
-                                    onClick={() => {/* Cancel handled by parent */ }}
+                                    onClick={onCancelDelete}
                                     className="text-xs bg-white text-gray-600 border border-gray-200 px-2 py-0.5 rounded hover:bg-gray-50 transition-colors"
                                 >
                                     No
