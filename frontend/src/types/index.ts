@@ -171,6 +171,7 @@ export interface Location {
   zipCode?: string;  // Alias for postalCode
   latitude?: number;
   longitude?: number;
+  country?: string;
 }
 
 // PropertyType entity (normalized from string type)
@@ -306,7 +307,7 @@ export interface PropertyContainer {
 
 export interface Property {
   // Core fields
-  id: number; // Changed from string to number
+  id: number | string; // Changed to allow string IDs from mock data
   ownerId: string;
   title: string;
   description: string;
@@ -356,6 +357,7 @@ export interface Property {
 
   // Relations (populated by backend includes)
   location?: Location;
+  coordinates?: Coordinates;
   type?: PropertyTypeEntity;
   contact?: PropertyContact;
   features?: PropertyFeatures;
@@ -417,10 +419,35 @@ export interface User {
   planExpiresAt?: string;
   paymentRequestId?: string;
   premiumSince?: string;
+
+  // New Analytics Profile Data
+  profile?: UserProfileData;
+}
+
+export interface UserProfileData {
+  // Common Demographics
+  birthDate?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  referralSource?: string;
+
+  // Tenant Specific
+  institutionId?: number;
+  institution?: Institution; // Hydrated
+  academicProgram?: string;
+  currentSemester?: number;
+  originCityId?: number;
+  originCity?: City; // Hydrated
+  livingPreference?: 'solo' | 'shared' | 'indifferent'; // 'solo', 'shared', 'indifferent'
+
+  // Owner Specific
+  totalPropertiesManaged?: number;
+  yearsAsLandlord?: number;
+  managesPersonally?: boolean;
 }
 
 export interface Amenity {
-  id: number;  // Changed from string to number to match database
+  id: number | string;  // Changed to allow string IDs
+
   name: string;
   icon: string;
   slug?: string;

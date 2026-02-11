@@ -155,8 +155,15 @@ export const createUser = async (userData) => {
  * @throws {NotFoundError} If user not found
  */
 export const updateUser = async (id, updates) => {
-    // Separate identification details from main user updates
-    const { idType, idNumber, ownerRole, ...userUpdates } = updates;
+    // Separate identification and profile details from main user updates
+    const {
+        idType, idNumber, ownerRole,
+        // Profile fields
+        birthDate, gender, referralSource, institutionId, academicProgram,
+        currentSemester, originCityId, livingPreference, totalPropertiesManaged,
+        yearsAsLandlord, managesPersonally, profile,
+        ...userUpdates
+    } = updates;
 
     // Hash password if it's being updated
     if (userUpdates.password) {
@@ -199,6 +206,43 @@ export const updateUser = async (id, updates) => {
             await UserIdentificationDetails.create({
                 userId: id,
                 ...identificationUpdates,
+                createdAt: new Date()
+            });
+        }
+    }
+
+    // Handle User Profile Updates
+    // Combine flat fields and nested 'profile' object
+    const profileData = {
+        ...(profile || {}),
+        birthDate, gender, referralSource, institutionId, academicProgram,
+        currentSemester, originCityId, livingPreference, totalPropertiesManaged,
+        yearsAsLandlord, managesPersonally
+    };
+
+    // Filter out undefined values
+    const profileUpdates = Object.entries(profileData).reduce((acc, [key, value]) => {
+        if (value !== undefined) {
+            acc[key] = value;
+        }
+        return acc;
+    }, {});
+
+    if (Object.keys(profileUpdates).length > 0) {
+        const { UserProfile } = await import('../models/index.js');
+
+        // Try to find existing profile
+        const existingProfile = await UserProfile.findOne({ where: { userId: id } });
+
+        if (existingProfile) {
+            await existingProfile.update({
+                ...profileUpdates,
+                updatedAt: new Date()
+            });
+        } else {
+            await UserProfile.create({
+                userId: id,
+                ...profileUpdates,
                 createdAt: new Date()
             });
         }

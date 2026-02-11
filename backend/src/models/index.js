@@ -38,6 +38,7 @@ import UserPasswordReset from './UserPasswordReset.js';
 import UserBillingDetails from './UserBillingDetails.js';
 import Subscription from './Subscription.js';
 import UserStats from './UserStats.js';
+import UserProfile from './UserProfile.js';
 
 /**
  * Define Model Associations
@@ -118,6 +119,29 @@ User.hasOne(UserStats, {
 UserStats.belongsTo(User, {
     foreignKey: 'userId',
     as: 'user'
+});
+
+// User <-> UserProfile (One-to-One)
+User.hasOne(UserProfile, {
+    foreignKey: 'userId',
+    as: 'profile',
+    onDelete: 'CASCADE'
+});
+UserProfile.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user'
+});
+
+// UserProfile <-> Institution (Many-to-One)
+UserProfile.belongsTo(Institution, {
+    foreignKey: 'institutionId',
+    as: 'institution'
+});
+
+// UserProfile <-> City (Many-to-One)
+UserProfile.belongsTo(City, {
+    foreignKey: 'originCityId',
+    as: 'originCity'
 });
 
 // User <-> Property (One-to-Many)
@@ -460,7 +484,8 @@ export {
     UserPasswordReset,
     UserBillingDetails,
     Subscription,
-    UserStats
+    UserStats,
+    UserProfile
 };
 
 export default {
@@ -497,5 +522,6 @@ export default {
     UserPasswordReset,
     UserBillingDetails,
     Subscription,
-    UserStats
+    UserStats,
+    UserProfile
 };
