@@ -549,6 +549,7 @@ export interface SearchFilters {
   university?: string;
   amenities?: number[];  // Changed from string[] to number[] to match Amenity.id
   status?: 'all' | 'pending' | 'approved' | 'rejected';
+  isRented?: boolean;
   // Institution filters
   institutionId?: number;
   institutionType?: 'universidad' | 'instituto';

@@ -11,7 +11,7 @@ interface RoomCardProps {
         roomType: 'individual' | 'shared';
         bedsInRoom?: number;
         images?: Array<{ url: string } | string>;
-        amenities?: Array<{ id: number; name: string }>;
+        amenities?: Array<{ id: number | string; name: string }>;
         isRented: boolean;
     };
     onClick: () => void;

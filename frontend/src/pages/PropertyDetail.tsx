@@ -461,26 +461,26 @@ const PropertyDetail: React.FC = () => {
                           Habitaciones Disponibles
                         </h2>
                         <p className="text-sm sm:text-base text-gray-600">
-                          {property.availableUnits || 0} de {property.totalUnits || property.units.length} habitaciones disponibles
+                          {property.units.filter(u => !u.isRented).length} de {property.totalUnits || property.units.length} habitaciones disponibles
                         </p>
                       </div>
                       <div className="flex sm:hidden items-center space-x-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200 self-start">
                         <Bed className="h-4 w-4 text-emerald-600" />
                         <span className="text-xs font-semibold text-emerald-700">
-                          {property.units.length} opciones
+                          {property.units.filter(u => !u.isRented).length} opciones
                         </span>
                       </div>
                       <div className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-200">
                         <Bed className="h-5 w-5 text-emerald-600" />
                         <span className="text-sm font-semibold text-emerald-700">
-                          {property.units.length} opciones
+                          {property.units.filter(u => !u.isRented).length} opciones
                         </span>
                       </div>
                     </div>
 
                     {/* Room Cards Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                      {property.units.map((unit) => (
+                      {property.units.filter(u => !u.isRented).map((unit) => (
                         <RoomCard
                           key={unit.id}
                           room={unit}
@@ -490,6 +490,11 @@ const PropertyDetail: React.FC = () => {
                           }}
                         />
                       ))}
+                      {property.units.filter(u => !u.isRented).length === 0 && (
+                        <div className="col-span-full text-center py-8 text-gray-500">
+                          No hay habitaciones disponibles en este momento.
+                        </div>
+                      )}
                     </div>
 
                     {/* Info Banner */}

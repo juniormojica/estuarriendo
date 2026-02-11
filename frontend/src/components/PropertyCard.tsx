@@ -147,12 +147,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
             {getTypeLabel(property.type?.name || 'apartamento')}
           </Badge>
 
-          {/* Container Badge - specific for individual rooms */}
+          {/* Container Badge - specific for individual rooms
           {property.parentId && property.container && (
             <Badge variant="outline" className="bg-amber-50/90 backdrop-blur-sm shadow-sm text-[10px] sm:text-xs border-amber-200 text-amber-700">
               Parte de {property.container.title}
             </Badge>
-          )}
+          )} */}
         </div>
 
         {/* Favorite Button - Bottom Right - Touch-friendly & Centered */}

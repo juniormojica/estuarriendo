@@ -46,6 +46,14 @@ export const fetchProperties = createAsyncThunk(
                 params.append('amenities', filters.amenities.join(','));
             }
 
+            // Default: Hide rented properties from public search results
+            // Unless explicitly requested (e.g. by passing isRented in filters, though UI doesn't support that yet)
+            if (filters?.isRented !== undefined) {
+                params.append('isRented', String(filters.isRented));
+            } else {
+                params.append('isRented', 'false');
+            }
+
             const response = await axios.get(`/properties?${params.toString()}`);
             return response.data.data as Property[];
         } catch (error: any) {
