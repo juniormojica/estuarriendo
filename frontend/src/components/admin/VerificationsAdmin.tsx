@@ -84,7 +84,12 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
                                         Documentos:
                                     </span>
                                     <span className="font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
-                                        {Object.values(user.verificationDocuments || {}).filter(Boolean).length} archivos
+                                        {[
+                                            user.verificationDocuments?.idFront,
+                                            user.verificationDocuments?.idBack,
+                                            user.verificationDocuments?.selfie,
+                                            user.verificationDocuments?.utilityBill
+                                        ].filter(Boolean).length} archivos
                                     </span>
                                 </div>
 
