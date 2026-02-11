@@ -1,5 +1,6 @@
-import { UserVerificationDocuments, User } from '../models/index.js';
+import { UserVerificationDocuments, User, UserVerification } from '../models/index.js';
 import { VerificationStatus } from '../utils/enums.js';
+import { uploadImage } from '../utils/cloudinaryUtils.js';
 
 /**
  * Verification Controller
@@ -12,8 +13,8 @@ export const submitVerificationDocuments = async (req, res) => {
         const { userId, idFront, idBack, selfie, utilityBill } = req.body;
 
         // Validate required fields
-        if (!userId || !idFront || !idBack || !selfie || !utilityBill) {
-            return res.status(400).json({ error: 'All verification documents are required' });
+        if (!userId || !idFront || !idBack || !selfie) {
+            return res.status(400).json({ error: 'ID Front, ID Back and Selfie are required' });
         }
 
         // Check if user exists
@@ -22,15 +23,41 @@ export const submitVerificationDocuments = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Upload images to Cloudinary
+        console.log(`Uploading verification documents for user ${userId}...`);
+
+        // Upload concurrently for better performance
+        const uploadPromises = [
+            uploadImage(idFront, 'verification_documents'),
+            uploadImage(idBack, 'verification_documents'),
+            uploadImage(selfie, 'verification_documents'),
+        ];
+
+        // Only upload utility bill if provided (owners)
+        if (utilityBill) {
+            uploadPromises.push(uploadImage(utilityBill, 'verification_documents'));
+        }
+
+        const results = await Promise.all(uploadPromises);
+
+        const idFrontResult = results[0];
+        const idBackResult = results[1];
+        const selfieResult = results[2];
+        const utilityBillResult = utilityBill ? results[3] : null;
+
+        console.log('Documents uploaded to Cloudinary successfully');
+        console.log('ID Front URL:', idFrontResult.url);
+        console.log('ID Back URL:', idBackResult.url);
+
         // Check if documents already exist
         const existing = await UserVerificationDocuments.findByPk(userId);
 
         const documentData = {
             userId,
-            idFront,
-            idBack,
-            selfie,
-            utilityBill,
+            idFront: idFrontResult.url,
+            idBack: idBackResult.url,
+            selfie: selfieResult.url,
+            utilityBill: utilityBillResult ? utilityBillResult.url : null,
             submittedAt: new Date()
         };
 
@@ -44,14 +71,31 @@ export const submitVerificationDocuments = async (req, res) => {
             documents = await UserVerificationDocuments.create(documentData);
         }
 
-        // Update user verification status
+        // Update UserVerification status (Normalized)
+        const [verification, created] = await UserVerification.findOrCreate({
+            where: { userId },
+            defaults: {
+                verificationStatus: VerificationStatus.PENDING,
+                isVerified: false
+            }
+        });
+
+        if (!created) {
+            await verification.update({
+                verificationStatus: VerificationStatus.PENDING,
+                verificationRejectionReason: null,
+                updatedAt: new Date()
+            });
+        }
+
+        // ALSO update user verification status for backwards compatibility/frontend ease
         await user.update({
             verificationStatus: VerificationStatus.PENDING,
             updatedAt: new Date()
         });
 
         res.status(201).json({
-            message: 'Verification documents submitted successfully',
+            message: 'Verification documents submitted and uploaded successfully',
             documents: {
                 userId: documents.userId,
                 submittedAt: documents.submittedAt
@@ -92,6 +136,7 @@ export const getVerificationDocuments = async (req, res) => {
 // Get all pending verifications (admin only)
 export const getPendingVerifications = async (req, res) => {
     try {
+        // Find users with PENDING status
         const pendingUsers = await User.findAll({
             where: {
                 verificationStatus: VerificationStatus.PENDING
@@ -101,7 +146,7 @@ export const getPendingVerifications = async (req, res) => {
                 {
                     model: UserVerificationDocuments,
                     as: 'verificationDocuments',
-                    attributes: ['submittedAt']
+                    attributes: ['submittedAt', 'idFront', 'idBack', 'selfie', 'utilityBill'] // Include document URLs
                 }
             ],
             order: [['joinedAt', 'DESC']]
@@ -126,10 +171,30 @@ export const approveVerification = async (req, res) => {
 
         const documents = await UserVerificationDocuments.findByPk(userId);
         if (!documents) {
-            return res.status(404).json({ error: 'Verification documents not found' });
+            return res.status(404).json({ error: 'Verification documents not found' }); // Or allow approval without docs if exceptional? No, enforce docs.
         }
 
-        // Update user status
+        // Update UserVerification model
+        const verification = await UserVerification.findOne({ where: { userId } });
+        if (verification) {
+            await verification.update({
+                verificationStatus: VerificationStatus.VERIFIED,
+                isVerified: true,
+                verificationRejectionReason: null,
+                verifiedAt: new Date(),
+                updatedAt: new Date()
+            });
+        } else {
+            // Create if missing (should exist if flow followed, but be safe)
+            await UserVerification.create({
+                userId,
+                verificationStatus: VerificationStatus.VERIFIED,
+                isVerified: true,
+                verifiedAt: new Date()
+            });
+        }
+
+        // Update User model (denormalized status)
         await user.update({
             verificationStatus: VerificationStatus.VERIFIED,
             isVerified: true,
@@ -147,8 +212,8 @@ export const approveVerification = async (req, res) => {
             user: {
                 id: user.id,
                 name: user.name,
-                verificationStatus: user.verificationStatus,
-                isVerified: user.isVerified
+                verificationStatus: VerificationStatus.VERIFIED,
+                isVerified: true
             }
         });
     } catch (error) {
@@ -174,10 +239,28 @@ export const rejectVerification = async (req, res) => {
 
         const documents = await UserVerificationDocuments.findByPk(userId);
         if (!documents) {
-            return res.status(404).json({ error: 'Verification documents not found' });
+            // Allow rejection even if docs missing? Yes, usually.
         }
 
-        // Update user status
+        // Update UserVerification model
+        const verification = await UserVerification.findOne({ where: { userId } });
+        if (verification) {
+            await verification.update({
+                verificationStatus: VerificationStatus.REJECTED,
+                isVerified: false,
+                verificationRejectionReason: reason,
+                updatedAt: new Date()
+            });
+        } else {
+            await UserVerification.create({
+                userId,
+                verificationStatus: VerificationStatus.REJECTED,
+                isVerified: false,
+                verificationRejectionReason: reason
+            });
+        }
+
+        // Update User model
         await user.update({
             verificationStatus: VerificationStatus.REJECTED,
             isVerified: false,
@@ -186,17 +269,19 @@ export const rejectVerification = async (req, res) => {
         });
 
         // Update documents processed timestamp
-        await documents.update({
-            processedAt: new Date()
-        });
+        if (documents) {
+            await documents.update({
+                processedAt: new Date()
+            });
+        }
 
         res.json({
             message: 'Verification rejected',
             user: {
                 id: user.id,
                 name: user.name,
-                verificationStatus: user.verificationStatus,
-                verificationRejectionReason: user.verificationRejectionReason
+                verificationStatus: VerificationStatus.REJECTED,
+                verificationRejectionReason: reason
             }
         });
     } catch (error) {

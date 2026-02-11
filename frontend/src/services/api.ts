@@ -637,10 +637,16 @@ export const api = {
       console.log('  - Status:', verificationStatus);
       console.log('  - Reason:', verificationRejectionReason);
 
-      const response = await apiClient.put(`/users/${userId}/verification-status`, {
-        verificationStatus,
-        verificationRejectionReason
-      });
+      let response;
+      if (verificationStatus === 'verified') {
+        response = await apiClient.put(`/verification/${userId}/approve`);
+      } else if (verificationStatus === 'rejected') {
+        response = await apiClient.put(`/verification/${userId}/reject`, { reason: verificationRejectionReason });
+      } else {
+        // Fallback for other statuses if needed, or error
+        console.warn('⚠️ Unknown verification status update requested:', verificationStatus);
+        return false;
+      }
 
       console.log('✅ Frontend: Update successful', response.data);
       return true;
@@ -1046,59 +1052,45 @@ export const api = {
   },
 
   // Verification Methods
+  // Verification Methods
   async submitVerification(userId: string, documents: VerificationDocuments): Promise<{ success: boolean; message: string }> {
-    await delay(500);
-
     try {
-      const users = getStoredUsers();
-      const userIndex = users.findIndex(u => u.id === userId);
+      console.log('📤 Submitting verification documents:', { userId, documentCount: Object.keys(documents).length });
 
-      if (userIndex === -1) {
-        return { success: false, message: 'Usuario no encontrado.' };
-      }
+      const response = await apiClient.post('/verification/submit', {
+        userId,
+        ...documents
+      });
 
-      // Update user with verification documents and status
-      users[userIndex] = {
-        ...users[userIndex],
-        verificationDocuments: documents,
-        verificationStatus: 'pending',
-        verificationSubmittedAt: new Date().toISOString(),
-        verificationProcessedAt: undefined,
-        verificationRejectionReason: undefined
-      };
-
-      saveStoredUsers(users);
-
-      // Update current user if it matches
-      const currentUser = getStoredCurrentUser();
-      if (currentUser && currentUser.id === userId) {
-        currentUser.verificationDocuments = documents;
-        currentUser.verificationStatus = 'pending';
-        currentUser.verificationSubmittedAt = new Date().toISOString();
-        currentUser.verificationProcessedAt = undefined;
-        currentUser.verificationRejectionReason = undefined;
-        localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
-      }
-
+      console.log('✅ Verification submitted successfully:', response.data);
       return { success: true, message: 'Documentos enviados correctamente. Tu verificación será revisada pronto.' };
-    } catch (error) {
-      console.error('Error submitting verification:', error);
-      return { success: false, message: 'Error al enviar los documentos. Por favor intenta nuevamente.' };
+    } catch (error: any) {
+      console.error('❌ Error submitting verification:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Error al enviar los documentos.';
+      return { success: false, message: errorMessage };
     }
   },
 
-  async getVerificationStatus(userId: string): Promise<User['verificationStatus']> {
-    await delay(200);
-    const users = getStoredUsers();
-    const user = users.find(u => u.id === userId);
-    return user?.verificationStatus || 'not_submitted';
+  async getVerificationStatus(userId: string): Promise<UserVerificationStatus> {
+    try {
+      // If we are checking the current user, we might already have this in the auth state,
+      // but let's fetch fresh data
+      const response = await apiClient.get<User>(`/users/${userId}`);
+      return response.data.verificationStatus || 'not_submitted';
+    } catch (error) {
+      console.error('Error fetching verification status:', error);
+      return 'not_submitted';
+    }
   },
 
-
   async getPendingVerifications(): Promise<User[]> {
-    await delay(300);
-    const users = getStoredUsers();
-    return users.filter(u => u.verificationStatus === 'pending');
+    try {
+      const response = await apiClient.get('/verification/pending/all');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching pending verifications:', error);
+      return [];
+    }
   },
 
   // Activity Logs Methods

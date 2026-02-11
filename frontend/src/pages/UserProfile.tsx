@@ -124,10 +124,15 @@ const UserProfile: React.FC = () => {
     };
 
 
-    const handleVerificationSuccess = () => {
-        // Reload user from AuthContext
+    const handleVerificationSuccess = async () => {
+        // Reload user from backend to get updated status
         if (authUser) {
-            setUser(authUser);
+            try {
+                const freshUser = await api.getCurrentUser();
+                setUser(freshUser);
+            } catch (error) {
+                console.error('Error refreshing user after verification:', error);
+            }
         }
         setMessage({ type: 'success', text: 'Documentos enviados correctamente. Tu verificación será revisada pronto.' });
         window.scrollTo(0, 0);

@@ -55,15 +55,24 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, o
         setLoading(true);
 
         try {
-            // Use placeholder images if no documents are uploaded (temporary for testing)
-            const placeholderImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+            // Validate all required documents
+            if (!documents.idFront || !documents.idBack || !documents.selfie) {
+                setError('Por favor carga todos los documentos requeridos (Cédula frente, reverso y selfie).');
+                setLoading(false);
+                return;
+            }
+
+            if (userRole === 'owner' && !documents.utilityBill) {
+                setError('Por favor carga el recibo de servicios públicos.');
+                setLoading(false);
+                return;
+            }
 
             const documentsToSubmit: VerificationDocuments = {
-                idFront: documents.idFront || placeholderImage,
-                idBack: documents.idBack || placeholderImage,
-                selfie: documents.selfie || placeholderImage,
-                // Only require utility bill for owners, students get placeholder
-                utilityBill: userRole === 'owner' ? (documents.utilityBill || placeholderImage) : placeholderImage
+                idFront: documents.idFront,
+                idBack: documents.idBack,
+                selfie: documents.selfie,
+                utilityBill: documents.utilityBill || '' // Should be caught by validation above if owner
             };
 
             const result = await api.submitVerification(userId, documentsToSubmit);
@@ -153,7 +162,6 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, o
                             {userRole === 'student' && (
                                 <li className="text-emerald-700 font-semibold">Como estudiante solo necesitas cédula y selfie</li>
                             )}
-                            <li className="text-emerald-700 font-semibold">Puedes enviar sin documentos para probar el flujo (temporal)</li>
                         </ul>
                     </div>
                 </div>
