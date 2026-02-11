@@ -1,12 +1,13 @@
 import React, { useState, useRef, DragEvent } from 'react';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { uploadSingleImage, CloudinaryFolder, CLOUDINARY_FOLDERS } from '../services/uploadService';
+import { directUpload, CloudinaryFolder, CLOUDINARY_FOLDERS } from '../services/directUploadService';
+import { compressImage } from '../utils/imageCompression';
 
 interface ImageUploaderProps {
     images: string[]; // Cloudinary URLs
     onChange: (images: string[]) => void;
     maxImages?: number;
-    maxSizeMB?: number;
+    maxSizeMB?: number; // Maximum upload size before compression (default 10MB)
     onLimitReached?: () => void;
     folder?: CloudinaryFolder; // Cloudinary folder for organization
 }
@@ -15,7 +16,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     images,
     onChange,
     maxImages = 10,
-    maxSizeMB = 5,
+    maxSizeMB = 10, // Increased default to 10MB since we compress
     onLimitReached,
     folder = CLOUDINARY_FOLDERS.PROPERTIES
 }) => {
@@ -64,13 +65,24 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             }
 
             try {
-                // Convert to base64
                 setUploadProgress(prev => ({ ...prev, [i]: 10 }));
-                const base64 = await fileToBase64(file);
 
-                // Upload to Cloudinary
-                setUploadProgress(prev => ({ ...prev, [i]: 50 }));
-                const result = await uploadSingleImage(base64, folder);
+                // Compress image (get File object)
+                // Use 'property' profile for best balance of quality/size for listings
+                const compressedFile = await compressImage(file, 'property');
+
+                setUploadProgress(prev => ({ ...prev, [i]: 30 }));
+
+                // Direct upload to Cloudinary
+                const result = await directUpload(
+                    compressedFile,
+                    folder,
+                    (percent) => {
+                        // Map 0-100 to 30-100 range for progress bar
+                        const adjustedProgress = 30 + Math.round((percent * 0.7));
+                        setUploadProgress(prev => ({ ...prev, [i]: adjustedProgress }));
+                    }
+                );
 
                 // Add Cloudinary URL to array
                 newUrls.push(result.url);
@@ -93,15 +105,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         // Reset upload state
         setIsUploading(false);
         setUploadProgress({});
-    };
-
-    const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
     };
 
     const handleDragOver = (e: DragEvent<HTMLDivElement>) => {

@@ -144,9 +144,16 @@ export const getUserProperties = async (req, res) => {
     try {
         const { userId } = req.params;
 
+        // Import necessary models
+        const { PropertyImage, Amenity } = await import('../models/index.js');
+
         const result = await propertyService.findPropertiesWithAssociations(
             { ownerId: userId },
-            { order: [['createdAt', 'DESC']] }
+            {
+                order: [['createdAt', 'DESC']],
+                // Include units for containers
+                includeUnits: true
+            }
         );
 
         res.json({
@@ -166,12 +173,29 @@ export const getUserProperties = async (req, res) => {
 // Create new property
 export const createProperty = async (req, res) => {
     try {
-        const { ownerId, amenityIds, services, rules, ...propertyData } = req.body;
+        const { ownerId, amenityIds, services, rules, nearbyInstitutions, ...propertyData } = req.body;
 
         // Validate owner exists
         const owner = await User.findByPk(ownerId);
         if (!owner) {
             return res.status(404).json({ error: 'Owner not found' });
+        }
+
+        // Validate images
+        const images = propertyData.images;
+        if (!images || !Array.isArray(images) || images.length === 0) {
+            return res.status(400).json({
+                error: 'Al menos una imagen es requerida',
+                message: 'Debes agregar al menos una imagen de la propiedad'
+            });
+        }
+
+        // Validate maximum images limit
+        if (images.length > 10) {
+            return res.status(400).json({
+                error: 'Demasiadas imágenes',
+                message: 'El máximo de imágenes permitidas es 10'
+            });
         }
 
         // Create property with all associations
@@ -217,6 +241,20 @@ export const createProperty = async (req, res) => {
                         isAllowed: rule.isAllowed,
                         value: rule.value || null,
                         description: rule.description || null
+                    });
+                }
+            }
+        }
+
+        // Add nearby institutions if provided
+        if (nearbyInstitutions && Array.isArray(nearbyInstitutions) && nearbyInstitutions.length > 0) {
+            const { PropertyInstitution } = await import('../models/index.js');
+            for (const ni of nearbyInstitutions) {
+                if (ni.institutionId) {
+                    await PropertyInstitution.create({
+                        propertyId: property.id,
+                        institutionId: ni.institutionId,
+                        distance: ni.distance || null
                     });
                 }
             }
@@ -368,14 +406,19 @@ export const approveProperty = async (req, res) => {
         }
 
         // Notify owner about property approval
-        await Notification.create({
-            userId: property.ownerId,
-            type: NotificationType.PROPERTY_APPROVED,
-            title: '¡Propiedad aprobada!',
-            message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para estudiantes.`,
-            propertyId: property.id,
-            isRead: false
-        });
+        try {
+            await Notification.create({
+                userId: property.ownerId,
+                type: NotificationType.PROPERTY_APPROVED,
+                title: '¡Propiedad aprobada!',
+                message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para estudiantes.`,
+                propertyId: property.id,
+                isRead: false
+            });
+        } catch (notifError) {
+            console.warn('Failed to send approval notification:', notifError);
+            // Continue execution, approval was successful
+        }
 
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);

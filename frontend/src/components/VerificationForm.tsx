@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, X, CheckCircle, AlertCircle, Loader, FileText, Camera, Receipt } from 'lucide-react';
 import { VerificationDocuments } from '../types';
 import { api } from '../services/api';
+import { compressImage, formatFileSize } from '../utils/imageCompression';
+import { directUpload, CLOUDINARY_FOLDERS } from '../services/directUploadService';
 
 interface VerificationFormProps {
     userId: string;
@@ -10,17 +12,39 @@ interface VerificationFormProps {
 }
 
 const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, onSuccess }) => {
-    const [documents, setDocuments] = useState<Partial<VerificationDocuments>>({});
-    const [previews, setPreviews] = useState<Partial<Record<keyof VerificationDocuments, string>>>({});
+    // Store actual File objects for upload
+    const [files, setFiles] = useState<Partial<Record<keyof VerificationDocuments, File>>>({});
+    // Store object URLs for preview
+    const [previews, setPreviews] = useState<Partial<VerificationDocuments>>({});
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>('');
 
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    // Increased to 10MB to allow raw camera photos that will be compressed
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+    // Cleanup object URLs on unmount
+    useEffect(() => {
+        return () => {
+            Object.values(previews).forEach(url => {
+                if (url) URL.revokeObjectURL(url);
+            });
+        };
+    }, []);
 
     const handleFileChange = async (field: keyof VerificationDocuments, file: File | null) => {
         if (!file) {
-            setDocuments(prev => ({ ...prev, [field]: undefined }));
-            setPreviews(prev => ({ ...prev, [field]: undefined }));
+            setFiles(prev => {
+                const newFiles = { ...prev };
+                delete newFiles[field];
+                return newFiles;
+            });
+            setPreviews(prev => {
+                const newPreviews = { ...prev };
+                if (newPreviews[field]) URL.revokeObjectURL(newPreviews[field]!);
+                delete newPreviews[field];
+                return newPreviews;
+            });
             return;
         }
 
@@ -32,49 +56,85 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, o
 
         // Validate file size
         if (file.size > MAX_FILE_SIZE) {
-            setError(`El archivo es muy grande. Tamaño máximo: 2MB. Tamaño actual: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+            setError(`El archivo es muy grande. Tamaño máximo: 10MB. Tamaño actual: ${formatFileSize(file.size)}`);
             return;
         }
 
         setError('');
 
-        // Convert to base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64 = reader.result as string;
-            setDocuments(prev => ({ ...prev, [field]: base64 }));
-            setPreviews(prev => ({ ...prev, [field]: base64 }));
-        };
-        reader.readAsDataURL(file);
+        try {
+            // Compress image for verification (get File object)
+            const compressedFile = await compressImage(file, 'verification');
+
+            setFiles(prev => ({ ...prev, [field]: compressedFile }));
+
+            // Create object URL for preview
+            const objectUrl = URL.createObjectURL(compressedFile);
+            setPreviews(prev => {
+                // Revoke old URL if exists
+                if (prev[field]) URL.revokeObjectURL(prev[field]!);
+                return { ...prev, [field]: objectUrl };
+            });
+
+        } catch (err) {
+            console.error('Error compressing image:', err);
+            setError('Error al procesar la imagen. Intenta con otra.');
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-
         setLoading(true);
 
         try {
-            // Use placeholder images if no documents are uploaded (temporary for testing)
-            const placeholderImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+            // Validate all required documents
+            if (!files.idFront || !files.idBack || !files.selfie) {
+                setError('Por favor carga todos los documentos requeridos (Cédula frente, reverso y selfie).');
+                setLoading(false);
+                return;
+            }
 
-            const documentsToSubmit: VerificationDocuments = {
-                idFront: documents.idFront || placeholderImage,
-                idBack: documents.idBack || placeholderImage,
-                selfie: documents.selfie || placeholderImage,
-                // Only require utility bill for owners, students get placeholder
-                utilityBill: userRole === 'owner' ? (documents.utilityBill || placeholderImage) : placeholderImage
+            if (userRole === 'owner' && !files.utilityBill) {
+                setError('Por favor carga el recibo de servicios públicos.');
+                setLoading(false);
+                return;
+            }
+
+            // Upload files directly to Cloudinary
+            const uploadTasks: Promise<{ field: keyof VerificationDocuments, url: string }>[] = [];
+
+            // Helper to upload a field
+            const uploadField = async (field: keyof VerificationDocuments, file: File) => {
+                const result = await directUpload(file, CLOUDINARY_FOLDERS.VERIFICATION);
+                return { field, url: result.url };
             };
 
-            const result = await api.submitVerification(userId, documentsToSubmit);
+            if (files.idFront) uploadTasks.push(uploadField('idFront', files.idFront));
+            if (files.idBack) uploadTasks.push(uploadField('idBack', files.idBack));
+            if (files.selfie) uploadTasks.push(uploadField('selfie', files.selfie));
+            if (files.utilityBill) uploadTasks.push(uploadField('utilityBill', files.utilityBill));
+
+            // Wait for all uploads
+            const results = await Promise.all(uploadTasks);
+
+            // Construct documents object with URLs
+            const documentsToSubmit: Partial<VerificationDocuments> = {};
+            results.forEach(({ field, url }) => {
+                documentsToSubmit[field] = url;
+            });
+
+            // Submit to backend
+            const result = await api.submitVerification(userId, documentsToSubmit as VerificationDocuments);
 
             if (result.success) {
                 onSuccess();
             } else {
                 setError(result.message);
             }
-        } catch (err) {
-            setError('Error al enviar los documentos. Por favor intenta nuevamente.');
+        } catch (err: any) {
+            console.error('Error uploading/submitting verification:', err);
+            setError(err.message || 'Error al enviar los documentos. Por favor intenta nuevamente.');
         } finally {
             setLoading(false);
         }
@@ -153,7 +213,6 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, o
                             {userRole === 'student' && (
                                 <li className="text-emerald-700 font-semibold">Como estudiante solo necesitas cédula y selfie</li>
                             )}
-                            <li className="text-emerald-700 font-semibold">Puedes enviar sin documentos para probar el flujo (temporal)</li>
                         </ul>
                     </div>
                 </div>

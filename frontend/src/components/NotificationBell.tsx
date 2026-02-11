@@ -57,8 +57,8 @@ const NotificationBell: React.FC = () => {
                 navigate('/admin?section=payments');
                 break;
             case 'property_submitted':
-                // Admin: Navigate to admin dashboard properties section
-                navigate('/admin?section=properties');
+                // Admin: Navigate to admin dashboard pending properties section
+                navigate('/admin?section=pending');
                 break;
             case 'property_approved':
                 // Owner: Navigate to my properties page
@@ -74,6 +74,18 @@ const NotificationBell: React.FC = () => {
                 break;
             case 'property_interest':
                 // Informative only - no navigation
+                break;
+            case 'verification_submitted':
+                // Admin: Navigate to admin dashboard verifications section
+                navigate('/admin?section=verifications');
+                break;
+            case 'verification_approved':
+                // User: Navigate to profile
+                navigate('/mi-perfil');
+                break;
+            case 'verification_rejected':
+                // User: Navigate to profile verification tab to fix issues
+                navigate('/mi-perfil?tab=verification');
                 break;
             default:
                 break;

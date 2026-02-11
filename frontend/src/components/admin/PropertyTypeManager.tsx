@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api';
 import ConfirmModal from '../ConfirmModal';
+import { useToast } from '../../components/ToastProvider';
 import './ManagerStyles.css';
 
 interface PropertyType {
@@ -23,6 +24,7 @@ const PropertyTypeManager: React.FC = () => {
         description: ''
     });
     const [error, setError] = useState('');
+    const toast = useToast();
 
     useEffect(() => {
         fetchPropertyTypes();
@@ -43,7 +45,9 @@ const PropertyTypeManager: React.FC = () => {
             setPropertyTypes(data);
             setFilteredPropertyTypes(data);
         } catch (err: any) {
-            setError(err.message || 'Error al cargar tipos de propiedad');
+            const message = err.message || 'Error al cargar tipos de propiedad';
+            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -78,13 +82,17 @@ const PropertyTypeManager: React.FC = () => {
         try {
             if (editingPropertyType) {
                 await api.updatePropertyType(editingPropertyType.id, formData);
+                toast.success('Tipo de propiedad actualizado exitosamente');
             } else {
                 await api.createPropertyType(formData);
+                toast.success('Tipo de propiedad creado exitosamente');
             }
             await fetchPropertyTypes();
             handleCloseModal();
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Error al guardar tipo de propiedad');
+            const message = err.response?.data?.error || err.message || 'Error al guardar tipo de propiedad';
+            setError(message);
+            toast.error(message);
         }
     };
 
@@ -93,10 +101,13 @@ const PropertyTypeManager: React.FC = () => {
 
         try {
             await api.deletePropertyType(deleteConfirm.id);
+            toast.success('Tipo de propiedad eliminado exitosamente');
             await fetchPropertyTypes();
             setDeleteConfirm(null);
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Error al eliminar tipo de propiedad');
+            const message = err.response?.data?.message || err.message || 'Error al eliminar tipo de propiedad';
+            setError(message);
+            toast.error(message);
             setDeleteConfirm(null);
         }
     };

@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Copy, Check, AlertCircle, X } from 'lucide-react';
 import { api } from '../services/api';
 import { User } from '../types';
 import LoadingSpinner from './LoadingSpinner';
+import { compressImage, formatFileSize } from '../utils/imageCompression';
+import { directUpload, CLOUDINARY_FOLDERS } from '../services/directUploadService';
 
 interface PaymentUploadFormProps {
     user: User;
@@ -28,7 +30,6 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
 
     const selectedPlanData = selectedPlan ? plans[selectedPlan] : null;
 
-
     const bankAccounts = [
         { name: 'Nequi', number: '3044736477', type: 'Ahorros', holder: 'Junior Armando Mojica Dominguez' },
         { name: 'Llave Bre-B', number: '1065841642', type: 'Cuenta', holder: 'Junior Armando Mojica Dominguez' },
@@ -41,24 +42,39 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
         setTimeout(() => setCopied(null), 2000);
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
 
-            if (selectedFile.size > 2 * 1024 * 1024) {
-                setError('El archivo no debe superar los 2MB');
+            // Allow up to 10MB raw, we will compress it
+            if (selectedFile.size > 10 * 1024 * 1024) {
+                setError(`El archivo no debe superar los 10MB. Tamaño actual: ${formatFileSize(selectedFile.size)}`);
                 return;
             }
 
-            setFile(selectedFile);
-            setError('');
+            try {
+                // Compress image for payment proof (get File object)
+                const compressedFile = await compressImage(selectedFile, 'payment');
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result as string);
-            };
-            reader.readAsDataURL(selectedFile);
+                setFile(compressedFile);
+
+                // Create object URL for preview
+                const objectUrl = URL.createObjectURL(compressedFile);
+                setPreview(objectUrl);
+                setError('');
+
+            } catch (err) {
+                console.error('Error compressing image:', err);
+                setError('Error al procesar la imagen. Intenta con otra.');
+            }
         }
+    };
+
+    const removeFile = () => {
+        setFile(null);
+        if (preview) URL.revokeObjectURL(preview); // Clean up object URL
+        setPreview(null);
+        setError('');
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -77,14 +93,20 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
         setError('');
 
         try {
+            // 1. Upload to Cloudinary directly
+            const uploadResult = await directUpload(file, CLOUDINARY_FOLDERS.PAYOUTS);
+
+            // 2. Create payment request with URL
             await api.createPaymentRequest({
                 userId: user.id,
                 amount: selectedPlanData.price,
                 planType: selectedPlan!,
                 planDuration: selectedPlanData.duration,
                 referenceCode,
-                proofImageBase64: preview
+                proofImageUrl: uploadResult.url,
+                proofImagePublicId: uploadResult.publicId
             });
+
             onSuccess();
         } catch (err: any) {
             console.error('Error al enviar comprobante:', err);

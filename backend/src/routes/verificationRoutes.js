@@ -12,11 +12,11 @@ const router = express.Router();
 // Submit verification documents
 router.post('/submit', submitVerificationDocuments);
 
-// Get verification documents (admin)
-router.get('/:userId', getVerificationDocuments);
-
 // Get all pending verifications (admin)
 router.get('/pending/all', getPendingVerifications);
+
+// Get verification documents (admin)
+router.get('/:userId', getVerificationDocuments);
 
 // Approve verification (admin)
 router.put('/:userId/approve', approveVerification);

@@ -1,5 +1,7 @@
-import { UserVerificationDocuments, User } from '../models/index.js';
-import { VerificationStatus } from '../utils/enums.js';
+import { UserVerificationDocuments, User, UserVerification, Notification } from '../models/index.js';
+import { VerificationStatus, NotificationType, UserType } from '../utils/enums.js';
+
+import { Op } from 'sequelize';
 
 /**
  * Verification Controller
@@ -12,8 +14,8 @@ export const submitVerificationDocuments = async (req, res) => {
         const { userId, idFront, idBack, selfie, utilityBill } = req.body;
 
         // Validate required fields
-        if (!userId || !idFront || !idBack || !selfie || !utilityBill) {
-            return res.status(400).json({ error: 'All verification documents are required' });
+        if (!userId || !idFront || !idBack || !selfie) {
+            return res.status(400).json({ error: 'ID Front, ID Back and Selfie are required' });
         }
 
         // Check if user exists
@@ -27,10 +29,10 @@ export const submitVerificationDocuments = async (req, res) => {
 
         const documentData = {
             userId,
-            idFront,
+            idFront, // Now receiving URLs directly from frontend
             idBack,
             selfie,
-            utilityBill,
+            utilityBill: utilityBill || null,
             submittedAt: new Date()
         };
 
@@ -44,11 +46,54 @@ export const submitVerificationDocuments = async (req, res) => {
             documents = await UserVerificationDocuments.create(documentData);
         }
 
-        // Update user verification status
+        // Update UserVerification status (Normalized)
+        const [verification, created] = await UserVerification.findOrCreate({
+            where: { userId },
+            defaults: {
+                verificationStatus: VerificationStatus.PENDING,
+                isVerified: false
+            }
+        });
+
+        if (!created) {
+            await verification.update({
+                verificationStatus: VerificationStatus.PENDING,
+                verificationRejectionReason: null,
+                updatedAt: new Date()
+            });
+        }
+
+        // ALSO update user verification status for backwards compatibility/frontend ease
         await user.update({
             verificationStatus: VerificationStatus.PENDING,
             updatedAt: new Date()
         });
+
+        // Notify all admins about new verification submission
+        try {
+            const admins = await User.findAll({
+                where: {
+                    userType: {
+                        [Op.in]: [UserType.ADMIN, UserType.SUPER_ADMIN]
+                    }
+                }
+            });
+
+            for (const admin of admins) {
+                await Notification.create({
+                    userId: admin.id,
+                    type: NotificationType.VERIFICATION_SUBMITTED,
+                    title: 'Nueva verificación pendiente',
+                    message: `${user.name} ha enviado sus documentos de verificación`,
+                    interestedUserId: userId,
+                    isRead: false,
+                    createdAt: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('Error creating admin notifications:', error);
+            // Continue execution, notification failure shouldn't block submission
+        }
 
         res.status(201).json({
             message: 'Verification documents submitted successfully',
@@ -92,6 +137,7 @@ export const getVerificationDocuments = async (req, res) => {
 // Get all pending verifications (admin only)
 export const getPendingVerifications = async (req, res) => {
     try {
+        // Find users with PENDING status
         const pendingUsers = await User.findAll({
             where: {
                 verificationStatus: VerificationStatus.PENDING
@@ -101,7 +147,7 @@ export const getPendingVerifications = async (req, res) => {
                 {
                     model: UserVerificationDocuments,
                     as: 'verificationDocuments',
-                    attributes: ['submittedAt']
+                    attributes: ['submittedAt', 'idFront', 'idBack', 'selfie', 'utilityBill'] // Include document URLs
                 }
             ],
             order: [['joinedAt', 'DESC']]
@@ -126,10 +172,30 @@ export const approveVerification = async (req, res) => {
 
         const documents = await UserVerificationDocuments.findByPk(userId);
         if (!documents) {
-            return res.status(404).json({ error: 'Verification documents not found' });
+            return res.status(404).json({ error: 'Verification documents not found' }); // Or allow approval without docs if exceptional? No, enforce docs.
         }
 
-        // Update user status
+        // Update UserVerification model
+        const verification = await UserVerification.findOne({ where: { userId } });
+        if (verification) {
+            await verification.update({
+                verificationStatus: VerificationStatus.VERIFIED,
+                isVerified: true,
+                verificationRejectionReason: null,
+                verifiedAt: new Date(),
+                updatedAt: new Date()
+            });
+        } else {
+            // Create if missing (should exist if flow followed, but be safe)
+            await UserVerification.create({
+                userId,
+                verificationStatus: VerificationStatus.VERIFIED,
+                isVerified: true,
+                verifiedAt: new Date()
+            });
+        }
+
+        // Update User model (denormalized status)
         await user.update({
             verificationStatus: VerificationStatus.VERIFIED,
             isVerified: true,
@@ -142,13 +208,27 @@ export const approveVerification = async (req, res) => {
             processedAt: new Date()
         });
 
+        // Notify user about verification approval
+        try {
+            await Notification.create({
+                userId,
+                type: NotificationType.VERIFICATION_APPROVED,
+                title: '¡Verificación aprobada!',
+                message: 'Tu verificación ha sido aprobada. Ya tienes acceso completo.',
+                isRead: false,
+                createdAt: new Date()
+            });
+        } catch (error) {
+            console.error('Error creating approval notification:', error);
+        }
+
         res.json({
             message: 'Verification approved successfully',
             user: {
                 id: user.id,
                 name: user.name,
-                verificationStatus: user.verificationStatus,
-                isVerified: user.isVerified
+                verificationStatus: VerificationStatus.VERIFIED,
+                isVerified: true
             }
         });
     } catch (error) {
@@ -174,10 +254,28 @@ export const rejectVerification = async (req, res) => {
 
         const documents = await UserVerificationDocuments.findByPk(userId);
         if (!documents) {
-            return res.status(404).json({ error: 'Verification documents not found' });
+            // Allow rejection even if docs missing? Yes, usually.
         }
 
-        // Update user status
+        // Update UserVerification model
+        const verification = await UserVerification.findOne({ where: { userId } });
+        if (verification) {
+            await verification.update({
+                verificationStatus: VerificationStatus.REJECTED,
+                isVerified: false,
+                verificationRejectionReason: reason,
+                updatedAt: new Date()
+            });
+        } else {
+            await UserVerification.create({
+                userId,
+                verificationStatus: VerificationStatus.REJECTED,
+                isVerified: false,
+                verificationRejectionReason: reason
+            });
+        }
+
+        // Update User model
         await user.update({
             verificationStatus: VerificationStatus.REJECTED,
             isVerified: false,
@@ -186,17 +284,33 @@ export const rejectVerification = async (req, res) => {
         });
 
         // Update documents processed timestamp
-        await documents.update({
-            processedAt: new Date()
-        });
+        if (documents) {
+            await documents.update({
+                processedAt: new Date()
+            });
+        }
+
+        // Notify user about verification rejection
+        try {
+            await Notification.create({
+                userId,
+                type: NotificationType.VERIFICATION_REJECTED,
+                title: 'Verificación rechazada',
+                message: `Tu verificación fue rechazada. Motivo: ${reason}`,
+                isRead: false,
+                createdAt: new Date()
+            });
+        } catch (error) {
+            console.error('Error creating rejection notification:', error);
+        }
 
         res.json({
             message: 'Verification rejected',
             user: {
                 id: user.id,
                 name: user.name,
-                verificationStatus: user.verificationStatus,
-                verificationRejectionReason: user.verificationRejectionReason
+                verificationStatus: VerificationStatus.REJECTED,
+                verificationRejectionReason: reason
             }
         });
     } catch (error) {

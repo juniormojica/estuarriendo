@@ -11,7 +11,8 @@ import {
   PaymentRequest,
   StudentRequest,
   Notification,
-  VerificationDocuments
+  VerificationDocuments,
+  VerificationStatus
 } from '../types';
 import { mockProperties, mockAmenities } from '../data/mockData';
 import apiClient from '../lib/axios';
@@ -38,23 +39,7 @@ const saveProperties = (properties: Property[]) => {
   localStorage.setItem('estuarriendo_properties', JSON.stringify(properties));
 };
 
-// Helper for payment requests
-const getStoredPaymentRequests = (): PaymentRequest[] => {
-  const stored = localStorage.getItem('estuarriendo_payment_requests');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error parsing stored payment requests:', e);
-      return [];
-    }
-  }
-  return [];
-};
 
-const savePaymentRequests = (requests: PaymentRequest[]) => {
-  localStorage.setItem('estuarriendo_payment_requests', JSON.stringify(requests));
-};
 
 // Helper for users
 const getStoredUsers = (): User[] => {
@@ -70,23 +55,8 @@ const getStoredUsers = (): User[] => {
   return [];
 };
 
-const saveStoredUsers = (users: User[]) => {
-  localStorage.setItem('estuarriendo_users', JSON.stringify(users));
-};
-
 // Helper for current user
-const getStoredCurrentUser = (): User | any => {
-  const stored = localStorage.getItem('estuarriendo_current_user');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error parsing stored current user:', e);
-      return {};
-    }
-  }
-  return {};
-};
+// const getStoredCurrentUser = ... unused
 
 
 export const api = {
@@ -122,30 +92,30 @@ export const api = {
 
     // Default to showing only approved properties unless specified otherwise
     // For now, public search only shows approved properties
-    filteredProperties = filteredProperties.filter(p => !p.is_rented && p.status === 'approved');
+    filteredProperties = filteredProperties.filter(p => !p.isRented && p.status === 'approved');
 
     if (filters) {
       if (filters.city) {
         filteredProperties = filteredProperties.filter(p =>
-          p.address.city.toLowerCase().includes(filters.city!.toLowerCase())
+          p.location?.city?.toLowerCase().includes(filters.city!.toLowerCase())
         );
       }
 
       if (filters.type) {
-        filteredProperties = filteredProperties.filter(p => p.type === filters.type);
+        filteredProperties = filteredProperties.filter(p => p.type?.name === filters.type || (typeof p.type === 'string' && p.type === filters.type));
       }
 
       if (filters.priceMin !== undefined) {
-        filteredProperties = filteredProperties.filter(p => p.price >= filters.priceMin!);
+        filteredProperties = filteredProperties.filter(p => p.monthlyRent >= filters.priceMin!);
       }
 
       if (filters.priceMax !== undefined) {
-        filteredProperties = filteredProperties.filter(p => p.price <= filters.priceMax!);
+        filteredProperties = filteredProperties.filter(p => p.monthlyRent <= filters.priceMax!);
       }
 
       if (filters.rooms !== undefined && filters.rooms > 0) {
         filteredProperties = filteredProperties.filter(p =>
-          p.rooms !== undefined && p.rooms >= filters.rooms!
+          p.bedrooms !== undefined && p.bedrooms >= filters.rooms!
         );
       }
 
@@ -157,20 +127,26 @@ export const api = {
 
       if (filters.university) {
         filteredProperties = filteredProperties.filter(p =>
-          p.nearbyUniversities && p.nearbyUniversities.includes(filters.university!)
+          p.institutions?.some(inst => inst.name.toLowerCase().includes(filters.university!.toLowerCase())) ||
+          (p as any).nearbyUniversities?.includes(filters.university!) // Fallback for legacy data
         );
       }
 
       if (filters.amenities && filters.amenities.length > 0) {
-        filteredProperties = filteredProperties.filter(p =>
-          filters.amenities!.every(amenity => p.amenities.includes(amenity))
-        );
+        // Handle both string IDs and number IDs in mock data vs filters
+        filteredProperties = filteredProperties.filter(p => {
+          if (!p.amenities) return false;
+          return filters.amenities!.every(filterAmId =>
+            p.amenities!.some(pAm => String(pAm.id) === String(filterAmId)) ||
+            (p.amenities as any).includes(filterAmId) // Fallback for string array
+          );
+        });
       }
     }
 
     return filteredProperties.sort((a, b) => {
-      if (a.featured && !b.featured) return -1;
-      if (!a.featured && b.featured) return 1;
+      if (a.isFeatured && !b.isFeatured) return -1;
+      if (!a.isFeatured && b.isFeatured) return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   },
@@ -238,21 +214,41 @@ export const api = {
 
     const newProperty: Property = {
       id: newId,
+      ownerId: formData.ownerId || 'current-user', // Ensure ownerId
       title: formData.title,
       description: formData.description,
-      type: formData.type,
-      price: formData.price,
+      type: { id: 0, name: formData.type }, // Mock entity
+      monthlyRent: formData.price!,
       currency: formData.currency,
-      address: formData.address,
-      rooms: formData.rooms,
+      location: {
+        id: 0,
+        ...formData.address,
+        zipCode: formData.address.postalCode
+      },
+      bedrooms: formData.rooms,
       bathrooms: formData.bathrooms,
       area: formData.area,
-      images: imageStrings,
-      amenities: formData.amenities,
+      images: imageStrings.map((url, index) => ({
+        id: index,
+        propertyId: Number(newId),
+        url,
+        displayOrder: index,
+        isPrimary: index === 0
+      })),
+      amenities: formData.amenities.map(a => ({
+        id: a,
+        name: String(a),
+        icon: 'check' // Mock
+      })),
       createdAt: new Date().toISOString().split('T')[0],
       status: 'pending',
-      ownerId: formData.ownerId,
-      coordinates: formData.coordinates
+      coordinates: formData.coordinates,
+      viewsCount: 0,
+      interestsCount: 0,
+      isFeatured: false,
+      isVerified: false,
+      isRented: false,
+      isContainer: false
     };
 
     // Try to save with original images (or slightly filtered ones)
@@ -269,7 +265,13 @@ export const api = {
       // Create a fallback property with ALL placeholder images to ensure it saves
       const fallbackProperty: Property = {
         ...newProperty,
-        images: ['https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg']
+        images: [{
+          id: 0,
+          propertyId: Number(newId),
+          url: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg',
+          displayOrder: 0,
+          isPrimary: true
+        }]
       };
 
       properties.unshift(fallbackProperty);
@@ -299,89 +301,90 @@ export const api = {
     return properties.filter(p => p.status === 'pending');
   },
 
-  async approveProperty(id: string): Promise<boolean> {
-    await delay(500);
-    const properties = getStoredProperties();
-    const property = properties.find(p => p.id === id);
-    if (property) {
-      property.status = 'approved';
-      saveProperties(properties);
-
-      // Create notification for owner
-      const ownerId = property.ownerId;
-      if (ownerId) {
-        const notifications = localStorage.getItem('estuarriendo_notifications');
-        let parsedNotifications: Notification[] = [];
-        if (notifications) {
-          try {
-            parsedNotifications = JSON.parse(notifications);
-          } catch (e) {
-            console.error('Error parsing notifications', e);
-          }
-        }
-
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          userId: ownerId,
-          type: 'property_approved',
-          title: 'Propiedad Aprobada',
-          message: `Tu propiedad "${property.title}" ha sido aprobada y ya está visible para los estudiantes.`,
-          propertyId: id,
-          propertyTitle: property.title,
-          read: false,
-          createdAt: new Date().toISOString()
-        };
-
-        parsedNotifications.unshift(newNotification);
-        localStorage.setItem('estuarriendo_notifications', JSON.stringify(parsedNotifications));
-      }
-
-      return true;
+  async getPendingContainers(): Promise<Property[]> {
+    try {
+      const response = await apiClient.get('/containers/pending');
+      return response.data.data || response.data || [];
+    } catch (error) {
+      console.error('Error fetching pending containers:', error);
+      return [];
     }
-    return false;
+  },
+
+  async approveProperty(id: string): Promise<boolean> {
+    try {
+      console.log(`🔄 Approving property/unit ID: ${id}`);
+      const response = await apiClient.put(`/properties/${id}/approve`);
+      console.log('✅ Property approved:', response.data);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error approving property:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return false;
+    }
   },
 
   async rejectProperty(id: string, reason: string): Promise<boolean> {
-    await delay(500);
-    const properties = getStoredProperties();
-    const index = properties.findIndex(p => p.id === id);
-    if (index !== -1) {
-      properties[index].status = 'rejected';
-      properties[index].rejectionReason = reason;
-      saveProperties(properties);
-
-      // Create notification for owner
-      const ownerId = properties[index].ownerId;
-      if (ownerId) {
-        const notifications = localStorage.getItem('estuarriendo_notifications');
-        let parsedNotifications: Notification[] = [];
-        if (notifications) {
-          try {
-            parsedNotifications = JSON.parse(notifications);
-          } catch (e) {
-            console.error('Error parsing notifications', e);
-          }
-        }
-
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          userId: ownerId,
-          type: 'property_rejected',
-          title: 'Propiedad Rechazada',
-          message: `Tu propiedad "${properties[index].title}" ha sido rechazada. Razón: ${reason}`,
-          propertyId: id,
-          propertyTitle: properties[index].title,
-          read: false,
-          createdAt: new Date().toISOString()
-        };
-
-        parsedNotifications.unshift(newNotification);
-        localStorage.setItem('estuarriendo_notifications', JSON.stringify(parsedNotifications));
-      }
-
+    try {
+      console.log(`🚫 Rejecting property/unit ID: ${id}, Reason: ${reason}`);
+      const response = await apiClient.put(`/properties/${id}/reject`, { reason });
+      console.log('✅ Property rejected:', response.data);
       return true;
+    } catch (error: any) {
+      console.error('❌ Error rejecting property:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return false;
     }
-    return false;
+  },
+
+  async approveUnit(unitId: string): Promise<{ success: boolean; containerApproved?: boolean }> {
+    try {
+      console.log(`🔄 Approving unit ID: ${unitId}`);
+      const response = await apiClient.put(`/units/${unitId}/approve`);
+      console.log('✅ Unit approved:', response.data);
+      return {
+        success: true,
+        containerApproved: response.data.data?.containerApproved
+      };
+    } catch (error: any) {
+      console.error('❌ Error approving unit:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return { success: false };
+    }
+  },
+
+  async rejectUnit(unitId: string, reason: string): Promise<boolean> {
+    try {
+      console.log(`🚫 Rejecting unit ID: ${unitId}, Reason: ${reason}`);
+      await apiClient.put(`/units/${unitId}/reject`, { reason });
+      console.log('✅ Unit rejected');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error rejecting unit:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return false;
+    }
+  },
+
+  async approveContainer(containerId: string): Promise<{ success: boolean; approvedUnitsCount?: number }> {
+    try {
+      console.log(`🔄 Approving container ID: ${containerId}`);
+      const response = await apiClient.put(`/containers/${containerId}/approve`);
+      console.log('✅ Container approved:', response.data);
+      return {
+        success: true,
+        approvedUnitsCount: response.data.data?.approvedUnitsCount
+      };
+    } catch (error: any) {
+      console.error('❌ Error approving container:', error);
+      console.error('  - Response:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
+      return { success: false };
+    }
   },
 
   // Get cities that have at least one approved property
@@ -389,7 +392,7 @@ export const api = {
     await delay(300);
     const properties = getStoredProperties();
     const approvedProperties = properties.filter(p => p.status === 'approved');
-    const cities = Array.from(new Set(approvedProperties.map(p => p.address.city)));
+    const cities = Array.from(new Set(approvedProperties.map(p => p.location?.city || ''))).filter(Boolean);
     return cities.sort();
   },
 
@@ -399,7 +402,7 @@ export const api = {
     const properties = getStoredProperties();
     const property = properties.find(p => p.id === propertyId);
 
-    if (property && property.images.length > imageIndex) {
+    if (property && property.images && property.images.length > imageIndex) {
       property.images.splice(imageIndex, 1);
       saveProperties(properties);
       return true;
@@ -425,7 +428,7 @@ export const api = {
       pending: properties.filter(p => p.status === 'pending').length,
       approved: properties.filter(p => p.status === 'approved').length,
       rejected: properties.filter(p => p.status === 'rejected').length,
-      featured: properties.filter(p => p.featured).length,
+      featured: properties.filter(p => p.isFeatured).length,
       totalRevenue: properties.filter(p => p.status === 'approved').length * 50000 // Simulated revenue
     };
 
@@ -475,7 +478,7 @@ export const api = {
     const property = properties.find(p => p.id === id);
 
     if (property) {
-      property.featured = !property.featured;
+      property.isFeatured = !property.isFeatured;
       saveProperties(properties);
       return true;
     }
@@ -489,7 +492,7 @@ export const api = {
     const properties = getStoredProperties();
     const property = properties.find(p => p.id === id);
     if (property) {
-      property.is_rented = !property.is_rented;
+      property.isRented = !property.isRented;
       saveProperties(properties);
       return true;
     }
@@ -514,6 +517,7 @@ export const api = {
         joinedAt: user.joinedAt || user.joined_at,
         plan: user.plan || 'free',
         verificationStatus: user.verificationStatus || user.verification_status || 'not_submitted',
+        isVerified: (user.verificationStatus || user.verification_status) === 'verified',
         verificationSubmittedAt: user.verificationSubmittedAt || user.verification_submitted_at,
         verificationDocuments: user.verificationDocuments || user.verification_documents,
         propertiesCount: user.propertiesCount || user.properties_count || 0,
@@ -523,7 +527,10 @@ export const api = {
         // Extract from nested identification object
         idType: user.identification?.idType || user.idType,
         idNumber: user.identification?.idNumber || user.idNumber,
-        role: user.identification?.ownerRole || user.role
+        role: user.identification?.ownerRole || user.role,
+
+        // Analytics Profile
+        profile: user.profile
       }));
     } catch (error) {
       console.error('Error fetching users from backend:', error);
@@ -536,7 +543,7 @@ export const api = {
     await delay(300);
     const properties = getStoredProperties();
     // Filter properties that belong to this user
-    return properties.filter(p => p.ownerId === userId || `user-${p.id.substring(0, 3)}` === userId);
+    return properties.filter(p => p.ownerId === userId || `user-${String(p.id).substring(0, 3)}` === userId);
   },
 
   // Get current authenticated user with all relations
@@ -566,7 +573,10 @@ export const api = {
         // Extract from nested identification object
         idType: user.identification?.idType || user.idType,
         idNumber: user.identification?.idNumber || user.idNumber,
-        role: user.identification?.ownerRole || user.role
+        role: user.identification?.ownerRole || user.role,
+
+        // Analytics Profile
+        profile: user.profile
       };
     } catch (error) {
       console.error('Error fetching current user:', error);
@@ -604,6 +614,10 @@ export const api = {
         idType: user.identification?.idType || user.idType,
         idNumber: user.identification?.idNumber || user.idNumber,
         role: user.identification?.ownerRole || user.role,
+
+        // Analytics Profile
+        profile: user.profile,
+
         updatedAt: user.updatedAt
       };
     } catch (error: any) {
@@ -636,10 +650,16 @@ export const api = {
       console.log('  - Status:', verificationStatus);
       console.log('  - Reason:', verificationRejectionReason);
 
-      const response = await apiClient.put(`/users/${userId}/verification-status`, {
-        verificationStatus,
-        verificationRejectionReason
-      });
+      let response;
+      if (verificationStatus === 'verified') {
+        response = await apiClient.put(`/verification/${userId}/approve`);
+      } else if (verificationStatus === 'rejected') {
+        response = await apiClient.put(`/verification/${userId}/reject`, { reason: verificationRejectionReason });
+      } else {
+        // Fallback for other statuses if needed, or error
+        console.warn('⚠️ Unknown verification status update requested:', verificationStatus);
+        return false;
+      }
 
       console.log('✅ Frontend: Update successful', response.data);
       return true;
@@ -677,7 +697,7 @@ export const api = {
         type: 'property_submitted',
         message: `Nueva propiedad enviada: ${property.title}`,
         timestamp: property.createdAt,
-        propertyId: property.id
+        propertyId: String(property.id)
       });
 
       if (property.status === 'approved') {
@@ -686,7 +706,7 @@ export const api = {
           type: 'property_approved',
           message: `Propiedad aprobada: ${property.title}`,
           timestamp: property.createdAt,
-          propertyId: property.id
+          propertyId: String(property.id)
         });
       }
     });
@@ -753,7 +773,8 @@ export const api = {
     planType: string;
     planDuration: number;
     referenceCode: string;
-    proofImageBase64: string;
+    proofImageUrl: string;
+    proofImagePublicId?: string;
   }): Promise<boolean> {
     try {
       console.log('📤 Creating payment request:', {
@@ -762,7 +783,7 @@ export const api = {
         planType: request.planType,
         planDuration: request.planDuration,
         referenceCode: request.referenceCode,
-        imageSize: request.proofImageBase64.length
+        imageUrl: request.proofImageUrl
       });
 
       const response = await apiClient.post('/payment-requests', request);
@@ -1045,59 +1066,45 @@ export const api = {
   },
 
   // Verification Methods
+  // Verification Methods
   async submitVerification(userId: string, documents: VerificationDocuments): Promise<{ success: boolean; message: string }> {
-    await delay(500);
-
     try {
-      const users = getStoredUsers();
-      const userIndex = users.findIndex(u => u.id === userId);
+      console.log('📤 Submitting verification documents:', { userId, documentCount: Object.keys(documents).length });
 
-      if (userIndex === -1) {
-        return { success: false, message: 'Usuario no encontrado.' };
-      }
+      const response = await apiClient.post('/verification/submit', {
+        userId,
+        ...documents
+      });
 
-      // Update user with verification documents and status
-      users[userIndex] = {
-        ...users[userIndex],
-        verificationDocuments: documents,
-        verificationStatus: 'pending',
-        verificationSubmittedAt: new Date().toISOString(),
-        verificationProcessedAt: undefined,
-        verificationRejectionReason: undefined
-      };
-
-      saveStoredUsers(users);
-
-      // Update current user if it matches
-      const currentUser = getStoredCurrentUser();
-      if (currentUser && currentUser.id === userId) {
-        currentUser.verificationDocuments = documents;
-        currentUser.verificationStatus = 'pending';
-        currentUser.verificationSubmittedAt = new Date().toISOString();
-        currentUser.verificationProcessedAt = undefined;
-        currentUser.verificationRejectionReason = undefined;
-        localStorage.setItem('estuarriendo_current_user', JSON.stringify(currentUser));
-      }
-
+      console.log('✅ Verification submitted successfully:', response.data);
       return { success: true, message: 'Documentos enviados correctamente. Tu verificación será revisada pronto.' };
-    } catch (error) {
-      console.error('Error submitting verification:', error);
-      return { success: false, message: 'Error al enviar los documentos. Por favor intenta nuevamente.' };
+    } catch (error: any) {
+      console.error('❌ Error submitting verification:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Error al enviar los documentos.';
+      return { success: false, message: errorMessage };
     }
   },
 
-  async getVerificationStatus(userId: string): Promise<User['verificationStatus']> {
-    await delay(200);
-    const users = getStoredUsers();
-    const user = users.find(u => u.id === userId);
-    return user?.verificationStatus || 'not_submitted';
+  async getVerificationStatus(userId: string): Promise<VerificationStatus> {
+    try {
+      // If we are checking the current user, we might already have this in the auth state,
+      // but let's fetch fresh data
+      const response = await apiClient.get<User>(`/users/${userId}`);
+      return response.data.verificationStatus || 'not_submitted';
+    } catch (error) {
+      console.error('Error fetching verification status:', error);
+      return 'not_submitted';
+    }
   },
 
-
   async getPendingVerifications(): Promise<User[]> {
-    await delay(300);
-    const users = getStoredUsers();
-    return users.filter(u => u.verificationStatus === 'pending');
+    try {
+      const response = await apiClient.get('/verification/pending/all');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching pending verifications:', error);
+      return [];
+    }
   },
 
   // Activity Logs Methods
@@ -1330,25 +1337,10 @@ export const api = {
     }
   },
 
-  async deleteAmenity(id: number): Promise<void> {
-    try {
-      await apiClient.delete(`/amenities/${id}`);
-    } catch (error) {
-      console.error('Error deleting amenity:', error);
-      throw error;
-    }
-  },
+
 
   // User Management Methods
-  async getUsers(params?: { userType?: string; plan?: string; verificationStatus?: string; search?: string }): Promise<any[]> {
-    try {
-      const response = await apiClient.get('/users', { params });
-      return response.data || [];
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
-  },
+
 
   async getUserById(id: string): Promise<any> {
     try {
@@ -1370,15 +1362,7 @@ export const api = {
     }
   },
 
-  async updateUser(id: string, userData: any): Promise<any> {
-    try {
-      const response = await apiClient.put(`/users/${id}`, userData);
-      return response.data;
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-  },
+
 
   async deleteUser(id: string): Promise<void> {
     try {
@@ -1392,22 +1376,8 @@ export const api = {
 }
 
 // Helper for student requests
-const getStoredStudentRequests = (): StudentRequest[] => {
-  const stored = localStorage.getItem('estuarriendo_student_requests');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error parsing stored student requests:', e);
-      return [];
-    }
-  }
-  return [];
-};
 
-const saveStudentRequests = (requests: StudentRequest[]) => {
-  localStorage.setItem('estuarriendo_student_requests', JSON.stringify(requests));
-};
+
 
 
 // Helper for notifications

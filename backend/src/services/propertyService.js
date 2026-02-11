@@ -8,7 +8,10 @@ import {
     Institution,
     PropertyInstitution,
     Amenity,
+    CommonArea,
     User,
+    City,
+    Department,
     sequelize
 } from '../models/index.js';
 import { Op } from 'sequelize';
@@ -23,7 +26,41 @@ import { Op } from 'sequelize';
  * Prevents duplicate locations for properties in the same building
  */
 export const findOrCreateLocation = async (locationData, transaction = null) => {
-    const { street, neighborhood, cityId, departmentId, zipCode, latitude, longitude } = locationData;
+    let { street, neighborhood, cityId, departmentId, zipCode, latitude, longitude, city, department } = locationData;
+
+    // Resolve IDs if missing but names are provided
+    if ((!departmentId && department) || (!cityId && city)) {
+        try {
+            // 1. Resolve Department
+            if (!departmentId && department) {
+                const deptRecord = await Department.findOne({
+                    where: { name: department },
+                    attributes: ['id']
+                });
+                if (deptRecord) departmentId = deptRecord.id;
+            }
+
+            // 2. Resolve City
+            if (!cityId && city) {
+                const whereClause = { name: city };
+                if (departmentId) whereClause.departmentId = departmentId;
+
+                const cityRecord = await City.findOne({
+                    where: whereClause,
+                    attributes: ['id', 'departmentId']
+                });
+
+                if (cityRecord) {
+                    cityId = cityRecord.id;
+                    // If departmentId was still unknown, use the one from the city
+                    if (!departmentId) departmentId = cityRecord.departmentId;
+                }
+            }
+        } catch (error) {
+            console.error('Error resolving location IDs:', error);
+            // Continue execution, will likely fail in findOrCreate if essential IDs are missing
+        }
+    }
 
     // Try to find existing location
     const [location, created] = await Location.findOrCreate({
@@ -139,10 +176,10 @@ export const createPropertyWithAssociations = async (propertyData) => {
 
         // 6. Associate institutions (N:M)
         if (institutionsData && institutionsData.length > 0) {
-            // institutionsData can be array of IDs or array of objects with {id, distance}
+            // institutionsData can be array of IDs or array of objects with {id, distance} or {institutionId, distance}
             const institutionAssociations = institutionsData.map(inst => ({
                 propertyId: property.id,
-                institutionId: typeof inst === 'number' ? inst : inst.id,
+                institutionId: typeof inst === 'number' ? inst : (inst.institutionId || inst.id),
                 distance: typeof inst === 'object' ? inst.distance : null
             }));
 
@@ -184,10 +221,10 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
             corePropertyData.locationId = location.id;
         }
 
-        // Check if property is currently rejected and reset status to pending
+        // Check if property is currently rejected or approved and reset status to pending
         const currentProperty = await Property.findByPk(propertyId);
-        if (currentProperty && currentProperty.status === 'rejected') {
-            // Reset status to pending when a rejected property is updated
+        if (currentProperty && (currentProperty.status === 'rejected' || currentProperty.status === 'approved')) {
+            // Reset status to pending when a rejected or approved property is updated
             corePropertyData.status = 'pending';
             corePropertyData.rejectionReason = null; // Clear rejection reason
         }
@@ -245,7 +282,7 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
             if (institutionsData.length > 0) {
                 const institutionAssociations = institutionsData.map(inst => ({
                     propertyId,
-                    institutionId: typeof inst === 'number' ? inst : inst.id,
+                    institutionId: typeof inst === 'number' ? inst : (inst.institutionId || inst.id),
                     distance: typeof inst === 'object' ? inst.distance : null
                 }));
 
@@ -279,7 +316,11 @@ export const findPropertyWithAssociations = async (propertyId) => {
             },
             {
                 model: Location,
-                as: 'location'
+                as: 'location',
+                include: [
+                    { model: City, as: 'city' },
+                    { model: Department, as: 'department' }
+                ]
             },
             {
                 model: Contact,
@@ -319,6 +360,30 @@ export const findPropertyWithAssociations = async (propertyId) => {
             {
                 model: PropertyRule,
                 as: 'rules'
+            },
+            {
+                model: Property,
+                as: 'units',
+                include: [
+                    { model: PropertyImage, as: 'images' },
+                    { model: Amenity, as: 'amenities', through: { attributes: [] } }
+                ]
+            },
+            {
+                model: Property,
+                as: 'container',
+                include: [
+                    { model: PropertyImage, as: 'images' },
+                    { model: CommonArea, as: 'commonAreas', through: { attributes: [] } },
+                    { model: PropertyService, as: 'services' },
+                    { model: PropertyRule, as: 'rules' },
+                    { model: Location, as: 'location' }
+                ]
+            },
+            {
+                model: CommonArea,
+                as: 'commonAreas',
+                through: { attributes: [] }
             }
         ]
     });
@@ -348,20 +413,70 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
     const {
         limit = 50,
         offset = 0,
-        order = [['createdAt', 'DESC']]
+        order = [['createdAt', 'DESC']],
+        includeUnits = false
     } = options;
 
     const where = {};
 
+    // ============================================================
+    // CONTAINER/UNIT LOGIC:
+    // - When filtering by 'pension' type: show containers only
+    // - Otherwise: show individual rooms + regular properties
+    //   (exclude containers with rentalMode='by_unit')
+    // ============================================================
+
+    // Resolve typeId if it's a string name (e.g., 'pension' sent from frontend)
+    let resolvedTypeId = typeId;
+    if (typeId && isNaN(parseInt(typeId))) {
+        const type = await PropertyType.findOne({ where: { name: typeId } });
+        if (type) resolvedTypeId = type.id;
+    } else if (typeId) {
+        resolvedTypeId = parseInt(typeId);
+    }
+
+    // Check if we're filtering by 'pension' type
+    let isPensionTypeFilter = false;
+    if (resolvedTypeId) {
+        const pensionType = await PropertyType.findOne({ where: { name: 'pension' } });
+        isPensionTypeFilter = pensionType && resolvedTypeId === pensionType.id;
+    }
+
+    if (isPensionTypeFilter) {
+        // When filtering by 'pension', show only containers
+        where.isContainer = true;
+        where.typeId = resolvedTypeId;
+    } else {
+        // For other cases:
+        // 1. Show regular properties
+        // 2. Show ALL containers (including by_unit like Pensions)
+        // 3. Show individual rooms (units)
+
+        where[Op.or] = [
+            // Regular properties (not containers, not units - standalone properties)
+            { isContainer: false, parentId: null },
+            // ALL Containers
+            { isContainer: true },
+            // Individual rooms from by_unit containers
+            { parentId: { [Op.ne]: null } }
+        ];
+
+        // Apply typeId filter if provided (but not pension)
+        if (resolvedTypeId) {
+            where.typeId = resolvedTypeId;
+        }
+    }
+
     if (status) where.status = status;
     if (ownerId) where.ownerId = ownerId;
-    if (typeId) where.typeId = typeId;
     if (minRent) where.monthlyRent = { ...where.monthlyRent, [Op.gte]: minRent };
     if (maxRent) where.monthlyRent = { ...where.monthlyRent, [Op.lte]: maxRent };
     if (minBedrooms) where.bedrooms = { [Op.gte]: minBedrooms };
     if (minBathrooms) where.bathrooms = { [Op.gte]: minBathrooms };
     if (isFeatured !== undefined) where.isFeatured = isFeatured;
     if (isRented !== undefined) where.isRented = isRented;
+
+    const { PropertyService, PropertyRule } = await import('../models/index.js');
 
     const include = [
         {
@@ -389,6 +504,12 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         {
             model: PropertyType,
             as: 'type'
+        },
+        // Include parent container for rooms (minimal info for display)
+        {
+            model: Property,
+            as: 'container',
+            attributes: ['id', 'title']
         }
     ];
 
@@ -484,7 +605,6 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
     }
 
     // Add services and rules (for all property types)
-    const { PropertyService, PropertyRule } = await import('../models/index.js');
     include.push({
         model: PropertyService,
         as: 'services'
@@ -494,7 +614,39 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         as: 'rules'
     });
 
+    // Include units (child properties) for containers if requested
+    if (includeUnits) {
+        include.push({
+            model: Property,
+            as: 'units',
+            include: [
+                {
+                    model: PropertyImage,
+                    as: 'images'
+                },
+                {
+                    model: Amenity,
+                    as: 'amenities',
+                    through: { attributes: [] }
+                }
+            ]
+        });
+    }
+
     return await Property.findAndCountAll({
+        attributes: {
+            include: [
+                [
+                    sequelize.literal(`(
+                        SELECT MIN("monthly_rent")
+                        FROM "properties" AS "unit"
+                        WHERE "unit"."parent_id" = "Property"."id"
+                        AND "unit"."is_container" = false
+                    )`),
+                    'minUnitRent'
+                ]
+            ]
+        },
         where,
         include,
         limit,

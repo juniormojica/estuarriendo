@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock
+  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock,
+  Clock, Users, Ban, Volume2, Utensils, Coffee, Wifi, Zap, Home, ArrowRight
 } from 'lucide-react';
 import { Property, User } from '../types';
 import { api } from '../services/api';
@@ -19,6 +20,8 @@ import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-m
 import AuthModal from '../components/AuthModal';
 import { authService } from '../services/authService';
 import { useToast } from '../components/ToastProvider';
+import RoomCard from '../components/RoomCard';
+import RoomModal from '../components/RoomModal';
 
 const mapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -40,6 +43,8 @@ const PropertyDetail: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingFavoriteAction, setPendingFavoriteAction] = useState<'add' | null>(null);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+  const [showRoomModal, setShowRoomModal] = useState(false);
 
   // Get property from Redux state - use currentProperty which is set by fetchPropertyById
   const property = currentProperty;
@@ -232,6 +237,14 @@ const PropertyDetail: React.FC = () => {
     });
   };
 
+  // Helper to get city/department name from object or string
+  const getLocationValue = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.name) return value.name;
+    return '';
+  };
+
   const getAmenityDetails = (amenityId: string | number) => {
     return amenities.find(a => String(a.id) === String(amenityId));
   };
@@ -240,7 +253,7 @@ const PropertyDetail: React.FC = () => {
     console.log('Button clicked! property:', property, 'currentUser:', currentUser, 'ownerDetails:', ownerDetails);
     if (!property || !currentUser || !currentUser.id || !ownerDetails) return;
     try {
-      await api.notifyOwnerInterest(property.ownerId, property.id, currentUser.id);
+      await api.notifyOwnerInterest(property.ownerId, property.id.toString(), currentUser.id);
       alert('Se ha notificado al propietario de tu interés.');
     } catch (error) {
       console.error('Error notifying owner:', error);
@@ -278,15 +291,39 @@ const PropertyDetail: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
-            {/* Image Gallery - Mobile Optimized */}
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-              <ImageGallery images={(property.images || []).map(img => typeof img === 'string' ? img : img.url)} alt={property.title} />
-            </div>
+
+            {/* FOR CONTAINERS: Title and Description First (no gallery) */}
+            {/* FOR REGULAR PROPERTIES: Gallery First */}
+            {!property.isContainer && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                <ImageGallery images={(property.images || []).map(img => typeof img === 'string' ? img : img.url)} alt={property.title} />
+              </div>
+            )}
 
             {/* Property Info - Responsive Padding */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
               {/* Header Section - Mobile Optimized */}
               <div className="flex flex-col gap-4 mb-4 sm:mb-6">
+
+                {/* Parent Container Banner - For Individual Rooms */}
+                {property.parentId && property.container && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 mb-2 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="bg-amber-100 p-2 rounded-full flex-shrink-0">
+                      <Home className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-amber-900">
+                        Esta habitacion pertenece a <span className="font-semibold">{property.container.title}</span>.
+                      </p>
+                      <Link
+                        to={`/propiedad/${property.parentId}`}
+                        className="text-xs sm:text-sm text-amber-700 font-medium hover:text-amber-800 hover:underline flex items-center mt-0.5 group"
+                      >
+                        Ver pensión completa y otras habitaciones <ArrowRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-3 sm:space-y-4">
                   {/* Badges - Responsive */}
                   <div className="flex flex-wrap items-center gap-2">
@@ -318,40 +355,44 @@ const PropertyDetail: React.FC = () => {
                   {/* Location - Responsive */}
                   <div className="flex items-start sm:items-center text-gray-600">
                     <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-emerald-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-                    <span className="text-sm sm:text-base lg:text-lg">{property.location?.street}, {property.location?.city}, {property.location?.department}</span>
+                    <span className="text-sm sm:text-base lg:text-lg">
+                      {property.location?.street}, {getLocationValue(property.location?.city)}, {getLocationValue(property.location?.department)}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Key Stats Grid - Mobile Optimized */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {property.bedrooms && property.type?.name !== 'habitacion' && (
+              {/* Key Stats Grid - Mobile Optimized - ONLY FOR NON-CONTAINERS */}
+              {!property.isContainer && (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                  {property.bedrooms && property.type?.name !== 'habitacion' && (
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
+                      <Bed className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                      <p className="text-xs sm:text-sm text-gray-500 mb-1">Habitaciones</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900">{property.bedrooms}</p>
+                    </div>
+                  )}
+                  {property.bathrooms && (
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
+                      <Bath className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                      <p className="text-xs sm:text-sm text-gray-500 mb-1">Baños</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900">{property.bathrooms}</p>
+                    </div>
+                  )}
+                  {property.area && (
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
+                      <Square className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                      <p className="text-xs sm:text-sm text-gray-500 mb-1">Área</p>
+                      <p className="text-base sm:text-lg font-bold text-gray-900">{property.area}m²</p>
+                    </div>
+                  )}
                   <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                    <Bed className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Habitaciones</p>
-                    <p className="text-base sm:text-lg font-bold text-gray-900">{property.bedrooms}</p>
+                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
+                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Publicado</p>
+                    <p className="text-sm sm:text-base font-bold text-gray-900">{formatDate(property.createdAt)}</p>
                   </div>
-                )}
-                {property.bathrooms && (
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                    <Bath className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Baños</p>
-                    <p className="text-base sm:text-lg font-bold text-gray-900">{property.bathrooms}</p>
-                  </div>
-                )}
-                {property.area && (
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                    <Square className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Área</p>
-                    <p className="text-base sm:text-lg font-bold text-gray-900">{property.area}m²</p>
-                  </div>
-                )}
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl text-center">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mx-auto text-emerald-600 mb-1.5 sm:mb-2" />
-                  <p className="text-xs sm:text-sm text-gray-500 mb-1">Publicado</p>
-                  <p className="text-sm sm:text-base font-bold text-gray-900">{formatDate(property.createdAt)}</p>
                 </div>
-              </div>
+              )}
 
               {/* Description - Responsive */}
               <div className="mb-6 sm:mb-8">
@@ -361,8 +402,8 @@ const PropertyDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Amenities - Mobile Optimized */}
-              {(property.amenities && property.amenities.length > 0) && (
+              {/* Amenities - Mobile Optimized - ONLY FOR NON-CONTAINERS */}
+              {!property.isContainer && (property.amenities && property.amenities.length > 0) && (
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
                     {property.type?.name === 'habitacion' ? 'Características' : 'Comodidades'}
@@ -390,6 +431,265 @@ const PropertyDetail: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* FOR CONTAINERS: Banner + Rooms Section */}
+            {property.isContainer && property.rentalMode === 'by_unit' && (
+              <>
+                {/* Container Type Banner */}
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                      <Home className="h-8 w-8" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl sm:text-3xl font-bold">
+                        {getTypeLabel(property.type?.name || 'apartamento')}
+                      </h2>
+                      <p className="text-emerald-100 mt-1">
+                        Esta propiedad tiene {property.totalUnits || property.units?.length || 0} habitaciones que se arriendan individualmente
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Units Section - Visual Room Cards */}
+                {property.units && property.units.length > 0 && (
+                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+                          Habitaciones Disponibles
+                        </h2>
+                        <p className="text-sm sm:text-base text-gray-600">
+                          {property.units.filter(u => !u.isRented).length} de {property.totalUnits || property.units.length} habitaciones disponibles
+                        </p>
+                      </div>
+                      <div className="flex sm:hidden items-center space-x-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200 self-start">
+                        <Bed className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs font-semibold text-emerald-700">
+                          {property.units.filter(u => !u.isRented).length} opciones
+                        </span>
+                      </div>
+                      <div className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <Bed className="h-5 w-5 text-emerald-600" />
+                        <span className="text-sm font-semibold text-emerald-700">
+                          {property.units.filter(u => !u.isRented).length} opciones
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Room Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                      {property.units.filter(u => !u.isRented).map((unit) => (
+                        <RoomCard
+                          key={unit.id}
+                          room={unit}
+                          onClick={() => {
+                            setSelectedRoom(unit);
+                            setShowRoomModal(true);
+                          }}
+                        />
+                      ))}
+                      {property.units.filter(u => !u.isRented).length === 0 && (
+                        <div className="col-span-full text-center py-8 text-gray-500">
+                          No hay habitaciones disponibles en este momento.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info Banner */}
+                    <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start space-x-3">
+                      <ShieldCheck className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-blue-800">
+                        <span className="font-semibold">Tip:</span> Haz clic en cualquier habitación para ver su galería de fotos completa, amenidades y detalles.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              </>
+            )}
+
+            {/* Common Areas Section - Shared logic for Container and Units */}
+            {((property.commonAreas && property.commonAreas.length > 0) || (property.container?.commonAreas && property.container.commonAreas.length > 0)) && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Áreas Comunes</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(property.commonAreas && property.commonAreas.length > 0 ? property.commonAreas : property.container?.commonAreas || []).map((area) => {
+                    const IconComponent = area.icon ? iconMap[area.icon] : Home;
+                    return (
+                      <div key={area.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-600 flex-shrink-0">
+                          {IconComponent ? (
+                            <IconComponent className="h-4 w-4" />
+                          ) : (
+                            <Home className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-gray-700">{area.name}</span>
+                          {area.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">{area.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Gallery of Common Areas - Shared logic */}
+            {((property.isContainer && property.images && property.images.length > 0) || (property.container?.images && property.container.images.length > 0)) && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                <div className="p-4 sm:p-6 lg:p-8 pb-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+                    {property.isContainer ? 'Fotos de Áreas Comunes y Fachada' : `Fotos de Áreas Comunes (${property.container?.title})`}
+                  </h2>
+                </div>
+                <ImageGallery
+                  images={(property.isContainer ? (property.images || []) : (property.container?.images || [])).map(img => typeof img === 'string' ? img : img.url)}
+                  alt={property.isContainer ? property.title : property.container?.title || 'Common Areas'}
+                />
+              </div>
+            )}
+
+            {/* Rules Section - For habitacion and pension */}
+            {((property.rules && property.rules.length > 0) || (property.container?.rules && property.container.rules.length > 0)) && (property.type?.name === 'habitacion' || property.type?.name === 'pension' || property.parentId) && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Reglas de Convivencia</h2>
+                <div className="space-y-3 sm:space-y-4">
+                  {(property.rules && property.rules.length > 0 ? property.rules : property.container?.rules || []).map((rule, index) => {
+                    const getRuleIcon = (ruleType: string) => {
+                      switch (ruleType) {
+                        case 'smoking': return <Ban className="h-5 w-5" />;
+                        case 'pets': return <Ban className="h-5 w-5" />;
+                        case 'visits': return <Users className="h-5 w-5" />;
+                        case 'noise': return <Volume2 className="h-5 w-5" />;
+                        case 'curfew': return <Clock className="h-5 w-5" />;
+                        default: return <Ban className="h-5 w-5" />;
+                      }
+                    };
+
+                    const getRuleLabel = (ruleType: string) => {
+                      switch (ruleType) {
+                        case 'smoking': return 'Fumar';
+                        case 'pets': return 'Mascotas';
+                        case 'visits': return 'Visitas';
+                        case 'noise': return 'Horario de silencio';
+                        case 'curfew': return 'Hora límite de llegada';
+                        case 'tenant_profile': return 'Perfil de inquilino';
+                        case 'couples': return 'Parejas';
+                        case 'children': return 'Niños';
+                        default: return ruleType;
+                      }
+                    };
+
+                    return (
+                      <div key={index} className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
+                        <div className="flex-shrink-0 p-2 bg-white rounded-lg shadow-sm text-emerald-600">
+                          {getRuleIcon(rule.ruleType)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                              {getRuleLabel(rule.ruleType)}
+                            </h3>
+                            {(rule.ruleType === 'smoking' || rule.ruleType === 'pets' || rule.ruleType === 'couples' || rule.ruleType === 'children') && (
+                              <span className={`text-xs sm:text-sm font-medium px-2 py-1 rounded-full ${rule.isAllowed
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                                }`}>
+                                {rule.isAllowed ? 'Permitido' : 'No permitido'}
+                              </span>
+                            )}
+                          </div>
+                          {rule.value && (
+                            <p className="text-sm text-gray-700 font-medium mb-1">
+                              {rule.value}
+                            </p>
+                          )}
+                          {rule.description && (
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              {rule.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Services Section - For pension and habitacion */}
+            {((property.services && property.services.length > 0) || (property.container?.services && property.container.services.length > 0)) && (property.type?.name === 'pension' || property.type?.name === 'habitacion' || property.parentId) && (
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Servicios Incluidos</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {(property.services && property.services.length > 0 ? property.services : property.container?.services || []).map((service, index) => {
+                    const getServiceIcon = (serviceType: string) => {
+                      switch (serviceType) {
+                        case 'breakfast': return <Coffee className="h-5 w-5" />;
+                        case 'lunch': return <Utensils className="h-5 w-5" />;
+                        case 'dinner': return <Utensils className="h-5 w-5" />;
+                        case 'housekeeping': return <Home className="h-5 w-5" />;
+                        case 'laundry': return <Home className="h-5 w-5" />;
+                        case 'wifi': return <Wifi className="h-5 w-5" />;
+                        case 'utilities': return <Zap className="h-5 w-5" />;
+                        default: return <Home className="h-5 w-5" />;
+                      }
+                    };
+
+                    const getServiceLabel = (serviceType: string) => {
+                      switch (serviceType) {
+                        case 'breakfast': return 'Desayuno';
+                        case 'lunch': return 'Almuerzo';
+                        case 'dinner': return 'Cena';
+                        case 'housekeeping': return 'Limpieza';
+                        case 'laundry': return 'Lavandería';
+                        case 'wifi': return 'WiFi';
+                        case 'utilities': return 'Servicios públicos';
+                        default: return serviceType;
+                      }
+                    };
+
+                    return (
+                      <div key={index} className={`flex items-start space-x-3 p-3 sm:p-4 rounded-lg border ${service.isIncluded
+                        ? 'bg-emerald-50 border-emerald-200'
+                        : 'bg-gray-50 border-gray-200'
+                        }`}>
+                        <div className={`flex-shrink-0 p-2 rounded-lg shadow-sm ${service.isIncluded ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                          {getServiceIcon(service.serviceType)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                              {getServiceLabel(service.serviceType)}
+                            </h3>
+                            {service.isIncluded ? (
+                              <span className="text-xs font-medium px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+                                Incluido
+                              </span>
+                            ) : service.additionalCost ? (
+                              <span className="text-xs font-medium px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
+                                +${service.additionalCost.toLocaleString()}
+                              </span>
+                            ) : null}
+                          </div>
+                          {service.description && (
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              {service.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Map Section - Mobile Optimized */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
@@ -505,11 +805,11 @@ const PropertyDetail: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Ciudad</p>
-                  <p className="font-semibold text-gray-900">{property.location?.city}</p>
+                  <p className="font-semibold text-gray-900">{getLocationValue(property.location?.city)}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Departamento</p>
-                  <p className="font-semibold text-gray-900">{property.location?.department}</p>
+                  <p className="font-semibold text-gray-900">{getLocationValue(property.location?.department)}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
                   <p className="text-sm text-gray-500 mb-1">Dirección</p>
@@ -552,7 +852,7 @@ const PropertyDetail: React.FC = () => {
             {/* Related Properties */}
             <RelatedProperties
               currentPropertyId={String(property.id)}
-              city={property.location?.city || ''}
+              city={getLocationValue(property.location?.city) || ''}
               type={property.type?.name || 'apartamento'}
             />
           </div>
@@ -564,11 +864,40 @@ const PropertyDetail: React.FC = () => {
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 {/* Price - Responsive */}
                 <div className="text-center mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-100">
-                  <p className="text-xs sm:text-sm text-gray-500 mb-1">Precio de alquiler</p>
-                  <div className="flex items-center justify-center text-emerald-600">
-                    <span className="text-3xl sm:text-4xl font-bold">{formatPrice(property.monthlyRent)}</span>
-                  </div>
-                  <p className="text-sm sm:text-base text-gray-500 mt-1">/ mes</p>
+                  <p className="text-xs sm:text-sm text-gray-500 mb-1">
+                    {property.isContainer && property.rentalMode === 'by_unit'
+                      ? 'Rango de precios de habitaciones'
+                      : 'Precio de alquiler'}
+                  </p>
+
+                  {property.isContainer && property.rentalMode === 'by_unit' && property.units && property.units.length > 0 ? (
+                    // Show price range for containers rented by unit
+                    <>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="bg-emerald-50 p-3 sm:p-4 rounded-xl border border-emerald-100">
+                          <p className="text-xs text-emerald-600 font-medium mb-1">Desde</p>
+                          <p className="text-xl sm:text-2xl font-bold text-emerald-600">
+                            {formatPrice(Math.min(...property.units.map(u => u.monthlyRent)))}
+                          </p>
+                        </div>
+                        <div className="bg-emerald-50 p-3 sm:p-4 rounded-xl border border-emerald-100">
+                          <p className="text-xs text-emerald-600 font-medium mb-1">Hasta</p>
+                          <p className="text-xl sm:text-2xl font-bold text-emerald-600">
+                            {formatPrice(Math.max(...property.units.map(u => u.monthlyRent)))}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-500">por habitación / mes</p>
+                    </>
+                  ) : (
+                    // Show single price for regular properties
+                    <>
+                      <div className="flex items-center justify-center text-emerald-600">
+                        <span className="text-3xl sm:text-4xl font-bold">{formatPrice(property.monthlyRent)}</span>
+                      </div>
+                      <p className="text-sm sm:text-base text-gray-500 mt-1">/ mes</p>
+                    </>
+                  )}
 
                   {/* Owner Plan Message - Responsive */}
                   <div className="mt-3 sm:mt-4 px-1 sm:px-2">
@@ -657,6 +986,18 @@ const PropertyDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Room Modal */}
+      {selectedRoom && (
+        <RoomModal
+          isOpen={showRoomModal}
+          onClose={() => {
+            setShowRoomModal(false);
+            setSelectedRoom(null);
+          }}
+          room={selectedRoom}
+        />
+      )}
 
       {/* Auth Modal */}
       <AuthModal

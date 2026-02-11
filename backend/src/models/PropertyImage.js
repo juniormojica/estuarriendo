@@ -23,7 +23,7 @@ const PropertyImage = sequelize.define('PropertyImage', {
         onDelete: 'CASCADE'
     },
     url: {
-        type: DataTypes.TEXT,
+        type: DataTypes.TEXT('long'),
         allowNull: false,
         comment: 'Image URL (Cloudinary or other CDN)'
     },

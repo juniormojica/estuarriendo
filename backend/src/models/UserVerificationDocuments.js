@@ -37,9 +37,9 @@ const UserVerificationDocuments = sequelize.define('UserVerificationDocuments', 
     },
     utilityBill: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
         field: 'utility_bill',
-        comment: 'Base64 encoded utility bill for address verification'
+        comment: 'Cloudinary URL of utility bill (only for owners)'
     },
     submittedAt: {
         type: DataTypes.DATE,

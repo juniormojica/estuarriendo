@@ -34,30 +34,83 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    // Get unique cities from properties
-    const cities = Array.from(new Set(properties.map(p => p.location?.city).filter(Boolean))).sort();
+    // Get unique cities from properties (handling both string and object formats)
+    const cities = Array.from(new Set(
+        properties.map(p => {
+            const city = p.location?.city;
+            if (typeof city === 'object') return (city as any)?.name;
+            return city || p.location?.neighborhood;
+        }).filter(Boolean)
+    )).sort() as string[];
+
+    const getOwner = (ownerId?: string): User | undefined => {
+        if (!ownerId) return undefined;
+        return users.find(u => u.id === ownerId);
+    };
 
     const getOwnerName = (ownerId?: string) => {
-        if (!ownerId) return 'Desconocido';
-        const user = users.find(u => u.id === ownerId);
-        return user ? user.name : 'Desconocido';
+        const owner = getOwner(ownerId);
+        return owner?.name || owner?.email || 'Desconocido';
+    };
+
+    const getOwnerEmail = (ownerId?: string) => {
+        const owner = getOwner(ownerId);
+        return owner?.email || '';
+    };
+
+    const getLocationDisplay = (property: Property): string => {
+        const parts: string[] = [];
+
+        // Handle neighborhood
+        if (property.location?.neighborhood) {
+            parts.push(property.location.neighborhood);
+        }
+
+        // Handle city - can be string or object with name
+        const cityName = typeof property.location?.city === 'object'
+            ? (property.location.city as any)?.name
+            : property.location?.city;
+        if (cityName) {
+            parts.push(cityName);
+        }
+
+        // Handle department - can be string or object with name  
+        const deptName = typeof property.location?.department === 'object'
+            ? (property.location.department as any)?.name
+            : property.location?.department;
+        if (deptName && deptName !== cityName) {
+            parts.push(deptName);
+        }
+
+        return parts.length > 0 ? parts.join(', ') : 'Sin ubicación';
     };
 
     // Filter properties
     const filteredProperties = properties.filter(property => {
         const ownerName = getOwnerName(property.ownerId);
-        const matchesSearch =
-            property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (property.location?.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (property.type?.name || property.type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            ownerName.toLowerCase().includes(searchTerm.toLowerCase());
+        const ownerEmail = getOwnerEmail(property.ownerId);
+        const locationStr = getLocationDisplay(property);
+        const searchLower = searchTerm.toLowerCase();
+
+        const matchesSearch = searchTerm === '' ||
+            property.title.toLowerCase().includes(searchLower) ||
+            locationStr.toLowerCase().includes(searchLower) ||
+            (property.type?.name || '').toLowerCase().includes(searchLower) ||
+            ownerName.toLowerCase().includes(searchLower) ||
+            ownerEmail.toLowerCase().includes(searchLower) ||
+            String(property.id).includes(searchLower);
 
         const matchesStatus = filterStatus === 'all' || property.status === filterStatus;
 
-        const propertyUserId = `user-${String(property.id).substring(0, 3)}`;
-        const matchesUser = filterUser === 'all' || propertyUserId === filterUser;
+        // Fix: Compare with actual ownerId instead of artificial ID
+        const matchesUser = filterUser === 'all' || property.ownerId === filterUser;
 
-        const matchesCity = filterCity === 'all' || property.location?.city === filterCity;
+        const matchesCity = filterCity === 'all' || (() => {
+            const cityName = typeof property.location?.city === 'object'
+                ? (property.location.city as any)?.name
+                : property.location?.city;
+            return cityName === filterCity || property.location?.neighborhood === filterCity;
+        })();
 
         return matchesSearch && matchesStatus && matchesUser && matchesCity;
     });
@@ -187,29 +240,23 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                 onClick={() => onView(property)}
                             >
                                 <td className="px-4 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <img
-                                            src={(property.images && property.images.length > 0) ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0]?.url) : 'https://via.placeholder.com/64x64'}
-                                            alt={property.title}
-                                            className="w-16 h-16 rounded-lg object-cover"
-                                        />
-                                        <div>
-                                            <div className="font-medium text-gray-900 flex items-center gap-2">
-                                                {property.title}
-                                                {property.isFeatured && (
-                                                    <Star size={16} className="text-yellow-500 fill-yellow-500" />
-                                                )}
-                                            </div>
-                                            <div className="text-sm text-gray-500">ID: {property.id}</div>
-                                        </div>
+                                    <div className="font-medium text-gray-900 flex items-center gap-2 flex-wrap">
+                                        {property.title}
+                                        {property.isFeatured && (
+                                            <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                                        )}
+                                        {property.isContainer && (
+                                            <span className="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded border border-blue-200">
+                                                Contenedor
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900">
                                     <div className="font-medium">{getOwnerName(property.ownerId)}</div>
-                                    <div className="text-xs text-gray-500">ID: {property.ownerId || 'N/A'}</div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900">
-                                    {property.location?.city}, {property.location?.department}
+                                    {getLocationDisplay(property)}
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900 capitalize">
                                     {property.type?.name || property.type}

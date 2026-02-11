@@ -523,22 +523,16 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                                                         'Verificación revocada por administrador'
                                                     );
                                                     if (success) {
-                                                        // Update local state immediately
-                                                        setDisplayUser({
-                                                            ...displayUser,
-                                                            verificationStatus: 'rejected'
-                                                        });
                                                         // Notify parent to refresh
-                                                        if (onUpdate) onUpdate();
+                                                        if (onUpdate) await onUpdate();
+                                                        onClose();
 
-                                                        // Show success message
-                                                        setConfirmAction({
-                                                            title: 'Verificación Revocada',
-                                                            message: 'La verificación del usuario ha sido revocada exitosamente.',
-                                                            type: 'success',
-                                                            onConfirm: () => setShowConfirmModal(false)
-                                                        });
-                                                        setShowConfirmModal(true);
+                                                        // Show success message (will be shown after modal closes)
+                                                        setConfirmAction(null); // Clear confirm action
+
+                                                        // Use alert or toast here ideally, or rely on parent update
+                                                        // Since modal closes, we can't show confirmation modal on top of it easily
+                                                        // But let's keep the user flow consistent with other actions: update & close.
                                                     } else {
                                                         setConfirmAction({
                                                             title: 'Error',

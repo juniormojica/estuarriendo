@@ -3,6 +3,7 @@ import { Users, Search, RefreshCw, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { api } from '../../services/api';
 import LoadingSpinner from '../LoadingSpinner';
 import ConfirmModal from '../ConfirmModal';
+import { useToast } from '../../components/ToastProvider';
 
 interface User {
     id: string;
@@ -22,6 +23,7 @@ const UserManager: React.FC = () => {
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const toast = useToast();
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -64,7 +66,9 @@ const UserManager: React.FC = () => {
             setUsers(data);
             setFilteredUsers(data);
         } catch (err: any) {
-            setError(err.message || 'Error al cargar usuarios');
+            const message = err.message || 'Error al cargar usuarios';
+            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -160,18 +164,20 @@ const UserManager: React.FC = () => {
 
             if (editingUser) {
                 await api.updateUser(editingUser.id, userData);
+                toast.success('Usuario actualizado exitosamente');
             } else {
                 if (!formData.password) {
-                    alert('La contraseña es requerida para crear un nuevo usuario');
+                    toast.error('La contraseña es requerida para crear un nuevo usuario');
                     return;
                 }
                 await api.createUser({ ...userData, password: formData.password });
+                toast.success('Usuario creado exitosamente');
             }
 
             await fetchUsers();
             handleCloseModal();
         } catch (err: any) {
-            alert(err.response?.data?.error || 'Error al guardar usuario');
+            toast.error(err.response?.data?.error || 'Error al guardar usuario');
         }
     };
 
@@ -180,11 +186,12 @@ const UserManager: React.FC = () => {
 
         try {
             await api.deleteUser(userToDelete.id);
+            toast.success('Usuario eliminado exitosamente');
             await fetchUsers();
             setShowDeleteConfirm(false);
             setUserToDelete(null);
         } catch (err: any) {
-            alert(err.response?.data?.error || 'Error al eliminar usuario');
+            toast.error(err.response?.data?.error || 'Error al eliminar usuario');
         }
     };
 

@@ -50,10 +50,17 @@ export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' 
 export type PaymentRequestStatus = 'pending' | 'verified' | 'rejected';
 
 // Tipos de Notificación
-export type NotificationType = 'property_interest' | 'payment_verified' | 'payment_rejected' | 'payment_submitted' | 'property_approved' | 'property_rejected';
+export type NotificationType = 'property_interest' | 'payment_verified' | 'payment_rejected' | 'payment_submitted' | 'property_submitted' | 'property_approved' | 'property_rejected' | 'verification_submitted' | 'verification_approved' | 'verification_rejected';
 
 // Estados de la Solicitud de Estudiante
 export type StudentRequestStatus = 'open' | 'closed';
+
+// ===== CONTAINER ARCHITECTURE TYPES =====
+// Rental modes for properties
+export type RentalMode = 'complete' | 'by_unit' | 'single';
+
+// Room types for units
+export type RoomType = 'individual' | 'shared';
 
 
 /**
@@ -130,6 +137,11 @@ export interface Institution {
   cityId: number;
   city?: City;
   type: 'universidad' | 'corporacion' | 'instituto';
+  latitude?: number;
+  longitude?: number;
+  PropertyInstitution?: {
+    distance?: number | null;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -159,6 +171,7 @@ export interface Location {
   zipCode?: string;  // Alias for postalCode
   latitude?: number;
   longitude?: number;
+  country?: string;
 }
 
 // PropertyType entity (normalized from string type)
@@ -171,6 +184,7 @@ export interface PropertyTypeEntity {
 export interface PropertyContact {
   id: number;
   propertyId: number;
+  contactName?: string;
   phone?: string;
   whatsapp?: string;
   email?: string;
@@ -226,6 +240,64 @@ export interface PropertyRule {
   description?: string;
 }
 
+// ===== CONTAINER ARCHITECTURE INTERFACES =====
+
+// Common Area (shared spaces in containers)
+export interface CommonArea {
+  id: number;
+  name: string;
+  icon?: string;
+  slug?: string;
+  description?: string;
+  createdAt?: string;
+}
+
+// Property Unit (room/unit within a container)
+export interface PropertyUnit {
+  id: number;
+  status: PropertyStatus; // Added status field
+  parentId: number;
+  title: string;
+  description?: string;
+  monthlyRent: number;
+  deposit?: number;
+  currency?: string;
+  area?: number;
+  isRented: boolean;
+  availableFrom?: string;
+  roomType: RoomType;  // 'individual' or 'shared'
+  bedsInRoom?: number;  // Number of beds if shared
+  amenities?: Amenity[];
+  images?: PropertyImage[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// Property Container (pension, apartment, aparta-estudio with units)
+export interface PropertyContainer {
+  id: number;
+  title: string;
+  description: string;
+  typeId: number;
+  type?: PropertyTypeEntity;
+  isContainer: true;
+  rentalMode: RentalMode;
+  totalUnits: number;
+  availableUnits: number;
+  requiresDeposit: boolean;
+  minimumContractMonths?: number;
+  location?: Location;
+  contact?: PropertyContact;
+  services?: PropertyService[];
+  rules?: PropertyRule[];
+  commonAreas?: CommonArea[];
+  units?: PropertyUnit[];
+  images?: PropertyImage[];
+  owner?: User;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 
 /**
  * =================================================================================
@@ -235,7 +307,7 @@ export interface PropertyRule {
 
 export interface Property {
   // Core fields
-  id: number; // Changed from string to number
+  id: number | string; // Changed to allow string IDs from mock data
   ownerId: string;
   title: string;
   description: string;
@@ -257,6 +329,17 @@ export interface Property {
   isVerified: boolean;
   isRented: boolean; // Renamed from is_rented
 
+  // ===== CONTAINER ARCHITECTURE FIELDS =====
+  parentId?: number;  // Reference to parent container (if this is a unit)
+  isContainer: boolean;  // TRUE if this is a container, FALSE if unit or independent
+  rentalMode?: RentalMode;  // 'complete', 'by_unit', 'single'
+  totalUnits?: number;  // Total number of units (for containers)
+  availableUnits?: number;  // Available units (for containers)
+  roomType?: RoomType;  // 'individual' or 'shared' (for units)
+  bedsInRoom?: number;  // Number of beds if shared room
+  requiresDeposit?: boolean;  // Whether deposit is required (container level)
+  minimumContractMonths?: number;  // Minimum contract duration (container level)
+
   // Metrics
   viewsCount: number;
   interestsCount: number;
@@ -269,8 +352,12 @@ export interface Property {
   rejectionReason?: string;
   availableFrom?: string;
 
+  // Calculated fields (via backend attributes)
+  minUnitRent?: number;
+
   // Relations (populated by backend includes)
   location?: Location;
+  coordinates?: Coordinates;
   type?: PropertyTypeEntity;
   contact?: PropertyContact;
   features?: PropertyFeatures;
@@ -280,6 +367,11 @@ export interface Property {
   services?: PropertyService[];
   rules?: PropertyRule[];
   owner?: User; // If included
+
+  // ===== CONTAINER ARCHITECTURE RELATIONS =====
+  units?: PropertyUnit[];  // Child units (if this is a container)
+  container?: PropertyContainer;  // Parent container (if this is a unit)
+  commonAreas?: CommonArea[];  // Shared spaces (if this is a container)
 }
 
 export interface User {
@@ -327,12 +419,39 @@ export interface User {
   planExpiresAt?: string;
   paymentRequestId?: string;
   premiumSince?: string;
+
+  // New Analytics Profile Data
+  profile?: UserProfileData;
+}
+
+export interface UserProfileData {
+  // Common Demographics
+  birthDate?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  referralSource?: string;
+
+  // Tenant Specific
+  institutionId?: number;
+  institution?: Institution; // Hydrated
+  academicProgram?: string;
+  currentSemester?: number;
+  originCityId?: number;
+  originCity?: City; // Hydrated
+  livingPreference?: 'solo' | 'shared' | 'indifferent'; // 'solo', 'shared', 'indifferent'
+
+  // Owner Specific
+  totalPropertiesManaged?: number;
+  yearsAsLandlord?: number;
+  managesPersonally?: boolean;
 }
 
 export interface Amenity {
-  id: number;  // Changed from string to number to match database
+  id: number | string;  // Changed to allow string IDs
+
   name: string;
   icon: string;
+  slug?: string;
+  category?: 'general' | 'habitacion' | 'pension';
 }
 
 export interface PaymentRequest {
@@ -430,6 +549,7 @@ export interface SearchFilters {
   university?: string;
   amenities?: number[];  // Changed from string[] to number[] to match Amenity.id
   status?: 'all' | 'pending' | 'approved' | 'rejected';
+  isRented?: boolean;
   // Institution filters
   institutionId?: number;
   institutionType?: 'universidad' | 'instituto';

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api';
 import ConfirmModal from '../ConfirmModal';
+import { useToast } from '../../components/ToastProvider';
 import './ManagerStyles.css';
 
 interface Amenity {
@@ -23,6 +24,7 @@ const AmenityManager: React.FC = () => {
         icon: ''
     });
     const [error, setError] = useState('');
+    const toast = useToast();
 
     useEffect(() => {
         fetchAmenities();
@@ -42,7 +44,9 @@ const AmenityManager: React.FC = () => {
             setAmenities(data);
             setFilteredAmenities(data);
         } catch (err: any) {
-            setError(err.message || 'Error al cargar amenidades');
+            const message = err.message || 'Error al cargar amenidades';
+            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -77,13 +81,17 @@ const AmenityManager: React.FC = () => {
         try {
             if (editingAmenity) {
                 await api.updateAmenity(editingAmenity.id, formData);
+                toast.success('Amenidad actualizada exitosamente');
             } else {
                 await api.createAmenity(formData);
+                toast.success('Amenidad creada exitosamente');
             }
             await fetchAmenities();
             handleCloseModal();
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Error al guardar amenidad');
+            const message = err.response?.data?.error || err.message || 'Error al guardar amenidad';
+            setError(message);
+            toast.error(message);
         }
     };
 
@@ -92,10 +100,13 @@ const AmenityManager: React.FC = () => {
 
         try {
             await api.deleteAmenity(deleteConfirm.id);
+            toast.success('Amenidad eliminada exitosamente');
             await fetchAmenities();
             setDeleteConfirm(null);
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Error al eliminar amenidad');
+            const message = err.response?.data?.message || err.message || 'Error al eliminar amenidad';
+            setError(message);
+            toast.error(message);
             setDeleteConfirm(null);
         }
     };

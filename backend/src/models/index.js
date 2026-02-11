@@ -23,6 +23,9 @@ import PropertyRule from './PropertyRule.js';
 import PropertyType from './PropertyType.js';
 import Institution from './Institution.js';
 import PropertyInstitution from './PropertyInstitution.js';
+import CommonArea from './CommonArea.js';
+import PropertyCommonArea from './PropertyCommonArea.js';
+
 
 // Import location normalized models
 import Department from './Department.js';
@@ -35,6 +38,7 @@ import UserPasswordReset from './UserPasswordReset.js';
 import UserBillingDetails from './UserBillingDetails.js';
 import Subscription from './Subscription.js';
 import UserStats from './UserStats.js';
+import UserProfile from './UserProfile.js';
 
 /**
  * Define Model Associations
@@ -115,6 +119,29 @@ User.hasOne(UserStats, {
 UserStats.belongsTo(User, {
     foreignKey: 'userId',
     as: 'user'
+});
+
+// User <-> UserProfile (One-to-One)
+User.hasOne(UserProfile, {
+    foreignKey: 'userId',
+    as: 'profile',
+    onDelete: 'CASCADE'
+});
+UserProfile.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user'
+});
+
+// UserProfile <-> Institution (Many-to-One)
+UserProfile.belongsTo(Institution, {
+    foreignKey: 'institutionId',
+    as: 'institution'
+});
+
+// UserProfile <-> City (Many-to-One)
+UserProfile.belongsTo(City, {
+    foreignKey: 'originCityId',
+    as: 'originCity'
 });
 
 // User <-> Property (One-to-Many)
@@ -275,6 +302,33 @@ PropertyRule.belongsTo(Property, {
     as: 'property'
 });
 
+// Property <-> Property (Self-referential for Container-Unit hierarchy)
+// Container has many Units
+Property.hasMany(Property, {
+    foreignKey: 'parentId',
+    as: 'units',
+    onDelete: 'CASCADE'
+});
+// Unit belongs to Container
+Property.belongsTo(Property, {
+    foreignKey: 'parentId',
+    as: 'container'
+});
+
+// Property <-> CommonArea (Many-to-Many through PropertyCommonArea)
+Property.belongsToMany(CommonArea, {
+    through: PropertyCommonArea,
+    foreignKey: 'propertyId',
+    otherKey: 'commonAreaId',
+    as: 'commonAreas'
+});
+CommonArea.belongsToMany(Property, {
+    through: PropertyCommonArea,
+    foreignKey: 'commonAreaId',
+    otherKey: 'propertyId',
+    as: 'properties'
+});
+
 // City <-> StudentRequest (One-to-Many)
 City.hasMany(StudentRequest, {
     foreignKey: 'cityId',
@@ -419,6 +473,8 @@ export {
     PropertyType,
     Institution,
     PropertyInstitution,
+    CommonArea,
+    PropertyCommonArea,
     // Location normalized models
     Department,
     City,
@@ -428,7 +484,8 @@ export {
     UserPasswordReset,
     UserBillingDetails,
     Subscription,
-    UserStats
+    UserStats,
+    UserProfile
 };
 
 export default {
@@ -454,6 +511,8 @@ export default {
     PropertyType,
     Institution,
     PropertyInstitution,
+    CommonArea,
+    PropertyCommonArea,
     // Location normalized models
     Department,
     City,
@@ -463,5 +522,6 @@ export default {
     UserPasswordReset,
     UserBillingDetails,
     Subscription,
-    UserStats
+    UserStats,
+    UserProfile
 };

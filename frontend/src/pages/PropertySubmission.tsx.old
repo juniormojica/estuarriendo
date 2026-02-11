@@ -18,6 +18,11 @@ import InstitutionAutocomplete from '../components/InstitutionAutocomplete';
 import RoomSpecificFields from '../components/RoomSpecificFields';
 import PensionSpecificFields from '../components/PensionSpecificFields';
 
+// ===== NEW CONTAINER COMPONENTS =====
+import PropertyTypeSelectorStep from '../components/PropertyTypeSelectorStep';
+import ContainerFlow from '../components/ContainerFlow';
+import type { RentalMode, PropertyUnit } from '../types';
+
 const STEPS = ['Información Básica', 'Ubicación', 'Detalles', 'Imágenes'];
 
 const PropertySubmission: React.FC = () => {
@@ -25,6 +30,11 @@ const PropertySubmission: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { items: amenities } = useAppSelector((state) => state.amenities);
+
+  // ===== ALL STATE DECLARATIONS MUST BE AT THE TOP =====
+  // Check if this is a container property
+  const [isContainer, setIsContainer] = useState<boolean | null>(null);
+  const [selectedPropertyType, setSelectedPropertyType] = useState<string>('');
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +58,13 @@ const PropertySubmission: React.FC = () => {
   const [showInstitutionSelector, setShowInstitutionSelector] = useState(false);
   const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
   const [tempDistance, setTempDistance] = useState<string>('');
+
+  // ===== CONTAINER STATE (not used in old form but must be declared) =====
+  const [rentalMode, setRentalMode] = useState<RentalMode>('by_unit');
+  const [containerServices, setContainerServices] = useState<PropertyService[]>([]);
+  const [containerRules, setContainerRules] = useState<PropertyRule[]>([]);
+  const [commonAreaIds, setCommonAreaIds] = useState<number[]>([]);
+  const [units, setUnits] = useState<Partial<PropertyUnit>[]>([]);
 
   const maxImages = user?.plan === 'premium' ? 10 : 3;
 
@@ -79,7 +96,11 @@ const PropertySubmission: React.FC = () => {
     }
   });
 
+  // ===== ALL HOOKS MUST RUN BEFORE ANY CONDITIONAL RETURNS =====
   useEffect(() => {
+    // Skip this effect for containers - they use ContainerFlow
+    if (isContainer === true) return;
+
     const storedUser = localStorage.getItem('estuarriendo_current_user');
     if (!storedUser) {
       navigate('/login');
@@ -110,7 +131,33 @@ const PropertySubmission: React.FC = () => {
       setIsEditing(true);
       loadProperty(id);
     }
-  }, [id, dispatch, navigate]);
+  }, [id, dispatch, navigate, isContainer]);
+
+  // ===== CONDITIONAL RENDERING AFTER ALL HOOKS =====
+  // If container type selected, use ContainerFlow
+  if (isContainer === true) {
+    return <ContainerFlow propertyId={id} initialPropertyType={selectedPropertyType} />;
+  }
+
+  // If type not selected yet, show selector
+  if (isContainer === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <PropertyTypeSelectorStep
+            onSelect={(type) => {
+              const containerTypes = ['pension', 'apartamento', 'aparta-estudio'];
+              setSelectedPropertyType(type);
+              setIsContainer(containerTypes.includes(type));
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, use old form for independent rooms
+
 
   const loadProperty = async (propertyId: string) => {
     setIsLoadingProperty(true);
@@ -555,7 +602,52 @@ const PropertySubmission: React.FC = () => {
           )}
 
           <div className="animate-fadeIn">
+            {/* STEP 0: Property Type Selector (NEW) */}
             {currentStep === 0 && (
+              <PropertyTypeSelectorStep
+                onSelect={(type) => {
+                  handleInputChange('type', type);
+                  setIsContainer(['pension', 'apartamento', 'aparta-estudio'].includes(type));
+                  setCurrentStep(1);
+                }}
+                selectedType={formData.type}
+              />
+            )}
+
+            {/* STEP 1: Container Basic Info (FOR CONTAINERS) */}
+            {currentStep === 1 && isContainer && (
+              <ContainerBasicInfo
+                onNext={(data) => {
+                  // Save container basic info including rentalMode
+                  setFormData(prev => ({ ...prev, ...data }));
+                  setRentalMode(data.rentalMode);
+
+                  // Navigate based on rental mode
+                  if (data.rentalMode === 'by_unit') {
+                    setCurrentStep(2); // Go to Services
+                  } else {
+                    setCurrentStep(2); // Go to UnitBuilder (will be rendered at step 2 for complete mode)
+                  }
+                }}
+                initialData={{
+                  title: formData.title,
+                  description: formData.description,
+                  typeId: formData.type === 'pension' ? 3 : formData.type === 'apartamento' ? 1 : 4,
+                  typeName: formData.type,
+                  locationId: 0,
+                  cityId: 0,
+                  departmentId: 0,
+                  street: formData.address.street,
+                  neighborhood: formData.address.neighborhood,
+                  rentalMode: rentalMode,
+                  requiresDeposit: true,
+                  minimumContractMonths: 6,
+                }}
+              />
+            )}
+
+            {/* STEP 1: Basic Information (FOR INDEPENDENT ROOMS) */}
+            {currentStep === 1 && !isContainer && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Información Básica</h2>
                 <div className="grid grid-cols-1 gap-6">
@@ -614,7 +706,68 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {currentStep === 1 && (
+            {/* STEP 2: Container Services (ONLY IF by_unit) */}
+            {currentStep === 2 && isContainer && rentalMode === 'by_unit' && (
+              <ContainerServices
+                onNext={(services) => {
+                  setContainerServices(services);
+                  setCurrentStep(3);
+                }}
+                onBack={() => setCurrentStep(1)}
+                initialData={containerServices}
+              />
+            )}
+
+            {/* STEP 3: Container Rules (ONLY IF by_unit) */}
+            {currentStep === 3 && isContainer && rentalMode === 'by_unit' && (
+              <ContainerRules
+                onNext={(rules) => {
+                  setContainerRules(rules);
+                  setCurrentStep(4);
+                }}
+                onBack={() => setCurrentStep(2)}
+                initialData={containerRules}
+              />
+            )}
+
+            {/* STEP 4: Common Areas (ONLY IF by_unit) */}
+            {currentStep === 4 && isContainer && rentalMode === 'by_unit' && (
+              <ContainerCommonAreas
+                onNext={(areaIds) => {
+                  setCommonAreaIds(areaIds);
+                  setCurrentStep(5);
+                }}
+                onBack={() => setCurrentStep(3)}
+                initialData={commonAreaIds}
+              />
+            )}
+
+
+
+            {/* STEP 2/5: Unit Builder (ONLY FOR CONTAINERS) */}
+            {/* Step 2 if complete mode, Step 5 if by_unit mode */}
+            {((currentStep === 2 && isContainer && rentalMode === 'complete') ||
+              (currentStep === 5 && isContainer && rentalMode === 'by_unit')) && (
+                <UnitBuilder
+                  onNext={(unitList) => {
+                    setUnits(unitList);
+                    // Skip step 6 (Details) for containers - units already defined
+                    // Go directly to step 7 (Container Images)
+                    setCurrentStep(7);
+                  }}
+                  onBack={() => {
+                    if (rentalMode === 'by_unit') {
+                      setCurrentStep(4); // Back to Common Areas
+                    } else {
+                      setCurrentStep(1); // Back to Basic Info
+                    }
+                  }}
+                  initialData={units}
+                />
+              )}
+
+            {/* STEP 2: Location (ONLY FOR INDEPENDENT ROOMS) */}
+            {currentStep === 2 && !isContainer && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Ubicación</h2>
                 <div className="grid grid-cols-1 gap-6">
@@ -809,7 +962,8 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {currentStep === 2 && (
+            {/* STEP 3 (independent) / 6 (container): Details and Amenities */}
+            {((currentStep === 3 && !isContainer) || (currentStep === 6 && isContainer)) && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Detalles y Comodidades</h2>
 
@@ -926,7 +1080,8 @@ const PropertySubmission: React.FC = () => {
               </div>
             )}
 
-            {currentStep === 3 && (
+            {/* STEP 4 (independent) / 7 (container): Images */}
+            {((currentStep === 4 && !isContainer) || (currentStep === 7 && isContainer)) && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Galería de Imágenes</h2>
 
@@ -964,51 +1119,56 @@ const PropertySubmission: React.FC = () => {
             )}
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between">
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={currentStep === 0 || isSubmitting}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${currentStep === 0
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-            >
-              <ChevronLeft className="h-5 w-5" />
-              <span>Anterior</span>
-            </button>
 
-            {currentStep === STEPS.length - 1 ? (
+          {/* Navigation Buttons - Hidden for container steps 1-5 (they have their own) */}
+          {/* Steps 6-7 use main navigation buttons */}
+          {!(isContainer && currentStep >= 1 && currentStep <= 5) && (
+            <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between">
               <button
                 type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleBack}
+                disabled={currentStep === 0 || isSubmitting}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${currentStep === 0
+                  ? 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
-                {isSubmitting ? (
-                  <>
-                    <LoadingSpinner size="sm" />
-                    <span>{isEditing ? 'Actualizando...' : 'Publicando...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{isEditing ? 'Actualizar Propiedad' : 'Publicar Propiedad'}</span>
-                    <CheckCircle className="h-5 w-5" />
-                  </>
-                )}
+                <ChevronLeft className="h-5 w-5" />
+                <span>Anterior</span>
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
-              >
-                <span>Siguiente</span>
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            )}
-          </div>
+
+              {/* Determine last step: step 7 for containers, step 4 for independent */}
+              {((isContainer && currentStep === 7) || (!isContainer && currentStep === 4)) ? (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span>{isEditing ? 'Actualizando...' : 'Publicando...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{isEditing ? 'Actualizar Propiedad' : 'Publicar Propiedad'}</span>
+                      <CheckCircle className="h-5 w-5" />
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex items-center space-x-2 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

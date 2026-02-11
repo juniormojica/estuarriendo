@@ -23,6 +23,10 @@ const UserProfile: React.FC = () => {
     // Form states
     const [formData, setFormData] = useState<Partial<User>>({});
 
+    // Select options
+    const [cities, setCities] = useState<any[]>([]);
+    const [institutions, setInstitutions] = useState<any[]>([]);
+
     const location = useLocation();
 
     useEffect(() => {
@@ -76,10 +80,47 @@ const UserProfile: React.FC = () => {
             setLoading(false);
         };
         loadUserAndPayment();
+
+        // Fetch cities and institutions
+        const fetchData = async () => {
+            // We can use getAvailableCities, but that returns strings. We might need full city objects or just list all cities.
+            // For now let's use a hardcoded list of major Colombian cities if no API exists, or try to get institutions which have cities.
+            // Actually, verify what api.getAllInstitutions returns.
+            try {
+                const insts = await api.getAllInstitutions();
+                setInstitutions(insts);
+
+                // Mock cities for now or derive from institutions/properties
+                // Ideally we should have an api.getCities()
+                setCities([
+                    { id: 1, name: 'Bogotá' },
+                    { id: 2, name: 'Medellín' },
+                    { id: 3, name: 'Cali' },
+                    { id: 4, name: 'Barranquilla' },
+                    { id: 5, name: 'Bucaramanga' },
+                    { id: 6, name: 'Cartagena' },
+                    { id: 7, name: 'Pereira' },
+                    { id: 8, name: 'Manizales' }
+                ]);
+            } catch (e) {
+                console.error('Error loading form data options', e);
+            }
+        };
+        fetchData();
     }, [location.search, authUser, authLoading, navigate]);
 
     const handleInputChange = (field: keyof User, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleProfileChange = (field: string, value: any) => {
+        setFormData(prev => ({
+            ...prev,
+            profile: {
+                ...prev.profile,
+                [field]: value
+            }
+        }));
     };
 
     const handleSaveProfile = async () => {
@@ -89,12 +130,15 @@ const UserProfile: React.FC = () => {
 
         try {
             // Call backend API to update user
+            // We include the profile data in the update
             const updatedUser = await api.updateUser(user.id, {
                 name: formData.name,
                 phone: formData.phone,
                 whatsapp: formData.whatsapp,
                 idType: formData.idType,
-                idNumber: formData.idNumber
+                idNumber: formData.idNumber,
+                // Include profile data
+                profile: formData.profile
             });
 
             // Update local state with the response from backend
@@ -124,10 +168,15 @@ const UserProfile: React.FC = () => {
     };
 
 
-    const handleVerificationSuccess = () => {
-        // Reload user from AuthContext
+    const handleVerificationSuccess = async () => {
+        // Reload user from backend to get updated status
         if (authUser) {
-            setUser(authUser);
+            try {
+                const freshUser = await api.getCurrentUser();
+                setUser(freshUser);
+            } catch (error) {
+                console.error('Error refreshing user after verification:', error);
+            }
         }
         setMessage({ type: 'success', text: 'Documentos enviados correctamente. Tu verificación será revisada pronto.' });
         window.scrollTo(0, 0);
@@ -322,6 +371,159 @@ const UserProfile: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="pt-4 sm:pt-6 border-t border-gray-100">
+                                        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Información Personal Adicional</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                            <div>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Fecha de Nacimiento</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.profile?.birthDate ? new Date(formData.profile.birthDate).toISOString().split('T')[0] : ''}
+                                                    onChange={(e) => handleProfileChange('birthDate', e.target.value)}
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Género</label>
+                                                <select
+                                                    value={formData.profile?.gender || ''}
+                                                    onChange={(e) => handleProfileChange('gender', e.target.value)}
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                >
+                                                    <option value="">Seleccionar</option>
+                                                    <option value="male">Masculino</option>
+                                                    <option value="female">Femenino</option>
+                                                    <option value="other">Otro</option>
+                                                    <option value="prefer_not_to_say">Prefiero no decir</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Ciudad de Origen</label>
+                                                <select
+                                                    value={formData.profile?.originCityId || ''}
+                                                    onChange={(e) => handleProfileChange('originCityId', Number(e.target.value))}
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                >
+                                                    <option value="">Seleccionar</option>
+                                                    {cities.map(city => (
+                                                        <option key={city.id} value={city.id}>{city.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">¿Cómo nos conociste?</label>
+                                                <select
+                                                    value={formData.profile?.referralSource || ''}
+                                                    onChange={(e) => handleProfileChange('referralSource', e.target.value)}
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                >
+                                                    <option value="">Seleccionar</option>
+                                                    <option value="google">Google</option>
+                                                    <option value="facebook">Facebook</option>
+                                                    <option value="instagram">Instagram</option>
+                                                    <option value="tiktok">TikTok</option>
+                                                    <option value="friend">Amigo / Referido</option>
+                                                    <option value="university">Universidad</option>
+                                                    <option value="other">Otro</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {user.userType === 'tenant' && (
+                                        <div className="pt-4 sm:pt-6 border-t border-gray-100">
+                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Información Académica</h2>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                                <div className="sm:col-span-2">
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Institución Educativa</label>
+                                                    <select
+                                                        value={formData.profile?.institutionId || ''}
+                                                        onChange={(e) => handleProfileChange('institutionId', Number(e.target.value))}
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    >
+                                                        <option value="">Seleccionar Institución</option>
+                                                        {institutions.map(inst => (
+                                                            <option key={inst.id} value={inst.id}>{inst.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Programa Académico</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.profile?.academicProgram || ''}
+                                                        onChange={(e) => handleProfileChange('academicProgram', e.target.value)}
+                                                        placeholder="Ej: Ingeniería de Sistemas"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Semestre Actual</label>
+                                                    <input
+                                                        type="number"
+                                                        value={formData.profile?.currentSemester || ''}
+                                                        onChange={(e) => handleProfileChange('currentSemester', Number(e.target.value))}
+                                                        min="1"
+                                                        max="12"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Preferencia de Vivienda</label>
+                                                    <select
+                                                        value={formData.profile?.livingPreference || ''}
+                                                        onChange={(e) => handleProfileChange('livingPreference', e.target.value)}
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    >
+                                                        <option value="">Seleccionar</option>
+                                                        <option value="solo">Vivir solo</option>
+                                                        <option value="shared">Compartir (Roomie)</option>
+                                                        <option value="indifferent">Indiferente</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {user.userType === 'owner' && (
+                                        <div className="pt-4 sm:pt-6 border-t border-gray-100">
+                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Información del Arrendador</h2>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                                <div>
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Total Propiedades Administradas</label>
+                                                    <input
+                                                        type="number"
+                                                        value={formData.profile?.totalPropertiesManaged || ''}
+                                                        onChange={(e) => handleProfileChange('totalPropertiesManaged', Number(e.target.value))}
+                                                        min="0"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Años de Experiencia</label>
+                                                    <input
+                                                        type="number"
+                                                        value={formData.profile?.yearsAsLandlord || ''}
+                                                        onChange={(e) => handleProfileChange('yearsAsLandlord', Number(e.target.value))}
+                                                        min="0"
+                                                        step="0.5"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.profile?.managesPersonally || false}
+                                                            onChange={(e) => handleProfileChange('managesPersonally', e.target.checked)}
+                                                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                                                        />
+                                                        <span className="text-sm text-gray-700">Administro personalmente mis propiedades (sin inmobiliaria)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="flex justify-end pt-3 sm:pt-4">
                                         <button

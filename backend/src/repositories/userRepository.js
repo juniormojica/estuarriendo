@@ -1,4 +1,4 @@
-import { User, UserVerificationDocuments, UserIdentificationDetails } from '../models/index.js';
+import { User, UserVerificationDocuments, UserIdentificationDetails, UserProfile } from '../models/index.js';
 
 /**
  * User Repository
@@ -11,6 +11,7 @@ import { User, UserVerificationDocuments, UserIdentificationDetails } from '../m
  * @returns {Promise<Array>} Array of users
  */
 export const findAll = async (options = {}) => {
+    // Only fetch basic data by default to avoid huge payloads
     const defaultOptions = {
         attributes: { exclude: ['password'] },
         include: [
@@ -23,6 +24,10 @@ export const findAll = async (options = {}) => {
                 model: UserIdentificationDetails,
                 as: 'identification',
                 attributes: ['idType', 'idNumber', 'ownerRole']
+            },
+            {
+                model: UserProfile,
+                as: 'profile'
             }
         ]
     };
@@ -49,6 +54,10 @@ export const findById = async (id, options = {}) => {
                 model: UserIdentificationDetails,
                 as: 'identification',
                 attributes: ['idType', 'idNumber', 'ownerRole']
+            },
+            {
+                model: UserProfile,
+                as: 'profile'
             }
         ]
     };

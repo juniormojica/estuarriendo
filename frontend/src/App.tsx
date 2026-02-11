@@ -8,7 +8,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import PropertyDetail from './pages/PropertyDetail';
-import PropertySubmission from './pages/PropertySubmission';
+import PropertySubmissionRouter from './pages/PropertySubmissionRouter';
 import AdminDashboard from './pages/AdminDashboard';
 import FavoritesPage from './pages/FavoritesPage';
 import RegistrationPage from './pages/RegistrationPage';
@@ -25,6 +25,7 @@ import { FavoritesProvider } from './context/FavoritesContext';
 import { ToastProvider } from './components/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
+import ComponentDemoPage from './pages/ComponentDemoPage';
 
 function AppContent() {
   useEffect(() => {
@@ -54,12 +55,15 @@ function AppContent() {
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+                {/* Demo route - temporary for development */}
+                <Route path="/demo-components" element={<ComponentDemoPage />} />
+
                 {/* Protected routes - require authentication */}
                 <Route
                   path="/publicar"
                   element={
                     <ProtectedRoute>
-                      <PropertySubmission />
+                      <PropertySubmissionRouter />
                     </ProtectedRoute>
                   }
                 />
@@ -67,7 +71,7 @@ function AppContent() {
                   path="/editar-propiedad/:id"
                   element={
                     <ProtectedRoute>
-                      <PropertySubmission />
+                      <PropertySubmissionRouter />
                     </ProtectedRoute>
                   }
                 />
