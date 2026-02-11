@@ -773,7 +773,8 @@ export const api = {
     planType: string;
     planDuration: number;
     referenceCode: string;
-    proofImageBase64: string;
+    proofImageUrl: string;
+    proofImagePublicId?: string;
   }): Promise<boolean> {
     try {
       console.log('📤 Creating payment request:', {
@@ -782,7 +783,7 @@ export const api = {
         planType: request.planType,
         planDuration: request.planDuration,
         referenceCode: request.referenceCode,
-        imageSize: request.proofImageBase64.length
+        imageUrl: request.proofImageUrl
       });
 
       const response = await apiClient.post('/payment-requests', request);

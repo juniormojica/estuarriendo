@@ -87,7 +87,6 @@ export const createContainer = async (req, res) => {
 
         // Import all required models once
         const { Property, PropertyService, PropertyRule, PropertyImage, Amenity } = await import('../models/index.js');
-        const { uploadMultipleImages } = await import('../utils/cloudinaryUtils.js');
 
         // For containers rented by_unit, monthlyRent should be 0 (price is per unit)
         // For containers rented complete, use provided monthlyRent or default to 0
@@ -151,42 +150,36 @@ export const createContainer = async (req, res) => {
                     ownerId: container.ownerId
                 }, { transaction });
 
-                // Add unit images - upload to Cloudinary first
-                // Add unit images
+                // Add unit images - Expecting URLs from frontend
                 if (unitImages && unitImages.length > 0) {
-                    const imagesToSave = [];
+                    // Normalize images to plain URLs strings
+                    const imageUrls = unitImages.map(img =>
+                        typeof img === 'string' ? img : img.url
+                    ).filter(url => url && !url.startsWith('data:image')); // Filter out any accidental base64
 
-                    // 1. Separate base64 (need upload) from URLs (already uploaded)
-                    const base64Images = unitImages.filter(img =>
-                        (typeof img === 'string' && img.startsWith('data:image')) ||
-                        (img.url && img.url.startsWith('data:image'))
-                    ).map(img => typeof img === 'string' ? img : img.url);
+                    if (imageUrls.length > 0) {
+                        const imageRecords = imageUrls.map((url, index) => ({
+                            propertyId: unit.id,
+                            url: url,
+                            isFeatured: index === 0,
+                            displayOrder: index // Normalized field name (check model if it uses orderPosition or displayOrder)
+                        }));
 
-                    const existingUrls = unitImages.filter(img =>
-                        (typeof img === 'string' && img.startsWith('http')) ||
-                        (img.url && img.url.startsWith('http'))
-                    ).map(img => typeof img === 'string' ? img : img.url);
+                        // Using 'displayOrder' as per PropertyImage interface in types, but propertyService uses 'displayOrder' too?
+                        // Let's check typical usage. propertyService.js creates images? 
+                        // Actually propertyService.createPropertyWithAssociations handles 'images' which are URLs.
+                        // I will stick to what the code was using: 'orderPosition'. 
+                        // Wait, previous code used 'orderPosition': index.
+                        // I will use 'orderPosition' to be safe match.
 
-                    // 2. Upload new base64 images
-                    if (base64Images.length > 0) {
-                        const uploaded = await uploadMultipleImages(base64Images, 'properties');
-                        const newUrls = uploaded.map(result => result.url);
-                        imagesToSave.push(...newUrls);
-                    }
-
-                    // 3. Add existing URLs
-                    imagesToSave.push(...existingUrls);
-
-                    // 4. Save to database
-                    if (imagesToSave.length > 0) {
-                        const imageRecords = imagesToSave.map((url, index) => ({
+                        const imageRecordsSafe = imageUrls.map((url, index) => ({
                             propertyId: unit.id,
                             url: url,
                             isFeatured: index === 0,
                             orderPosition: index
                         }));
 
-                        await PropertyImage.bulkCreate(imageRecords, { transaction });
+                        await PropertyImage.bulkCreate(imageRecordsSafe, { transaction });
                     }
                 }
 

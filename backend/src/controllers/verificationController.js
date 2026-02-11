@@ -1,6 +1,6 @@
 import { UserVerificationDocuments, User, UserVerification, Notification } from '../models/index.js';
 import { VerificationStatus, NotificationType, UserType } from '../utils/enums.js';
-import { uploadImage } from '../utils/cloudinaryUtils.js';
+
 import { Op } from 'sequelize';
 
 /**
@@ -24,41 +24,15 @@ export const submitVerificationDocuments = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Upload images to Cloudinary
-        console.log(`Uploading verification documents for user ${userId}...`);
-
-        // Upload concurrently for better performance
-        const uploadPromises = [
-            uploadImage(idFront, 'verification_documents'),
-            uploadImage(idBack, 'verification_documents'),
-            uploadImage(selfie, 'verification_documents'),
-        ];
-
-        // Only upload utility bill if provided (owners)
-        if (utilityBill) {
-            uploadPromises.push(uploadImage(utilityBill, 'verification_documents'));
-        }
-
-        const results = await Promise.all(uploadPromises);
-
-        const idFrontResult = results[0];
-        const idBackResult = results[1];
-        const selfieResult = results[2];
-        const utilityBillResult = utilityBill ? results[3] : null;
-
-        console.log('Documents uploaded to Cloudinary successfully');
-        console.log('ID Front URL:', idFrontResult.url);
-        console.log('ID Back URL:', idBackResult.url);
-
         // Check if documents already exist
         const existing = await UserVerificationDocuments.findByPk(userId);
 
         const documentData = {
             userId,
-            idFront: idFrontResult.url,
-            idBack: idBackResult.url,
-            selfie: selfieResult.url,
-            utilityBill: utilityBillResult ? utilityBillResult.url : null,
+            idFront, // Now receiving URLs directly from frontend
+            idBack,
+            selfie,
+            utilityBill: utilityBill || null,
             submittedAt: new Date()
         };
 
@@ -122,7 +96,7 @@ export const submitVerificationDocuments = async (req, res) => {
         }
 
         res.status(201).json({
-            message: 'Verification documents submitted and uploaded successfully',
+            message: 'Verification documents submitted successfully',
             documents: {
                 userId: documents.userId,
                 submittedAt: documents.submittedAt

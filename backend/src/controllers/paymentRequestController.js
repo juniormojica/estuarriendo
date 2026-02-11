@@ -82,10 +82,10 @@ export const getUserPaymentRequests = async (req, res) => {
 // Create payment request
 export const createPaymentRequest = async (req, res) => {
     try {
-        const { userId, amount, planType, planDuration, referenceCode, proofImageBase64 } = req.body;
+        const { userId, amount, planType, planDuration, referenceCode, proofImageUrl, proofImagePublicId } = req.body;
 
         // Validate required fields
-        if (!userId || !amount || !planType || !planDuration || !referenceCode || !proofImageBase64) {
+        if (!userId || !amount || !planType || !planDuration || !referenceCode || !proofImageUrl) {
             return res.status(400).json({ error: 'All fields are required' });
         }
 
@@ -109,10 +109,6 @@ export const createPaymentRequest = async (req, res) => {
             });
         }
 
-        // Upload proof image to Cloudinary (payouts folder)
-        const { uploadImage } = await import('../utils/cloudinaryUtils.js');
-        const uploadResult = await uploadImage(proofImageBase64, 'payouts');
-
         // Create payment request
         const request = await PaymentRequest.create({
             userId,
@@ -120,8 +116,8 @@ export const createPaymentRequest = async (req, res) => {
             planType,
             planDuration,
             referenceCode,
-            proofImageUrl: uploadResult.url,
-            proofImagePublicId: uploadResult.publicId,
+            proofImageUrl: proofImageUrl,
+            proofImagePublicId: proofImagePublicId || null,
             status: PaymentRequestStatus.PENDING,
             createdAt: new Date()
         });
@@ -288,13 +284,8 @@ export const rejectPaymentRequest = async (req, res) => {
         });
 
         // Optional: Delete proof image from Cloudinary to save space
-        try {
-            const { deleteImage } = await import('../utils/cloudinaryUtils.js');
-            await deleteImage(request.proofImagePublicId);
-        } catch (err) {
-            console.error('Failed to delete image from Cloudinary:', err);
-            // Don't fail the request if image deletion fails
-        }
+        // Logic removed as part of Direct Upload migration (backend fully decoupled from Cloudinary management)
+        // Image will remain in Cloudinary until manual cleanup or retention policy.
 
         // Create activity log
         const { ActivityLog } = await import('../models/index.js');
