@@ -80,7 +80,10 @@ export const NotificationType = {
     PAYMENT_SUBMITTED: 'payment_submitted',
     PROPERTY_SUBMITTED: 'property_submitted',
     PROPERTY_APPROVED: 'property_approved',
-    PROPERTY_REJECTED: 'property_rejected'
+    PROPERTY_REJECTED: 'property_rejected',
+    VERIFICATION_SUBMITTED: 'verification_submitted',
+    VERIFICATION_APPROVED: 'verification_approved',
+    VERIFICATION_REJECTED: 'verification_rejected'
 };
 
 export const StudentRequestStatus = {

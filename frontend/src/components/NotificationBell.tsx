@@ -75,6 +75,18 @@ const NotificationBell: React.FC = () => {
             case 'property_interest':
                 // Informative only - no navigation
                 break;
+            case 'verification_submitted':
+                // Admin: Navigate to admin dashboard verifications section
+                navigate('/admin?section=verifications');
+                break;
+            case 'verification_approved':
+                // User: Navigate to profile
+                navigate('/mi-perfil');
+                break;
+            case 'verification_rejected':
+                // User: Navigate to profile verification tab to fix issues
+                navigate('/mi-perfil?tab=verification');
+                break;
             default:
                 break;
         }

@@ -50,7 +50,7 @@ export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' 
 export type PaymentRequestStatus = 'pending' | 'verified' | 'rejected';
 
 // Tipos de Notificación
-export type NotificationType = 'property_interest' | 'payment_verified' | 'payment_rejected' | 'payment_submitted' | 'property_approved' | 'property_rejected';
+export type NotificationType = 'property_interest' | 'payment_verified' | 'payment_rejected' | 'payment_submitted' | 'property_submitted' | 'property_approved' | 'property_rejected' | 'verification_submitted' | 'verification_approved' | 'verification_rejected';
 
 // Estados de la Solicitud de Estudiante
 export type StudentRequestStatus = 'open' | 'closed';

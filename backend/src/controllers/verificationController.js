@@ -1,6 +1,7 @@
-import { UserVerificationDocuments, User, UserVerification } from '../models/index.js';
-import { VerificationStatus } from '../utils/enums.js';
+import { UserVerificationDocuments, User, UserVerification, Notification } from '../models/index.js';
+import { VerificationStatus, NotificationType, UserType } from '../utils/enums.js';
 import { uploadImage } from '../utils/cloudinaryUtils.js';
+import { Op } from 'sequelize';
 
 /**
  * Verification Controller
@@ -93,6 +94,32 @@ export const submitVerificationDocuments = async (req, res) => {
             verificationStatus: VerificationStatus.PENDING,
             updatedAt: new Date()
         });
+
+        // Notify all admins about new verification submission
+        try {
+            const admins = await User.findAll({
+                where: {
+                    userType: {
+                        [Op.in]: [UserType.ADMIN, UserType.SUPER_ADMIN]
+                    }
+                }
+            });
+
+            for (const admin of admins) {
+                await Notification.create({
+                    userId: admin.id,
+                    type: NotificationType.VERIFICATION_SUBMITTED,
+                    title: 'Nueva verificación pendiente',
+                    message: `${user.name} ha enviado sus documentos de verificación`,
+                    interestedUserId: userId,
+                    isRead: false,
+                    createdAt: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('Error creating admin notifications:', error);
+            // Continue execution, notification failure shouldn't block submission
+        }
 
         res.status(201).json({
             message: 'Verification documents submitted and uploaded successfully',
@@ -207,6 +234,20 @@ export const approveVerification = async (req, res) => {
             processedAt: new Date()
         });
 
+        // Notify user about verification approval
+        try {
+            await Notification.create({
+                userId,
+                type: NotificationType.VERIFICATION_APPROVED,
+                title: '¡Verificación aprobada!',
+                message: 'Tu verificación ha sido aprobada. Ya tienes acceso completo.',
+                isRead: false,
+                createdAt: new Date()
+            });
+        } catch (error) {
+            console.error('Error creating approval notification:', error);
+        }
+
         res.json({
             message: 'Verification approved successfully',
             user: {
@@ -273,6 +314,20 @@ export const rejectVerification = async (req, res) => {
             await documents.update({
                 processedAt: new Date()
             });
+        }
+
+        // Notify user about verification rejection
+        try {
+            await Notification.create({
+                userId,
+                type: NotificationType.VERIFICATION_REJECTED,
+                title: 'Verificación rechazada',
+                message: `Tu verificación fue rechazada. Motivo: ${reason}`,
+                isRead: false,
+                createdAt: new Date()
+            });
+        } catch (error) {
+            console.error('Error creating rejection notification:', error);
         }
 
         res.json({
