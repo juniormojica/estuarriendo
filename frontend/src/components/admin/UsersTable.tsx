@@ -96,9 +96,13 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onViewDetails }) => {
                                                 Inactivo
                                             </span>
                                         )}
-                                        {user.isVerified ? (
+                                        {user.verificationStatus === 'verified' ? (
                                             <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                 Verificado
+                                            </span>
+                                        ) : user.verificationStatus === 'pending' ? (
+                                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                Pendiente
                                             </span>
                                         ) : (
                                             <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">

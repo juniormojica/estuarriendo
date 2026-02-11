@@ -515,6 +515,7 @@ export const api = {
         joinedAt: user.joinedAt || user.joined_at,
         plan: user.plan || 'free',
         verificationStatus: user.verificationStatus || user.verification_status || 'not_submitted',
+        isVerified: (user.verificationStatus || user.verification_status) === 'verified',
         verificationSubmittedAt: user.verificationSubmittedAt || user.verification_submitted_at,
         verificationDocuments: user.verificationDocuments || user.verification_documents,
         propertiesCount: user.propertiesCount || user.properties_count || 0,
