@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, XCircle, FileText, ChevronRight, User as UserIcon, Calendar, Mail, AlertTriangle, ZoomIn } from 'lucide-react';
+import { X, Check, XCircle, ChevronRight, User as UserIcon, Calendar, Mail, AlertTriangle, ZoomIn } from 'lucide-react';
 import { User } from '../../types';
 
 interface VerificationReviewModalProps {
@@ -32,6 +32,25 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
             setRejectionReason('');
         }
     }, [isOpen, user]);
+
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = 'hidden';
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen, onClose]);
 
     if (!isOpen || !user) return null;
 
@@ -73,8 +92,14 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
     const currentDocUrl = user.verificationDocuments?.[activeDoc];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
                     <div className="flex items-center gap-4">
@@ -115,8 +140,8 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                                 key={doc.id}
                                 onClick={() => setActiveDoc(doc.id)}
                                 className={`w-full text-left p-3 rounded-lg border transition-all duration-200 group ${activeDoc === doc.id
-                                        ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-100'
-                                        : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                    ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-100'
+                                    : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                     }`}
                             >
                                 <div className="flex items-center justify-between mb-2">
@@ -145,8 +170,8 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                                     key={doc.id}
                                     onClick={() => setActiveDoc(doc.id)}
                                     className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors snap-center ${activeDoc === doc.id
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                         }`}
                                 >
                                     {doc.label}
