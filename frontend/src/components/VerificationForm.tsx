@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Upload, X, CheckCircle, AlertCircle, Loader, FileText, Camera, Receipt } from 'lucide-react';
 import { VerificationDocuments } from '../types';
 import { api } from '../services/api';
+import { compressImageToBase64, formatFileSize } from '../utils/imageCompression';
 
 interface VerificationFormProps {
     userId: string;
@@ -11,11 +12,12 @@ interface VerificationFormProps {
 
 const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, onSuccess }) => {
     const [documents, setDocuments] = useState<Partial<VerificationDocuments>>({});
-    const [previews, setPreviews] = useState<Partial<Record<keyof VerificationDocuments, string>>>({});
+    const [previews, setPreviews] = useState<Partial<VerificationDocuments>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>('');
 
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    // Increased to 10MB to allow raw camera photos that will be compressed
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     const handleFileChange = async (field: keyof VerificationDocuments, file: File | null) => {
         if (!file) {
@@ -32,20 +34,22 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, o
 
         // Validate file size
         if (file.size > MAX_FILE_SIZE) {
-            setError(`El archivo es muy grande. Tamaño máximo: 2MB. Tamaño actual: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+            setError(`El archivo es muy grande. Tamaño máximo: 10MB. Tamaño actual: ${formatFileSize(file.size)}`);
             return;
         }
 
         setError('');
 
-        // Convert to base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64 = reader.result as string;
+        try {
+            // Compress image for verification (high quality but optimized)
+            const base64 = await compressImageToBase64(file, 'verification');
+
             setDocuments(prev => ({ ...prev, [field]: base64 }));
             setPreviews(prev => ({ ...prev, [field]: base64 }));
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            console.error('Error compressing image:', err);
+            setError('Error al procesar la imagen. Intenta con otra.');
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

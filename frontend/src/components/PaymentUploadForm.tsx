@@ -3,6 +3,7 @@ import { Upload, Copy, Check, AlertCircle, X } from 'lucide-react';
 import { api } from '../services/api';
 import { User } from '../types';
 import LoadingSpinner from './LoadingSpinner';
+import { compressImageToBase64, formatFileSize } from '../utils/imageCompression';
 
 interface PaymentUploadFormProps {
     user: User;
@@ -41,23 +42,27 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
         setTimeout(() => setCopied(null), 2000);
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
 
-            if (selectedFile.size > 2 * 1024 * 1024) {
-                setError('El archivo no debe superar los 2MB');
+            // Allow up to 10MB raw, we will compress it
+            if (selectedFile.size > 10 * 1024 * 1024) {
+                setError(`El archivo no debe superar los 10MB. Tamaño actual: ${formatFileSize(selectedFile.size)}`);
                 return;
             }
 
             setFile(selectedFile);
             setError('');
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result as string);
-            };
-            reader.readAsDataURL(selectedFile);
+            try {
+                // Compress image for payment proof (better readability)
+                const compressedBase64 = await compressImageToBase64(selectedFile, 'payment');
+                setPreview(compressedBase64);
+            } catch (err) {
+                console.error('Error compressing image:', err);
+                setError('Error al procesar la imagen. Intenta con otra.');
+            }
         }
     };
 
