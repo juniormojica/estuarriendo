@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api';
 import ConfirmModal from '../ConfirmModal';
+import { useToast } from '../../components/ToastProvider';
 import './ManagerStyles.css';
 
 interface Department {
@@ -27,6 +28,7 @@ const DepartmentManager: React.FC = () => {
         isActive: true
     });
     const [error, setError] = useState('');
+    const toast = useToast();
 
     useEffect(() => {
         fetchDepartments();
@@ -47,7 +49,8 @@ const DepartmentManager: React.FC = () => {
             setDepartments(data);
             setFilteredDepartments(data);
         } catch (err: any) {
-            setError(err.message || 'Error al cargar departamentos');
+            console.error('Error loading departments:', err);
+            toast.error('Error al cargar departamentos');
         } finally {
             setLoading(false);
         }
@@ -84,13 +87,17 @@ const DepartmentManager: React.FC = () => {
         try {
             if (editingDepartment) {
                 await api.updateDepartment(editingDepartment.id, formData);
+                toast.success('Departamento actualizado exitosamente');
             } else {
                 await api.createDepartment(formData);
+                toast.success('Departamento creado exitosamente');
             }
             await fetchDepartments();
             handleCloseModal();
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Error al guardar departamento');
+            const message = err.response?.data?.error || err.message || 'Error al guardar departamento';
+            setError(message);
+            toast.error(message);
         }
     };
 
@@ -99,10 +106,13 @@ const DepartmentManager: React.FC = () => {
 
         try {
             await api.deleteDepartment(deleteConfirm.id);
+            toast.success('Departamento eliminado exitosamente');
             await fetchDepartments();
             setDeleteConfirm(null);
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Error al eliminar departamento');
+            const message = err.response?.data?.message || err.message || 'Error al eliminar departamento';
+            setError(message);
+            toast.error(message);
             setDeleteConfirm(null);
         }
     };

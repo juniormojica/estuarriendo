@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api';
 import ConfirmModal from '../ConfirmModal';
+import { useToast } from '../../components/ToastProvider';
 import './ManagerStyles.css';
 
 interface City {
@@ -40,6 +41,7 @@ const InstitutionManager: React.FC = () => {
         longitude: ''
     });
     const [error, setError] = useState('');
+    const toast = useToast();
 
     useEffect(() => {
         fetchData();
@@ -77,7 +79,9 @@ const InstitutionManager: React.FC = () => {
             setCities(citiesData);
             setFilteredInstitutions(institutionsData);
         } catch (err: any) {
-            setError(err.message || 'Error al cargar datos');
+            const message = err.message || 'Error al cargar datos';
+            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -164,13 +168,17 @@ const InstitutionManager: React.FC = () => {
 
             if (editingInstitution) {
                 await api.updateInstitution(editingInstitution.id, payload);
+                toast.success('Institución actualizada exitosamente');
             } else {
                 await api.createInstitution(payload);
+                toast.success('Institución creada exitosamente');
             }
             await fetchData();
             handleCloseModal();
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Error al guardar institución');
+            const message = err.response?.data?.error || err.message || 'Error al guardar institución';
+            setError(message);
+            toast.error(message);
         }
     };
 
@@ -179,10 +187,13 @@ const InstitutionManager: React.FC = () => {
 
         try {
             await api.deleteInstitution(deleteConfirm.id);
+            toast.success('Institución eliminada exitosamente');
             await fetchData();
             setDeleteConfirm(null);
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Error al eliminar institución');
+            const message = err.response?.data?.message || err.message || 'Error al eliminar institución';
+            setError(message);
+            toast.error(message);
             setDeleteConfirm(null);
         }
     };

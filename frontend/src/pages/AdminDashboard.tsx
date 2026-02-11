@@ -7,21 +7,19 @@ import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { fetchProperties, approveProperty, rejectProperty, deleteProperty, toggleFeatured } from '../store/slices/propertiesSlice';
 import ContainerReviewModal from '../components/admin/ContainerReviewModal';
 import AdminSidebar from '../components/admin/AdminSidebar';
-import AdminStats from '../components/admin/AdminStats';
 import PropertiesTable from '../components/admin/PropertiesTable';
 import UsersTable from '../components/admin/UsersTable';
-import ActivityFeed from '../components/admin/ActivityFeed';
 import AdminConfig from '../components/admin/AdminConfig';
 import DeleteConfirmationModal from '../components/admin/DeleteConfirmationModal';
 import PropertyEditModal from '../components/admin/PropertyEditModal';
 import PropertyReviewModal from '../components/PropertyReviewModal';
 import UserDetailsModal from '../components/admin/UserDetailsModal';
-import ConfirmationModal from '../components/admin/ConfirmationModal';
 import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
 import ActivityLogsAdmin from '../components/admin/ActivityLogsAdmin';
-import PendingActionsCard from '../components/admin/PendingActionsCard';
-import UserStatsCard from '../components/admin/UserStatsCard';
-import { CheckCircle, XCircle, FileText } from 'lucide-react';
+import PaymentsAdmin from '../components/admin/PaymentsAdmin';
+import VerificationsAdmin from '../components/admin/VerificationsAdmin';
+import DashboardHome from '../components/admin/DashboardHome';
+import { CheckCircle, XCircle, FileText, Menu } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
 const AdminDashboard = () => {
@@ -75,17 +73,9 @@ const AdminDashboard = () => {
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [paymentConfirmModal, setPaymentConfirmModal] = useState<{
-        isOpen: boolean;
-        type: 'verify' | 'reject';
-        requestId: string;
-        userName: string;
-    } | null>(null);
-    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; userId: string | null; action: 'approve' | 'reject' | null }>({ isOpen: false, userId: null, action: null });
-    const [rejectionReason, setRejectionReason] = useState('');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Use React Router's useLocation hook
     const location = useLocation();
@@ -290,62 +280,7 @@ const AdminDashboard = () => {
 
 
 
-    const handleVerifyPayment = (requestId: string) => {
-        const request = paymentRequests.find(r => r.id === requestId);
-        if (!request) return;
 
-        setPaymentConfirmModal({
-            isOpen: true,
-            type: 'verify',
-            requestId,
-            userName: request.user?.name || 'Usuario'
-        });
-    };
-
-    const handleRejectPayment = (requestId: string) => {
-        const request = paymentRequests.find(r => r.id === requestId);
-        if (!request) return;
-
-        setPaymentConfirmModal({
-            isOpen: true,
-            type: 'reject',
-            requestId,
-            userName: request.user?.name || 'Usuario'
-        });
-    };
-
-    const handleConfirmPaymentAction = async () => {
-        if (!paymentConfirmModal) return;
-
-        setIsProcessingPayment(true);
-        try {
-            const { type, requestId } = paymentConfirmModal;
-
-            if (type === 'verify') {
-                const success = await api.verifyPaymentRequest(requestId);
-                if (success) {
-                    toast.success('✅ Pago verificado exitosamente');
-                    await refreshData();
-                } else {
-                    toast.error('❌ Error al verificar el pago');
-                }
-            } else {
-                const success = await api.rejectPaymentRequest(requestId);
-                if (success) {
-                    toast.success('✅ Pago rechazado');
-                    await refreshData();
-                } else {
-                    toast.error('❌ Error al rechazar el pago');
-                }
-            }
-        } catch (error) {
-            console.error('Error processing payment:', error);
-            toast.error('❌ Error al procesar el pago');
-        } finally {
-            setIsProcessingPayment(false);
-            setPaymentConfirmModal(null);
-        }
-    };
 
     const handleSaveConfig = async (config: SystemConfig) => {
         try {
@@ -361,41 +296,7 @@ const AdminDashboard = () => {
 
 
 
-    const handleApproveVerification = (userId: string) => {
-        setVerificationModal({ isOpen: true, userId, action: 'approve' });
-    };
 
-    const handleConfirmApproveVerification = async () => {
-        if (!verificationModal.userId) return;
-        setVerificationModal({ isOpen: false, userId: null, action: null });
-        try {
-            const success = await api.updateVerificationStatus(verificationModal.userId, 'verified');
-            if (success) {
-                await refreshData();
-            }
-        } catch (error) {
-            console.error('Error approving verification:', error);
-        }
-    };
-
-    const handleRejectVerification = (userId: string) => {
-        setVerificationModal({ isOpen: true, userId, action: 'reject' });
-        setRejectionReason('');
-    };
-
-    const handleConfirmRejectVerification = async () => {
-        if (!verificationModal.userId || !rejectionReason.trim()) return;
-        setVerificationModal({ isOpen: false, userId: null, action: null });
-        try {
-            const success = await api.updateVerificationStatus(verificationModal.userId, 'rejected', rejectionReason);
-            if (success) {
-                await refreshData();
-            }
-        } catch (error) {
-            console.error('Error rejecting verification:', error);
-        }
-        setRejectionReason('');
-    };
 
     const renderContent = () => {
 
@@ -410,27 +311,15 @@ const AdminDashboard = () => {
         switch (currentSection) {
             case 'dashboard':
                 return (
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
-                        <AdminStats stats={stats} />
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                            <ActivityFeed
-                                activities={activities}
-                                maxItems={8}
-                                onViewAll={() => setCurrentSection('activity')}
-                            />
-                            <div className="space-y-6">
-                                <PendingActionsCard
-                                    pendingProperties={stats.pending}
-                                    pendingVerifications={pendingVerifications.length}
-                                    pendingPayments={paymentRequests.filter(r => r.status === 'pending').length}
-                                    pendingStudentRequests={studentRequestsCount}
-                                    onNavigate={setCurrentSection}
-                                />
-                                <UserStatsCard users={users} />
-                            </div>
-                        </div>
-                    </div>
+                    <DashboardHome
+                        stats={stats}
+                        users={users}
+                        activities={activities}
+                        pendingVerificationsCount={pendingVerifications.length}
+                        pendingPaymentsCount={paymentRequests.filter(r => r.status === 'pending').length}
+                        studentRequestsCount={studentRequestsCount}
+                        onNavigate={setCurrentSection}
+                    />
                 );
             case 'pending':
                 return (
@@ -450,174 +339,18 @@ const AdminDashboard = () => {
                     </div>
                 );
             case 'payments':
-                const pendingPayments = paymentRequests.filter(r => r.status === 'pending');
                 return (
-                    <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Solicitudes de Pago</h2>
-                        {pendingPayments.length === 0 ? (
-                            <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
-                                No hay solicitudes de pago pendientes.
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referencia</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comprobante</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {pendingPayments.map((request) => (
-                                            <tr key={request.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {request.referenceCode}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {request.user?.name || 'Usuario desconocido'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                                        {request.planType}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    ${request.amount.toLocaleString()}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {request.proofImageUrl ? (
-                                                        <a
-                                                            href={request.proofImageUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center text-blue-600 hover:text-blue-800"
-                                                        >
-                                                            <FileText className="w-4 h-4 mr-1" />
-                                                            Ver Comprobante
-                                                        </a>
-                                                    ) : (
-                                                        <span className="text-gray-400">Sin comprobante</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {new Date(request.createdAt).toLocaleDateString()}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button
-                                                        onClick={() => handleVerifyPayment(request.id)}
-                                                        className="text-green-600 hover:text-green-900 mr-4"
-                                                        title="Verificar Pago"
-                                                    >
-                                                        <CheckCircle className="w-5 h-5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleRejectPayment(request.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                        title="Rechazar Pago"
-                                                    >
-                                                        <XCircle className="w-5 h-5" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                    <PaymentsAdmin
+                        paymentRequests={paymentRequests}
+                        onRefresh={loadInitialData}
+                    />
                 );
             case 'verifications':
                 return (
-                    <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Verificaciones Pendientes</h2>
-                        {pendingVerifications.length === 0 ? (
-                            <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
-                                No hay verificaciones pendientes.
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {pendingVerifications.map((user) => (
-                                    <div key={user.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-                                            <p className="text-sm text-gray-500">{user.email}</p>
-                                            {user.verificationSubmittedAt && (
-                                                <p className="text-xs text-gray-400 mt-1">
-                                                    Enviado: {new Date(user.verificationSubmittedAt).toLocaleDateString('es-CO')}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {user.verificationDocuments && (
-                                            <div className="space-y-3 mb-4">
-                                                <h4 className="text-sm font-medium text-gray-700">Documentos:</h4>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <a
-                                                        href={user.verificationDocuments.idFront}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
-                                                    >
-                                                        <FileText className="w-3 h-3 mr-1" />
-                                                        Cédula Frente
-                                                    </a>
-                                                    <a
-                                                        href={user.verificationDocuments.idBack}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
-                                                    >
-                                                        <FileText className="w-3 h-3 mr-1" />
-                                                        Cédula Reverso
-                                                    </a>
-                                                    <a
-                                                        href={user.verificationDocuments.selfie}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
-                                                    >
-                                                        <FileText className="w-3 h-3 mr-1" />
-                                                        Selfie
-                                                    </a>
-                                                    <a
-                                                        href={user.verificationDocuments.utilityBill}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center justify-center p-2 bg-gray-50 rounded hover:bg-gray-100 text-xs text-gray-700"
-                                                    >
-                                                        <FileText className="w-3 h-3 mr-1" />
-                                                        Recibo
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleApproveVerification(user.id)}
-                                                className="flex-1 flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-                                            >
-                                                <CheckCircle className="w-4 h-4 mr-1" />
-                                                Aprobar
-                                            </button>
-                                            <button
-                                                onClick={() => handleRejectVerification(user.id)}
-                                                className="flex-1 flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
-                                            >
-                                                <XCircle className="w-4 h-4 mr-1" />
-                                                Rechazar
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <VerificationsAdmin
+                        pendingVerifications={pendingVerifications}
+                        onRefresh={loadInitialData}
+                    />
                 );
             case 'all-properties':
                 return (
@@ -673,16 +406,30 @@ const AdminDashboard = () => {
 
     return (
         <div className="flex flex-col lg:flex-row h-screen bg-gray-100">
+            {/* Mobile Header */}
+            <div className="lg:hidden bg-white p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+                <h1 className="font-bold text-lg text-gray-900">EstuArriendo Admin</h1>
+                <button
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                    <Menu size={24} />
+                </button>
+            </div>
+
             <AdminSidebar
                 currentSection={currentSection}
                 onSectionChange={(section) => {
                     setCurrentSection(section);
                     // Update URL to match section
                     window.history.pushState({}, '', `/admin?section=${section}`);
+                    setIsSidebarOpen(false);
                 }}
                 pendingCount={stats.pending}
                 paymentCount={paymentRequests.filter(r => r.status === 'pending').length}
                 verificationCount={pendingVerifications.length}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
             />
 
             <div className="flex-1 overflow-auto">
@@ -748,109 +495,9 @@ const AdminDashboard = () => {
                 />
             )}
 
-            {/* Payment Confirmation Modal */}
-            {paymentConfirmModal && (
-                <ConfirmationModal
-                    isOpen={paymentConfirmModal.isOpen}
-                    onClose={() => setPaymentConfirmModal(null)}
-                    onConfirm={handleConfirmPaymentAction}
-                    title={paymentConfirmModal.type === 'verify' ? 'Verificar Pago' : 'Rechazar Pago'}
-                    message={
-                        paymentConfirmModal.type === 'verify'
-                            ? `¿Estás seguro de verificar el pago de ${paymentConfirmModal.userName}? El usuario obtendrá acceso premium inmediatamente.`
-                            : `¿Estás seguro de rechazar el pago de ${paymentConfirmModal.userName}? El usuario podrá intentar nuevamente.`
-                    }
-                    confirmText={paymentConfirmModal.type === 'verify' ? 'Verificar' : 'Rechazar'}
-                    type={paymentConfirmModal.type === 'verify' ? 'success' : 'danger'}
-                    isProcessing={isProcessingPayment}
-                />
-            )}
 
-            {/* Verification Approval Modal */}
-            {verificationModal.isOpen && verificationModal.action === 'approve' && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-start gap-4 mb-4">
-                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                                    ¿Aprobar verificación?
-                                </h3>
-                                <p className="text-sm text-gray-600">
-                                    Esto verificará al usuario y le permitirá acceder a funciones adicionales de la plataforma.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={() => setVerificationModal({ isOpen: false, userId: null, action: null })}
-                                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleConfirmApproveVerification}
-                                className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors shadow-lg shadow-green-600/30"
-                            >
-                                Aprobar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
-            {/* Verification Rejection Modal */}
-            {verificationModal.isOpen && verificationModal.action === 'reject' && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-start gap-4 mb-4">
-                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                                    Rechazar verificación
-                                </h3>
-                                <p className="text-sm text-gray-600 mb-4">
-                                    Por favor, proporciona una razón para el rechazo. Esto ayudará al usuario a entender qué debe corregir.
-                                </p>
-                                <textarea
-                                    value={rejectionReason}
-                                    onChange={(e) => setRejectionReason(e.target.value)}
-                                    placeholder="Ej: Los documentos no son legibles, falta información..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                                    rows={3}
-                                    autoFocus
-                                />
-                            </div>
-                        </div>
-                        <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={() => {
-                                    setVerificationModal({ isOpen: false, userId: null, action: null });
-                                    setRejectionReason('');
-                                }}
-                                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleConfirmRejectVerification}
-                                disabled={!rejectionReason.trim()}
-                                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/30"
-                            >
-                                Rechazar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 };

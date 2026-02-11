@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api';
 import ConfirmModal from '../ConfirmModal';
+import { useToast } from '../../components/ToastProvider';
 import './ManagerStyles.css';
 
 interface Department {
@@ -36,6 +37,7 @@ const CityManager: React.FC = () => {
         isActive: true
     });
     const [error, setError] = useState('');
+    const toast = useToast();
 
     useEffect(() => {
         fetchData();
@@ -70,7 +72,9 @@ const CityManager: React.FC = () => {
             setDepartments(departmentsData);
             setFilteredCities(citiesData);
         } catch (err: any) {
-            setError(err.message || 'Error al cargar datos');
+            const message = err.message || 'Error al cargar datos';
+            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -112,13 +116,17 @@ const CityManager: React.FC = () => {
 
             if (editingCity) {
                 await api.updateCity(editingCity.id, payload);
+                toast.success('Ciudad actualizada exitosamente');
             } else {
                 await api.createCity(payload);
+                toast.success('Ciudad creada exitosamente');
             }
             await fetchData();
             handleCloseModal();
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Error al guardar ciudad');
+            const message = err.response?.data?.error || err.message || 'Error al guardar ciudad';
+            setError(message);
+            toast.error(message);
         }
     };
 
@@ -127,10 +135,13 @@ const CityManager: React.FC = () => {
 
         try {
             await api.deleteCity(deleteConfirm.id);
+            toast.success('Ciudad eliminada exitosamente');
             await fetchData();
             setDeleteConfirm(null);
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Error al eliminar ciudad');
+            const message = err.response?.data?.message || err.message || 'Error al eliminar ciudad';
+            setError(message);
+            toast.error(message);
             setDeleteConfirm(null);
         }
     };
