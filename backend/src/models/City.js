@@ -49,6 +49,7 @@ const City = sequelize.define('City', {
     updatedAt: {
         type: DataTypes.DATE,
         allowNull: true,
+         defaultValue: DataTypes.NOW,
         field: 'updated_at'
     }
 }, {
