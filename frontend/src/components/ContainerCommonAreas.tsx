@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { containerCommonAreasSchema, type ContainerCommonAreasData } from '../lib/schemas/container.schema';
 import type { CommonArea } from '../types';
 import containerService from '../services/containerService';
+import { iconMap } from '../lib/icons';
 
 interface ContainerCommonAreasProps {
     onNext: (commonAreaIds: number[]) => void;
@@ -94,29 +95,34 @@ const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onB
                 <form onSubmit={handleSubmit(onSubmit)} noValidate>
                     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {commonAreas.map(area => (
-                                <label
-                                    key={area.id}
-                                    className={`
+                            {commonAreas.map(area => {
+                                const IconComponent = iconMap[area.icon] || iconMap.default;
+                                return (
+                                    <label
+                                        key={area.id}
+                                        className={`
                                         flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all
                                         ${selectedIds?.includes(area.id)
-                                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                                            : 'border-gray-200 hover:border-blue-300'
-                                        }
+                                                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                                                : 'border-gray-200 hover:border-blue-300'
+                                            }
                                     `}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedIds?.includes(area.id) || false}
-                                        onChange={() => toggleArea(area.id)}
-                                        className="sr-only"
-                                    />
-                                    <div className="text-4xl mb-2">{area.icon}</div>
-                                    <div className="text-sm font-medium text-center text-gray-900">
-                                        {area.name}
-                                    </div>
-                                </label>
-                            ))}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds?.includes(area.id) || false}
+                                            onChange={() => toggleArea(area.id)}
+                                            className="sr-only"
+                                        />
+                                        <div className="text-4xl mb-2 text-blue-500">
+                                            <IconComponent className="w-8 h-8" />
+                                        </div>
+                                        <div className="text-sm font-medium text-center text-gray-900">
+                                            {area.name}
+                                        </div>
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
 
