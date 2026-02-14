@@ -209,7 +209,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
       </div>
 
       {/* Basic Filters - Responsive Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
         {/* Department Filter */}
         <div>
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Departamento</label>
@@ -243,21 +243,6 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
         </div>
 
         <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tipo de Institución</label>
-          <select
-            value={filters.institutionType || ''}
-            onChange={(e) => handleFilterChange('institutionType', e.target.value || undefined)}
-            className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-            disabled={isLoading}
-          >
-            <option value="">Todas</option>
-            {institutionTypes.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tipo de Propiedad</label>
           <select
             value={filters.type || ''}
@@ -273,19 +258,19 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           </select>
         </div>
 
-        <div className="sm:col-span-2 lg:col-span-4">
+        <div className="sm:col-span-2 lg:col-span-3">
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Buscar Institución</label>
           <InstitutionSearch
             onSelect={handleInstitutionSelect}
             selectedInstitution={selectedInstitution}
             placeholder="Buscar universidad o instituto..."
-            type={filters.institutionType as any}
             cityId={selectedCityId}
+            institutionTypes={institutionTypes}
           />
         </div>
 
         {hasActiveFilters && (
-          <div className="sm:col-span-2 lg:col-span-4 flex justify-start sm:justify-end">
+          <div className="sm:col-span-2 lg:col-span-3 flex justify-start sm:justify-end">
             <button
               onClick={clearFilters}
               className="flex items-center space-x-1.5 min-w-[44px] min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors"
