@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Filter, X } from 'lucide-react';
-import { SearchFilters as SearchFiltersType } from '../types';
+import { SearchFilters as SearchFiltersType, Department } from '../types';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { api } from '../services/api';
@@ -17,7 +17,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
+
+  // Data states
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [cities, setCities] = useState<string[]>([]);
+  const [citiesData, setCitiesData] = useState<{ id: number; name: string }[]>([]);
+  const [institutionTypes, setInstitutionTypes] = useState<string[]>([]);
+
   const [filters, setFilters] = useState<SearchFiltersType>({
     priceMin: undefined,
     priceMax: undefined
@@ -28,30 +34,90 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
   const [priceMaxInput, setPriceMaxInput] = useState<string>('');
   const [priceError, setPriceError] = useState<string>('');
 
+  // Initial Data Load (Amenities, Departments, Institution Types)
   useEffect(() => {
     dispatch(fetchAmenities());
-    // Fetch cities from API
+
+    const loadInitialData = async () => {
+      try {
+        // Load Departments
+        const deptsData = await api.getDepartments();
+        // Sort alphabetically
+        const sortedDepts = deptsData
+          .filter((d: any) => d.isActive !== false)
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        setDepartments(sortedDepts);
+
+        // Load Institution Types (distinct from API)
+        const instData = await api.getInstitutions();
+        // Extract unique types using Set
+        const types = [...new Set(instData.map((i: any) => i.type))].sort();
+        setInstitutionTypes(types);
+
+      } catch (error) {
+        console.error('Error loading initial filter data:', error);
+      }
+    };
+
+    loadInitialData();
+  }, [dispatch]);
+
+  // Load cities whenever department changes (or initially)
+  useEffect(() => {
     const loadCities = async () => {
       try {
-        const citiesData = await api.getCities();
+        const params = filters.departmentId ? { departmentId: filters.departmentId } : undefined;
+        const citiesRes = await api.getCities(params);
+
+        // Store full city data for ID lookup
+        setCitiesData(citiesRes);
+
         // Extract unique city names and sort them
-        const cityNames = citiesData
-          .filter((city: any) => city.isActive !== false)
-          .map((city: any) => city.name)
-          .sort();
-        setCities(cityNames);
+        // Use Set to strictly deduplicate names as some cities share names across different departments
+        const uniqueCityNames = [...new Set(
+          citiesRes
+            .filter((city: any) => city.isActive !== false)
+            .map((city: any) => city.name)
+        )].sort();
+
+        setCities(uniqueCityNames);
       } catch (error) {
         console.error('Error loading cities:', error);
       }
     };
     loadCities();
-  }, [dispatch]);
+  }, [filters.departmentId]);
 
   const handleFilterChange = useCallback((key: keyof SearchFiltersType, value: any) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
-    onFiltersChange(newFilters);
-  }, [filters, onFiltersChange]);
+    setFilters(prev => {
+      const newFilters = { ...prev, [key]: value };
+
+      // Special handling for cascading resets
+      if (key === 'departmentId') {
+        // When department changes, reset city AND institution
+        newFilters.city = undefined;
+        newFilters.institutionId = undefined;
+        setSelectedInstitution(null);
+      }
+      if (key === 'city') {
+        // When city changes, reset institution
+        newFilters.institutionId = undefined;
+        setSelectedInstitution(null);
+      }
+
+      onFiltersChange(newFilters);
+      return newFilters;
+    });
+  }, [onFiltersChange]);
+
+  // Derived state: find the ID of the selected city
+  const selectedCityId = useMemo(() => {
+    if (!filters.city) return undefined;
+    // Find city by name (case insensitive if needed, but exact match should work)
+    // If multiple cities have same name, we take the first one (usually filtered by department already)
+    const city = citiesData.find(c => c.name === filters.city);
+    return city?.id;
+  }, [filters.city, citiesData]);
 
   // Handle price input changes WITHOUT auto-search
   const handlePriceInputChange = useCallback((type: 'min' | 'max', value: string) => {
@@ -144,6 +210,23 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
 
       {/* Basic Filters - Responsive Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+        {/* Department Filter */}
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Departamento</label>
+          <select
+            value={filters.departmentId || ''}
+            onChange={(e) => handleFilterChange('departmentId', e.target.value ? parseInt(e.target.value) : undefined)}
+            className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+            disabled={isLoading}
+          >
+            <option value="">Todos los departamentos</option>
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.id}>{dept.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* City Filter */}
         <div>
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Ciudad</label>
           <select
@@ -152,8 +235,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
             className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
             disabled={isLoading}
           >
-            <option value="">Todas las ciudades</option>
-            {cities.map(city => (
+            <option value="">{filters.departmentId ? 'Todas las ciudades del depto.' : 'Todas las ciudades'}</option>
+            {cities.map((city) => (
               <option key={city} value={city}>{city}</option>
             ))}
           </select>
@@ -175,27 +258,14 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           </select>
         </div>
 
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tipo de Institución</label>
-          <select
-            value={filters.institutionType || ''}
-            onChange={(e) => handleFilterChange('institutionType', e.target.value || undefined)}
-            className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-            disabled={isLoading}
-          >
-            <option value="">Todas</option>
-            <option value="universidad">Universidades</option>
-            <option value="instituto">Institutos Técnicos</option>
-          </select>
-        </div>
-
-        <div className="sm:col-span-2 lg:col-span-1">
+        <div className="sm:col-span-2 lg:col-span-3">
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Buscar Institución</label>
           <InstitutionSearch
             onSelect={handleInstitutionSelect}
             selectedInstitution={selectedInstitution}
             placeholder="Buscar universidad o instituto..."
-            type={filters.institutionType as any}
+            cityId={selectedCityId}
+            institutionTypes={institutionTypes}
           />
         </div>
 
@@ -317,7 +387,6 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
           )}
 
           {/* Amenities */}
-          {/* Amenities - Mobile Optimized */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-3">Comodidades</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-2">
@@ -325,8 +394,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
                 <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer min-h-[44px] p-2 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
                   <input
                     type="checkbox"
-                    checked={(filters.amenities || []).includes(amenity.id)}
-                    onChange={() => handleAmenityToggle(amenity.id)}
+                    checked={(filters.amenities || []).includes(Number(amenity.id))}
+                    onChange={() => handleAmenityToggle(Number(amenity.id))}
                     className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 min-w-[20px] min-h-[20px]"
                     disabled={isLoading}
                   />

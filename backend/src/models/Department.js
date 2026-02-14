@@ -45,6 +45,7 @@ const Department = sequelize.define('Department', {
     updatedAt: {
         type: DataTypes.DATE,
         allowNull: true,
+        defaultValue: DataTypes.NOW,
         field: 'updated_at'
     }
 }, {
