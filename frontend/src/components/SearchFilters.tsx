@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { SearchFilters as SearchFiltersType, Department } from '../types';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -21,6 +21,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
   // Data states
   const [departments, setDepartments] = useState<Department[]>([]);
   const [cities, setCities] = useState<string[]>([]);
+  const [citiesData, setCitiesData] = useState<{ id: number; name: string }[]>([]);
   const [institutionTypes, setInstitutionTypes] = useState<string[]>([]);
 
   const [filters, setFilters] = useState<SearchFiltersType>({
@@ -66,12 +67,15 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
     const loadCities = async () => {
       try {
         const params = filters.departmentId ? { departmentId: filters.departmentId } : undefined;
-        const citiesData = await api.getCities(params);
+        const citiesRes = await api.getCities(params);
+
+        // Store full city data for ID lookup
+        setCitiesData(citiesRes);
 
         // Extract unique city names and sort them
         // Use Set to strictly deduplicate names as some cities share names across different departments
         const uniqueCityNames = [...new Set(
-          citiesData
+          citiesRes
             .filter((city: any) => city.isActive !== false)
             .map((city: any) => city.name)
         )].sort();
@@ -90,14 +94,30 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
 
       // Special handling for cascading resets
       if (key === 'departmentId') {
-        // When department changes, reset city
+        // When department changes, reset city AND institution
         newFilters.city = undefined;
+        newFilters.institutionId = undefined;
+        setSelectedInstitution(null);
+      }
+      if (key === 'city') {
+        // When city changes, reset institution
+        newFilters.institutionId = undefined;
+        setSelectedInstitution(null);
       }
 
       onFiltersChange(newFilters);
       return newFilters;
     });
   }, [onFiltersChange]);
+
+  // Derived state: find the ID of the selected city
+  const selectedCityId = useMemo(() => {
+    if (!filters.city) return undefined;
+    // Find city by name (case insensitive if needed, but exact match should work)
+    // If multiple cities have same name, we take the first one (usually filtered by department already)
+    const city = citiesData.find(c => c.name === filters.city);
+    return city?.id;
+  }, [filters.city, citiesData]);
 
   // Handle price input changes WITHOUT auto-search
   const handlePriceInputChange = useCallback((type: 'min' | 'max', value: string) => {
@@ -260,6 +280,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
             selectedInstitution={selectedInstitution}
             placeholder="Buscar universidad o instituto..."
             type={filters.institutionType as any}
+            cityId={selectedCityId}
           />
         </div>
 
