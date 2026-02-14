@@ -540,6 +540,7 @@ export interface UserRegistrationPayload {
 }
 
 export interface SearchFilters {
+  departmentId?: number;
   city?: string;
   type?: string;
   priceMin?: number;
@@ -552,7 +553,7 @@ export interface SearchFilters {
   isRented?: boolean;
   // Institution filters
   institutionId?: number;
-  institutionType?: 'universidad' | 'instituto';
+  institutionType?: string;
   maxDistance?: number;
 }
 

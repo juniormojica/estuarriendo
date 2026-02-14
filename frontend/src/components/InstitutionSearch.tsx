@@ -5,7 +5,7 @@ import { api } from '../services/api';
 interface Institution {
     id: number;
     name: string;
-    type: 'universidad' | 'instituto';
+    type: string;
     cityId: number;
     city?: {
         id: number;
@@ -18,7 +18,7 @@ interface InstitutionSearchProps {
     selectedInstitution?: Institution | null;
     placeholder?: string;
     cityId?: number;
-    type?: 'universidad' | 'instituto';
+    type?: string;
 }
 
 const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
@@ -88,11 +88,15 @@ const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
     };
 
     const getInstitutionIcon = (instType: string) => {
-        return instType === 'universidad' ? '🎓' : '📚';
+        if (!instType) return '🏛️';
+        const lower = instType.toLowerCase();
+        if (lower.includes('universidad')) return '🎓';
+        if (lower.includes('tecnológica') || lower.includes('técnica') || lower.includes('instituto')) return '⚙️';
+        return '📚';
     };
 
     const getInstitutionTypeLabel = (instType: string) => {
-        return instType === 'universidad' ? 'Universidad' : 'Instituto';
+        return instType; // DB types are already formatted names
     };
 
     return (

@@ -28,10 +28,11 @@ const initialState: PropertiesState = {
  */
 export const fetchProperties = createAsyncThunk(
     'properties/fetchProperties',
-    async (filters?: SearchFilters, { rejectWithValue }) => {
+    async (filters: SearchFilters | undefined, { rejectWithValue }) => {
         try {
             const params = new URLSearchParams();
 
+            if (filters?.departmentId) params.append('departmentId', filters.departmentId.toString());
             if (filters?.city) params.append('city', filters.city);
             if (filters?.type) params.append('type', filters.type);
             if (filters?.priceMin) params.append('minPrice', filters.priceMin.toString());
