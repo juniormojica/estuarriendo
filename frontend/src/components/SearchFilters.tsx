@@ -69,11 +69,14 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onFiltersChange, isLoadin
         const citiesData = await api.getCities(params);
 
         // Extract unique city names and sort them
-        const cityNames = citiesData
-          .filter((city: any) => city.isActive !== false)
-          .map((city: any) => city.name)
-          .sort();
-        setCities(cityNames);
+        // Use Set to strictly deduplicate names as some cities share names across different departments
+        const uniqueCityNames = [...new Set(
+          citiesData
+            .filter((city: any) => city.isActive !== false)
+            .map((city: any) => city.name)
+        )].sort();
+
+        setCities(uniqueCityNames);
       } catch (error) {
         console.error('Error loading cities:', error);
       }
