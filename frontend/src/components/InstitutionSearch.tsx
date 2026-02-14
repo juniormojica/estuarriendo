@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, X } from 'lucide-react';
+import { Search, MapPin, X, Filter, Check } from 'lucide-react';
 import { api } from '../services/api';
 
 interface Institution {
@@ -35,12 +35,17 @@ const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const [showTypeFilter, setShowTypeFilter] = useState(false);
+    const filterRef = useRef<HTMLDivElement>(null);
 
-    // Close dropdown when clicking outside
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
+            }
+            if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+                setShowTypeFilter(false);
             }
         };
 
@@ -51,13 +56,8 @@ const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
     // Search institutions with debounce
     useEffect(() => {
         const searchInstitutions = async () => {
+            // ... existing search logic ...
             if (query.length < 2 && !selectedType) {
-                setResults([]);
-                return;
-            }
-
-            // Don't search if query is too short (unless type is selected perhaps? No, usually name is required)
-            if (query.length < 2) {
                 setResults([]);
                 return;
             }
@@ -87,6 +87,7 @@ const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
         onSelect(institution);
         setQuery('');
         setIsOpen(false);
+        setShowTypeFilter(false);
     };
 
     const handleClear = () => {
@@ -94,6 +95,14 @@ const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
         setQuery('');
         setResults([]);
         setSelectedType('');
+    };
+
+    const handleTypeSelect = (type: string) => {
+        setSelectedType(type === selectedType ? '' : type);
+        setShowTypeFilter(false);
+        // If we have a query, re-search automatically via effect
+        // If no query but type selected, we might want to trigger search? 
+        // Current logic requires query length >= 2 OR selectedType to search
     };
 
     const getInstitutionIcon = (instType: string) => {
@@ -134,48 +143,71 @@ const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
                 </div>
             ) : (
                 <>
-                    {/* Search Input with Integrated Type Filter */}
-                    <div className="relative flex shadow-sm rounded-md">
-                        <div className="relative flex-grow focus-within:z-10">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                onFocus={() => query.length >= 2 && setIsOpen(true)}
-                                placeholder={placeholder}
-                                className="focus:ring-emerald-500 focus:border-emerald-500 block w-full rounded-none rounded-l-md pl-10 sm:text-sm border-gray-300 min-h-[44px]"
-                            />
-                        </div>
-                        <div className="-ml-px relative">
-                            <label htmlFor="type-filter" className="sr-only">Filtrar por tipo</label>
-                            <select
-                                id="type-filter"
-                                value={selectedType}
-                                onChange={(e) => setSelectedType(e.target.value)}
-                                className="focus:ring-emerald-500 focus:border-emerald-500 relative block w-full rounded-none rounded-r-md bg-gray-50 text-xs sm:text-sm border-gray-300 min-h-[44px] pl-2 pr-8 text-gray-700 hover:bg-gray-100 cursor-pointer max-w-[100px] sm:max-w-[140px]"
-                                title="Filtrar por tipo de institución"
-                            >
-                                <option value="">Todos</option>
-                                {institutionTypes?.map((type) => (
-                                    <option key={type} value={type}>
-                                        {/* Shorten known long names for the small dropdown if needed, or CSS truncation */}
-                                        {type.length > 20 ? type.substring(0, 18) + '...' : type}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                    {/* Search Input with Floating Filter Button */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            onFocus={() => (query.length >= 2 || selectedType) && setIsOpen(true)}
+                            placeholder={placeholder}
+                            className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                        />
 
+                        {/* Loading Spinner */}
                         {isLoading && (
-                            <div className="absolute right-[110px] sm:right-[150px] top-1/2 transform -translate-y-1/2 z-20">
+                            <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
                                 <div className="animate-spin h-4 w-4 border-2 border-emerald-500 border-t-transparent rounded-full"></div>
                             </div>
                         )}
+
+                        {/* Filter Trigger Button */}
+                        <div ref={filterRef} className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <button
+                                onClick={() => setShowTypeFilter(!showTypeFilter)}
+                                className={`p-1.5 rounded-md transition-colors ${selectedType
+                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                title="Filtrar por tipo"
+                            >
+                                <Filter className="h-4 w-4" />
+                            </button>
+
+                            {/* Custom Type Filter Dropdown */}
+                            {showTypeFilter && (
+                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 z-[60] overflow-hidden">
+                                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Filtrar por tipo
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto py-1">
+                                        <button
+                                            onClick={() => handleTypeSelect('')}
+                                            className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-gray-50 ${!selectedType ? 'text-emerald-600 font-medium bg-emerald-50/50' : 'text-gray-700'
+                                                }`}
+                                        >
+                                            <span>Todos</span>
+                                            {!selectedType && <Check className="h-3 w-3" />}
+                                        </button>
+                                        {institutionTypes?.map((type) => (
+                                            <button
+                                                key={type}
+                                                onClick={() => handleTypeSelect(type)}
+                                                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-gray-50 ${selectedType === type ? 'text-emerald-600 font-medium bg-emerald-50/50' : 'text-gray-700'
+                                                    }`}
+                                            >
+                                                <span className="truncate mr-2" title={type}>{type}</span>
+                                                {selectedType === type && <Check className="h-3 w-3 flex-shrink-0" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Dropdown Results */}
+                    {/* Search Results Dropdown */}
                     {isOpen && results.length > 0 && (
                         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
                             {results.map((institution) => (
@@ -210,7 +242,7 @@ const InstitutionSearch: React.FC<InstitutionSearchProps> = ({
                     )}
 
                     {/* No Results */}
-                    {isOpen && query.length >= 2 && results.length === 0 && !isLoading && (
+                    {isOpen && (query.length >= 2 || selectedType) && results.length === 0 && !isLoading && (
                         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-3">
                             <p className="text-sm text-gray-500 text-center">
                                 No se encontraron instituciones{selectedType ? ' con este filtro' : ''}
