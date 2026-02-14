@@ -14,7 +14,7 @@ import {
   VerificationDocuments,
   VerificationStatus
 } from '../types';
-import { mockProperties, mockAmenities } from '../data/mockData';
+import { mockProperties } from '../data/mockData';
 import apiClient from '../lib/axios';
 
 // Simulate API delay
@@ -183,9 +183,15 @@ export const api = {
   },
 
   // Get all amenities
+  // Get all amenities
   async getAmenities(): Promise<Amenity[]> {
-    await delay(200);
-    return mockAmenities;
+    try {
+      const response = await apiClient.get('/amenities');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching amenities:', error);
+      throw error;
+    }
   },
 
   // Submit new property
@@ -749,22 +755,7 @@ export const api = {
     }
   },
 
-  // Add amenity
-  async addAmenity(amenity: Omit<Amenity, 'id'>): Promise<boolean> {
-    await delay(300);
-    const amenities = [...mockAmenities];
-    const newId = (amenities.length + 1).toString();
-    amenities.push({ id: newId, ...amenity });
-    // In a real app, this would persist to a database
-    return true;
-  },
 
-  // Delete amenity
-  async deleteAmenity(): Promise<boolean> {
-    await delay(300);
-    // In a real app, this would delete from a database
-    return true;
-  },
 
   // Payment Requests
   async createPaymentRequest(request: {
@@ -1336,6 +1327,17 @@ export const api = {
       throw error;
     }
   },
+
+  async deleteAmenity(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/amenities/${id}`);
+    } catch (error) {
+      console.error('Error deleting amenity:', error);
+      throw error;
+    }
+  },
+
+
 
 
 
