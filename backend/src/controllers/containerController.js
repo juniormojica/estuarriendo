@@ -86,7 +86,7 @@ export const createContainer = async (req, res) => {
         const ownerId = req.userId; // From auth middleware
 
         // Import all required models once
-        const { Property, PropertyService, PropertyRule, PropertyImage, Amenity } = await import('../models/index.js');
+        const { Property, PropertyService, PropertyRule, PropertyImage, Amenity, ActivityLog } = await import('../models/index.js');
 
         // For containers rented by_unit, monthlyRent should be 0 (price is per unit)
         // For containers rented complete, use provided monthlyRent or default to 0
@@ -207,6 +207,15 @@ export const createContainer = async (req, res) => {
 
         // Fetch complete container with all associations
         const completeContainer = await containerService.findContainerWithUnits(container.id);
+
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_submitted',
+            message: `Nueva propiedad (Container) enviada por ${req.user ? req.user.name : 'Propietario'}: ${completeContainer.title}`,
+            userId: ownerId,
+            propertyId: container.id,
+            timestamp: new Date()
+        });
 
         res.status(201).json({
             success: true,
@@ -785,7 +794,7 @@ export const approveContainer = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         const { id } = req.params;
-        const { Property, Notification } = await import('../models/index.js');
+        const { Property, Notification, ActivityLog } = await import('../models/index.js');
 
         // Get container with all units
         const container = await Property.findByPk(id, {
@@ -820,6 +829,15 @@ export const approveContainer = async (req, res) => {
             isVerified: true,
             reviewedAt: new Date(),
             rejectionReason: null
+        }, { transaction });
+
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_approved',
+            message: `Container aprobado: ${container.title}`,
+            userId: req.user.id,
+            propertyId: container.id,
+            timestamp: new Date()
         }, { transaction });
 
         // Send notification to owner

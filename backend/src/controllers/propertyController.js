@@ -132,6 +132,17 @@ export const getPropertyById = async (req, res) => {
         // Increment views count
         await property.increment('viewsCount');
 
+        // Log activity only if featured
+        if (property.isFeatured) {
+            await ActivityLog.create({
+                type: 'property_featured',
+                message: `Propiedad destacada: ${property.title}`,
+                userId: req.user.id,
+                propertyId: property.id,
+                timestamp: new Date()
+            });
+        }
+
         res.json(property);
     } catch (error) {
         console.error('Error fetching property:', error);
@@ -289,6 +300,15 @@ export const createProperty = async (req, res) => {
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(property.id);
 
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_submitted',
+            message: `Nueva propiedad enviada por ${owner.name}: ${property.title}`,
+            userId: owner.id,
+            propertyId: property.id,
+            timestamp: new Date()
+        });
+
         res.status(201).json(completeProperty);
     } catch (error) {
         console.error('Error creating property:', error);
@@ -340,6 +360,15 @@ export const deleteProperty = async (req, res) => {
 
         const ownerId = property.ownerId;
         const status = property.status;
+
+        // Log activity before deletion
+        await ActivityLog.create({
+            type: 'property_deleted',
+            message: `Propiedad eliminada: ${property.title} (ID: ${id})`,
+            userId: req.user.id, // Admin who deleted
+            propertyId: null, // Don't link since it's being deleted
+            timestamp: new Date()
+        });
 
         await propertyService.deleteProperty(id);
 
@@ -423,6 +452,15 @@ export const approveProperty = async (req, res) => {
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
 
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_approved',
+            message: `Propiedad aprobada: ${property.title}`,
+            userId: req.user.id,
+            propertyId: property.id,
+            timestamp: new Date()
+        });
+
         res.json({
             success: true,
             message: 'Property approved successfully',
@@ -493,6 +531,15 @@ export const rejectProperty = async (req, res) => {
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
 
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_rejected',
+            message: `Propiedad rechazada: ${property.title}. Razón: ${reason}`,
+            userId: req.user.id,
+            propertyId: property.id,
+            timestamp: new Date()
+        });
+
         res.json({
             success: true,
             message: 'Property rejected',
@@ -524,6 +571,17 @@ export const toggleFeatured = async (req, res) => {
 
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
+        // Log activity if featured
+        if (completeProperty.isFeatured) {
+            await ActivityLog.create({
+                type: 'property_featured',
+                message: `Propiedad destacada: ${completeProperty.title}`,
+                userId: req.user.id,
+                propertyId: completeProperty.id,
+                timestamp: new Date()
+            });
+        }
 
         res.json({
             success: true,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
+import { Property, PropertyStats, User, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -42,7 +42,7 @@ const AdminDashboard = () => {
         totalRevenue: 0
     });
     const [users, setUsers] = useState<User[]>([]);
-    const [activities, setActivities] = useState<ActivityLog[]>([]);
+    // const [activities, setActivities] = useState<ActivityLog[]>([]); // Removed: DashboardHome handles fetching
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
     const [pendingVerifications, setPendingVerifications] = useState<User[]>([]);
@@ -106,9 +106,9 @@ const AdminDashboard = () => {
 
             // Fetch other data that still uses api methods
             // TODO: These should also be migrated to Redux eventually
-            const [usersData, activitiesData, configData, paymentsData, verificationsData, studentRequests, containers] = await Promise.all([
+            const [usersData, configData, paymentsData, verificationsData, studentRequests, containers] = await Promise.all([
                 api.getUsers(),
-                api.getActivityLog(),
+                // api.getActivityLog(), // Removed
                 api.getSystemConfig(),
                 api.getPaymentRequests(),
                 api.getPendingVerifications(),
@@ -117,7 +117,7 @@ const AdminDashboard = () => {
             ]);
 
             setUsers(usersData);
-            setActivities(activitiesData);
+            // setActivities(activitiesData); // Removed
             setSystemConfig(configData);
             setPaymentRequests(paymentsData);
             setPendingVerifications(verificationsData);
@@ -315,7 +315,7 @@ const AdminDashboard = () => {
                     <DashboardHome
                         stats={stats}
                         users={users}
-                        activities={activities}
+                        // activities={activities} // Removed: component self-fetches
                         pendingVerificationsCount={pendingVerifications.length}
                         pendingPaymentsCount={paymentRequests.filter(r => r.status === 'pending').length}
                         studentRequestsCount={studentRequestsCount}
