@@ -11,13 +11,16 @@ import UnitBuilder from './UnitBuilder';
 import ImageUploader from './ImageUploader';
 import LoadingSpinner from './LoadingSpinner';
 import type { RentalMode, PropertyUnit } from '../types';
-import { createContainer, updateContainer } from '../services/containerService';
+import { createContainer, updateContainer, adminCreateContainer } from '../services/containerService';
 import { useAppDispatch } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
 
 interface ContainerFlowProps {
     propertyId?: string; // For editing
     initialPropertyType?: string; // Skip type selector if already selected
+    adminMode?: boolean; // If true, enables admin creation mode
+    targetOwnerId?: string; // Required if adminMode is true
+    onAdminComplete?: () => void; // Callback after admin creates property
 }
 
 interface ContainerData {
@@ -49,7 +52,13 @@ interface ContainerData {
     images: string[];
 }
 
-const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialPropertyType }) => {
+const ContainerFlow: React.FC<ContainerFlowProps> = ({
+    propertyId,
+    initialPropertyType,
+    adminMode = false,
+    targetOwnerId,
+    onAdminComplete
+}) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
@@ -156,13 +165,21 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
             };
 
             if (propertyId) {
-                await updateContainer(propertyId, payload as any);
+                await updateContainer(parseInt(propertyId), payload as any);
             } else {
-                await createContainer(payload as any);
+                if (adminMode && targetOwnerId) {
+                    await adminCreateContainer({ ...payload, targetOwnerId } as any);
+                } else {
+                    await createContainer(payload as any);
+                }
             }
 
-            // Success - redirect to dashboard
-            navigate('/dashboard');
+            // Success - redirect or callback
+            if (adminMode && onAdminComplete) {
+                onAdminComplete();
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err: any) {
             console.error('Error submitting container:', err);
             setError(err.message || 'Error al publicar la propiedad');

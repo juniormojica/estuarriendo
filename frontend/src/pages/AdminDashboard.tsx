@@ -18,6 +18,7 @@ import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
 import ActivityLogsAdmin from '../components/admin/ActivityLogsAdmin';
 import PaymentsAdmin from '../components/admin/PaymentsAdmin';
 import VerificationsAdmin from '../components/admin/VerificationsAdmin';
+import AdminPropertyCreator from '../components/admin/AdminPropertyCreator';
 import DashboardHome from '../components/admin/DashboardHome';
 import { CheckCircle, XCircle, FileText, Menu } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
@@ -398,6 +399,16 @@ const AdminDashboard = () => {
                         <h2 className="text-2xl font-bold text-gray-900">Solicitudes de Estudiantes</h2>
                         <StudentRequestsAdmin />
                     </div>
+                );
+            case 'create-property':
+                return (
+                    <AdminPropertyCreator
+                        onComplete={() => {
+                            toast.success('✅ Propiedad creada exitosamente para el propietario');
+                            setCurrentSection('pending'); // Or 'all-properties'
+                            refreshData();
+                        }}
+                    />
                 );
             default:
                 return null;

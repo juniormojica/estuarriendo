@@ -18,8 +18,19 @@ import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
 import LoadingSpinner from './LoadingSpinner';
 import type { City, Institution, PropertyRule, Amenity, PropertyService } from '../types';
+import { adminCreateContainer } from '../services/containerService';
 
-const RoomFlow: React.FC = () => {
+interface RoomFlowProps {
+    adminMode?: boolean;
+    targetOwnerId?: string;
+    onAdminComplete?: () => void;
+}
+
+const RoomFlow: React.FC<RoomFlowProps> = ({
+    adminMode = false,
+    targetOwnerId,
+    onAdminComplete
+}) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { items: amenities } = useAppSelector((state) => state.amenities);
@@ -165,13 +176,22 @@ const RoomFlow: React.FC = () => {
                 images: data.images
             };
 
-            const resultAction = await dispatch(createProperty(propertyData as any));
-
-            if (createProperty.fulfilled.match(resultAction)) {
-                setSubmitted(true);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (adminMode && targetOwnerId) {
+                // Admin mode: use adminCreateContainer with targetOwnerId
+                await adminCreateContainer({ ...propertyData, targetOwnerId } as any);
+                if (onAdminComplete) {
+                    onAdminComplete();
+                }
             } else {
-                setError(resultAction.payload as string || 'Error al crear la propiedad');
+                // Standard owner mode
+                const resultAction = await dispatch(createProperty(propertyData as any));
+
+                if (createProperty.fulfilled.match(resultAction)) {
+                    setSubmitted(true);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    setError(resultAction.payload as string || 'Error al crear la propiedad');
+                }
             }
         } catch (err: any) {
             console.error('Submit error:', err);

@@ -849,6 +849,78 @@ export const approveContainer = async (req, res) => {
     }
 };
 
+/**
+ * Admin: Create a container on behalf of an owner
+ * POST /api/containers/admin-create
+ */
+const adminCreateContainer = async (req, res) => {
+    try {
+        // 1. Check admin role
+        // We need to import User model dynamically or use the one from models/index.js if available in scope
+        // The controller imports { sequelize } from '../models/index.js' at top, but not User directly in top scope usually. 
+        // Let's check imports. original file imported containerService, propertyService, sequelize.
+        // I will import User locally to be safe.
+        const { User } = await import('../models/index.js');
+
+        const adminUser = await User.findByPk(req.userId);
+        if (!adminUser || !['admin', 'superAdmin'].includes(adminUser.userType)) {
+            return res.status(403).json({
+                success: false,
+                error: 'No tienes permisos para realizar esta acción'
+            });
+        }
+
+        // 2. Validate target owner
+        const { targetOwnerId, ...containerData } = req.body;
+
+        if (!targetOwnerId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Se requiere el ID del propietario (targetOwnerId)'
+            });
+        }
+
+        const owner = await User.findByPk(targetOwnerId);
+        if (!owner) {
+            return res.status(404).json({
+                success: false,
+                error: 'Propietario no encontrado'
+            });
+        }
+
+        // Check if user is actually a user who can own properties (owner, admin, etc)
+        // Ideally 'owner' userType.
+        if (owner.userType !== 'owner' && owner.userType !== 'admin' && owner.userType !== 'superAdmin') {
+            return res.status(400).json({
+                success: false,
+                error: 'El usuario seleccionado no tiene rol de propietario'
+            });
+        }
+
+        // 3. Override userId in request to impersonate the owner for the creation logic
+        // We utilize the existing createContainer logic but we need to trick it or reuse the service directly.
+        // The existing createContainer extracts ownerId = req.userId.
+        // So modifying req.userId is the cleanest way to reuse that controller logic 
+        // WITHOUT duplicating the extensive validation and service calls in createContainer.
+
+        req.userId = targetOwnerId;
+
+        // Also ensure the body doesn't contain targetOwnerId anymore if createContainer works strictly with body
+        req.body = containerData;
+
+        // 4. Call createContainer
+        return createContainer(req, res);
+
+    } catch (error) {
+        console.error('Error in adminCreateContainer:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Error interno al crear propiedad por administrador',
+            details: error.message
+        });
+    }
+};
+
 export default {
     createContainer,
     getPendingContainers,
@@ -864,5 +936,6 @@ export default {
     updateUnitRentalStatus,
     approveUnit,
     rejectUnit,
-    approveContainer
+    approveContainer,
+    adminCreateContainer
 };

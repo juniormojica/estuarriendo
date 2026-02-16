@@ -1,6 +1,6 @@
 import React from 'react';
 import { AdminSection } from '../../types';
-import { LayoutDashboard, Clock, Home, Users, Settings, Activity, CreditCard, ShieldCheck, FileText, X } from 'lucide-react';
+import { LayoutDashboard, Clock, Home, Users, Settings, Activity, CreditCard, ShieldCheck, FileText, X, PlusCircle } from 'lucide-react';
 
 interface AdminSidebarProps {
     currentSection: AdminSection;
@@ -33,6 +33,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             label: 'Pendientes',
             icon: Clock,
             badge: pendingCount > 0 ? pendingCount : null
+        },
+        {
+            id: 'create-property' as AdminSection,
+            label: 'Crear Propiedad',
+            icon: PlusCircle,
+            badge: null
         },
         {
             id: 'payments' as AdminSection,
