@@ -94,6 +94,29 @@ const AdminDashboard = () => {
         loadInitialData();
     }, []);
 
+    const loadSectionData = async (section: AdminSection) => {
+        try {
+            if (section === 'users' && users.length === 0) {
+                const data = await api.getUsers();
+                setUsers(data);
+            }
+            if (section === 'config' && !systemConfig) {
+                const data = await api.getSystemConfig();
+                setSystemConfig(data);
+            }
+            if (section === 'payments' && paymentRequests.length === 0) {
+                const data = await api.getPaymentRequests();
+                setPaymentRequests(data);
+            }
+            if (section === 'verifications' && pendingVerifications.length === 0) {
+                const data = await api.getPendingVerifications();
+                setPendingVerifications(data);
+            }
+        } catch (err) {
+            console.error('Failed to load section data', err);
+        }
+    };
+
     const loadInitialData = async () => {
         try {
             setLoading(true);
@@ -104,31 +127,29 @@ const AdminDashboard = () => {
             // Fetch amenities from Redux
             dispatch(fetchAmenities());
 
-            // Fetch other data that still uses api methods
-            // TODO: These should also be migrated to Redux eventually
-            const [usersData, configData, paymentsData, verificationsData, studentRequests, containers] = await Promise.all([
-                api.getUsers(),
-                // api.getActivityLog(), // Removed
-                api.getSystemConfig(),
-                api.getPaymentRequests(),
-                api.getPendingVerifications(),
+            // Default lightweight fetches needed across dashboard (sidebar counts, pending lists)
+            const [studentRequests, containers] = await Promise.all([
                 api.getStudentRequests(),
                 api.getPendingContainers()
             ]);
 
-            setUsers(usersData);
-            // setActivities(activitiesData); // Removed
-            setSystemConfig(configData);
-            setPaymentRequests(paymentsData);
-            setPendingVerifications(verificationsData);
             setStudentRequestsCount(studentRequests.filter(r => r.status === 'open').length);
             setPendingContainers(containers);
+
+            // Load data for the active section immediately
+            await loadSectionData(currentSection);
         } catch (error) {
             console.error('Error loading admin data:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (!loading) {
+            loadSectionData(currentSection);
+        }
+    }, [currentSection]);
 
     // Calculate stats from Redux properties
     useEffect(() => {
@@ -151,16 +172,17 @@ const AdminDashboard = () => {
         const containers = await api.getPendingContainers();
         setPendingContainers(containers);
 
-        // Refresh other data
-        const [usersData, paymentsData, verificationsData] = await Promise.all([
-            api.getUsers(),
-            api.getPaymentRequests(),
-            api.getPendingVerifications()
-        ]);
-
-        setUsers(usersData);
-        setPaymentRequests(paymentsData);
-        setPendingVerifications(verificationsData);
+        // Refresh other data depending on the current section
+        if (currentSection === 'users') {
+            const usersData = await api.getUsers();
+            setUsers(usersData);
+        } else if (currentSection === 'payments') {
+            const paymentsData = await api.getPaymentRequests();
+            setPaymentRequests(paymentsData);
+        } else if (currentSection === 'verifications') {
+            const verificationsData = await api.getPendingVerifications();
+            setPendingVerifications(verificationsData);
+        }
     };
 
     const handleApprove = async (id: string) => {

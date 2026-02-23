@@ -574,6 +574,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                                 src={typeof img === 'string' ? img : img.url}
                                                 alt={`Área Común ${idx + 1}`}
                                                 className="w-full h-full object-cover"
+                                                loading="lazy"
                                             />
                                         </div>
                                     ))}
@@ -629,6 +630,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                                     src={typeof unit.images[0] === 'string' ? unit.images[0] : unit.images[0].url}
                                                     alt={unit.title}
                                                     className="w-full h-full object-cover"
+                                                    loading="lazy"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -720,6 +722,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                                             src={typeof img === 'string' ? img : img.url}
                                             alt={`Foto ${i + 1}`}
                                             className="w-full h-48 object-cover rounded-lg"
+                                            loading="lazy"
                                         />
                                     </div>
                                 ))}
@@ -804,6 +807,7 @@ const ContainerReviewModal: React.FC<ContainerReviewModalProps> = ({
                         src={selectedImage}
                         alt="Vista completa"
                         className="max-w-full max-h-[90vh] object-contain select-none"
+                        loading="lazy"
                     />
                 </div>
             )}

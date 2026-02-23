@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "lazy-loading": {
+      "source": "yanko-belov/code-craft",
+      "sourceType": "github",
+      "computedHash": "14e06b98e7c86b336e786bcc81ca855fa74d2b2c33d318164a42832e41244955"
+    }
+  }
+}

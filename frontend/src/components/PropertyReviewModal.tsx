@@ -221,6 +221,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                                 src={typeof localImages[currentImageIndex] === 'string' ? localImages[currentImageIndex] : localImages[currentImageIndex]?.url}
                                                 alt={`${property.title} - ${currentImageIndex + 1}`}
                                                 className="w-full h-full object-contain bg-black"
+                                                loading="lazy"
                                             />
 
                                             {/* Hover overlay */}
@@ -280,6 +281,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                                                             src={typeof image === 'string' ? image : image?.url}
                                                             alt={`Thumbnail ${index + 1}`}
                                                             className="w-full h-full object-cover"
+                                                            loading="lazy"
                                                         />
                                                     </button>
                                                 ))}
@@ -735,6 +737,7 @@ const PropertyReviewModal: React.FC<PropertyReviewModalProps> = ({
                             alt={`${property.title} - ${lightboxImageIndex + 1}`}
                             className="max-w-full max-h-full object-contain"
                             onClick={(e) => e.stopPropagation()}
+                            loading="lazy"
                         />
 
                         {/* Navigation Arrows */}

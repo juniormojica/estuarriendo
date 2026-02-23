@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import LazyImage from './LazyImage';
 
 interface ImageGalleryProps {
   images: string[];
@@ -84,6 +85,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt }) => {
             alt={alt}
             className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity active:opacity-75"
             onClick={() => openLightbox(currentIndex)}
+            loading="lazy"
           />
           {images.length > 1 && (
             <>
@@ -118,7 +120,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt }) => {
           <div className="hidden md:flex flex-col gap-4">
             {images.slice(1, 4).map((image, index) => (
               <div key={index} className="relative flex-1 bg-gray-900 rounded-lg overflow-hidden">
-                <img
+                <LazyImage
                   src={image}
                   alt={`${alt} ${index + 2}`}
                   className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
@@ -178,6 +180,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt }) => {
             src={images[currentIndex]}
             alt={`${alt} ${currentIndex + 1}`}
             className="max-w-full max-h-full object-contain"
+            loading="lazy"
           />
 
           {/* Image counter */}

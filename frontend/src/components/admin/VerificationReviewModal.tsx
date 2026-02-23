@@ -155,6 +155,7 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                                         src={doc.url}
                                         alt={doc.label}
                                         className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                        loading="lazy"
                                     />
                                 </div>
                             </button>
@@ -186,6 +187,7 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                                     src={currentDocUrl}
                                     alt="Documento seleccionado"
                                     className="max-w-full max-h-full object-contain shadow-2xl rounded-sm"
+                                    loading="lazy"
                                 />
                             ) : (
                                 <div className="text-gray-400 flex flex-col items-center">

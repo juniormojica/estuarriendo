@@ -168,6 +168,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({ userId, userRole, o
                                 src={previews[field]}
                                 alt={label}
                                 className="w-32 h-32 object-cover rounded-lg border-2 border-emerald-500"
+                                loading="lazy"
                             />
                             <button
                                 type="button"
