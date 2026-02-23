@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Home, AlertCircle } from 'lucide-react';
 import { Property } from '../types';
@@ -15,9 +15,9 @@ const OwnerDashboard: React.FC = () => {
     const dispatch = useAppDispatch();
     const { items: properties, loading, error: reduxError } = useAppSelector((state) => state.properties);
 
-    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
     const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-    const [expandedContainers, setExpandedContainers] = useState<Set<number>>(new Set());
+    const [expandedContainers, setExpandedContainers] = useState<Set<string>>(new Set());
 
     // State for Interested Users Modal
     const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
@@ -35,29 +35,29 @@ const OwnerDashboard: React.FC = () => {
         dispatch(fetchUserProperties(user.id));
     }, [dispatch]);
 
-    const handleDelete = async (id: number | string) => {
+    const handleDelete = useCallback(async () => {
+        if (!propertyToDelete) return;
         try {
-            const resultAction = await dispatch(deleteProperty(String(id)));
+            const resultAction = await dispatch(deleteProperty(String(propertyToDelete.id)));
 
             if (deleteProperty.fulfilled.match(resultAction)) {
-                setDeleteId(null);
+                setPropertyToDelete(null);
             }
         } catch (err) {
             console.error('Error deleting property:', err);
         }
-    };
+    }, [dispatch, propertyToDelete]);
 
-    const handleToggleRented = async (id: number | string) => {
+    const handleToggleRented = useCallback(async (id: number | string) => {
         try {
             await dispatch(toggleRented(String(id)));
         } catch (err) {
             console.error('Error toggling rented status:', err);
         }
-    };
+    }, [dispatch]);
 
-    const handleToggleUnitRented = async (unitId: string) => {
+    const handleToggleUnitRented = useCallback(async (unitId: string) => {
         try {
-            // Find the unit to get its current status
             const container = properties.find(p => p.units?.some(u => u.id === parseInt(unitId)));
             const unit = container?.units?.find(u => u.id === parseInt(unitId));
 
@@ -70,36 +70,36 @@ const OwnerDashboard: React.FC = () => {
         } catch (err) {
             console.error('Error toggling unit rented status:', err);
         }
-    };
+    }, [dispatch, properties]);
 
-    const handleOpenInterests = (propertyId: string, propertyTitle: string) => {
+    const handleOpenInterests = useCallback((propertyId: string, propertyTitle: string) => {
         setSelectedPropertyId(propertyId);
         setSelectedPropertyTitle(propertyTitle);
         setIsInterestModalOpen(true);
-    };
+    }, []);
 
-    const handleCloseInterests = () => {
+    const handleCloseInterests = useCallback(() => {
         setIsInterestModalOpen(false);
         setSelectedPropertyId(null);
         setSelectedPropertyTitle('');
-    };
+    }, []);
 
-    const handleToggleExpand = (propertyId: number) => {
+    const handleToggleExpand = useCallback((propertyId: string | number) => {
+        const idStr = String(propertyId);
         setExpandedContainers(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(propertyId)) {
-                newSet.delete(propertyId);
+            if (newSet.has(idStr)) {
+                newSet.delete(idStr);
             } else {
-                newSet.add(propertyId);
+                newSet.add(idStr);
             }
             return newSet;
         });
-    };
+    }, []);
 
-    const handleViewUnit = (unitId: string) => {
-        // For now, just log - could navigate to unit detail page
+    const handleViewUnit = useCallback((unitId: string) => {
         console.log('View unit:', unitId);
-    };
+    }, []);
 
     // Filter properties by status and hierarchy (show only parents)
     const filteredProperties = properties.filter(property => {
@@ -209,21 +209,16 @@ const OwnerDashboard: React.FC = () => {
                                     property={property}
                                     onToggleRented={handleToggleRented}
                                     onDelete={(id) => {
-                                        if (deleteId === id) {
-                                            handleDelete(id);
-                                        } else {
-                                            setDeleteId(id);
-                                        }
+                                        const pToDel = filteredProperties.find(p => String(p.id) === String(id));
+                                        if (pToDel) setPropertyToDelete(pToDel);
                                     }}
-                                    onCancelDelete={() => setDeleteId(null)}
                                     onViewInterests={handleOpenInterests}
-                                    isExpanded={expandedContainers.has(property.id)}
+                                    isExpanded={expandedContainers.has(String(property.id))}
                                     onToggleExpand={property.isContainer ? () => handleToggleExpand(property.id) : undefined}
-                                    isDeleting={deleteId === String(property.id)}
                                 />
 
                                 {/* Show units if container is expanded */}
-                                {property.isContainer && expandedContainers.has(property.id) && (
+                                {property.isContainer && expandedContainers.has(String(property.id)) && (
                                     <OwnerContainerDetail
                                         container={property}
                                         onToggleUnitRented={handleToggleUnitRented}
@@ -244,6 +239,40 @@ const OwnerDashboard: React.FC = () => {
                     propertyId={selectedPropertyId}
                     propertyTitle={selectedPropertyTitle}
                 />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {propertyToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-100 max-w-md w-full overflow-hidden animate-slideUp">
+                        <div className="p-6">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4 mx-auto">
+                                <AlertCircle className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Eliminar Propiedad</h3>
+                            <p className="text-gray-600 text-center mb-6">
+                                ¿Estás seguro de que deseas eliminar la publicación "<strong>{propertyToDelete.title}</strong>"? <br /><br />
+                                Esta acción no se puede deshacer y todos los datos asociados se perderán permanentemente.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                                <button
+                                    onClick={() => setPropertyToDelete(null)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 flex justify-center items-center transition-colors"
+                                    disabled={loading}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={loading}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 flex justify-center items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? 'Eliminando...' : 'Sí, Eliminar'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
