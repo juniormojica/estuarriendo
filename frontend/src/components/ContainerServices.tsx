@@ -137,24 +137,10 @@ const ContainerServices: React.FC<ContainerServicesProps> = ({ onNext, onBack, i
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
-                {/* Progress */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Paso 3 de 5</span>
-                        <span className="text-sm text-gray-500">Servicios Incluidos</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '60%' }}></div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Servicios Incluidos</h1>
-                    <p className="text-gray-600">Selecciona los servicios que ofreces</p>
-                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Servicios Incluidos</h1>
+                <p className="text-gray-600 mb-6">Selecciona los servicios que ofreces</p>
 
                 <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-                    {/* Alimentación */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Alimentación</h3>
                         <div className="space-y-3">

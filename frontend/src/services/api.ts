@@ -678,51 +678,7 @@ export const api = {
     }
   },
 
-  // Get activity log
-  async getActivityLog(): Promise<ActivityLog[]> {
-    await delay(300);
 
-    // Get from localStorage or create default
-    const stored = localStorage.getItem('estuarriendo_activity_log');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error('Error parsing activity log:', e);
-        return [];
-      }
-    }
-
-    // Create initial activity log based on properties
-    const properties = getStoredProperties();
-    const activities: ActivityLog[] = [];
-
-    properties.forEach((property) => {
-      activities.push({
-        id: `activity-${property.id}-submitted`,
-        type: 'property_submitted',
-        message: `Nueva propiedad enviada: ${property.title}`,
-        timestamp: property.createdAt,
-        propertyId: String(property.id)
-      });
-
-      if (property.status === 'approved') {
-        activities.push({
-          id: `activity-${property.id}-approved`,
-          type: 'property_approved',
-          message: `Propiedad aprobada: ${property.title}`,
-          timestamp: property.createdAt,
-          propertyId: String(property.id)
-        });
-      }
-    });
-
-    // Sort by timestamp descending
-    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-    localStorage.setItem('estuarriendo_activity_log', JSON.stringify(activities));
-    return activities;
-  },
 
   // Get system configuration
   async getSystemConfig(): Promise<SystemConfig> {

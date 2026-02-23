@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bed, Square, Users, Eye } from 'lucide-react';
+import LazyImage from './LazyImage';
 
 interface RoomCardProps {
     room: {
@@ -42,7 +43,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
             <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                 {firstImage ? (
                     <>
-                        <img
+                        <LazyImage
                             src={firstImage}
                             alt={room.title}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

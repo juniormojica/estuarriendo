@@ -1,4 +1,4 @@
-import { Property, User, Amenity, Notification } from '../models/index.js';
+import { Property, User, Amenity, Notification, ActivityLog } from '../models/index.js';
 import { PropertyStatus, NotificationType, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';
@@ -131,6 +131,17 @@ export const getPropertyById = async (req, res) => {
 
         // Increment views count
         await property.increment('viewsCount');
+
+        // Log activity only if featured and user is logged in
+        if (property.isFeatured && req.userId) {
+            await ActivityLog.create({
+                type: 'property_featured',
+                message: `Propiedad destacada: ${property.title}`,
+                userId: req.userId,
+                propertyId: property.id,
+                timestamp: new Date()
+            });
+        }
 
         res.json(property);
     } catch (error) {
@@ -289,6 +300,15 @@ export const createProperty = async (req, res) => {
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(property.id);
 
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_submitted',
+            message: `Nueva propiedad enviada por ${owner.name}: ${property.title}`,
+            userId: owner.id,
+            propertyId: property.id,
+            timestamp: new Date()
+        });
+
         res.status(201).json(completeProperty);
     } catch (error) {
         console.error('Error creating property:', error);
@@ -341,6 +361,15 @@ export const deleteProperty = async (req, res) => {
         const ownerId = property.ownerId;
         const status = property.status;
 
+        // Log activity before deletion
+        await ActivityLog.create({
+            type: 'property_deleted',
+            message: `Propiedad eliminada: ${property.title} (ID: ${id})`,
+            userId: req.userId, // Admin who deleted
+            propertyId: null, // Don't link since it's being deleted
+            timestamp: new Date()
+        });
+
         await propertyService.deleteProperty(id);
 
         // Update owner's property counts
@@ -358,7 +387,9 @@ export const deleteProperty = async (req, res) => {
                 updates.rejectedCount = Math.max(0, owner.rejectedCount - 1);
             }
 
-            await owner.update(updates);
+            if (Object.keys(updates).length > 0) {
+                await owner.update(updates);
+            }
         }
 
         res.json({ message: 'Property deleted successfully' });
@@ -422,6 +453,15 @@ export const approveProperty = async (req, res) => {
 
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_approved',
+            message: `Propiedad aprobada: ${property.title}`,
+            userId: req.userId,
+            propertyId: property.id,
+            timestamp: new Date()
+        });
 
         res.json({
             success: true,
@@ -493,6 +533,15 @@ export const rejectProperty = async (req, res) => {
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
 
+        // Log activity
+        await ActivityLog.create({
+            type: 'property_rejected',
+            message: `Propiedad rechazada: ${property.title}. Razón: ${reason}`,
+            userId: req.userId,
+            propertyId: property.id,
+            timestamp: new Date()
+        });
+
         res.json({
             success: true,
             message: 'Property rejected',
@@ -524,6 +573,17 @@ export const toggleFeatured = async (req, res) => {
 
         // Fetch complete property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
+        // Log activity if featured
+        if (completeProperty.isFeatured) {
+            await ActivityLog.create({
+                type: 'property_featured',
+                message: `Propiedad destacada: ${completeProperty.title}`,
+                userId: req.user.id,
+                propertyId: completeProperty.id,
+                timestamp: new Date()
+            });
+        }
 
         res.json({
             success: true,

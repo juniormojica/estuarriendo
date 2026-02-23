@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Property, PropertyStats, User, ActivityLog, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
+import { Property, PropertyStats, User, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -18,6 +18,7 @@ import StudentRequestsAdmin from '../components/admin/StudentRequestsAdmin';
 import ActivityLogsAdmin from '../components/admin/ActivityLogsAdmin';
 import PaymentsAdmin from '../components/admin/PaymentsAdmin';
 import VerificationsAdmin from '../components/admin/VerificationsAdmin';
+import AdminPropertyCreator from '../components/admin/AdminPropertyCreator';
 import DashboardHome from '../components/admin/DashboardHome';
 import { CheckCircle, XCircle, FileText, Menu } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
@@ -41,7 +42,7 @@ const AdminDashboard = () => {
         totalRevenue: 0
     });
     const [users, setUsers] = useState<User[]>([]);
-    const [activities, setActivities] = useState<ActivityLog[]>([]);
+    // const [activities, setActivities] = useState<ActivityLog[]>([]); // Removed: DashboardHome handles fetching
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
     const [pendingVerifications, setPendingVerifications] = useState<User[]>([]);
@@ -93,6 +94,29 @@ const AdminDashboard = () => {
         loadInitialData();
     }, []);
 
+    const loadSectionData = async (section: AdminSection) => {
+        try {
+            if (section === 'users' && users.length === 0) {
+                const data = await api.getUsers();
+                setUsers(data);
+            }
+            if (section === 'config' && !systemConfig) {
+                const data = await api.getSystemConfig();
+                setSystemConfig(data);
+            }
+            if (section === 'payments' && paymentRequests.length === 0) {
+                const data = await api.getPaymentRequests();
+                setPaymentRequests(data);
+            }
+            if (section === 'verifications' && pendingVerifications.length === 0) {
+                const data = await api.getPendingVerifications();
+                setPendingVerifications(data);
+            }
+        } catch (err) {
+            console.error('Failed to load section data', err);
+        }
+    };
+
     const loadInitialData = async () => {
         try {
             setLoading(true);
@@ -103,31 +127,29 @@ const AdminDashboard = () => {
             // Fetch amenities from Redux
             dispatch(fetchAmenities());
 
-            // Fetch other data that still uses api methods
-            // TODO: These should also be migrated to Redux eventually
-            const [usersData, activitiesData, configData, paymentsData, verificationsData, studentRequests, containers] = await Promise.all([
-                api.getUsers(),
-                api.getActivityLog(),
-                api.getSystemConfig(),
-                api.getPaymentRequests(),
-                api.getPendingVerifications(),
+            // Default lightweight fetches needed across dashboard (sidebar counts, pending lists)
+            const [studentRequests, containers] = await Promise.all([
                 api.getStudentRequests(),
                 api.getPendingContainers()
             ]);
 
-            setUsers(usersData);
-            setActivities(activitiesData);
-            setSystemConfig(configData);
-            setPaymentRequests(paymentsData);
-            setPendingVerifications(verificationsData);
             setStudentRequestsCount(studentRequests.filter(r => r.status === 'open').length);
             setPendingContainers(containers);
+
+            // Load data for the active section immediately
+            await loadSectionData(currentSection);
         } catch (error) {
             console.error('Error loading admin data:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (!loading) {
+            loadSectionData(currentSection);
+        }
+    }, [currentSection]);
 
     // Calculate stats from Redux properties
     useEffect(() => {
@@ -150,16 +172,17 @@ const AdminDashboard = () => {
         const containers = await api.getPendingContainers();
         setPendingContainers(containers);
 
-        // Refresh other data
-        const [usersData, paymentsData, verificationsData] = await Promise.all([
-            api.getUsers(),
-            api.getPaymentRequests(),
-            api.getPendingVerifications()
-        ]);
-
-        setUsers(usersData);
-        setPaymentRequests(paymentsData);
-        setPendingVerifications(verificationsData);
+        // Refresh other data depending on the current section
+        if (currentSection === 'users') {
+            const usersData = await api.getUsers();
+            setUsers(usersData);
+        } else if (currentSection === 'payments') {
+            const paymentsData = await api.getPaymentRequests();
+            setPaymentRequests(paymentsData);
+        } else if (currentSection === 'verifications') {
+            const verificationsData = await api.getPendingVerifications();
+            setPendingVerifications(verificationsData);
+        }
     };
 
     const handleApprove = async (id: string) => {
@@ -169,6 +192,7 @@ const AdminDashboard = () => {
             if (approveProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad aprobada exitosamente');
                 setSelectedProperty(null);
+                await refreshData();
             } else {
                 toast.error('❌ Error al aprobar la propiedad');
             }
@@ -192,6 +216,7 @@ const AdminDashboard = () => {
             if (rejectProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad rechazada');
                 setSelectedProperty(null);
+                await refreshData();
             } else {
                 toast.error('❌ Error al rechazar la propiedad');
             }
@@ -287,10 +312,11 @@ const AdminDashboard = () => {
             const success = await api.updateSystemConfig(config);
             if (success) {
                 setSystemConfig(config);
-                alert('Configuración guardada exitosamente');
+                toast.success('Configuración guardada exitosamente');
             }
         } catch (error) {
             console.error('Error saving config:', error);
+            toast.error('Error al guardar la configuración');
         }
     };
 
@@ -314,7 +340,7 @@ const AdminDashboard = () => {
                     <DashboardHome
                         stats={stats}
                         users={users}
-                        activities={activities}
+                        // activities={activities} // Removed: component self-fetches
                         pendingVerificationsCount={pendingVerifications.length}
                         pendingPaymentsCount={paymentRequests.filter(r => r.status === 'pending').length}
                         studentRequestsCount={studentRequestsCount}
@@ -398,6 +424,16 @@ const AdminDashboard = () => {
                         <h2 className="text-2xl font-bold text-gray-900">Solicitudes de Estudiantes</h2>
                         <StudentRequestsAdmin />
                     </div>
+                );
+            case 'create-property':
+                return (
+                    <AdminPropertyCreator
+                        onComplete={() => {
+                            toast.success('✅ Propiedad creada exitosamente para el propietario');
+                            setCurrentSection('pending'); // Or 'all-properties'
+                            refreshData();
+                        }}
+                    />
                 );
             default:
                 return null;

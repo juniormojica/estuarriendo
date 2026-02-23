@@ -11,6 +11,7 @@ const router = express.Router();
 
 // Container CRUD
 router.get('/pending', authMiddleware, containerController.getPendingContainers);
+router.post('/admin-create', authMiddleware, containerController.adminCreateContainer); // New admin route
 router.post('/', authMiddleware, containerController.createContainer);
 router.get('/:id', containerController.getContainer);
 router.put('/:id', authMiddleware, containerController.updateContainer);

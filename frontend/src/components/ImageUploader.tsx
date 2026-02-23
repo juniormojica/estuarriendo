@@ -23,7 +23,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     const [isDragging, setIsDragging] = useState(false);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
+    const [, setUploadProgress] = useState<Record<number, number>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (files: FileList | null) => {
@@ -240,6 +240,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                                         src={image}
                                         alt={`Preview ${index + 1}`}
                                         className="w-full h-full object-cover"
+                                        loading="lazy"
                                     />
                                 </div>
 

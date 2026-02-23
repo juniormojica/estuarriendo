@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, Copy, Check, AlertCircle, X } from 'lucide-react';
 import { api } from '../services/api';
 import { User } from '../types';
@@ -70,12 +70,7 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
         }
     };
 
-    const removeFile = () => {
-        setFile(null);
-        if (preview) URL.revokeObjectURL(preview); // Clean up object URL
-        setPreview(null);
-        setError('');
-    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -216,6 +211,7 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
                                         src={preview}
                                         alt="Comprobante"
                                         className="w-full h-64 object-contain bg-gray-100 rounded-lg border border-gray-200"
+                                        loading="lazy"
                                     />
                                     <button
                                         type="button"

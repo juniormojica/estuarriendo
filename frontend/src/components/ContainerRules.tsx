@@ -1,4 +1,4 @@
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Clock, Users, Ban, Volume2 } from 'lucide-react';
 import { containerRulesSchema, type ContainerRulesData } from '../lib/schemas/container.schema';
@@ -81,7 +81,7 @@ const ContainerRules: React.FC<ContainerRulesProps> = ({ onNext, onBack, initial
         if (existingIndex >= 0) {
             remove(existingIndex);
         } else {
-            append({ ruleType, isAllowed: true });
+            append({ ruleType, isAllowed: true } as any);
         }
     };
 
@@ -94,7 +94,7 @@ const ContainerRules: React.FC<ContainerRulesProps> = ({ onNext, onBack, initial
     };
 
     const onSubmit = (data: ContainerRulesData) => {
-        onNext(data.rules);
+        onNext(data.rules as PropertyRule[]);
     };
 
     return (
@@ -115,7 +115,7 @@ const ContainerRules: React.FC<ContainerRulesProps> = ({ onNext, onBack, initial
                     <p className="text-gray-600">Define las reglas para una buena convivencia</p>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 mb-6">
+                <form onSubmit={handleSubmit(onSubmit as any)} noValidate className="space-y-4 mb-6">
                     {ruleOptions.map(option => {
                         const isSelected = isRuleSelected(option.ruleType);
                         const ruleIndex = getRuleIndex(option.ruleType);
@@ -151,26 +151,32 @@ const ContainerRules: React.FC<ContainerRulesProps> = ({ onNext, onBack, initial
                                         )}
 
                                         {!option.hasValue && (
-                                            <div className="flex gap-4">
-                                                <label className="flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        value="true"
-                                                        {...register(`rules.${ruleIndex}.isAllowed`)}
-                                                        className="mr-2"
-                                                    />
-                                                    <span>Permitido</span>
-                                                </label>
-                                                <label className="flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        value="false"
-                                                        {...register(`rules.${ruleIndex}.isAllowed`)}
-                                                        className="mr-2"
-                                                    />
-                                                    <span>No permitido</span>
-                                                </label>
-                                            </div>
+                                            <Controller
+                                                name={`rules.${ruleIndex}.isAllowed`}
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <div className="flex gap-4">
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                checked={field.value === true}
+                                                                onChange={() => field.onChange(true)}
+                                                                className="mr-2"
+                                                            />
+                                                            <span>Permitido</span>
+                                                        </label>
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                checked={field.value === false}
+                                                                onChange={() => field.onChange(false)}
+                                                                className="mr-2"
+                                                            />
+                                                            <span>No permitido</span>
+                                                        </label>
+                                                    </div>
+                                                )}
+                                            />
                                         )}
 
                                         <input

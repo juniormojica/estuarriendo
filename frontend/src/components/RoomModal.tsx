@@ -88,6 +88,7 @@ const RoomModal: React.FC<RoomModalProps> = ({ isOpen, onClose, room }) => {
                                 src={images[currentImageIndex]}
                                 alt={`${room.title} - Imagen ${currentImageIndex + 1}`}
                                 className="w-full h-full object-cover"
+                                loading="lazy"
                             />
 
                             {/* Navigation Arrows */}

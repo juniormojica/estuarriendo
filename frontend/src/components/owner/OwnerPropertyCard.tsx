@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     MapPin, Edit, Trash2, Users, Eye,
     CheckCircle, Clock, XCircle, ChevronDown, ChevronUp,
@@ -11,23 +11,20 @@ interface OwnerPropertyCardProps {
     property: Property;
     onToggleRented: (id: string) => void;
     onDelete: (id: string) => void;
-    onCancelDelete?: () => void;
     onViewInterests: (id: string, title: string) => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
-    isDeleting?: boolean;
 }
 
 const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
     property,
     onToggleRented,
     onDelete,
-    onCancelDelete,
     onViewInterests,
     isExpanded = false,
-    onToggleExpand,
-    isDeleting = false
+    onToggleExpand
 }) => {
+    const navigate = useNavigate();
     const getStatusDisplay = () => {
         switch (property.status) {
             case 'approved':
@@ -81,8 +78,10 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
     const statusDisplay = getStatusDisplay();
 
     return (
-        <div className={`bg-white border rounded-lg shadow-sm transition-all ${isExpanded ? 'border-primary-500 ring-1 ring-primary-500 shadow-md' : 'border-gray-200 hover:shadow-md'
-            }`}>
+        <div
+            onClick={() => navigate(`/propiedad/${property.id}`)}
+            className={`bg-white border rounded-lg transition-all cursor-pointer ${isExpanded ? 'border-primary-500 ring-1 ring-primary-500 shadow-md' : 'border-gray-200 hover:shadow-lg hover:border-primary-300'
+                }`}>
             <div className="p-5">
                 {/* Type Badge & Status */}
                 <div className="flex items-center justify-between mb-3">
@@ -151,7 +150,10 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
                 )}
 
                 {/* Actions Bar */}
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
+                <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100"
+                >
                     <div className="flex items-center gap-2">
                         {/* Edit Button */}
                         <Link
@@ -160,15 +162,6 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
                         >
                             <Edit size={14} className="mr-1.5" />
                             Editar
-                        </Link>
-
-                        {/* Public View */}
-                        <Link
-                            to={`/propiedad/${property.id}`}
-                            className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-primary-600 hover:bg-primary-50"
-                        >
-                            <Eye size={14} className="mr-1.5" />
-                            Ver
                         </Link>
 
                         {/* Toggle Status (Only for Approved Single Properties) */}
@@ -191,31 +184,13 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
 
                     <div className="flex items-center gap-2">
                         {/* Delete Button */}
-                        {isDeleting ? (
-                            <div className="flex items-center gap-2 bg-red-50 px-2 py-1 rounded-md animate-fadeIn">
-                                <span className="text-xs text-red-700 font-medium">¿Confirmar?</span>
-                                <button
-                                    onClick={() => onDelete(String(property.id))}
-                                    className="text-xs bg-red-600 text-white px-2 py-0.5 rounded hover:bg-red-700 transition-colors"
-                                >
-                                    Si
-                                </button>
-                                <button
-                                    onClick={onCancelDelete}
-                                    className="text-xs bg-white text-gray-600 border border-gray-200 px-2 py-0.5 rounded hover:bg-gray-50 transition-colors"
-                                >
-                                    No
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => onDelete(String(property.id))}
-                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                title="Eliminar Propiedad"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        )}
+                        <button
+                            onClick={() => onDelete(String(property.id))}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Eliminar Propiedad"
+                        >
+                            <Trash2 size={16} />
+                        </button>
 
                         {/* Expand/Collapse Button (Main Action for Containers) */}
                         {isContainer && totalUnits > 0 && onToggleExpand && (

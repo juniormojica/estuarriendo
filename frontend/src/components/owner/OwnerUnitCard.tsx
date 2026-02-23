@@ -4,14 +4,12 @@ import { PropertyUnit } from '../../types';
 
 interface OwnerUnitCardProps {
     unit: PropertyUnit;
-    containerId: number;
     onToggleRented: (unitId: string) => void;
     onView: (unitId: string) => void;
 }
 
 const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({
     unit,
-    containerId,
     onToggleRented,
     onView
 }) => {
@@ -65,6 +63,7 @@ const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({
                             src={typeof unit.images[0] === 'string' ? unit.images[0] : unit.images[0].url}
                             alt={unit.title}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">

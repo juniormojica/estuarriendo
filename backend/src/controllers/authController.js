@@ -1,4 +1,5 @@
 import * as authService from '../services/authService.js';
+import { ActivityLog } from '../models/index.js';
 
 /**
  * Authentication Controller
@@ -44,6 +45,15 @@ export const register = async (req, res) => {
         }
 
         const result = await authService.register(userData);
+
+        // Log activity
+        await ActivityLog.create({
+            type: 'user_registered',
+            message: `Nuevo usuario registrado: ${result.user.name} (${result.user.userType})`,
+            userId: result.user.id,
+            timestamp: new Date()
+        });
+
         res.status(201).json(result);
     } catch (error) {
         handleError(res, error);

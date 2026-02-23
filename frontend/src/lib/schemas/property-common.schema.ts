@@ -40,10 +40,28 @@ export const propertyServiceSchema = z.object({
  */
 export const propertyRuleSchema = z.object({
     ruleType: z.enum(['smoking', 'pets', 'visits', 'noise', 'curfew']),
-    isAllowed: z.boolean().optional(),
+    isAllowed: z.preprocess(
+        (val) => {
+            if (typeof val === 'string') return val === 'true';
+            return val;
+        },
+        z.boolean()
+    ).optional(),
     value: z.string().optional(),
     description: z.string().optional(),
-});
+}).refine(
+    (data) => {
+        // If the rule is about curfew or noise, and it is "allowed" (or requires a value), a value is mandatory
+        if ((data.ruleType === 'curfew' || data.ruleType === 'noise') && !data.value) {
+            return false;
+        }
+        return true;
+    },
+    {
+        message: 'Debes especificar el horario o detalle para esta regla.',
+        path: ['value'], // Point the error to the value field
+    }
+);
 
 /**
  * Schema para información básica de cualquier propiedad

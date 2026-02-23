@@ -43,6 +43,16 @@ export const createContainer = async (containerData: {
 };
 
 /**
+ * Admin: Create a new container on behalf of an owner
+ */
+export const adminCreateContainer = async (
+    containerData: Parameters<typeof createContainer>[0] & { targetOwnerId: string }
+): Promise<PropertyContainer> => {
+    const response = await apiClient.post('/containers/admin-create', containerData);
+    return response.data.data;
+};
+
+/**
  * Get container with all units and associations
  */
 export const getContainer = async (id: number): Promise<PropertyContainer> => {
@@ -185,8 +195,8 @@ export const getCommonAreas = async (): Promise<CommonArea[]> => {
 export default {
     // Container operations
     createContainer,
-    getContainer,
-    updateContainer,
+    adminCreateContainer,
+    getContainer, updateContainer,
     deleteContainer,
     rentCompleteContainer,
     changeRentalMode,

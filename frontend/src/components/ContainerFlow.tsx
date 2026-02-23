@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import PropertyTypeSelectorStep from './PropertyTypeSelectorStep';
 import ContainerBasicInfo from './ContainerBasicInfo';
@@ -11,13 +11,16 @@ import UnitBuilder from './UnitBuilder';
 import ImageUploader from './ImageUploader';
 import LoadingSpinner from './LoadingSpinner';
 import type { RentalMode, PropertyUnit } from '../types';
-import { createContainer, updateContainer } from '../services/containerService';
+import { createContainer, updateContainer, adminCreateContainer } from '../services/containerService';
 import { useAppDispatch } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
 
 interface ContainerFlowProps {
     propertyId?: string; // For editing
     initialPropertyType?: string; // Skip type selector if already selected
+    adminMode?: boolean; // If true, enables admin creation mode
+    targetOwnerId?: string; // Required if adminMode is true
+    onAdminComplete?: () => void; // Callback after admin creates property
 }
 
 interface ContainerData {
@@ -49,7 +52,13 @@ interface ContainerData {
     images: string[];
 }
 
-const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialPropertyType }) => {
+const ContainerFlow: React.FC<ContainerFlowProps> = ({
+    propertyId,
+    initialPropertyType,
+    adminMode = false,
+    targetOwnerId,
+    onAdminComplete
+}) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
@@ -58,11 +67,14 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
         dispatch(fetchAmenities());
     }, [dispatch]);
 
+    const savedDraftStr = sessionStorage.getItem('containerFlowDraft');
+    const savedDraft = savedDraftStr ? JSON.parse(savedDraftStr) : null;
+
     // If initialPropertyType is provided, start at step 1 (skip type selector)
-    const [currentStep, setCurrentStep] = useState(initialPropertyType ? 1 : 0);
+    const [currentStep, setCurrentStep] = useState(savedDraft?.step ?? (initialPropertyType ? 1 : 0));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedPropertyType, setSelectedPropertyType] = useState<string>(initialPropertyType || 'pension');
+    const [selectedPropertyType, setSelectedPropertyType] = useState<string>(savedDraft?.selectedPropertyType || initialPropertyType || 'pension');
 
     const propertyTypeIds: Record<string, number> = {
         'habitacion': 1,
@@ -71,7 +83,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
         'aparta-estudio': 4
     };
 
-    const [containerData, setContainerData] = useState<Partial<ContainerData>>({
+    const [containerData, setContainerData] = useState<Partial<ContainerData>>(savedDraft?.data || {
         typeId: propertyTypeIds[selectedPropertyType] || 2, // Default to pension (2)
         coordinates: { lat: 0, lng: 0 },
         nearbyInstitutions: [],
@@ -84,6 +96,17 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
         units: [],
         images: []
     });
+
+    useEffect(() => {
+        if (!isSubmitting && !propertyId) {
+            const draft = {
+                step: currentStep,
+                data: containerData,
+                selectedPropertyType
+            };
+            sessionStorage.setItem('containerFlowDraft', JSON.stringify(draft));
+        }
+    }, [currentStep, containerData, selectedPropertyType, isSubmitting, propertyId]);
 
     // Update typeId when selectedPropertyType changes
     useEffect(() => {
@@ -156,13 +179,22 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
             };
 
             if (propertyId) {
-                await updateContainer(propertyId, payload as any);
+                await updateContainer(parseInt(propertyId), payload as any);
             } else {
-                await createContainer(payload as any);
+                if (adminMode && targetOwnerId) {
+                    await adminCreateContainer({ ...payload, targetOwnerId } as any);
+                } else {
+                    await createContainer(payload as any);
+                }
             }
 
-            // Success - redirect to dashboard
-            navigate('/dashboard');
+            // Success - redirect or callback
+            sessionStorage.removeItem('containerFlowDraft');
+            if (adminMode && onAdminComplete) {
+                onAdminComplete();
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err: any) {
             console.error('Error submitting container:', err);
             setError(err.message || 'Error al publicar la propiedad');
@@ -196,7 +228,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
                             setCurrentStep(2); // Go to Location
                         }}
                         onBack={() => setCurrentStep(0)}
-                        initialData={containerData}
+                        initialData={containerData as any}
                         propertyType={selectedPropertyType}
                     />
                 );
@@ -229,10 +261,6 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
 
             case 3:
                 // Container Services (only if by_unit)
-                if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(6);
-                    return null;
-                }
                 return (
                     <ContainerServices
                         onNext={(services) => {
@@ -246,10 +274,6 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
 
             case 4:
                 // Container Rules (only if by_unit)
-                if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(6);
-                    return null;
-                }
                 return (
                     <ContainerRules
                         onNext={(rules) => {
@@ -263,10 +287,6 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({ propertyId, initialProper
 
             case 5:
                 // Container Common Areas (only if by_unit)
-                if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(6);
-                    return null;
-                }
                 return (
                     <ContainerCommonAreas
                         onNext={(areaIds) => {
