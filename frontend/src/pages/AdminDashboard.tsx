@@ -170,6 +170,7 @@ const AdminDashboard = () => {
             if (approveProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad aprobada exitosamente');
                 setSelectedProperty(null);
+                await refreshData();
             } else {
                 toast.error('❌ Error al aprobar la propiedad');
             }
@@ -193,6 +194,7 @@ const AdminDashboard = () => {
             if (rejectProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad rechazada');
                 setSelectedProperty(null);
+                await refreshData();
             } else {
                 toast.error('❌ Error al rechazar la propiedad');
             }
@@ -288,10 +290,11 @@ const AdminDashboard = () => {
             const success = await api.updateSystemConfig(config);
             if (success) {
                 setSystemConfig(config);
-                alert('Configuración guardada exitosamente');
+                toast.success('Configuración guardada exitosamente');
             }
         } catch (error) {
             console.error('Error saving config:', error);
+            toast.error('Error al guardar la configuración');
         }
     };
 

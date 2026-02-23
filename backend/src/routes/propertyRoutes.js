@@ -11,6 +11,7 @@ import {
     toggleFeatured,
     toggleRentedStatus
 } from '../controllers/propertyController.js';
+import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -18,16 +19,16 @@ const router = express.Router();
 router.get('/', getAllProperties);
 router.get('/user/:userId', getUserProperties); // Get properties by owner
 router.get('/:id', getPropertyById);
-router.post('/', createProperty);
-router.put('/:id', updateProperty);
-router.delete('/:id', deleteProperty);
+router.post('/', authMiddleware, createProperty);
+router.put('/:id', authMiddleware, updateProperty);
+router.delete('/:id', authMiddleware, deleteProperty);
 
 // Property status management (admin)
-router.put('/:id/approve', approveProperty);
-router.put('/:id/reject', rejectProperty);
+router.put('/:id/approve', authMiddleware, approveProperty);
+router.put('/:id/reject', authMiddleware, rejectProperty);
 
 // Property features
-router.put('/:id/toggle-featured', toggleFeatured);
-router.put('/:id/toggle-rented', toggleRentedStatus);
+router.put('/:id/toggle-featured', authMiddleware, toggleFeatured);
+router.put('/:id/toggle-rented', authMiddleware, toggleRentedStatus);
 
 export default router;

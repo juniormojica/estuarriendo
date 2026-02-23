@@ -132,12 +132,12 @@ export const getPropertyById = async (req, res) => {
         // Increment views count
         await property.increment('viewsCount');
 
-        // Log activity only if featured
-        if (property.isFeatured) {
+        // Log activity only if featured and user is logged in
+        if (property.isFeatured && req.userId) {
             await ActivityLog.create({
                 type: 'property_featured',
                 message: `Propiedad destacada: ${property.title}`,
-                userId: req.user.id,
+                userId: req.userId,
                 propertyId: property.id,
                 timestamp: new Date()
             });
@@ -365,7 +365,7 @@ export const deleteProperty = async (req, res) => {
         await ActivityLog.create({
             type: 'property_deleted',
             message: `Propiedad eliminada: ${property.title} (ID: ${id})`,
-            userId: req.user.id, // Admin who deleted
+            userId: req.userId, // Admin who deleted
             propertyId: null, // Don't link since it's being deleted
             timestamp: new Date()
         });
@@ -387,7 +387,9 @@ export const deleteProperty = async (req, res) => {
                 updates.rejectedCount = Math.max(0, owner.rejectedCount - 1);
             }
 
-            await owner.update(updates);
+            if (Object.keys(updates).length > 0) {
+                await owner.update(updates);
+            }
         }
 
         res.json({ message: 'Property deleted successfully' });
@@ -456,7 +458,7 @@ export const approveProperty = async (req, res) => {
         await ActivityLog.create({
             type: 'property_approved',
             message: `Propiedad aprobada: ${property.title}`,
-            userId: req.user.id,
+            userId: req.userId,
             propertyId: property.id,
             timestamp: new Date()
         });
@@ -535,7 +537,7 @@ export const rejectProperty = async (req, res) => {
         await ActivityLog.create({
             type: 'property_rejected',
             message: `Propiedad rechazada: ${property.title}. Razón: ${reason}`,
-            userId: req.user.id,
+            userId: req.userId,
             propertyId: property.id,
             timestamp: new Date()
         });
