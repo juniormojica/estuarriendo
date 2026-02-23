@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
                             <h3 className="text-white font-bold text-lg">EstuArriendo</h3>
                         </div>
                         <p className="text-sm text-gray-400 mb-4">
-                            Tu plataforma confiable para encontrar alojamiento estudiantil en Valledupar.
+                            Tu plataforma confiable para encontrar alojamiento estudiantil en Colombia.
                             Conectamos estudiantes con propiedades verificadas cerca de las universidades.
                         </p>
                         <div className="flex space-x-4">
@@ -71,9 +71,9 @@ const Footer: React.FC = () => {
                                 </Link>
                             </li>
                             <li>
-                                <a href="#sobre-nosotros" className="hover:text-emerald-500 transition-colors">
+                                <Link to="/sobre-nosotros" className="hover:text-emerald-500 transition-colors">
                                     Sobre Nosotros
-                                </a>
+                                </Link>
                             </li>
                         </ul>
                     </div>
@@ -83,24 +83,24 @@ const Footer: React.FC = () => {
                         <h3 className="text-white font-semibold mb-4">Para Estudiantes</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <a href="#como-buscar" className="hover:text-emerald-500 transition-colors">
+                                <Link to="/como-buscar" className="hover:text-emerald-500 transition-colors">
                                     Cómo Buscar Alojamiento
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a href="#consejos" className="hover:text-emerald-500 transition-colors">
+                                <Link to="/consejos-seguridad" className="hover:text-emerald-500 transition-colors">
                                     Consejos de Seguridad
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a href="#preguntas" className="hover:text-emerald-500 transition-colors">
+                                <Link to="/preguntas-frecuentes" className="hover:text-emerald-500 transition-colors">
                                     Preguntas Frecuentes
-                                </a>
+                                </Link>
                             </li>
                             <li>
-                                <a href="#terminos" className="hover:text-emerald-500 transition-colors">
+                                <Link to="/terminos" className="hover:text-emerald-500 transition-colors">
                                     Términos y Condiciones
-                                </a>
+                                </Link>
                             </li>
                         </ul>
                     </div>
@@ -139,17 +139,17 @@ const Footer: React.FC = () => {
 
                         {/* Legal Links */}
                         <div className="flex flex-wrap justify-center gap-4 text-sm">
-                            <a href="#privacidad" className="hover:text-emerald-500 transition-colors">
+                            <Link to="/privacidad" className="hover:text-emerald-500 transition-colors">
                                 Política de Privacidad
-                            </a>
+                            </Link>
                             <span className="text-gray-600">•</span>
-                            <a href="#terminos" className="hover:text-emerald-500 transition-colors">
+                            <Link to="/terminos" className="hover:text-emerald-500 transition-colors">
                                 Términos de Uso
-                            </a>
+                            </Link>
                             <span className="text-gray-600">•</span>
-                            <a href="#cookies" className="hover:text-emerald-500 transition-colors">
+                            <Link to="/cookies" className="hover:text-emerald-500 transition-colors">
                                 Política de Cookies
-                            </a>
+                            </Link>
                         </div>
 
                         {/* Made with love */}
