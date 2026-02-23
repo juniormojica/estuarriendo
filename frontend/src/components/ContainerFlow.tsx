@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import PropertyTypeSelectorStep from './PropertyTypeSelectorStep';
 import ContainerBasicInfo from './ContainerBasicInfo';
@@ -67,11 +67,14 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
         dispatch(fetchAmenities());
     }, [dispatch]);
 
+    const savedDraftStr = sessionStorage.getItem('containerFlowDraft');
+    const savedDraft = savedDraftStr ? JSON.parse(savedDraftStr) : null;
+
     // If initialPropertyType is provided, start at step 1 (skip type selector)
-    const [currentStep, setCurrentStep] = useState(initialPropertyType ? 1 : 0);
+    const [currentStep, setCurrentStep] = useState(savedDraft?.step ?? (initialPropertyType ? 1 : 0));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedPropertyType, setSelectedPropertyType] = useState<string>(initialPropertyType || 'pension');
+    const [selectedPropertyType, setSelectedPropertyType] = useState<string>(savedDraft?.selectedPropertyType || initialPropertyType || 'pension');
 
     const propertyTypeIds: Record<string, number> = {
         'habitacion': 1,
@@ -80,7 +83,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
         'aparta-estudio': 4
     };
 
-    const [containerData, setContainerData] = useState<Partial<ContainerData>>({
+    const [containerData, setContainerData] = useState<Partial<ContainerData>>(savedDraft?.data || {
         typeId: propertyTypeIds[selectedPropertyType] || 2, // Default to pension (2)
         coordinates: { lat: 0, lng: 0 },
         nearbyInstitutions: [],
@@ -93,6 +96,17 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
         units: [],
         images: []
     });
+
+    useEffect(() => {
+        if (!isSubmitting && !propertyId) {
+            const draft = {
+                step: currentStep,
+                data: containerData,
+                selectedPropertyType
+            };
+            sessionStorage.setItem('containerFlowDraft', JSON.stringify(draft));
+        }
+    }, [currentStep, containerData, selectedPropertyType, isSubmitting, propertyId]);
 
     // Update typeId when selectedPropertyType changes
     useEffect(() => {
@@ -175,6 +189,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
             }
 
             // Success - redirect or callback
+            sessionStorage.removeItem('containerFlowDraft');
             if (adminMode && onAdminComplete) {
                 onAdminComplete();
             } else {
@@ -213,7 +228,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
                             setCurrentStep(2); // Go to Location
                         }}
                         onBack={() => setCurrentStep(0)}
-                        initialData={containerData}
+                        initialData={containerData as any}
                         propertyType={selectedPropertyType}
                     />
                 );
@@ -246,10 +261,6 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
 
             case 3:
                 // Container Services (only if by_unit)
-                if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(6);
-                    return null;
-                }
                 return (
                     <ContainerServices
                         onNext={(services) => {
@@ -263,10 +274,6 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
 
             case 4:
                 // Container Rules (only if by_unit)
-                if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(6);
-                    return null;
-                }
                 return (
                     <ContainerRules
                         onNext={(rules) => {
@@ -280,10 +287,6 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
 
             case 5:
                 // Container Common Areas (only if by_unit)
-                if (containerData.rentalMode !== 'by_unit') {
-                    setCurrentStep(6);
-                    return null;
-                }
                 return (
                     <ContainerCommonAreas
                         onNext={(areaIds) => {

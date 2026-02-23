@@ -19,6 +19,38 @@ import LocationPicker from './LocationPicker';
 import LoadingSpinner from './LoadingSpinner';
 import type { City, Institution, PropertyRule, Amenity, PropertyService } from '../types';
 import { adminCreateContainer } from '../services/containerService';
+import { getAmenityIcon } from '../lib/amenityIcons';
+
+
+
+const SERVICE_OPTIONS: Array<{
+    serviceType: PropertyService['serviceType'];
+    label: string;
+    icon: React.ReactNode;
+    category: 'food' | 'utilities' | 'other';
+}> = [
+        { serviceType: 'breakfast', label: 'Desayuno', icon: <Coffee className="w-5 h-5" />, category: 'food' },
+        { serviceType: 'lunch', label: 'Almuerzo', icon: <Utensils className="w-5 h-5" />, category: 'food' },
+        { serviceType: 'dinner', label: 'Cena', icon: <Utensils className="w-5 h-5" />, category: 'food' },
+        { serviceType: 'wifi', label: 'WiFi', icon: <Wifi className="w-5 h-5" />, category: 'utilities' },
+        { serviceType: 'utilities', label: 'Servicios Públicos', icon: <Zap className="w-5 h-5" />, category: 'utilities' },
+        { serviceType: 'laundry', label: 'Lavandería', icon: <Droplet className="w-5 h-5" />, category: 'other' },
+        { serviceType: 'housekeeping', label: 'Limpieza', icon: <Wind className="w-5 h-5" />, category: 'other' },
+    ];
+
+const RULE_OPTIONS: Array<{
+    ruleType: PropertyRule['ruleType'];
+    label: string;
+    icon: React.ReactNode;
+    hasValue: boolean;
+    placeholder?: string;
+}> = [
+        { ruleType: 'curfew', label: 'Hora límite de llegada', icon: <Clock className="w-5 h-5" />, hasValue: true, placeholder: 'Ej: 23:00' },
+        { ruleType: 'noise', label: 'Horario de silencio', icon: <Volume2 className="w-5 h-5" />, hasValue: true, placeholder: 'Ej: 22:00 - 07:00' },
+        { ruleType: 'visits', label: 'Visitas', icon: <Users className="w-5 h-5" />, hasValue: true, placeholder: 'Ej: Hasta las 21:00' },
+        { ruleType: 'smoking', label: 'Fumar', icon: <Ban className="w-5 h-5" />, hasValue: false },
+        { ruleType: 'pets', label: 'Mascotas', icon: <Ban className="w-5 h-5" />, hasValue: false },
+    ];
 
 interface RoomFlowProps {
     adminMode?: boolean;
@@ -35,15 +67,18 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
     const dispatch = useAppDispatch();
     const { items: amenities } = useAppSelector((state) => state.amenities);
 
-    const [currentStep, setCurrentStep] = useState(1);
+    const savedDraftStr = sessionStorage.getItem('roomFlowDraft');
+    const savedDraft = savedDraftStr ? JSON.parse(savedDraftStr) : null;
+
+    const [currentStep, setCurrentStep] = useState(savedDraft?.step || 1);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState<string>('');
 
     // UI-only states
-    const [selectedCity, setSelectedCity] = useState<City | null>(null);
+    const [selectedCity, setSelectedCity] = useState<City | null>(savedDraft?.selectedCity || null);
     const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
     const [tempDistance, setTempDistance] = useState<string>('');
-    const [institutionNames, setInstitutionNames] = useState<Record<number, string>>({});
+    const [institutionNames, setInstitutionNames] = useState<Record<number, string>>(savedDraft?.institutionNames || {});
 
     const {
         register,
@@ -57,7 +92,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
     } = useForm<RoomFormData>({
         resolver: zodResolver(roomCompleteSchema) as any,
         mode: 'onChange',
-        defaultValues: {
+        defaultValues: savedDraft?.data || {
             title: '',
             description: '',
             monthlyRent: undefined,
@@ -75,6 +110,20 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
         },
     });
 
+    const formValues = watch();
+
+    React.useEffect(() => {
+        if (!submitted) {
+            const draft = {
+                step: currentStep,
+                data: formValues,
+                selectedCity,
+                institutionNames
+            };
+            sessionStorage.setItem('roomFlowDraft', JSON.stringify(draft));
+        }
+    }, [formValues, currentStep, selectedCity, institutionNames, submitted]);
+
     // useFieldArray for dynamic arrays
     const { fields: institutionFields, append: appendInstitution, remove: removeInstitution } = useFieldArray({
         control,
@@ -91,11 +140,9 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
         name: 'rules',
     });
 
-    // Watch values
+    // Watch values only for fields that need reactivity
     const title = watch('title');
     const description = watch('description');
-    const street = watch('street');
-    const neighborhood = watch('neighborhood');
     const coordinates = watch('coordinates');
     const amenitiesValue = watch('amenities');
     const images = watch('images');
@@ -188,6 +235,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
 
                 if (createProperty.fulfilled.match(resultAction)) {
                     setSubmitted(true);
+                    sessionStorage.removeItem('roomFlowDraft');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                     setError(resultAction.payload as string || 'Error al crear la propiedad');
@@ -223,7 +271,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
         if (existingIndex >= 0) {
             removeRule(existingIndex);
         } else {
-            appendRule({ ruleType, isAllowed: true });
+            appendRule({ ruleType, isAllowed: true } as any);
         }
     };
 
@@ -234,37 +282,6 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
     const getRuleIndex = (ruleType: PropertyRule['ruleType']) => {
         return ruleFields.findIndex(field => field.ruleType === ruleType);
     };
-
-    // Service options
-    const serviceOptions: Array<{
-        serviceType: PropertyService['serviceType'];
-        label: string;
-        icon: React.ReactNode;
-        category: 'food' | 'utilities' | 'other';
-    }> = [
-            { serviceType: 'breakfast', label: 'Desayuno', icon: <Coffee className="w-5 h-5" />, category: 'food' },
-            { serviceType: 'lunch', label: 'Almuerzo', icon: <Utensils className="w-5 h-5" />, category: 'food' },
-            { serviceType: 'dinner', label: 'Cena', icon: <Utensils className="w-5 h-5" />, category: 'food' },
-            { serviceType: 'wifi', label: 'WiFi', icon: <Wifi className="w-5 h-5" />, category: 'utilities' },
-            { serviceType: 'utilities', label: 'Servicios Públicos', icon: <Zap className="w-5 h-5" />, category: 'utilities' },
-            { serviceType: 'laundry', label: 'Lavandería', icon: <Droplet className="w-5 h-5" />, category: 'other' },
-            { serviceType: 'housekeeping', label: 'Limpieza', icon: <Wind className="w-5 h-5" />, category: 'other' },
-        ];
-
-    // Rule options
-    const ruleOptions: Array<{
-        ruleType: PropertyRule['ruleType'];
-        label: string;
-        icon: React.ReactNode;
-        hasValue: boolean;
-        placeholder?: string;
-    }> = [
-            { ruleType: 'curfew', label: 'Hora límite de llegada', icon: <Clock className="w-5 h-5" />, hasValue: true, placeholder: 'Ej: 23:00' },
-            { ruleType: 'noise', label: 'Horario de silencio', icon: <Volume2 className="w-5 h-5" />, hasValue: true, placeholder: 'Ej: 22:00 - 07:00' },
-            { ruleType: 'visits', label: 'Visitas', icon: <Users className="w-5 h-5" />, hasValue: true, placeholder: 'Ej: Hasta las 21:00' },
-            { ruleType: 'smoking', label: 'Fumar', icon: <Ban className="w-5 h-5" />, hasValue: false },
-            { ruleType: 'pets', label: 'Mascotas', icon: <Ban className="w-5 h-5" />, hasValue: false },
-        ];
 
     if (submitted) {
         return (
@@ -288,29 +305,6 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
         );
     }
 
-    const getAmenityIcon = (name: string) => {
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes('abanico') || lowerName.includes('ventilador')) return <Wind className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('aire')) return <Snowflake className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('wifi') || lowerName.includes('internet')) return <Wifi className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('tv') || lowerName.includes('televis')) return <Tv className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('cama')) return <Bed className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('baño')) return <Bath className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('espacio') || lowerName.includes('trabajo') || lowerName.includes('escritorio')) return <Briefcase className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('piscina')) return <Waves className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('gimnasio')) return <Dumbbell className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('seguridad') || lowerName.includes('vigilancia')) return <Lock className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('balcón') || lowerName.includes('terraza')) return <Sun className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('amoblado') || lowerName.includes('muebles')) return <Sofa className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('ascensor')) return <ChevronsUp className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('cocina')) return <Utensils className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('lavadora') || lowerName.includes('lavandería')) return <Droplet className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('luz') || lowerName.includes('energía')) return <Zap className="w-8 h-8 mb-2 text-gray-700" />;
-        if (lowerName.includes('agua')) return <Droplet className="w-8 h-8 mb-2 text-gray-700" />;
-
-        return <Home className="w-8 h-8 mb-2 text-gray-700" />;
-    };
-
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
@@ -318,7 +312,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-700">Paso {currentStep} de 7</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm font-medium text-gray-900">
                             {currentStep === 1 && 'Información Básica'}
                             {currentStep === 2 && 'Ubicación'}
                             {currentStep === 3 && 'Detalles'}
@@ -328,11 +322,19 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                             {currentStep === 7 && 'Imágenes'}
                         </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                            className="bg-blue-600 h-2 rounded-full transition-all"
-                            style={{ width: `${(currentStep / 7) * 100}%` }}
-                        ></div>
+                    {/* Stepper */}
+                    <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+                            <div
+                                key={step}
+                                className={`h-2 flex-1 rounded-full transition-all duration-300 ${step < currentStep
+                                    ? 'bg-emerald-500' // Completed steps
+                                    : step === currentStep
+                                        ? 'bg-blue-600' // Current step
+                                        : 'bg-gray-200' // Future steps
+                                    }`}
+                            />
+                        ))}
                     </div>
                 </div>
 
@@ -437,8 +439,8 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                                         </label>
                                         <LocationPicker
                                             address={{
-                                                street: street || '',
-                                                neighborhood: neighborhood || '',
+                                                street: getValues('street') || '',
+                                                neighborhood: getValues('neighborhood') || '',
                                                 city: selectedCity?.name || '',
                                                 department: selectedCity?.department?.name || '',
                                                 country: 'Colombia'
@@ -595,7 +597,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                                 <p className="text-gray-600 mb-6">Selecciona los servicios que ofreces</p>
 
                                 <div className="space-y-3">
-                                    {serviceOptions.map(option => {
+                                    {SERVICE_OPTIONS.map(option => {
                                         const isSelected = isServiceSelected(option.serviceType);
                                         const serviceIndex = getServiceIndex(option.serviceType);
                                         const service = serviceIndex >= 0 ? serviceFields[serviceIndex] : null;
@@ -661,7 +663,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                                 <p className="text-gray-600 mb-6">Define las reglas para una buena convivencia</p>
 
                                 <div className="space-y-3">
-                                    {ruleOptions.map(option => {
+                                    {RULE_OPTIONS.map(option => {
                                         const isSelected = isRuleSelected(option.ruleType);
                                         const ruleIndex = getRuleIndex(option.ruleType);
                                         const rule = ruleIndex >= 0 ? ruleFields[ruleIndex] : null;
@@ -695,26 +697,32 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                                                         )}
 
                                                         {!option.hasValue && (
-                                                            <div className="flex gap-4">
-                                                                <label className="flex items-center">
-                                                                    <input
-                                                                        type="radio"
-                                                                        value="true"
-                                                                        {...register(`rules.${ruleIndex}.isAllowed`)}
-                                                                        className="mr-2"
-                                                                    />
-                                                                    <span>Permitido</span>
-                                                                </label>
-                                                                <label className="flex items-center">
-                                                                    <input
-                                                                        type="radio"
-                                                                        value="false"
-                                                                        {...register(`rules.${ruleIndex}.isAllowed`)}
-                                                                        className="mr-2"
-                                                                    />
-                                                                    <span>No permitido</span>
-                                                                </label>
-                                                            </div>
+                                                            <Controller
+                                                                name={`rules.${ruleIndex}.isAllowed`}
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <div className="flex gap-4">
+                                                                        <label className="flex items-center">
+                                                                            <input
+                                                                                type="radio"
+                                                                                checked={field.value === true}
+                                                                                onChange={() => field.onChange(true)}
+                                                                                className="mr-2"
+                                                                            />
+                                                                            <span>Permitido</span>
+                                                                        </label>
+                                                                        <label className="flex items-center">
+                                                                            <input
+                                                                                type="radio"
+                                                                                checked={field.value === false}
+                                                                                onChange={() => field.onChange(false)}
+                                                                                className="mr-2"
+                                                                            />
+                                                                            <span>No permitido</span>
+                                                                        </label>
+                                                                    </div>
+                                                                )}
+                                                            />
                                                         )}
 
                                                         <input
@@ -745,7 +753,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                                     onChange={(newImages) => {
                                         setValue('images', newImages, { shouldValidate: true });
                                     }}
-                                    images={images || []}
+                                    images={getValues('images') || []}
                                 />
 
                                 {errors.images && (

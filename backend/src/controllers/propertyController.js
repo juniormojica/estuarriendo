@@ -1,4 +1,4 @@
-import { Property, User, Amenity, Notification } from '../models/index.js';
+import { Property, User, Amenity, Notification, ActivityLog } from '../models/index.js';
 import { PropertyStatus, NotificationType, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';

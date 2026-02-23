@@ -73,18 +73,6 @@ const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack,
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
-                {/* Progress Indicator */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Paso 1 de 5</span>
-                        <span className="text-sm text-gray-500">Información General</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '20%' }}></div>
-                    </div>
-                </div>
-
-                {/* Header */}
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                     <div className="flex items-center gap-3 mb-2">
                         <Home className="w-6 h-6 text-blue-600" />

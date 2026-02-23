@@ -4,6 +4,7 @@ import {
     Waves, Dumbbell, Lock, Sun, Sofa, ChevronsUp, Utensils, Droplet, Zap, Home
 } from 'lucide-react';
 import type { PropertyUnit, RoomType, Amenity } from '../types';
+import { getAmenityIcon } from '../lib/amenityIcons';
 import { useAppSelector } from '../store/hooks';
 import { FormCurrencyInput, FormNumericInput } from './forms';
 import ImageUploader from './ImageUploader';
@@ -61,29 +62,6 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                 amenities: [...amenityIds, amenity.id]
             }));
         }
-    };
-
-    const getAmenityIcon = (name: string) => {
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes('abanico') || lowerName.includes('ventilador')) return <Wind className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('aire')) return <Snowflake className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('wifi') || lowerName.includes('internet')) return <Wifi className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('tv') || lowerName.includes('televis')) return <Tv className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('cama')) return <Bed className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('baño')) return <Bath className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('espacio') || lowerName.includes('trabajo') || lowerName.includes('escritorio')) return <Briefcase className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('piscina')) return <Waves className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('gimnasio')) return <Dumbbell className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('seguridad') || lowerName.includes('vigilancia')) return <Lock className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('balcón') || lowerName.includes('terraza')) return <Sun className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('amoblado') || lowerName.includes('muebles')) return <Sofa className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('ascensor')) return <ChevronsUp className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('cocina')) return <Utensils className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('lavadora') || lowerName.includes('lavandería')) return <Droplet className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('luz') || lowerName.includes('energía')) return <Zap className="w-5 h-5 text-gray-600" />;
-        if (lowerName.includes('agua')) return <Droplet className="w-5 h-5 text-gray-600" />;
-
-        return <Home className="w-5 h-5 text-gray-600" />;
     };
 
     const validate = (): boolean => {
