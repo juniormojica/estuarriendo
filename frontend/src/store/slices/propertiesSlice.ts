@@ -270,7 +270,21 @@ const propertiesSlice = createSlice({
             })
             .addCase(fetchProperties.fulfilled, (state, action) => {
                 state.loading = false;
-                state.items = action.payload;
+                // Filter out containers where all units are rented
+                state.items = action.payload.filter(p => {
+                    if (p.isContainer && p.rentalMode === 'by_unit') {
+                        // Check if it has 0 available units (or if backend doesn't send availableUnits, fallback to checking units array)
+                        const explicitlyZero = p.availableUnits === 0;
+                        const implicitlyZero = p.units && p.units.filter(u => !u.isRented).length === 0;
+
+                        // If we have availableUnits property and it's 0, hide it. 
+                        // If we don't have availableUnits but we have units[], check if all are rented.
+                        if (explicitlyZero || (p.availableUnits === undefined && implicitlyZero)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
             })
             .addCase(fetchProperties.rejected, (state, action) => {
                 state.loading = false;

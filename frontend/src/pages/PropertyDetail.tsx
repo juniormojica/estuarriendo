@@ -458,10 +458,10 @@ const PropertyDetail: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
                       <div>
                         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
-                          Habitaciones Disponibles
+                          Habitaciones
                         </h2>
                         <p className="text-sm sm:text-base text-gray-600">
-                          {property.units.filter(u => !u.isRented).length} de {property.totalUnits || property.units.length} habitaciones disponibles
+                          {property.units.filter(u => !u.isRented).length} disponibles de {property.totalUnits || property.units.length} habitaciones
                         </p>
                       </div>
                       <div className="flex sm:hidden items-center space-x-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200 self-start">
@@ -480,7 +480,7 @@ const PropertyDetail: React.FC = () => {
 
                     {/* Room Cards Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                      {property.units.filter(u => !u.isRented).map((unit) => (
+                      {[...property.units].sort((a, b) => Number(a.isRented) - Number(b.isRented)).map((unit) => (
                         <RoomCard
                           key={unit.id}
                           room={unit}
@@ -490,11 +490,6 @@ const PropertyDetail: React.FC = () => {
                           }}
                         />
                       ))}
-                      {property.units.filter(u => !u.isRented).length === 0 && (
-                        <div className="col-span-full text-center py-8 text-gray-500">
-                          No hay habitaciones disponibles en este momento.
-                        </div>
-                      )}
                     </div>
 
                     {/* Info Banner */}
