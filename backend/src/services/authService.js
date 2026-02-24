@@ -25,7 +25,7 @@ export const register = async (userData) => {
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-        const error = new Error('User with this email already exists');
+        const error = new Error('El usuario con este correo electrónico ya existe');
         error.statusCode = 400;
         throw error;
     }
@@ -67,14 +67,14 @@ export const login = async (email, password) => {
     const user = await User.scope('withPassword').findOne({ where: { email } });
 
     if (!user) {
-        const error = new Error('Invalid email or password');
+        const error = new Error('Correo electrónico o contraseña inválidos');
         error.statusCode = 401;
         throw error;
     }
 
     // Check if user is active
     if (!user.isActive) {
-        const error = new Error('Account is deactivated');
+        const error = new Error('La cuenta está desactivada');
         error.statusCode = 403;
         throw error;
     }
@@ -82,7 +82,7 @@ export const login = async (email, password) => {
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-        const error = new Error('Invalid email or password');
+        const error = new Error('Correo electrónico o contraseña inválidos');
         error.statusCode = 401;
         throw error;
     }
@@ -111,7 +111,7 @@ export const getUserById = async (userId) => {
     const user = await findById(userId);
 
     if (!user) {
-        const error = new Error('User not found');
+        const error = new Error('Usuario no encontrado');
         error.statusCode = 404;
         throw error;
     }

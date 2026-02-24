@@ -60,7 +60,7 @@ export const getPendingContainers = async (req, res) => {
         console.error('Error getting pending containers:', error);
         res.status(500).json({
             success: false,
-            message: 'Error getting pending containers',
+            message: 'Error al obtener pensiones u apartamentos pendientes',
             error: error.message
         });
     }
@@ -219,7 +219,7 @@ export const createContainer = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Container created successfully',
+            message: 'Pensión/apartamento creado exitosamente',
             data: completeContainer
         });
     } catch (error) {
@@ -227,7 +227,7 @@ export const createContainer = async (req, res) => {
         console.error('Error creating container:', error);
         res.status(500).json({
             success: false,
-            message: 'Error creating container',
+            message: 'Error al crear pensión/apartamento',
             error: error.message
         });
     }
@@ -246,7 +246,7 @@ export const getContainer = async (req, res) => {
         if (!container) {
             return res.status(404).json({
                 success: false,
-                message: 'Container not found'
+                message: 'Pensión/apartamento no encontrado'
             });
         }
 
@@ -258,7 +258,7 @@ export const getContainer = async (req, res) => {
         console.error('Error getting container:', error);
         res.status(500).json({
             success: false,
-            message: 'Error getting container',
+            message: 'Error al obtener pensión/apartamento',
             error: error.message
         });
     }
@@ -283,7 +283,7 @@ export const updateContainer = async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({
                 success: false,
-                message: 'Container not found'
+                message: 'Pensión/apartamento no encontrado'
             });
         }
 
@@ -292,7 +292,7 @@ export const updateContainer = async (req, res) => {
             await transaction.rollback();
             return res.status(403).json({
                 success: false,
-                message: 'Not authorized to update this container'
+                message: 'No autorizado para actualizar esta pensión/apartamento'
             });
         }
 
@@ -337,7 +337,7 @@ export const updateContainer = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Container updated successfully',
+            message: 'Pensión/apartamento actualizado exitosamente',
             data: updatedContainer
         });
     } catch (error) {
@@ -345,7 +345,7 @@ export const updateContainer = async (req, res) => {
         console.error('Error updating container:', error);
         res.status(500).json({
             success: false,
-            message: 'Error updating container',
+            message: 'Error al actualizar pensión/apartamento',
             error: error.message
         });
     }
@@ -369,7 +369,7 @@ export const deleteContainer = async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({
                 success: false,
-                message: 'Container not found'
+                message: 'Pensión/apartamento no encontrado'
             });
         }
 
@@ -378,7 +378,7 @@ export const deleteContainer = async (req, res) => {
             await transaction.rollback();
             return res.status(403).json({
                 success: false,
-                message: 'Not authorized to delete this container'
+                message: 'No autorizado para eliminar esta pensión/apartamento'
             });
         }
 
@@ -388,14 +388,14 @@ export const deleteContainer = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Container deleted successfully'
+            message: 'Pensión/apartamento eliminado exitosamente'
         });
     } catch (error) {
         await transaction.rollback();
         console.error('Error deleting container:', error);
         res.status(500).json({
             success: false,
-            message: 'Error deleting container',
+            message: 'Error al eliminar pensión/apartamento',
             error: error.message
         });
     }
@@ -417,7 +417,7 @@ export const rentCompleteContainer = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Container rented completely',
+            message: 'Pensión/apartamento alquilado por completo',
             data: container
         });
     } catch (error) {
@@ -446,14 +446,14 @@ export const changeRentalMode = async (req, res) => {
         if (mode === 'by_unit') {
             container = await containerService.changeToByUnitMode(id, transaction);
         } else {
-            throw new Error('Invalid rental mode');
+            throw new Error('Modo de alquiler inválido');
         }
 
         await transaction.commit();
 
         res.status(200).json({
             success: true,
-            message: `Rental mode changed to ${mode}`,
+            message: `Modo de alquiler cambiado a ${mode}`,
             data: container
         });
     } catch (error) {
@@ -483,7 +483,7 @@ export const createUnit = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Unit created successfully',
+            message: 'Habitación creada exitosamente',
             data: unit
         });
     } catch (error) {
@@ -491,7 +491,7 @@ export const createUnit = async (req, res) => {
         console.error('Error creating unit:', error);
         res.status(500).json({
             success: false,
-            message: 'Error creating unit',
+            message: 'Error al crear habitación',
             error: error.message
         });
     }
@@ -523,7 +523,7 @@ export const getContainerUnits = async (req, res) => {
         console.error('Error getting container units:', error);
         res.status(500).json({
             success: false,
-            message: 'Error getting container units',
+            message: 'Error al obtener habitaciones de la pensión/apartamento',
             error: error.message
         });
     }
@@ -548,7 +548,7 @@ export const updateUnit = async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({
                 success: false,
-                message: 'Unit not found'
+                message: 'Habitación no encontrada'
             });
         }
 
@@ -556,7 +556,7 @@ export const updateUnit = async (req, res) => {
             await transaction.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'Property is not a unit'
+                message: 'La propiedad no es una habitación'
             });
         }
 
@@ -566,7 +566,7 @@ export const updateUnit = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Unit updated successfully',
+            message: 'Habitación actualizada exitosamente',
             data: unit
         });
     } catch (error) {
@@ -574,7 +574,7 @@ export const updateUnit = async (req, res) => {
         console.error('Error updating unit:', error);
         res.status(500).json({
             success: false,
-            message: 'Error updating unit',
+            message: 'Error al actualizar habitación',
             error: error.message
         });
     }
@@ -596,14 +596,14 @@ export const deleteUnit = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Unit deleted successfully'
+            message: 'Habitación eliminada exitosamente'
         });
     } catch (error) {
         await transaction.rollback();
         console.error('Error deleting unit:', error);
         res.status(500).json({
             success: false,
-            message: 'Error deleting unit',
+            message: 'Error al eliminar habitación',
             error: error.message
         });
     }
@@ -626,7 +626,7 @@ export const updateUnitRentalStatus = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Unit rental status updated',
+            message: 'Estado de alquiler de habitación actualizado',
             data: unit
         });
     } catch (error) {
@@ -634,7 +634,7 @@ export const updateUnitRentalStatus = async (req, res) => {
         console.error('Error updating unit rental status:', error);
         res.status(500).json({
             success: false,
-            message: 'Error updating unit rental status',
+            message: 'Error al actualizar estado de alquiler de habitación',
             error: error.message
         });
     }
@@ -653,12 +653,12 @@ export const approveUnit = async (req, res) => {
         const unit = await Property.findByPk(id, { transaction });
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Unit not found' });
+            return res.status(404).json({ success: false, message: 'Habitación no encontrada' });
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'Property is not a unit' });
+            return res.status(400).json({ success: false, message: 'La propiedad no es una habitación' });
         }
 
         const oldStatus = unit.status;
@@ -715,7 +715,7 @@ export const approveUnit = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Unit approved successfully',
+            message: 'Habitación aprobada exitosamente',
             data: { unit, containerApproved }
         });
     } catch (error) {
@@ -736,7 +736,7 @@ export const rejectUnit = async (req, res) => {
         const { reason } = req.body;
 
         if (!reason) {
-            return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+            return res.status(400).json({ success: false, message: 'El motivo de rechazo es requerido' });
         }
 
         const { Property, Notification } = await import('../models/index.js');
@@ -744,12 +744,12 @@ export const rejectUnit = async (req, res) => {
         const unit = await Property.findByPk(id, { transaction });
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Unit not found' });
+            return res.status(404).json({ success: false, message: 'Habitación no encontrada' });
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'Property is not a unit' });
+            return res.status(400).json({ success: false, message: 'La propiedad no es una habitación' });
         }
 
         await unit.update({
@@ -776,7 +776,7 @@ export const rejectUnit = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Unit rejected',
+            message: 'Habitación rechazada',
             data: unit
         });
     } catch (error) {
@@ -804,12 +804,12 @@ export const approveContainer = async (req, res) => {
 
         if (!container) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Container not found' });
+            return res.status(404).json({ success: false, message: 'Pensión/apartamento no encontrado' });
         }
 
         if (!container.isContainer) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'Property is not a container' });
+            return res.status(400).json({ success: false, message: 'La propiedad no es una pensión/apartamento' });
         }
 
         // Approve all pending units
@@ -854,7 +854,7 @@ export const approveContainer = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Container and all units approved successfully',
+            message: 'Pensión/apartamento y todas sus habitaciones aprobadas exitosamente',
             data: {
                 container,
                 approvedUnitsCount: pendingUnits.length

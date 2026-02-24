@@ -11,7 +11,7 @@ const authMiddleware = (req, res, next) => {
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
-                error: 'No token provided. Authorization header must be in format: Bearer <token>'
+                error: 'No se proporcionó token. El encabezado de autorización debe tener el formato: Bearer <token>'
             });
         }
 
@@ -26,7 +26,7 @@ const authMiddleware = (req, res, next) => {
         next();
     } catch (error) {
         return res.status(401).json({
-            error: error.message || 'Invalid or expired token'
+            error: error.message || 'Token inválido o expirado'
         });
     }
 };

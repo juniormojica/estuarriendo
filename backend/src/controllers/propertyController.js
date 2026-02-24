@@ -114,7 +114,7 @@ export const getAllProperties = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching properties:', error);
-        res.status(500).json({ error: 'Failed to fetch properties', message: error.message });
+        res.status(500).json({ error: 'Error al obtener propiedades', message: error.message });
     }
 };
 
@@ -126,7 +126,7 @@ export const getPropertyById = async (req, res) => {
         const property = await propertyService.findPropertyWithAssociations(id);
 
         if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
+            return res.status(404).json({ error: 'Propiedad no encontrada' });
         }
 
         // Increment views count
@@ -146,7 +146,7 @@ export const getPropertyById = async (req, res) => {
         res.json(property);
     } catch (error) {
         console.error('Error fetching property:', error);
-        res.status(500).json({ error: 'Failed to fetch property', message: error.message });
+        res.status(500).json({ error: 'Error al obtener propiedad', message: error.message });
     }
 };
 
@@ -175,7 +175,7 @@ export const getUserProperties = async (req, res) => {
         console.error('Error fetching user properties:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch user properties',
+            message: 'Error al obtener propiedades del usuario',
             error: error.message
         });
     }
@@ -189,7 +189,7 @@ export const createProperty = async (req, res) => {
         // Validate owner exists
         const owner = await User.findByPk(ownerId);
         if (!owner) {
-            return res.status(404).json({ error: 'Owner not found' });
+            return res.status(404).json({ error: 'Propietario no encontrado' });
         }
 
         // Validate images
@@ -312,7 +312,7 @@ export const createProperty = async (req, res) => {
         res.status(201).json(completeProperty);
     } catch (error) {
         console.error('Error creating property:', error);
-        res.status(500).json({ error: 'Failed to create property', message: error.message });
+        res.status(500).json({ error: 'Error al crear propiedad', message: error.message });
     }
 };
 
@@ -324,7 +324,7 @@ export const updateProperty = async (req, res) => {
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
+            return res.status(404).json({ error: 'Propiedad no encontrada' });
         }
 
         // Update property with all associations
@@ -344,7 +344,7 @@ export const updateProperty = async (req, res) => {
         res.json(completeProperty);
     } catch (error) {
         console.error('Error updating property:', error);
-        res.status(500).json({ error: 'Failed to update property', message: error.message });
+        res.status(500).json({ error: 'Error al actualizar propiedad', message: error.message });
     }
 };
 
@@ -355,7 +355,7 @@ export const deleteProperty = async (req, res) => {
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
+            return res.status(404).json({ error: 'Propiedad no encontrada' });
         }
 
         const ownerId = property.ownerId;
@@ -392,10 +392,10 @@ export const deleteProperty = async (req, res) => {
             }
         }
 
-        res.json({ message: 'Property deleted successfully' });
+        res.json({ message: 'Propiedad eliminada exitosamente' });
     } catch (error) {
         console.error('Error deleting property:', error);
-        res.status(500).json({ error: 'Failed to delete property', message: error.message });
+        res.status(500).json({ error: 'Error al eliminar propiedad', message: error.message });
     }
 };
 
@@ -406,7 +406,7 @@ export const approveProperty = async (req, res) => {
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
+            return res.status(404).json({ error: 'Propiedad no encontrada' });
         }
 
         const oldStatus = property.status;
@@ -465,14 +465,14 @@ export const approveProperty = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Property approved successfully',
+            message: 'Propiedad aprobada exitosamente',
             data: completeProperty
         });
     } catch (error) {
         console.error('Error approving property:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to approve property',
+            error: 'Error al aprobar propiedad',
             message: error.message
         });
     }
@@ -485,12 +485,12 @@ export const rejectProperty = async (req, res) => {
         const { reason } = req.body;
 
         if (!reason) {
-            return res.status(400).json({ error: 'Rejection reason is required' });
+            return res.status(400).json({ error: 'El motivo de rechazo es requerido' });
         }
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
+            return res.status(404).json({ error: 'Propiedad no encontrada' });
         }
 
         const oldStatus = property.status;
@@ -544,14 +544,14 @@ export const rejectProperty = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Property rejected',
+            message: 'Propiedad rechazada',
             data: completeProperty
         });
     } catch (error) {
         console.error('Error rejecting property:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to reject property',
+            error: 'Error al rechazar propiedad',
             message: error.message
         });
     }
@@ -564,7 +564,7 @@ export const toggleFeatured = async (req, res) => {
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
+            return res.status(404).json({ error: 'Propiedad no encontrada' });
         }
 
         await property.update({
@@ -587,14 +587,14 @@ export const toggleFeatured = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Property ${completeProperty.isFeatured ? 'featured' : 'unfeatured'} successfully`,
+            message: `Propiedad ${completeProperty.isFeatured ? 'destacada' : 'no destacada'} exitosamente`,
             data: completeProperty
         });
     } catch (error) {
         console.error('Error toggling featured status:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to toggle featured status',
+            error: 'Error al cambiar estado destacado',
             message: error.message
         });
     }
@@ -607,7 +607,7 @@ export const toggleRentedStatus = async (req, res) => {
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
+            return res.status(404).json({ error: 'Propiedad no encontrada' });
         }
 
         await property.update({
@@ -619,14 +619,14 @@ export const toggleRentedStatus = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Property marked as ${completeProperty.isRented ? 'rented' : 'available'}`,
+            message: `Propiedad marcada como ${completeProperty.isRented ? 'alquilada' : 'disponible'}`,
             data: completeProperty
         });
     } catch (error) {
         console.error('Error toggling rented status:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to toggle rented status',
+            error: 'Error al cambiar estado de alquiler',
             message: error.message
         });
     }

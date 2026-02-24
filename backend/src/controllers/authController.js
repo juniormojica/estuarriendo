@@ -21,9 +21,8 @@ const handleError = (res, error) => {
         });
     }
 
-    // Handle unexpected errors
     res.status(500).json({
-        error: 'Internal server error',
+        error: 'Error interno del servidor',
         message: error.message
     });
 };
@@ -40,7 +39,7 @@ export const register = async (req, res) => {
         const { name, email, password, phone, userType } = userData;
         if (!name || !email || !password || !phone || !userType) {
             return res.status(400).json({
-                error: 'Missing required fields: name, email, password, phone, userType'
+                error: 'Faltan campos obligatorios: name, email, password, phone, userType'
             });
         }
 
@@ -71,7 +70,7 @@ export const login = async (req, res) => {
         // Validate required fields
         if (!email || !password) {
             return res.status(400).json({
-                error: 'Email and password are required'
+                error: 'Correo electrónico o contraseña son requeridos'
             });
         }
 
