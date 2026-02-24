@@ -25,7 +25,7 @@ export const registerSchema = z.object({
     name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(100, 'El nombre es muy largo'),
     email: z.string().min(1, 'El correo electrónico es requerido').email('Formato de correo inválido'),
     phone: phoneValidation,
-    whatsapp: phoneValidation,
+    whatsapp: phoneValidation.optional().or(z.literal('')),
     password: passwordValidation,
     confirmPassword: z.string().min(1, 'Por favor, confirma tu contraseña')
 }).refine((data) => data.password === data.confirmPassword, {
@@ -57,7 +57,7 @@ export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export const profileBasicInfoSchema = z.object({
     name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(100, 'El nombre es muy largo'),
     phone: phoneValidation,
-    whatsapp: phoneValidation
+    whatsapp: phoneValidation.optional().or(z.literal(''))
 });
 
 export type ProfileBasicInfoFormValues = z.infer<typeof profileBasicInfoSchema>;
