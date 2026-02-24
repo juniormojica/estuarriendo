@@ -47,6 +47,19 @@ export const register = async (userData) => {
     // Generate JWT token
     const token = generateToken(user.id);
 
+    // Save identification details if user is an owner and has ID data
+    const { idType, idNumber, role } = userData;
+    if (user.userType === 'owner' && (idType || idNumber || role)) {
+        const { UserIdentificationDetails } = await import('../models/index.js');
+        await UserIdentificationDetails.create({
+            userId: user.id,
+            idType: idType || null,
+            idNumber: idNumber || null,
+            ownerRole: role || null,
+            createdAt: new Date()
+        });
+    }
+
     // Return user without password
     const userJson = user.toJSON();
 
@@ -63,8 +76,18 @@ export const register = async (userData) => {
  * @returns {Promise<Object>} User and JWT token
  */
 export const login = async (email, password) => {
-    // Find user with password included
-    const user = await User.scope('withPassword').findOne({ where: { email } });
+    // Find user with relationships using repository
+    const { findByEmail } = await import('../repositories/userRepository.js');
+    let user = await findByEmail(email);
+
+    if (!user) {
+        const error = new Error('Correo electrónico o contraseña inválidos');
+        error.statusCode = 401;
+        throw error;
+    }
+
+    // Since findByEmail excludes password, we need to fetch it explicitly for validation
+    const userWithPassword = await User.scope('withPassword').findOne({ where: { email } });
 
     if (!user) {
         const error = new Error('Correo electrónico o contraseña inválidos');
@@ -79,8 +102,8 @@ export const login = async (email, password) => {
         throw error;
     }
 
-    // Verify password
-    const isPasswordValid = await comparePassword(password, user.password);
+    // Verify password using the userWithPassword object
+    const isPasswordValid = await comparePassword(password, userWithPassword.password);
     if (!isPasswordValid) {
         const error = new Error('Correo electrónico o contraseña inválidos');
         error.statusCode = 401;
@@ -90,9 +113,8 @@ export const login = async (email, password) => {
     // Generate JWT token
     const token = generateToken(user.id);
 
-    // Return user without password
+    // Return the user with relations (no password in this one)
     const userJson = user.toJSON();
-    delete userJson.password;
 
     return {
         user: userJson,
