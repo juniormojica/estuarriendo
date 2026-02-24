@@ -835,7 +835,7 @@ export const approveContainer = async (req, res) => {
         await ActivityLog.create({
             type: 'property_approved',
             message: `Container aprobado: ${container.title}`,
-            userId: req.user.id,
+            userId: req.userId,
             propertyId: container.id,
             timestamp: new Date()
         }, { transaction });

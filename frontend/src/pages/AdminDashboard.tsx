@@ -127,14 +127,16 @@ const AdminDashboard = () => {
             // Fetch amenities from Redux
             dispatch(fetchAmenities());
 
-            // Default lightweight fetches needed across dashboard (sidebar counts, pending lists)
-            const [studentRequests, containers] = await Promise.all([
+            // Default lightweight fetches needed across dashboard (sidebar counts, pending lists, owners)
+            const [studentRequests, containers, usersData] = await Promise.all([
                 api.getStudentRequests(),
-                api.getPendingContainers()
+                api.getPendingContainers(),
+                api.getUsers()
             ]);
 
             setStudentRequestsCount(studentRequests.filter(r => r.status === 'open').length);
             setPendingContainers(containers);
+            setUsers(usersData);
 
             // Load data for the active section immediately
             await loadSectionData(currentSection);
@@ -187,14 +189,28 @@ const AdminDashboard = () => {
 
     const handleApprove = async (id: string) => {
         try {
-            const resultAction = await dispatch(approveProperty(id));
+            // Check if the property is a container
+            const property = allProperties.find(p => p.id === parseInt(id)) || pendingContainers.find(p => String(p.id) === id);
 
-            if (approveProperty.fulfilled.match(resultAction)) {
-                toast.success('✅ Propiedad aprobada exitosamente');
-                setSelectedProperty(null);
-                await refreshData();
+            if (property?.isContainer) {
+                const result = await api.approveContainer(id);
+                if (result.success) {
+                    toast.success(`✅ Pensión aprobada. ${result.approvedUnitsCount || 0} habitación(es) aprobada(s)`);
+                    setSelectedProperty(null);
+                    await refreshData();
+                } else {
+                    toast.error('❌ Error al aprobar la pensión');
+                }
             } else {
-                toast.error('❌ Error al aprobar la propiedad');
+                const resultAction = await dispatch(approveProperty(id));
+
+                if (approveProperty.fulfilled.match(resultAction)) {
+                    toast.success('✅ Propiedad aprobada exitosamente');
+                    setSelectedProperty(null);
+                    await refreshData();
+                } else {
+                    toast.error('❌ Error al aprobar la propiedad');
+                }
             }
         } catch (error) {
             console.error('Error approving property:', error);
