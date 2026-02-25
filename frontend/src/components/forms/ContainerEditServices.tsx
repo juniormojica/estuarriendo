@@ -11,6 +11,7 @@ import { useToast } from '../ToastProvider';
 interface ContainerEditServicesProps {
     container: PropertyContainer;
     onUpdate?: (updatedContainer: PropertyContainer) => void;
+    onSuccess?: () => void;
 }
 
 interface ServiceOption {
@@ -20,7 +21,7 @@ interface ServiceOption {
     category: 'food' | 'utilities' | 'other';
 }
 
-const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container, onUpdate }) => {
+const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container, onUpdate, onSuccess }) => {
     const toast = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -83,6 +84,9 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
             toast.success('Servicios actualizados correctamente');
             if (onUpdate) {
                 onUpdate(updated);
+            }
+            if (onSuccess) {
+                onSuccess();
             }
         } catch (error: any) {
             console.error('Error updating services:', error);

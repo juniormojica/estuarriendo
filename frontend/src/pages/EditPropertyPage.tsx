@@ -29,8 +29,8 @@ const EditPropertyPage: React.FC = () => {
     }, [dispatch, id]);
 
     const handleSuccess = () => {
-        // Form specific success handles its own toast, but might want to navigate
-        // Let's stay on the page until explicitly leaving
+        // Redirigir al panel de propiedades después de un guardado exitoso
+        navigate('/dashboard?tab=properties');
     };
 
     const handleCancel = () => {
@@ -80,20 +80,19 @@ const EditPropertyPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-5xl mx-auto">
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="mb-8 flex items-center gap-4">
                     <button
-                        onClick={handleCancel}
-                        className="p-2 hover:bg-white rounded-full transition-colors hidden sm:block"
+                        onClick={() => navigate('/dashboard?tab=properties')}
+                        className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                        title="Volver al panel"
                     >
-                        <ArrowLeft className="w-6 h-6 text-gray-500" />
+                        <ArrowLeft className="w-6 h-6 text-gray-600" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Editar Propiedad: {property.title}</h1>
-                        <p className="text-gray-600 mt-2">
-                            Actualiza la información de tu {property.type?.name}. Algunos cambios pueden requerir una nueva revisión por parte del administrador.
-                        </p>
+                        <h1 className="text-2xl font-bold text-gray-900">Editar Propiedad</h1>
+                        <p className="text-gray-600">{property.title}</p>
                     </div>
                 </div>
 
@@ -132,18 +131,21 @@ const EditPropertyPage: React.FC = () => {
                     {activeTab === 'services' && isContainer && (
                         <ContainerEditServices
                             container={property as any}
+                            onSuccess={handleSuccess}
                         />
                     )}
 
                     {activeTab === 'rules' && isContainer && (
                         <ContainerEditRules
                             container={property as any}
+                            onSuccess={handleSuccess}
                         />
                     )}
 
                     {activeTab === 'areas' && isContainer && (
                         <ContainerEditCommonAreas
                             container={property as any}
+                            onSuccess={handleSuccess}
                         />
                     )}
 

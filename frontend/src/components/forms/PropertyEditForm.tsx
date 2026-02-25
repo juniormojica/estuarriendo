@@ -271,8 +271,8 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 // Amenities - send as array of IDs
                 amenityIds: formData.amenityIds,
 
-                // Institutions
-                nearbyInstitutions: formData.nearbyInstitutions,
+                // Institutions - backend expects "institutions" key
+                institutions: formData.nearbyInstitutions,
 
                 // Images - send as array of objects with url and metadata
                 images: formData.imageUrls.map((url, index) => ({
@@ -541,72 +541,52 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 </div>
             </div>
 
-            {/* Details */}
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {!isRoom && (
-                        <>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Habitaciones</label>
-                                <input
-                                    type="number"
-                                    value={formData.bedrooms || ''}
-                                    onChange={(e) => handleInputChange('bedrooms', e.target.value ? Number(e.target.value) : undefined)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Baños</label>
-                                <input
-                                    type="number"
-                                    value={formData.bathrooms || ''}
-                                    onChange={(e) => handleInputChange('bathrooms', e.target.value ? Number(e.target.value) : undefined)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                                />
-                            </div>
-                        </>
-                    )}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²)</label>
-                        <input
-                            type="number"
-                            value={formData.area || ''}
-                            onChange={(e) => handleInputChange('area', e.target.value ? Number(e.target.value) : undefined)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Piso (Opcional)</label>
-                        <input
-                            type="number"
-                            value={formData.floor || ''}
-                            onChange={(e) => handleInputChange('floor', e.target.value ? Number(e.target.value) : undefined)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Amenities */}
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    {isRoom ? 'Características' : 'Comodidades'}
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {amenities.map(amenity => (
-                        <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer p-2 border rounded hover:bg-gray-50">
+            {/* Details - Only show for individual rooms, not containers */}
+            {isRoom && (
+                <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²)</label>
                             <input
-                                type="checkbox"
-                                checked={formData.amenityIds.includes(Number(amenity.id))}
-                                onChange={() => handleAmenityToggle(Number(amenity.id))}
-                                className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                type="number"
+                                value={formData.area || ''}
+                                onChange={(e) => handleInputChange('area', e.target.value ? Number(e.target.value) : undefined)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                             />
-                            <span className="text-sm text-gray-700">{amenity.name}</span>
-                        </label>
-                    ))}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Piso (Opcional)</label>
+                            <input
+                                type="number"
+                                value={formData.floor || ''}
+                                onChange={(e) => handleInputChange('floor', e.target.value ? Number(e.target.value) : undefined)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                            />
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Amenities - Only show for individual rooms, not containers */}
+            {isRoom && (
+                <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Características</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {amenities.map(amenity => (
+                            <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer p-2 border rounded hover:bg-gray-50">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.amenityIds.includes(Number(amenity.id))}
+                                    onChange={() => handleAmenityToggle(Number(amenity.id))}
+                                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm text-gray-700">{amenity.name}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Images */}
             <div className="border-t pt-6">

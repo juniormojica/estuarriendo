@@ -10,6 +10,7 @@ import { useToast } from '../ToastProvider';
 interface ContainerEditRulesProps {
     container: PropertyContainer;
     onUpdate?: (updatedContainer: PropertyContainer) => void;
+    onSuccess?: () => void;
 }
 
 interface RuleOption {
@@ -20,7 +21,7 @@ interface RuleOption {
     placeholder?: string;
 }
 
-const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUpdate }) => {
+const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUpdate, onSuccess }) => {
     const toast = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -109,6 +110,9 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
             toast.success('Reglas actualizadas correctamente');
             if (onUpdate) {
                 onUpdate(updated);
+            }
+            if (onSuccess) {
+                onSuccess();
             }
         } catch (error: any) {
             console.error('Error updating rules:', error);

@@ -11,9 +11,10 @@ import { useToast } from '../ToastProvider';
 interface ContainerEditCommonAreasProps {
     container: PropertyContainer;
     onUpdate?: (updatedContainer: PropertyContainer) => void;
+    onSuccess?: () => void;
 }
 
-const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ container, onUpdate }) => {
+const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ container, onUpdate, onSuccess }) => {
     const toast = useToast();
     const [commonAreas, setCommonAreas] = useState<CommonArea[]>([]);
     const [loading, setLoading] = useState(true);
@@ -81,6 +82,9 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
             toast.success('Áreas comunes actualizadas correctamente');
             if (onUpdate) {
                 onUpdate(updated);
+            }
+            if (onSuccess) {
+                onSuccess();
             }
         } catch (error: any) {
             console.error('Error updating common areas:', error);
