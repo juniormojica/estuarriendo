@@ -16,13 +16,13 @@ apiClient.interceptors.request.use(
         const token = localStorage.getItem('estuarriendo_token');
 
         // Log the request details for debugging
-        console.log('🌐 API Request:', {
-            method: config.method?.toUpperCase(),
-            url: config.url,
-            baseURL: config.baseURL,
-            fullURL: `${config.baseURL}${config.url}`,
-            hasToken: !!token
-        });
+        // console.log('🌐 API Request:', {
+        //     method: config.method?.toUpperCase(),
+        //     url: config.url,
+        //     baseURL: config.baseURL,
+        //     fullURL: `${config.baseURL}${config.url}`,
+        //     hasToken: !!token
+        // });
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -40,12 +40,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => {
         // Log successful responses
-        console.log('✅ API Response:', {
-            method: response.config.method?.toUpperCase(),
-            url: response.config.url,
-            status: response.status,
-            dataKeys: response.data ? Object.keys(response.data) : []
-        });
+        // console.log('✅ API Response:', {
+        //     method: response.config.method?.toUpperCase(),
+        //     url: response.config.url,
+        //     status: response.status,
+        //     dataKeys: response.data ? Object.keys(response.data) : []
+        // });
         return response;
     },
     (error) => {

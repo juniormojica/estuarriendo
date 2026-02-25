@@ -326,6 +326,27 @@ const propertiesSlice = createSlice({
             .addCase(fetchUserProperties.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+            })
+            // Update property
+            .addCase(updateProperty.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateProperty.fulfilled, (state, action) => {
+                state.loading = false;
+                // Update in items list if it exists
+                const index = state.items.findIndex(p => p.id === action.payload.id);
+                if (index !== -1) {
+                    state.items[index] = action.payload;
+                }
+                // Update current property if it's the one we're viewing
+                if (state.currentProperty?.id === action.payload.id) {
+                    state.currentProperty = action.payload;
+                }
+            })
+            .addCase(updateProperty.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
             });
 
         // Create Property
@@ -343,26 +364,7 @@ const propertiesSlice = createSlice({
                 state.error = action.payload as string;
             });
 
-        // Update Property
-        builder
-            .addCase(updateProperty.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(updateProperty.fulfilled, (state, action) => {
-                state.loading = false;
-                const index = state.items.findIndex(p => p.id === action.payload.id);
-                if (index !== -1) {
-                    state.items[index] = action.payload;
-                }
-                if (state.currentProperty?.id === action.payload.id) {
-                    state.currentProperty = action.payload;
-                }
-            })
-            .addCase(updateProperty.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload as string;
-            });
+
 
         // Delete Property
         builder

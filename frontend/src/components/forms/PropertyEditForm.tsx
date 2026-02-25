@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Save, AlertCircle } from 'lucide-react';
-import { Property, PropertyTypeEntity } from '../../types';
+import { Save, AlertCircle, X } from 'lucide-react';
+import { Property, PropertyTypeEntity, Institution } from '../../types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchAmenities } from '../../store/slices/amenitiesSlice';
 import { updateProperty } from '../../store/slices/propertiesSlice';
 import { useToast } from '../ToastProvider';
 import ImageUploader from '../ImageUploader';
-import { departments, getCitiesByDepartment } from '../../data/colombiaLocations';
 import LoadingSpinner from '../LoadingSpinner';
 import { fetchPropertyTypes } from '../../services/propertyTypeService';
 import LocationPicker from '../LocationPicker';
+import InstitutionAutocomplete from '../InstitutionAutocomplete';
+import CityAutocomplete from '../CityAutocomplete';
+import { City as LocationCity } from '../../services/locationService';
+import { FormNumericInput } from './FormNumericInput';
 
 export interface PropertyEditFormProps {
     property: Property;
@@ -28,14 +31,15 @@ interface EditFormData {
     area?: number;
     floor?: number;
     locationId?: number;
-    department: string;
-    city: string;
+    cityId: number;
+    departmentId: number;
     street: string;
     neighborhood?: string;
     latitude?: number;
     longitude?: number;
     amenityIds: number[];
     imageUrls: string[];
+    nearbyInstitutions: Array<{ institutionId: number; distance: number | null }>;
 }
 
 const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
@@ -52,17 +56,23 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
         description: '',
         typeId: 1,
         monthlyRent: 0,
-        department: '',
-        city: '',
+        cityId: 0,
+        departmentId: 0,
         street: '',
         amenityIds: [],
-        imageUrls: []
+        imageUrls: [],
+        nearbyInstitutions: []
     });
-    const [availableCities, setAvailableCities] = useState<string[]>([]);
+    const [selectedCity, setSelectedCity] = useState<LocationCity | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string>('');
     const [propertyTypes, setPropertyTypes] = useState<PropertyTypeEntity[]>([]);
     const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+
+    // Temp state for adding new institutions
+    const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
+    const [tempDistance, setTempDistance] = useState<string>('');
+    const [institutionNames, setInstitutionNames] = useState<Record<number, string>>({});
 
     // Fetch property types on mount
     useEffect(() => {
@@ -100,14 +110,49 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 typeof img === 'object' ? img.url : img
             ) || [];
 
-            // Handle city and department - can be string or object with name
-            const cityValue = typeof property.location?.city === 'object'
-                ? (property.location.city as any)?.name || ''
-                : property.location?.city || '';
+            const initInstitutionNames: Record<number, string> = {};
+            const institutions = property.institutions?.map(i => {
+                const id = typeof i === 'object' ? i.id : Number(i);
+                if (typeof i === 'object') {
+                    initInstitutionNames[id] = i.name;
+                }
+                return {
+                    institutionId: id,
+                    distance: typeof i === 'object' ? (i as any).PropertyInstitution?.distance || null : null
+                };
+            }) || [];
 
-            const deptValue = typeof property.location?.department === 'object'
-                ? (property.location.department as any)?.name || ''
-                : property.location?.department || '';
+            setInstitutionNames(initInstitutionNames);
+
+            // Initialize selected city from property.location (backend returns city/department as objects)
+            const locationCity = property.location?.city;
+            const locationDept = property.location?.department;
+            let cityId = 0;
+            let departmentId = 0;
+
+            if (typeof locationCity === 'object' && locationCity !== null) {
+                cityId = (locationCity as any).id || 0;
+                departmentId = (locationCity as any).departmentId || 0;
+                // Build a City object for CityAutocomplete
+                setSelectedCity({
+                    id: cityId,
+                    name: (locationCity as any).name || '',
+                    slug: (locationCity as any).slug || '',
+                    departmentId: departmentId,
+                    department: typeof locationDept === 'object' && locationDept !== null
+                        ? {
+                            id: (locationDept as any).id || 0,
+                            name: (locationDept as any).name || '',
+                            code: (locationDept as any).code || '',
+                            slug: (locationDept as any).slug || '',
+                            isActive: true
+                        }
+                        : undefined,
+                    isActive: true
+                } as LocationCity);
+            } else if (typeof locationDept === 'object' && locationDept !== null) {
+                departmentId = (locationDept as any).id || 0;
+            }
 
             setFormData({
                 title: property.title || '',
@@ -120,45 +165,40 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 area: property.area,
                 floor: property.floor,
                 locationId: property.location?.id,
-                department: deptValue,
-                city: cityValue,
+                cityId,
+                departmentId,
                 street: property.location?.street || '',
                 neighborhood: property.location?.neighborhood,
                 latitude: property.location?.latitude ? Number(property.location.latitude) : undefined,
                 longitude: property.location?.longitude ? Number(property.location.longitude) : undefined,
                 amenityIds,
-                imageUrls
+                imageUrls,
+                nearbyInstitutions: institutions
             });
 
             dispatch(fetchAmenities());
-
-            // Initialize available cities
-            if (property.location?.department) {
-                const deptName = typeof property.location.department === 'object'
-                    ? (property.location.department as any)?.name
-                    : property.location.department;
-
-                const dept = departments.find(d => d.name === deptName);
-                if (dept) {
-                    const cities = getCitiesByDepartment(dept.id);
-                    setAvailableCities(cities.map(c => c.name));
-                }
-            }
         }
     }, [property, dispatch]);
 
-    const handleInputChange = (field: keyof EditFormData, value: any) => {
-        if (field === 'department') {
-            const dept = departments.find(d => d.id === value);
-            const deptName = dept ? dept.name : '';
-            const cities = getCitiesByDepartment(value);
-            setAvailableCities(cities.map(c => c.name));
+    const handleCityChange = (city: LocationCity | null) => {
+        setSelectedCity(city);
+        if (city) {
             setFormData(prev => ({
                 ...prev,
-                department: deptName,
-                city: ''
+                cityId: city.id,
+                departmentId: city.departmentId
             }));
-        } else if (field === 'typeId') {
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                cityId: 0,
+                departmentId: 0
+            }));
+        }
+    };
+
+    const handleInputChange = (field: keyof EditFormData, value: any) => {
+        if (field === 'typeId') {
             const typeId = Number(value);
             const isRoom = propertyTypes.find(t => t.id === typeId)?.name === 'habitacion';
             setFormData(prev => ({
@@ -217,10 +257,10 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 area: (formData.area || null) as any,
                 floor: (formData.floor || null) as any,
 
-                // Location object - backend expects these specific fields
+                // Location object - send IDs so findOrCreateLocation resolves correctly
                 location: {
-                    city: formData.city,
-                    department: formData.department,
+                    cityId: formData.cityId,
+                    departmentId: formData.departmentId,
                     street: formData.street,
                     neighborhood: formData.neighborhood || null,
                     postalCode: null,
@@ -230,6 +270,9 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
 
                 // Amenities - send as array of IDs
                 amenityIds: formData.amenityIds,
+
+                // Institutions
+                nearbyInstitutions: formData.nearbyInstitutions,
 
                 // Images - send as array of objects with url and metadata
                 images: formData.imageUrls.map((url, index) => ({
@@ -347,35 +390,13 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
             <div className="border-t pt-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Ubicación</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
-                        <select
+                    <div className="col-span-2">
+                        <CityAutocomplete
+                            value={selectedCity}
+                            onChange={handleCityChange}
+                            placeholder="Buscar ciudad..."
                             required
-                            value={departments.find(d => d.name === formData.department)?.id || ''}
-                            onChange={(e) => handleInputChange('department', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                        >
-                            <option value="">Selecciona un departamento</option>
-                            {departments.map(dept => (
-                                <option key={dept.id} value={dept.id}>{dept.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-                        <select
-                            required
-                            value={formData.city}
-                            onChange={(e) => handleInputChange('city', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                            disabled={!formData.department}
-                        >
-                            <option value="">Selecciona una ciudad</option>
-                            {availableCities.map(city => (
-                                <option key={city} value={city}>{city}</option>
-                            ))}
-                        </select>
+                        />
                     </div>
 
                     <div className="col-span-2">
@@ -400,7 +421,7 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                     </div>
 
                     {/* Map Location Picker - Only show if address is filled */}
-                    {formData.department && formData.city && formData.street && (
+                    {selectedCity && formData.street && (
                         <div className="col-span-2 mt-4">
                             <h4 className="text-sm font-medium text-gray-900 mb-3">📍 Ubicación en el Mapa</h4>
                             <p className="text-xs text-gray-600 mb-2">
@@ -409,8 +430,8 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                             <LocationPicker
                                 address={{
                                     street: formData.street,
-                                    city: formData.city,
-                                    department: formData.department,
+                                    city: selectedCity.name,
+                                    department: selectedCity.department?.name || '',
                                     country: 'Colombia'
                                 }}
                                 coordinates={{
@@ -429,13 +450,94 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                     )}
 
                     {/* Show message if address is incomplete */}
-                    {(!formData.department || !formData.city || !formData.street) && (
+                    {(!selectedCity || !formData.street) && (
                         <div className="col-span-2 mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <p className="text-sm text-blue-700">
-                                💡 Completa el departamento, ciudad y dirección para poder editar la ubicación en el mapa
+                                💡 Selecciona una ciudad y completa la dirección para poder editar la ubicación en el mapa
                             </p>
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* Institutions */}
+            <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Instituciones Cercanas</h3>
+                <div className="space-y-4">
+                    {formData.nearbyInstitutions.map((inst, index) => (
+                        <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1">
+                                <p className="text-sm font-medium">{institutionNames[inst.institutionId] || `Institución API ID: ${inst.institutionId}`}</p>
+                            </div>
+                            <div className="w-32">
+                                <FormNumericInput
+                                    label=""
+                                    value={inst.distance || undefined}
+                                    placeholder="Distancia (m)"
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        const newInstitutions = [...formData.nearbyInstitutions];
+                                        newInstitutions[index].distance = e.target.value ? Number(e.target.value) : null;
+                                        setFormData(prev => ({ ...prev, nearbyInstitutions: newInstitutions }));
+                                    }}
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const newInstitutions = [...formData.nearbyInstitutions];
+                                    newInstitutions.splice(index, 1);
+                                    setFormData(prev => ({ ...prev, nearbyInstitutions: newInstitutions }));
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
+
+                    <div className="flex gap-2">
+                        <div className="flex-1">
+                            <InstitutionAutocomplete
+                                value={tempInstitution}
+                                onChange={setTempInstitution}
+                                cityId={formData.cityId}
+                                placeholder="Buscar institución..."
+                                disabled={!formData.cityId}
+                            />
+                        </div>
+                        <div className="w-32">
+                            <FormNumericInput
+                                label=""
+                                value={tempDistance}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTempDistance(e.target.value)}
+                                placeholder="Distancia (m)"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (tempInstitution) {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        nearbyInstitutions: [...prev.nearbyInstitutions, {
+                                            institutionId: tempInstitution.id,
+                                            distance: tempDistance ? parseInt(tempDistance) : null
+                                        }]
+                                    }));
+                                    setInstitutionNames(prev => ({
+                                        ...prev,
+                                        [tempInstitution.id]: tempInstitution.name
+                                    }));
+                                    setTempInstitution(null);
+                                    setTempDistance('');
+                                }
+                            }}
+                            disabled={!tempInstitution}
+                            className="px-4 py-2 mt-6 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            Agregar
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -537,7 +639,7 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                     <span>Guardar Cambios</span>
                 </button>
             </div>
-        </form>
+        </form >
     );
 };
 
