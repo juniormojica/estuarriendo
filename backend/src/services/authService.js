@@ -154,13 +154,11 @@ export const requestPasswordReset = async (email) => {
     // Find user by email and extract userId
     const user = await User.findOne({ where: { email } });
 
-    // Don't reveal if user exists (security best practice)
+    // Throw error if user doesn't exist to improve UX
     if (!user) {
-        // Return success message anyway to prevent email enumeration
-        return {
-            message: 'Si el email existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña',
-            token: null // In production, don't return token
-        };
+        const error = new Error('El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.');
+        error.statusCode = 404;
+        throw error;
     }
 
     // Extract userId for password reset
@@ -180,8 +178,12 @@ export const requestPasswordReset = async (email) => {
     // Send password reset email
     await sendPasswordResetEmail(user.email, user.name, rawToken);
 
+    // Return dynamic success message with masked email
+    const emailParts = user.email.split('@');
+    const maskedEmail = emailParts[0].substring(0, 3) + '******@' + emailParts[1].substring(0, 2) + '****';
+
     return {
-        message: 'Si el email existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña'
+        message: `Se ha enviado el link de reinicio de contraseña a ${maskedEmail}`
     };
 };
 

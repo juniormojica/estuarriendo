@@ -10,6 +10,7 @@ const ForgotPasswordPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     const {
         register,
@@ -28,6 +29,7 @@ const ForgotPasswordPage = () => {
         try {
             const response = await authService.forgotPassword(data.email);
             setSuccess(true);
+            setSuccessMessage(response.message || 'Instrucciones enviadas');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Error al solicitar recuperación de contraseña');
         } finally {
@@ -56,9 +58,20 @@ const ForgotPasswordPage = () => {
                     {!success ? (
                         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                             {error && (
-                                <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700 text-sm">
-                                    <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-                                    {error}
+                                <div className="bg-red-50 border border-red-200 rounded-md p-4 flex flex-col items-start text-red-700 text-sm">
+                                    <div className="flex items-center">
+                                        <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+                                        <span className="font-medium">Atención</span>
+                                    </div>
+                                    <p className="mt-2 ml-7 leading-relaxed">{error}</p>
+                                    {error.includes('no está registrado') && (
+                                        <Link
+                                            to="/register"
+                                            className="mt-4 ml-7 inline-flex w-full sm:w-auto items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm transition-colors duration-200"
+                                        >
+                                            Crear una cuenta nueva
+                                        </Link>
+                                    )}
                                 </div>
                             )}
 
@@ -103,9 +116,9 @@ const ForgotPasswordPage = () => {
                             <div className="bg-green-50 border border-green-200 rounded-md p-4 flex items-start text-green-700 text-sm">
                                 <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="font-medium">Instrucciones enviadas</p>
+                                    <p className="font-medium">¡Instrucciones enviadas!</p>
                                     <p className="mt-1">
-                                        Si el correo existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña.
+                                        {successMessage}
                                     </p>
                                 </div>
                             </div>
