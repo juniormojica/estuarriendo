@@ -10,7 +10,6 @@ const ForgotPasswordPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
-    const [resetToken, setResetToken] = useState(''); // For development only
 
     const {
         register,
@@ -29,11 +28,6 @@ const ForgotPasswordPage = () => {
         try {
             const response = await authService.forgotPassword(data.email);
             setSuccess(true);
-
-            // In development, show the token
-            if (response.token) {
-                setResetToken(response.token);
-            }
         } catch (err: any) {
             setError(err.response?.data?.error || 'Error al solicitar recuperación de contraseña');
         } finally {
@@ -115,23 +109,6 @@ const ForgotPasswordPage = () => {
                                     </p>
                                 </div>
                             </div>
-
-                            {/* Development only - show token */}
-                            {resetToken && (
-                                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-800 text-sm">
-                                    <p className="font-medium mb-2">🔧 Modo Desarrollo:</p>
-                                    <p className="mb-2">Token de reset:</p>
-                                    <code className="block bg-white p-2 rounded text-xs break-all">
-                                        {resetToken}
-                                    </code>
-                                    <Link
-                                        to={`/reset-password?token=${resetToken}`}
-                                        className="mt-2 inline-block text-blue-600 hover:text-blue-500 font-medium"
-                                    >
-                                        → Ir a resetear contraseña
-                                    </Link>
-                                </div>
-                            )}
 
                             <div className="text-center pt-4">
                                 <Link to="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">

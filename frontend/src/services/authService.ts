@@ -22,8 +22,6 @@ export interface AuthResponse {
 
 export interface ForgotPasswordResponse {
     message: string;
-    token?: string; // Only in development
-    email?: string; // Only in development
 }
 
 export interface ResetPasswordData {

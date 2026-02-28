@@ -8,6 +8,7 @@ import {
     generateTokenExpiration,
     isTokenExpired
 } from '../utils/tokenUtils.js';
+import { sendPasswordResetEmail } from './emailService.js';
 
 /**
  * Authentication Service
@@ -176,12 +177,11 @@ export const requestPasswordReset = async (email) => {
         resetPasswordExpires: expirationTime
     });
 
-    // In production, send rawToken via email
-    // For development/testing, we return it
+    // Send password reset email
+    await sendPasswordResetEmail(user.email, user.name, rawToken);
+
     return {
-        message: 'Si el email existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña',
-        token: rawToken, // Remove this in production
-        email: user.email // Remove this in production
+        message: 'Si el email existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña'
     };
 };
 
