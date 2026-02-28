@@ -8,6 +8,9 @@ import PaymentUploadForm from '../components/PaymentUploadForm';
 import PaymentFlowSection from '../components/PaymentFlowSection';
 import PlanComparisonCards from '../components/PlanComparisonCards';
 import VerificationForm from '../components/VerificationForm';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { profileBasicInfoSchema, ProfileBasicInfoValues } from '../lib/validations';
 
 const UserProfile: React.FC = () => {
     const { user: authUser, loading: authLoading } = useAppSelector((state) => state.auth);
@@ -20,7 +23,7 @@ const UserProfile: React.FC = () => {
     const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
     const [initialPlan, setInitialPlan] = useState<string | null>(null);
 
-    // Form states
+    // Form states for non-basic info
     const [formData, setFormData] = useState<Partial<User>>({});
 
     // Select options
@@ -28,6 +31,22 @@ const UserProfile: React.FC = () => {
     const [institutions, setInstitutions] = useState<any[]>([]);
 
     const location = useLocation();
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors }
+    } = useForm<ProfileBasicInfoValues>({
+        resolver: zodResolver(profileBasicInfoSchema),
+        defaultValues: {
+            name: '',
+            phone: '',
+            whatsapp: '',
+            idType: undefined,
+            idNumber: ''
+        }
+    });
 
     useEffect(() => {
         // Handle tab parameter
@@ -54,18 +73,27 @@ const UserProfile: React.FC = () => {
                 // Fetch fresh user data from backend to get identification details
                 try {
                     const freshUser = await api.getCurrentUser();
-
-                    console.log('🔍 Fresh user data:', freshUser);
-                    console.log('🔍 idType:', freshUser?.idType);
-                    console.log('🔍 idNumber:', freshUser?.idNumber);
-
                     setUser(freshUser);
                     setFormData(freshUser);
+                    reset({
+                        name: freshUser.name || '',
+                        phone: freshUser.phone || '',
+                        whatsapp: freshUser.whatsapp || '',
+                        idType: (freshUser.idType as any) || undefined,
+                        idNumber: freshUser.idNumber || ''
+                    });
                 } catch (error) {
                     console.error('Error fetching fresh user data:', error);
                     // Fallback to authUser on error
                     setUser(authUser);
                     setFormData(authUser);
+                    reset({
+                        name: authUser.name || '',
+                        phone: authUser.phone || '',
+                        whatsapp: authUser.whatsapp || '',
+                        idType: (authUser.idType as any) || undefined,
+                        idNumber: authUser.idNumber || ''
+                    });
                 }
 
                 if (authUser.paymentRequestId) {
@@ -83,15 +111,11 @@ const UserProfile: React.FC = () => {
 
         // Fetch cities and institutions
         const fetchData = async () => {
-            // We can use getAvailableCities, but that returns strings. We might need full city objects or just list all cities.
-            // For now let's use a hardcoded list of major Colombian cities if no API exists, or try to get institutions which have cities.
-            // Actually, verify what api.getAllInstitutions returns.
             try {
                 const insts = await api.getAllInstitutions();
                 setInstitutions(insts);
 
                 // Mock cities for now or derive from institutions/properties
-                // Ideally we should have an api.getCities()
                 setCities([
                     { id: 1, name: 'Bogotá' },
                     { id: 2, name: 'Medellín' },
@@ -107,11 +131,7 @@ const UserProfile: React.FC = () => {
             }
         };
         fetchData();
-    }, [location.search, authUser, authLoading, navigate]);
-
-    const handleInputChange = (field: keyof User, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
+    }, [location.search, authUser, authLoading, navigate, reset]);
 
     const handleProfileChange = (field: string, value: any) => {
         setFormData(prev => ({
@@ -123,7 +143,7 @@ const UserProfile: React.FC = () => {
         }));
     };
 
-    const handleSaveProfile = async () => {
+    const onSubmitProfile = async (data: ProfileBasicInfoValues) => {
         if (!user) return;
         setSaving(true);
         setMessage(null);
@@ -132,11 +152,11 @@ const UserProfile: React.FC = () => {
             // Call backend API to update user
             // We include the profile data in the update
             const updatedUser = await api.updateUser(user.id, {
-                name: formData.name,
-                phone: formData.phone,
-                whatsapp: formData.whatsapp,
-                idType: formData.idType,
-                idNumber: formData.idNumber,
+                name: data.name,
+                phone: data.phone,
+                whatsapp: data.whatsapp,
+                idType: data.idType,
+                idNumber: data.idNumber,
                 // Include profile data
                 profile: formData.profile
             });
@@ -144,6 +164,14 @@ const UserProfile: React.FC = () => {
             // Update local state with the response from backend
             setUser(updatedUser);
             setFormData(updatedUser);
+            reset({
+                name: updatedUser.name || '',
+                phone: updatedUser.phone || '',
+                whatsapp: updatedUser.whatsapp || '',
+                idType: (updatedUser.idType as any) || undefined,
+                idNumber: updatedUser.idNumber || ''
+            });
+
             setMessage({ type: 'success', text: 'Perfil actualizado correctamente.' });
         } catch (error: any) {
             const errorMessage = error.response?.data?.error || 'Error al actualizar el perfil';
@@ -303,23 +331,23 @@ const UserProfile: React.FC = () => {
                             )}
 
                             {activeTab === 'profile' && (
-                                <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+                                <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-4 sm:space-y-6 animate-fadeIn">
                                     <h2 className="text-base sm:text-lg font-medium text-gray-900">Información Personal</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Nombre Completo</label>
                                             <input
                                                 type="text"
-                                                value={formData.name || ''}
-                                                onChange={(e) => handleInputChange('name', e.target.value)}
-                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                {...register('name')}
+                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.name ? 'border-red-500' : ''}`}
                                             />
+                                            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Correo Electrónico</label>
                                             <input
                                                 type="email"
-                                                value={formData.email || ''}
+                                                value={user?.email || ''}
                                                 disabled
                                                 className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                                             />
@@ -328,19 +356,19 @@ const UserProfile: React.FC = () => {
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Teléfono</label>
                                             <input
                                                 type="tel"
-                                                value={formData.phone || ''}
-                                                onChange={(e) => handleInputChange('phone', e.target.value)}
-                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                {...register('phone')}
+                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.phone ? 'border-red-500' : ''}`}
                                             />
+                                            {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">WhatsApp</label>
                                             <input
                                                 type="tel"
-                                                value={formData.whatsapp || ''}
-                                                onChange={(e) => handleInputChange('whatsapp', e.target.value)}
-                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                {...register('whatsapp')}
+                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.whatsapp ? 'border-red-500' : ''}`}
                                             />
+                                            {errors.whatsapp && <p className="mt-1 text-sm text-red-600">{errors.whatsapp.message}</p>}
                                         </div>
                                     </div>
 
@@ -350,24 +378,24 @@ const UserProfile: React.FC = () => {
                                             <div>
                                                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Tipo de Documento</label>
                                                 <select
-                                                    value={formData.idType || ''}
-                                                    onChange={(e) => handleInputChange('idType', e.target.value)}
-                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    {...register('idType')}
+                                                    className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.idType ? 'border-red-500' : ''}`}
                                                 >
                                                     <option value="">Seleccionar</option>
                                                     <option value="CC">Cédula de Ciudadanía</option>
                                                     <option value="CE">Cédula de Extranjería</option>
                                                     <option value="NIT">NIT</option>
                                                 </select>
+                                                {errors.idType && <p className="mt-1 text-sm text-red-600">{errors.idType.message}</p>}
                                             </div>
                                             <div>
                                                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Número de Documento</label>
                                                 <input
                                                     type="text"
-                                                    value={formData.idNumber || ''}
-                                                    onChange={(e) => handleInputChange('idNumber', e.target.value)}
-                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    {...register('idNumber')}
+                                                    className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.idNumber ? 'border-red-500' : ''}`}
                                                 />
+                                                {errors.idNumber && <p className="mt-1 text-sm text-red-600">{errors.idNumber.message}</p>}
                                             </div>
                                         </div>
                                     </div>
@@ -527,7 +555,7 @@ const UserProfile: React.FC = () => {
 
                                     <div className="flex justify-end pt-3 sm:pt-4">
                                         <button
-                                            onClick={handleSaveProfile}
+                                            type="submit"
                                             disabled={saving}
                                             className="flex items-center min-h-[48px] px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 transition-colors font-medium"
                                         >
@@ -535,7 +563,7 @@ const UserProfile: React.FC = () => {
                                             Guardar Cambios
                                         </button>
                                     </div>
-                                </div>
+                                </form>
                             )}
 
                             {activeTab === 'security' && (

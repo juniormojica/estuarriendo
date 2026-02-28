@@ -270,7 +270,21 @@ const propertiesSlice = createSlice({
             })
             .addCase(fetchProperties.fulfilled, (state, action) => {
                 state.loading = false;
-                state.items = action.payload;
+                // Filter out containers where all units are rented
+                state.items = action.payload.filter(p => {
+                    if (p.isContainer && p.rentalMode === 'by_unit') {
+                        // Check if it has 0 available units (or if backend doesn't send availableUnits, fallback to checking units array)
+                        const explicitlyZero = p.availableUnits === 0;
+                        const implicitlyZero = p.units && p.units.filter(u => !u.isRented).length === 0;
+
+                        // If we have availableUnits property and it's 0, hide it. 
+                        // If we don't have availableUnits but we have units[], check if all are rented.
+                        if (explicitlyZero || (p.availableUnits === undefined && implicitlyZero)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
             })
             .addCase(fetchProperties.rejected, (state, action) => {
                 state.loading = false;
@@ -312,6 +326,27 @@ const propertiesSlice = createSlice({
             .addCase(fetchUserProperties.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+            })
+            // Update property
+            .addCase(updateProperty.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateProperty.fulfilled, (state, action) => {
+                state.loading = false;
+                // Update in items list if it exists
+                const index = state.items.findIndex(p => p.id === action.payload.id);
+                if (index !== -1) {
+                    state.items[index] = action.payload;
+                }
+                // Update current property if it's the one we're viewing
+                if (state.currentProperty?.id === action.payload.id) {
+                    state.currentProperty = action.payload;
+                }
+            })
+            .addCase(updateProperty.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
             });
 
         // Create Property
@@ -329,26 +364,7 @@ const propertiesSlice = createSlice({
                 state.error = action.payload as string;
             });
 
-        // Update Property
-        builder
-            .addCase(updateProperty.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(updateProperty.fulfilled, (state, action) => {
-                state.loading = false;
-                const index = state.items.findIndex(p => p.id === action.payload.id);
-                if (index !== -1) {
-                    state.items[index] = action.payload;
-                }
-                if (state.currentProperty?.id === action.payload.id) {
-                    state.currentProperty = action.payload;
-                }
-            })
-            .addCase(updateProperty.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload as string;
-            });
+
 
         // Delete Property
         builder

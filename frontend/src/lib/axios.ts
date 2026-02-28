@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
@@ -15,13 +16,13 @@ apiClient.interceptors.request.use(
         const token = localStorage.getItem('estuarriendo_token');
 
         // Log the request details for debugging
-        console.log('🌐 API Request:', {
-            method: config.method?.toUpperCase(),
-            url: config.url,
-            baseURL: config.baseURL,
-            fullURL: `${config.baseURL}${config.url}`,
-            hasToken: !!token
-        });
+        // console.log('🌐 API Request:', {
+        //     method: config.method?.toUpperCase(),
+        //     url: config.url,
+        //     baseURL: config.baseURL,
+        //     fullURL: `${config.baseURL}${config.url}`,
+        //     hasToken: !!token
+        // });
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -39,12 +40,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => {
         // Log successful responses
-        console.log('✅ API Response:', {
-            method: response.config.method?.toUpperCase(),
-            url: response.config.url,
-            status: response.status,
-            dataKeys: response.data ? Object.keys(response.data) : []
-        });
+        // console.log('✅ API Response:', {
+        //     method: response.config.method?.toUpperCase(),
+        //     url: response.config.url,
+        //     status: response.status,
+        //     dataKeys: response.data ? Object.keys(response.data) : []
+        // });
         return response;
     },
     (error) => {
@@ -78,6 +79,13 @@ apiClient.interceptors.response.use(
                 localStorage.removeItem('estuarriendo_current_user');
                 window.location.href = '/login';
             }
+        } else {
+            // Show global error toast for all other errors (except 401 unless we want to show it)
+            // Prevent showing toast if the request explicitly disabled it via a custom config flag (optional enhancement)
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Ocurrió un error de conexión con el servidor.';
+
+            // We use an ID to prevent spamming the same error toast multiple times
+            toast.error(errorMessage, { id: 'global-api-error' });
         }
 
         return Promise.reject(error);

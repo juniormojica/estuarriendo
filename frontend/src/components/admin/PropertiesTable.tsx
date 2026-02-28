@@ -48,13 +48,16 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
         return users.find(u => u.id === ownerId);
     };
 
-    const getOwnerName = (ownerId?: string) => {
-        const owner = getOwner(ownerId);
+    const getOwnerName = (property: Property) => {
+        if (property.owner?.name) return property.owner.name;
+        if (property.owner?.email) return property.owner.email;
+        const owner = getOwner(property.ownerId);
         return owner?.name || owner?.email || 'Desconocido';
     };
 
-    const getOwnerEmail = (ownerId?: string) => {
-        const owner = getOwner(ownerId);
+    const getOwnerEmail = (property: Property) => {
+        if (property.owner?.email) return property.owner.email;
+        const owner = getOwner(property.ownerId);
         return owner?.email || '';
     };
 
@@ -87,8 +90,8 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
 
     // Filter properties
     const filteredProperties = properties.filter(property => {
-        const ownerName = getOwnerName(property.ownerId);
-        const ownerEmail = getOwnerEmail(property.ownerId);
+        const ownerName = getOwnerName(property);
+        const ownerEmail = getOwnerEmail(property);
         const locationStr = getLocationDisplay(property);
         const searchLower = searchTerm.toLowerCase();
 
@@ -253,19 +256,19 @@ const PropertiesTable: React.FC<PropertiesTableProps> = ({
                                     </div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900">
-                                    <div className="font-medium">{getOwnerName(property.ownerId)}</div>
+                                    <div className="font-medium">{getOwnerName(property)}</div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900">
                                     {getLocationDisplay(property)}
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900 capitalize">
-                                    {property.type?.name || property.type}
+                                    {typeof property.type === 'object' ? (property.type as PropertyTypeEntity)?.name : (property.type as string | undefined)}
                                 </td>
                                 <td className="px-4 py-4 text-sm font-medium text-gray-900">
                                     {new Intl.NumberFormat('es-CO', {
                                         style: 'currency',
                                         currency: property.currency
-                                    }).format(property.monthlyRent || property.price || 0)}
+                                    }).format(property.monthlyRent || (property as any).price || 0)}
                                 </td>
                                 <td className="px-4 py-4">
                                     {getStatusBadge(property.status)}

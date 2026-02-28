@@ -4,6 +4,9 @@ import { UserRegistrationPayload } from '../types';
 import { CheckCircle, Eye, EyeOff, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { registerUser, clearError } from '../store/slices/authSlice';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerSchema, RegisterFormValues } from '../lib/validations';
 
 const RegistrationPage = () => {
     const navigate = useNavigate();
@@ -14,23 +17,28 @@ const RegistrationPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const [formData, setFormData] = useState<Partial<UserRegistrationPayload>>({
-        userType: 'owner',
-        role: 'individual', // Default for owner, will be overwritten or ignored for tenant
+    // Some fields like role, idType, idNumber aren't in the base schema because they 
+    // depend on userType. We'll track them manually or they could be nested in Zod.
+    // To keep it simple, we use local state for owner-specific fields not in Zod yet.
+    const [ownerData, setOwnerData] = useState({
+        role: 'individual',
         idType: 'CC',
-        paymentPreference: 'PSE',
-        password: '',
-        confirmPassword: '',
-        bankDetails: {
-            bankName: '',
-            accountType: 'savings',
-            accountNumber: '',
-            holderName: ''
-        },
-        billingDetails: {
-            billingAddress: '',
-            taxId: '',
-            city: ''
+        idNumber: ''
+    });
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm<RegisterFormValues>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            name: '',
+            email: '',
+            phone: '',
+            whatsapp: '',
+            password: '',
+            confirmPassword: ''
         }
     });
 
@@ -52,54 +60,33 @@ const RegistrationPage = () => {
         }
     }, [user, navigate]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleOwnerInputChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setOwnerData(prev => ({ ...prev, [name]: value }));
     };
 
-    const validateForm = (): string | null => {
-        // Common validation
-        if (!formData.name || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
-            return 'Por favor completa todos los campos obligatorios.';
-        }
-
-        // Owner specific validation
-        if (userType === 'owner') {
-            if (!formData.idNumber) {
-                return 'Por favor ingresa tu número de documento.';
-            }
-        }
-
-        if (formData.password !== formData.confirmPassword) {
-            return 'Las contraseñas no coinciden.';
-        }
-
-        if (formData.password.length < 6) {
-            return 'La contraseña debe tener al menos 6 caracteres.';
-        }
-
-        return null;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        const validationError = validateForm();
-        if (validationError) {
-            // Validation errors will be shown via Redux error state if needed
-            // For now, just return without submitting
+    const onSubmit = async (data: RegisterFormValues) => {
+        // Owner specific manual validation since it's not in the generic zod schema yet
+        if (userType === 'owner' && !ownerData.idNumber) {
+            alert("Por favor ingresa tu número de documento.");
             return;
         }
 
         // Prepare registration data for backend
-        const registrationData = {
-            name: formData.name!,
-            email: formData.email!,
-            password: formData.password!,
-            phone: formData.phone!,
+        const registrationData: any = {
+            name: data.name,
+            email: data.email,
+            password: data.password,
+            phone: data.phone,
             userType: userType,
-            whatsapp: formData.phone // Use phone as whatsapp by default
+            whatsapp: data.whatsapp || data.phone
         };
+
+        if (userType === 'owner') {
+            registrationData.role = ownerData.role;
+            registrationData.idType = ownerData.idType;
+            registrationData.idNumber = ownerData.idNumber;
+        }
 
         // Register user via Redux
         await dispatch(registerUser(registrationData));
@@ -148,9 +135,9 @@ const RegistrationPage = () => {
                 </div>
 
                 <div className="bg-white shadow rounded-lg sm:rounded-xl p-5 sm:p-6 lg:p-8">
-                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                         {error && (
-                            <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700">
+                            <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700 text-sm">
                                 <AlertCircle className="h-5 w-5 mr-2" />
                                 {error}
                             </div>
@@ -162,8 +149,8 @@ const RegistrationPage = () => {
                                     <label className="block text-sm font-medium text-gray-700">Tipo de Perfil</label>
                                     <select
                                         name="role"
-                                        value={formData.role}
-                                        onChange={handleInputChange}
+                                        value={ownerData.role}
+                                        onChange={handleOwnerInputChange}
                                         className="mt-1 block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border text-sm sm:text-base"
                                     >
                                         <option value="individual">Propietario Individual</option>
@@ -176,12 +163,10 @@ const RegistrationPage = () => {
                                 <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
                                 <input
                                     type="text"
-                                    name="name"
-                                    required
-                                    value={formData.name || ''}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border text-sm sm:text-base"
+                                    {...register('name')}
+                                    className={`mt-1 block w-full min-h-[44px] rounded-lg border shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 text-sm sm:text-base ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                                 />
+                                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
                             </div>
 
                             {userType === 'owner' && (
@@ -190,8 +175,8 @@ const RegistrationPage = () => {
                                         <label className="block text-sm font-medium text-gray-700">Tipo de Documento</label>
                                         <select
                                             name="idType"
-                                            value={formData.idType}
-                                            onChange={handleInputChange}
+                                            value={ownerData.idType}
+                                            onChange={handleOwnerInputChange}
                                             className="mt-1 block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border text-sm sm:text-base"
                                         >
                                             <option value="CC">Cédula de Ciudadanía</option>
@@ -206,8 +191,8 @@ const RegistrationPage = () => {
                                             type="text"
                                             name="idNumber"
                                             required
-                                            value={formData.idNumber || ''}
-                                            onChange={handleInputChange}
+                                            value={ownerData.idNumber}
+                                            onChange={handleOwnerInputChange}
                                             className="mt-1 block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border text-sm sm:text-base"
                                         />
                                     </div>
@@ -218,24 +203,20 @@ const RegistrationPage = () => {
                                 <label className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
                                 <input
                                     type="email"
-                                    name="email"
-                                    required
-                                    value={formData.email || ''}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border text-sm sm:text-base"
+                                    {...register('email')}
+                                    className={`mt-1 block w-full min-h-[44px] rounded-lg border shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 text-sm sm:text-base ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                                 />
+                                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Teléfono (WhatsApp)</label>
                                 <input
                                     type="tel"
-                                    name="phone"
-                                    required
-                                    value={formData.phone || ''}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border text-sm sm:text-base"
+                                    {...register('phone')}
+                                    className={`mt-1 block w-full min-h-[44px] rounded-lg border shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 text-sm sm:text-base ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                                 />
+                                {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                             </div>
 
                             <div className="relative">
@@ -243,11 +224,8 @@ const RegistrationPage = () => {
                                 <div className="mt-1 relative rounded-md shadow-sm">
                                     <input
                                         type={showPassword ? "text" : "password"}
-                                        name="password"
-                                        required
-                                        value={formData.password || ''}
-                                        onChange={handleInputChange}
-                                        className="block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border pr-10 text-sm sm:text-base"
+                                        {...register('password')}
+                                        className={`block w-full min-h-[44px] rounded-lg border shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 pr-10 text-sm sm:text-base ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
                                     />
                                     <button
                                         type="button"
@@ -257,6 +235,7 @@ const RegistrationPage = () => {
                                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                     </button>
                                 </div>
+                                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
                             </div>
 
                             <div className="relative">
@@ -264,11 +243,8 @@ const RegistrationPage = () => {
                                 <div className="mt-1 relative rounded-md shadow-sm">
                                     <input
                                         type={showConfirmPassword ? "text" : "password"}
-                                        name="confirmPassword"
-                                        required
-                                        value={formData.confirmPassword || ''}
-                                        onChange={handleInputChange}
-                                        className="block w-full min-h-[44px] rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 border pr-10 text-sm sm:text-base"
+                                        {...register('confirmPassword')}
+                                        className={`block w-full min-h-[44px] rounded-lg border shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2.5 pr-10 text-sm sm:text-base ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
                                     />
                                     <button
                                         type="button"
@@ -278,6 +254,7 @@ const RegistrationPage = () => {
                                         {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                     </button>
                                 </div>
+                                {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>}
                             </div>
                         </div>
 

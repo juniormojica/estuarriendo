@@ -1,17 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { loginUser, clearError } from '../store/slices/authSlice';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema, LoginFormValues } from '../lib/validations';
 
 const LoginPage = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { user, loading, error } = useAppSelector((state) => state.auth);
-
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: '',
+            password: ''
+        }
+    });
 
     // Clear error when component unmounts
     useEffect(() => {
@@ -33,9 +45,8 @@ const LoginPage = () => {
         }
     }, [user, navigate]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        await dispatch(loginUser({ email, password }));
+    const onSubmit = async (data: LoginFormValues) => {
+        await dispatch(loginUser({ email: data.email, password: data.password }));
     };
 
     return (
@@ -59,7 +70,7 @@ const LoginPage = () => {
 
             <div className="mt-6 sm:mt-8 w-full max-w-md mx-auto">
                 <div className="bg-white py-6 sm:py-8 px-5 sm:px-8 shadow rounded-lg">
-                    <form className="space-y-6" onSubmit={handleSubmit}>
+                    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                         {error && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700 text-sm">
                                 <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
@@ -74,14 +85,15 @@ const LoginPage = () => {
                             <div className="mt-1">
                                 <input
                                     id="email"
-                                    name="email"
                                     type="email"
                                     autoComplete="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="appearance-none block w-full min-h-[44px] px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                    {...register('email')}
+                                    className={`appearance-none block w-full min-h-[44px] px-3 py-2.5 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base ${errors.email ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
+                                {errors.email && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                                )}
                             </div>
                         </div>
 
@@ -92,13 +104,11 @@ const LoginPage = () => {
                             <div className="mt-1 relative">
                                 <input
                                     id="password"
-                                    name="password"
                                     type={showPassword ? "text" : "password"}
                                     autoComplete="current-password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="appearance-none block w-full min-h-[44px] px-3 py-2.5 pr-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                    {...register('password')}
+                                    className={`appearance-none block w-full min-h-[44px] px-3 py-2.5 pr-10 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base ${errors.password ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
                                 <button
                                     type="button"
@@ -113,6 +123,9 @@ const LoginPage = () => {
                                     )}
                                 </button>
                             </div>
+                            {errors.password && (
+                                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                            )}
                         </div>
 
                         <div className="flex items-center justify-between">

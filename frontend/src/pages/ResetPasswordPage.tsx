@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Lock, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import authService from '../services/authService';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { resetPasswordSchema, ResetPasswordFormValues } from '../lib/validations';
 
 const ResetPasswordPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token') || '';
 
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [verifying, setVerifying] = useState(true);
@@ -17,6 +18,15 @@ const ResetPasswordPage = () => {
     const [success, setSuccess] = useState(false);
     const [tokenValid, setTokenValid] = useState(false);
     const [maskedEmail, setMaskedEmail] = useState('');
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm<ResetPasswordFormValues>({
+        resolver: zodResolver(resetPasswordSchema),
+        defaultValues: { password: '', confirmPassword: '' }
+    });
 
     // Verify token on mount
     useEffect(() => {
@@ -43,26 +53,12 @@ const ResetPasswordPage = () => {
         verifyToken();
     }, [token]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: ResetPasswordFormValues) => {
         setError('');
-
-        // Validate passwords match
-        if (newPassword !== confirmPassword) {
-            setError('Las contraseñas no coinciden');
-            return;
-        }
-
-        // Validate password length
-        if (newPassword.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres');
-            return;
-        }
-
         setLoading(true);
 
         try {
-            await authService.resetPassword({ token, newPassword });
+            await authService.resetPassword({ token, newPassword: data.password });
             setSuccess(true);
 
             // Redirect to login after 3 seconds
@@ -131,7 +127,7 @@ const ResetPasswordPage = () => {
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
                     {!success ? (
-                        <form className="space-y-6" onSubmit={handleSubmit}>
+                        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                             {error && (
                                 <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center text-red-700 text-sm">
                                     <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
@@ -146,12 +142,10 @@ const ResetPasswordPage = () => {
                                 <div className="mt-1 relative">
                                     <input
                                         id="newPassword"
-                                        name="newPassword"
                                         type={showPassword ? 'text' : 'password'}
-                                        required
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        {...register('password')}
+                                        className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.password ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         placeholder="Mínimo 6 caracteres"
                                     />
                                     <button
@@ -166,24 +160,39 @@ const ResetPasswordPage = () => {
                                         )}
                                     </button>
                                 </div>
+                                {errors.password && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                                )}
                             </div>
 
                             <div>
                                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                                     Confirmar Contraseña
                                 </label>
-                                <div className="mt-1">
+                                <div className="mt-1 relative">
                                     <input
                                         id="confirmPassword"
-                                        name="confirmPassword"
                                         type={showPassword ? 'text' : 'password'}
-                                        required
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        {...register('confirmPassword')}
+                                        className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         placeholder="Repite la contraseña"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-5 w-5 text-gray-400" />
+                                        ) : (
+                                            <Eye className="h-5 w-5 text-gray-400" />
+                                        )}
+                                    </button>
                                 </div>
+                                {errors.confirmPassword && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                                )}
                             </div>
 
                             <div>

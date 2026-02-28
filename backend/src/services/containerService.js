@@ -75,7 +75,7 @@ export const createContainer = async (containerData, transaction = null) => {
 
         return container;
     } catch (error) {
-        throw new Error(`Error creating container: ${error.message}`);
+        throw new Error(`Error al crear pensión/apartamento: ${error.message}`);
     }
 };
 
@@ -92,11 +92,11 @@ export const createUnit = async (containerId, unitData, transaction = null) => {
         const container = await Property.findByPk(containerId, { transaction });
 
         if (!container) {
-            throw new Error('Container not found');
+            throw new Error('Pensión/apartamento no encontrado');
         }
 
         if (!container.isContainer) {
-            throw new Error('Parent property is not a container');
+            throw new Error('La propiedad padre no es una pensión/apartamento');
         }
 
         // Create unit
@@ -118,7 +118,7 @@ export const createUnit = async (containerId, unitData, transaction = null) => {
 
         return unit;
     } catch (error) {
-        throw new Error(`Error creating unit: ${error.message}`);
+        throw new Error(`Error al crear habitación: ${error.message}`);
     }
 };
 
@@ -136,11 +136,11 @@ export const updateContainerAvailability = async (containerId, transaction = nul
         });
 
         if (!container) {
-            throw new Error('Container not found');
+            throw new Error('Pensión/apartamento no encontrado');
         }
 
         if (!container.isContainer) {
-            throw new Error('Property is not a container');
+            throw new Error('La propiedad no es una pensión/apartamento');
         }
 
         // Count available units (not rented)
@@ -152,7 +152,7 @@ export const updateContainerAvailability = async (containerId, transaction = nul
 
         return container;
     } catch (error) {
-        throw new Error(`Error updating container availability: ${error.message}`);
+        throw new Error(`Error al actualizar la disponibilidad de la pensión/apartamento: ${error.message}`);
     }
 };
 
@@ -170,17 +170,17 @@ export const rentCompleteContainer = async (containerId, transaction = null) => 
         });
 
         if (!container) {
-            throw new Error('Container not found');
+            throw new Error('Pensión/apartamento no encontrado');
         }
 
         if (!container.isContainer) {
-            throw new Error('Property is not a container');
+            throw new Error('La propiedad no es una pensión/apartamento');
         }
 
         // Check if any units are already rented
         const rentedUnits = container.units.filter(unit => unit.isRented);
         if (rentedUnits.length > 0) {
-            throw new Error('Cannot rent complete container: some units are already rented');
+            throw new Error('No se puede alquilar la pensión/apartamento completa: algunas habitaciones ya están alquiladas');
         }
 
         // Mark all units as rented
@@ -201,7 +201,7 @@ export const rentCompleteContainer = async (containerId, transaction = null) => 
 
         return container;
     } catch (error) {
-        throw new Error(`Error renting complete container: ${error.message}`);
+        throw new Error(`Error al alquilar la pensión/apartamento completa: ${error.message}`);
     }
 };
 
@@ -219,11 +219,11 @@ export const changeToByUnitMode = async (containerId, transaction = null) => {
         });
 
         if (!container) {
-            throw new Error('Container not found');
+            throw new Error('Pensión/apartamento no encontrado');
         }
 
         if (!container.isContainer) {
-            throw new Error('Property is not a container');
+            throw new Error('La propiedad no es una pensión/apartamento');
         }
 
         // Mark all units as available
@@ -244,7 +244,7 @@ export const changeToByUnitMode = async (containerId, transaction = null) => {
 
         return container;
     } catch (error) {
-        throw new Error(`Error changing to by_unit mode: ${error.message}`);
+        throw new Error(`Error al cambiar al modo por habitación: ${error.message}`);
     }
 };
 
@@ -289,11 +289,11 @@ export const findContainerWithUnits = async (containerId) => {
         });
 
         if (!container) {
-            throw new Error('Container not found');
+            throw new Error('Pensión/apartamento no encontrado');
         }
 
         if (!container.isContainer) {
-            throw new Error('Property is not a container');
+            throw new Error('La propiedad no es una pensión/apartamento');
         }
 
         // Calculate unit statistics
@@ -312,7 +312,7 @@ export const findContainerWithUnits = async (containerId) => {
 
         return container;
     } catch (error) {
-        throw new Error(`Error finding container: ${error.message}`);
+        throw new Error(`Error al buscar pensión/apartamento: ${error.message}`);
     }
 };
 
@@ -327,11 +327,11 @@ export const deleteUnit = async (unitId, transaction = null) => {
         const unit = await Property.findByPk(unitId, { transaction });
 
         if (!unit) {
-            throw new Error('Unit not found');
+            throw new Error('Habitación no encontrada');
         }
 
         if (!unit.parentId) {
-            throw new Error('Property is not a unit');
+            throw new Error('La propiedad no es una habitación');
         }
 
         const containerId = unit.parentId;
@@ -355,7 +355,7 @@ export const deleteUnit = async (unitId, transaction = null) => {
 
         return true;
     } catch (error) {
-        throw new Error(`Error deleting unit: ${error.message}`);
+        throw new Error(`Error al eliminar habitación: ${error.message}`);
     }
 };
 
@@ -371,11 +371,11 @@ export const updateUnitRentalStatus = async (unitId, isRented, transaction = nul
         const unit = await Property.findByPk(unitId, { transaction });
 
         if (!unit) {
-            throw new Error('Unit not found');
+            throw new Error('Habitación no encontrada');
         }
 
         if (!unit.parentId) {
-            throw new Error('Property is not a unit');
+            throw new Error('La propiedad no es una habitación');
         }
 
         // Update unit status
@@ -386,7 +386,7 @@ export const updateUnitRentalStatus = async (unitId, isRented, transaction = nul
 
         return unit;
     } catch (error) {
-        throw new Error(`Error updating unit rental status: ${error.message}`);
+        throw new Error(`Error al actualizar el estado de alquiler de la habitación: ${error.message}`);
     }
 };
 

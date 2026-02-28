@@ -30,6 +30,15 @@ const PlansPage = lazy(() => import('./pages/PlansPage'));
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
 const ComponentDemoPage = lazy(() => import('./pages/ComponentDemoPage'));
 
+// Informational pages
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const HowToSearchPage = lazy(() => import('./pages/HowToSearchPage'));
+const SecurityTipsPage = lazy(() => import('./pages/SecurityTipsPage'));
+const FAQPage = lazy(() => import('./pages/FAQPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const CookiesPage = lazy(() => import('./pages/CookiesPage'));
+
 function AppContent() {
   useEffect(() => {
     // Initialize auth state if token exists
@@ -58,6 +67,15 @@ function AppContent() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                  {/* Informational routes */}
+                  <Route path="/sobre-nosotros" element={<AboutPage />} />
+                  <Route path="/como-buscar" element={<HowToSearchPage />} />
+                  <Route path="/consejos-seguridad" element={<SecurityTipsPage />} />
+                  <Route path="/preguntas-frecuentes" element={<FAQPage />} />
+                  <Route path="/terminos" element={<TermsPage />} />
+                  <Route path="/privacidad" element={<PrivacyPage />} />
+                  <Route path="/cookies" element={<CookiesPage />} />
 
                   {/* Demo route - temporary for development */}
                   <Route path="/demo-components" element={<ComponentDemoPage />} />

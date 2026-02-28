@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 dotenv.config();
 
 import { sequelize, testConnection } from './config/database.js';
@@ -54,9 +56,35 @@ const corsOptions = {
 }
 
 // Middleware
+// 1. Basic Security Headers (Helmet)
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" } // Required to allow images to load across domains
+}));
+
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// 2. Global Rate Limiter to prevent basic DoS and brute force
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 1000, // Limit each IP to 1000 requests per windowMs
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.' }
+});
+
+// Apply global rate limiter to ALL API routes
+app.use('/api/', globalLimiter);
+
+// 3. Stricter Rate Limiter for Authentication routes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 15, // Limit each IP to 15 login/register requests per windowMs
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Demasiados intentos de inicio de sesión o registro. Por favor intenta en 15 minutos.' }
+});
 
 // HTTP Request Logger Middleware
 app.use((req, res, next) => {
@@ -92,7 +120,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes); // Apply strict limiter here
 app.use('/api/users', userRoutes);
 app.use('/api/verification', verificationRoutes);
 app.use('/api/amenities', amenityRoutes);

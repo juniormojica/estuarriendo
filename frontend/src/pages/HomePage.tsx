@@ -78,7 +78,7 @@ const HomePage: React.FC = () => {
 
             {/* Responsive subheading */}
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 max-w-3xl mx-auto mb-6 sm:mb-8 font-light px-4">
-              Apartamentos, habitaciones y pensiones cerca de tu universidad en Valledupar. Diseñado para estudiantes.
+              Apartamentos, habitaciones y pensiones cerca de tu universidad en Colombia. Diseñado para estudiantes.
             </p>
 
             {/* Touch-friendly CTA button */}
@@ -110,8 +110,8 @@ const HomePage: React.FC = () => {
                   key={city}
                   onClick={() => handleCityClick(city)}
                   className={`px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-medium transition-all min-h-[44px] active:scale-95 ${selectedCity === city
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
                     }`}
                 >
                   {city}
