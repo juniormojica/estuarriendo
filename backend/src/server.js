@@ -28,6 +28,8 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import containerRoutes from './routes/containerRoutes.js';
 import unitRoutes from './routes/unitRoutes.js';
 import commonAreaRoutes from './routes/commonAreaRoutes.js';
+import creditRoutes from './routes/creditRoutes.js';
+import propertyReportRoutes from './routes/propertyReportRoutes.js';
 
 
 const app = express();
@@ -139,6 +141,8 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/containers', containerRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/common-areas', commonAreaRoutes);
+app.use('/api/credits', creditRoutes);
+app.use('/api/property-reports', propertyReportRoutes);
 
 
 // Error handling middleware

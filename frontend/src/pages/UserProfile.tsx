@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { User, PaymentRequest } from '../types';
+import { User, PaymentRequest, CreditBalance, CreditTransaction } from '../types';
 import { useAppSelector } from '../store/hooks';
 import { api } from '../services/api';
 import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock, ShieldCheck, XCircle } from 'lucide-react';
-import PaymentUploadForm from '../components/PaymentUploadForm';
 import PaymentFlowSection from '../components/PaymentFlowSection';
-import PlanComparisonCards from '../components/PlanComparisonCards';
 import VerificationForm from '../components/VerificationForm';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { profileBasicInfoSchema, ProfileBasicInfoValues } from '../lib/validations';
+import { profileBasicInfoSchema, ProfileBasicInfoFormValues } from '../lib/validations';
 
 const UserProfile: React.FC = () => {
     const { user: authUser, loading: authLoading } = useAppSelector((state) => state.auth);
@@ -21,7 +19,10 @@ const UserProfile: React.FC = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing' | 'verification'>('profile');
     const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
-    const [initialPlan, setInitialPlan] = useState<string | null>(null);
+
+    const [creditBalance, setCreditBalance] = useState<CreditBalance | null>(null);
+    const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
+    const [loadingCredits, setLoadingCredits] = useState(false);
 
     // Form states for non-basic info
     const [formData, setFormData] = useState<Partial<User>>({});
@@ -37,29 +38,42 @@ const UserProfile: React.FC = () => {
         handleSubmit,
         reset,
         formState: { errors }
-    } = useForm<ProfileBasicInfoValues>({
-        resolver: zodResolver(profileBasicInfoSchema),
+    } = useForm<ProfileBasicInfoFormValues>({
+        resolver: zodResolver(profileBasicInfoSchema) as any,
         defaultValues: {
             name: '',
             phone: '',
             whatsapp: '',
             idType: undefined,
             idNumber: ''
-        }
+        } as any
     });
+
+    useEffect(() => {
+        // --- Redirect Interceptor ---
+        const params = new URLSearchParams(location.search);
+        const isPaymentSuccessReturn = params.has('payment_id') || params.has('preference_id') || params.has('preapproval_id') || params.get('status') === 'approved';
+        const pendingRedirect = localStorage.getItem('estuarriendo_pending_redirect');
+
+        if (isPaymentSuccessReturn && pendingRedirect) {
+            localStorage.removeItem('estuarriendo_pending_redirect');
+            setMessage({ type: 'success', text: '¡Transacción exitosa! Redirigiéndote a la propiedad...' });
+
+            // Wait 3 seconds to show success message then redirect
+            const timeout = setTimeout(() => {
+                navigate(pendingRedirect);
+            }, 3000);
+            return () => clearTimeout(timeout);
+        }
+    }, [location.search, navigate]);
 
     useEffect(() => {
         // Handle tab parameter
         const params = new URLSearchParams(location.search);
         const tabParam = params.get('tab');
-        const planParam = params.get('plan');
 
         if (tabParam === 'billing' || tabParam === 'security' || tabParam === 'profile' || tabParam === 'verification') {
             setActiveTab(tabParam);
-        }
-
-        if (planParam) {
-            setInitialPlan(planParam);
         }
 
         const loadUserAndPayment = async () => {
@@ -133,6 +147,26 @@ const UserProfile: React.FC = () => {
         fetchData();
     }, [location.search, authUser, authLoading, navigate, reset]);
 
+    // Fetch credits for tenant
+    useEffect(() => {
+        const loadCredits = async () => {
+            if (activeTab === 'billing' && user?.userType === 'tenant') {
+                setLoadingCredits(true);
+                try {
+                    const balance = await api.getCreditBalance(user.id.toString());
+                    const txs = await api.getCreditTransactions(user.id.toString());
+                    setCreditBalance(balance);
+                    setCreditTransactions(txs);
+                } catch (error) {
+                    console.error('Error fetching credits:', error);
+                } finally {
+                    setLoadingCredits(false);
+                }
+            }
+        };
+        loadCredits();
+    }, [activeTab, user?.id, user?.userType]);
+
     const handleProfileChange = (field: string, value: any) => {
         setFormData(prev => ({
             ...prev,
@@ -143,7 +177,7 @@ const UserProfile: React.FC = () => {
         }));
     };
 
-    const onSubmitProfile = async (data: ProfileBasicInfoValues) => {
+    const onSubmitProfile = async (data: ProfileBasicInfoFormValues) => {
         if (!user) return;
         setSaving(true);
         setMessage(null);
@@ -608,12 +642,12 @@ const UserProfile: React.FC = () => {
                                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="text-lg font-semibold mb-1">Plan Actual</h3>
+                                                <h3 className="text-lg font-semibold mb-1">Tu Cuenta</h3>
                                                 <p className="text-emerald-100 text-2xl font-bold">
-                                                    {user.plan === 'premium' ? 'Usuario Premium' : 'Usuario Gratuito'}
+                                                    {user.userType === 'tenant' ? 'Estudiante / Inquilino' : (user.plan === 'premium' ? 'Propietario Premium' : 'Propietario Gratuito')}
                                                 </p>
                                             </div>
-                                            {user.plan === 'premium' && (
+                                            {user.plan === 'premium' && user.userType === 'owner' && (
                                                 <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-bold backdrop-blur-sm">
                                                     ✓ Activo
                                                 </span>
@@ -621,73 +655,125 @@ const UserProfile: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Check if user can upload payment: either free plan OR premium expired */}
-                                    {(() => {
-                                        const isPremium = user.plan === 'premium';
-                                        const isExpired = user.planExpiresAt ? new Date(user.planExpiresAt) < new Date() : false;
-                                        const canUploadPayment = !isPremium || isExpired;
-
-                                        console.log('Payment upload check:', {
-                                            plan: user.plan,
-                                            isPremium,
-                                            planExpiresAt: user.planExpiresAt,
-                                            isExpired,
-                                            canUploadPayment
-                                        });
-
-                                        return canUploadPayment && (
-                                            <div className="space-y-8">
-                                                {/* Expiration Warning for expired premium users */}
-                                                {isPremium && isExpired && (
-                                                    <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6">
-                                                        <div className="flex items-center space-x-3 mb-2">
-                                                            <AlertCircle className="h-8 w-8 text-orange-600" />
-                                                            <h4 className="text-xl font-bold text-orange-800">Plan Premium Expirado</h4>
-                                                        </div>
-                                                        <p className="text-orange-700 mb-2">
-                                                            Tu plan premium ha expirado el {new Date(user.planExpiresAt!).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}.
+                                    {user.userType === 'tenant' ? (
+                                        <div className="space-y-6">
+                                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                                                <div>
+                                                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Tus Créditos</h3>
+                                                    {loadingCredits ? (
+                                                        <div className="flex items-center text-gray-500"><Loader className="w-4 h-4 mr-2 animate-spin" /> Cargando...</div>
+                                                    ) : creditBalance?.hasUnlimited && creditBalance.unlimitedUntil && new Date(creditBalance.unlimitedUntil) > new Date() ? (
+                                                        <p className="text-3xl font-bold text-emerald-600 flex items-center">
+                                                            Ilimitados
+                                                            <span className="text-sm font-normal text-gray-500 ml-3">
+                                                                Vence el {new Date(creditBalance.unlimitedUntil).toLocaleDateString()}
+                                                            </span>
                                                         </p>
-                                                        <p className="text-orange-700">
-                                                            Renueva tu suscripción para seguir disfrutando de todos los beneficios premium.
+                                                    ) : (
+                                                        <p className="text-3xl font-bold text-emerald-600">
+                                                            {creditBalance?.availableCredits || 0}
+                                                            <span className="text-sm font-normal text-gray-500 ml-2">disponibles</span>
                                                         </p>
-                                                    </div>
-                                                )}
-
-                                                {/* Payment Status Messages */}
-                                                {paymentRequest && paymentRequest.status === 'pending' && (
-                                                    <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
-                                                        <Clock className="h-16 w-16 text-yellow-500 mb-4" />
-                                                        <h4 className="text-xl font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
-                                                        <p className="text-yellow-700 mb-4 max-w-md">
-                                                            Hemos recibido tu comprobante. El plan se activará en un máximo de 2 horas tras la verificación manual.
-                                                        </p>
-                                                        <div className="text-sm text-yellow-600 bg-yellow-100 inline-block px-4 py-2 rounded-full font-mono font-bold">
-                                                            Referencia: {paymentRequest.referenceCode}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {paymentRequest && paymentRequest.status === 'rejected' && (
-                                                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-                                                        <div className="flex items-center space-x-3 mb-3">
-                                                            <AlertCircle className="h-8 w-8 text-red-600" />
-                                                            <h4 className="text-xl font-bold text-red-800">Pago Rechazado</h4>
-                                                        </div>
-                                                        <p className="text-red-700">
-                                                            Tu último pago fue rechazado. Por favor intenta nuevamente o contacta a soporte.
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                {/* Payment Flow Section with Step Indicators */}
-                                                <PaymentFlowSection
-                                                    user={user}
-                                                    paymentRequest={paymentRequest}
-                                                    onPaymentSuccess={handlePaymentSuccess}
-                                                />
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={() => navigate('/planes')}
+                                                    className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition"
+                                                >
+                                                    Comprar Más Créditos
+                                                </button>
                                             </div>
-                                        );
-                                    })()}
+
+                                            {creditTransactions.length > 0 && (
+                                                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                                                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                                                        <h3 className="text-lg font-semibold text-gray-900">Historial de Transacciones</h3>
+                                                    </div>
+                                                    <ul className="divide-y divide-gray-100">
+                                                        {creditTransactions.map(tx => (
+                                                            <li key={tx.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">{tx.description}</p>
+                                                                    <p className="text-xs text-gray-500 mt-1">{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : ''}</p>
+                                                                </div>
+                                                                <div className={`font-semibold text-sm ${tx.type === 'use' || tx.type === 'expire' ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                                    {tx.type === 'use' || tx.type === 'expire' ? '-' : '+'}{tx.amount}
+                                                                </div>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        /* Owner flow */
+                                        (() => {
+                                            const isPremium = user.plan === 'premium';
+                                            const isExpired = user.planExpiresAt ? new Date(user.planExpiresAt) < new Date() : false;
+                                            const canUploadPayment = !isPremium || isExpired;
+
+                                            console.log('Payment upload check:', {
+                                                plan: user.plan,
+                                                isPremium,
+                                                planExpiresAt: user.planExpiresAt,
+                                                isExpired,
+                                                canUploadPayment
+                                            });
+
+                                            return canUploadPayment && (
+                                                <div className="space-y-8">
+                                                    {/* Expiration Warning for expired premium users */}
+                                                    {isPremium && isExpired && (
+                                                        <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6">
+                                                            <div className="flex items-center space-x-3 mb-2">
+                                                                <AlertCircle className="h-8 w-8 text-orange-600" />
+                                                                <h4 className="text-xl font-bold text-orange-800">Plan Premium Expirado</h4>
+                                                            </div>
+                                                            <p className="text-orange-700 mb-2">
+                                                                Tu plan premium ha expirado el {new Date(user.planExpiresAt!).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}.
+                                                            </p>
+                                                            <p className="text-orange-700">
+                                                                Renueva tu suscripción para seguir disfrutando de todos los beneficios premium.
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Payment Status Messages */}
+                                                    {paymentRequest && paymentRequest.status === 'pending' && (
+                                                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
+                                                            <Clock className="h-16 w-16 text-yellow-500 mb-4" />
+                                                            <h4 className="text-xl font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
+                                                            <p className="text-yellow-700 mb-4 max-w-md">
+                                                                Hemos recibido tu comprobante. El plan se activará en un máximo de 2 horas tras la verificación manual.
+                                                            </p>
+                                                            <div className="text-sm text-yellow-600 bg-yellow-100 inline-block px-4 py-2 rounded-full font-mono font-bold">
+                                                                Referencia: {paymentRequest.referenceCode}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {paymentRequest && paymentRequest.status === 'rejected' && (
+                                                        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
+                                                            <div className="flex items-center space-x-3 mb-3">
+                                                                <AlertCircle className="h-8 w-8 text-red-600" />
+                                                                <h4 className="text-xl font-bold text-red-800">Pago Rechazado</h4>
+                                                            </div>
+                                                            <p className="text-red-700">
+                                                                Tu último pago fue rechazado. Por favor intenta nuevamente o contacta a soporte.
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Payment Flow Section with Step Indicators */}
+                                                    <PaymentFlowSection
+                                                        user={user}
+                                                        paymentRequest={paymentRequest}
+                                                        onPaymentSuccess={handlePaymentSuccess}
+                                                    />
+                                                </div>
+                                            );
+                                        })()
+                                    )}
                                 </div>
                             )}
 

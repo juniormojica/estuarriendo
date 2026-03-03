@@ -174,6 +174,30 @@ export const notifyPropertyInterest = async ({
     });
 };
 
+/**
+ * Notify tenant that they have purchased credits
+ * @param {Object} params
+ * @param {string} params.userId - Tenant user ID
+ * @param {string} params.userName - Tenant name
+ * @param {string} params.planType - Plan type purchased
+ * @param {number} params.credits - Credits added (-1 for unlimited)
+ */
+export const notifyCreditPurchased = async ({ userId, userName, planType, credits }) => {
+    let message = `Has adquirido el plan ${planType}. `;
+    if (credits === -1) {
+        message += 'Ahora tienes contactos ilimitados por un mes.';
+    } else {
+        message += `Se han añadido ${credits} créditos a tu cuenta.`;
+    }
+
+    return await createNotification({
+        userId,
+        type: NotificationType.CREDIT_PURCHASED,
+        title: '💎 ¡Créditos Activados!',
+        message
+    });
+};
+
 export default {
     createNotification,
     notifyPaymentVerified,
@@ -181,6 +205,7 @@ export default {
     notifyPaymentSubmitted,
     notifyPropertyApproved,
     notifyPropertyRejected,
-    notifyPropertyInterest
+    notifyPropertyInterest,
+    notifyCreditPurchased
 };
 

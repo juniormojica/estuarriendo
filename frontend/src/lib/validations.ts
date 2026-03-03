@@ -57,7 +57,9 @@ export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export const profileBasicInfoSchema = z.object({
     name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(100, 'El nombre es muy largo'),
     phone: phoneValidation,
-    whatsapp: phoneValidation.optional().or(z.literal(''))
+    whatsapp: phoneValidation.optional().or(z.literal('')),
+    idType: z.enum(['CC', 'CE', 'NIT', 'Pasaporte', '']).optional().transform(v => v === '' ? undefined : v),
+    idNumber: z.string().optional()
 });
 
 export type ProfileBasicInfoFormValues = z.infer<typeof profileBasicInfoSchema>;

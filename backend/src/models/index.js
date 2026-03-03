@@ -39,6 +39,10 @@ import UserBillingDetails from './UserBillingDetails.js';
 import Subscription from './Subscription.js';
 import UserStats from './UserStats.js';
 import UserProfile from './UserProfile.js';
+import CreditBalance from './CreditBalance.js';
+import CreditTransaction from './CreditTransaction.js';
+import ContactUnlock from './ContactUnlock.js';
+import PropertyReport from './PropertyReport.js';
 
 /**
  * Define Model Associations
@@ -447,6 +451,83 @@ Favorite.belongsTo(Property, {
     as: 'property'
 });
 
+// User <-> CreditBalance (One-to-One)
+User.hasOne(CreditBalance, {
+    foreignKey: 'userId',
+    as: 'creditBalance',
+    onDelete: 'CASCADE'
+});
+CreditBalance.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user'
+});
+
+// User <-> CreditTransaction (One-to-Many)
+User.hasMany(CreditTransaction, {
+    foreignKey: 'userId',
+    as: 'creditTransactions',
+    onDelete: 'CASCADE'
+});
+CreditTransaction.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user'
+});
+
+// User (Tenant) <-> ContactUnlock (One-to-Many)
+User.hasMany(ContactUnlock, {
+    foreignKey: 'tenantId',
+    as: 'unlockedContacts',
+    onDelete: 'CASCADE'
+});
+ContactUnlock.belongsTo(User, {
+    foreignKey: 'tenantId',
+    as: 'tenant'
+});
+
+// Property <-> ContactUnlock (One-to-Many)
+Property.hasMany(ContactUnlock, {
+    foreignKey: 'propertyId',
+    as: 'contactUnlocks',
+    onDelete: 'CASCADE'
+});
+ContactUnlock.belongsTo(Property, {
+    foreignKey: 'propertyId',
+    as: 'property'
+});
+
+// User (Reporter) <-> PropertyReport (One-to-Many)
+User.hasMany(PropertyReport, {
+    foreignKey: 'reporterId',
+    as: 'reports',
+    onDelete: 'CASCADE'
+});
+PropertyReport.belongsTo(User, {
+    foreignKey: 'reporterId',
+    as: 'reporter'
+});
+
+// ContactUnlock <-> PropertyReport (One-to-One / One-to-Many)
+ContactUnlock.hasMany(PropertyReport, {
+    foreignKey: 'contactUnlockId',
+    as: 'reports',
+    onDelete: 'CASCADE'
+});
+PropertyReport.belongsTo(ContactUnlock, {
+    foreignKey: 'contactUnlockId',
+    as: 'contactUnlock'
+});
+
+// Property <-> PropertyReport (One-to-Many)
+Property.hasMany(PropertyReport, {
+    foreignKey: 'propertyId',
+    as: 'reports',
+    onDelete: 'CASCADE'
+});
+PropertyReport.belongsTo(Property, {
+    foreignKey: 'propertyId',
+    as: 'property'
+});
+
 /**
  * Export all models and sequelize instance
  */
@@ -485,7 +566,11 @@ export {
     UserBillingDetails,
     Subscription,
     UserStats,
-    UserProfile
+    UserProfile,
+    CreditBalance,
+    CreditTransaction,
+    ContactUnlock,
+    PropertyReport
 };
 
 export default {
@@ -523,5 +608,9 @@ export default {
     UserBillingDetails,
     Subscription,
     UserStats,
-    UserProfile
+    UserProfile,
+    CreditBalance,
+    CreditTransaction,
+    ContactUnlock,
+    PropertyReport
 };

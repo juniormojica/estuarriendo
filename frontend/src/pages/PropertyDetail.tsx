@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock,
   Clock, Users, Ban, Volume2, Utensils, Coffee, Wifi, Zap, Home, ArrowRight
 } from 'lucide-react';
-import { Property, User } from '../types';
+import { User } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -32,9 +32,10 @@ const containerStyle = {
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { items: amenities } = useAppSelector((state) => state.amenities);
-  const { currentProperty, loading: propertiesLoading } = useAppSelector((state) => state.properties);
+  const { currentProperty } = useAppSelector((state) => state.properties);
 
   const [ownerDetails, setOwnerDetails] = useState<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -45,6 +46,9 @@ const PropertyDetail: React.FC = () => {
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
   const [showRoomModal, setShowRoomModal] = useState(false);
+  const [contactUnlocked, setContactUnlocked] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
 
   // Get property from Redux state - use currentProperty which is set by fetchPropertyById
   const property = currentProperty;
@@ -117,35 +121,44 @@ const PropertyDetail: React.FC = () => {
 
   // Fetch owner details when property is loaded
   useEffect(() => {
-    console.log('👤 Owner effect triggered, property:', property);
-
     if (property?.owner) {
-      console.log('✅ Owner data found in property:', property.owner);
-      // Owner data comes with the property from backend
-      setOwnerDetails({
-        name: property.owner.name || '',
-        whatsapp: property.owner.whatsapp || '',
-        email: property.owner.email || '',
-        plan: property.owner.plan || 'free'
-      });
-      console.log('✅ Owner details set successfully');
+      if (!ownerDetails || ownerDetails.email !== property.owner.email) {
+        setOwnerDetails({
+          name: property.owner.name || '',
+          whatsapp: property.owner.whatsapp || '',
+          email: property.owner.email || '',
+          plan: property.owner.plan || 'free'
+        });
+      }
     } else if (property?.ownerId && !ownerDetails) {
-      console.warn('⚠️ Owner details not included in property response, ownerId:', property.ownerId);
-      // Fallback: fetch owner details if not included
       const fetchOwner = async () => {
         try {
-          // For now, we'll just use basic info from property
-          // In the future, we could implement api.getOwnerContactDetails
           console.warn('⚠️ Owner details not included in property response');
         } catch (err) {
           console.error('❌ Error fetching owner details:', err);
         }
       };
       fetchOwner();
-    } else {
-      console.log('ℹ️ No owner data available yet');
     }
-  }, [property, ownerDetails]);
+  }, [property?.id, property?.owner?.email, property?.ownerId]);
+
+  // Check contact unlock status
+  useEffect(() => {
+    const checkUnlockStatus = async () => {
+      // If user is authenticated and we have a property
+      if (currentUser?.id && property?.id) {
+        try {
+          const res = await api.checkContactUnlocked(String(currentUser.id), String(property.id));
+          setContactUnlocked(res.unlocked);
+        } catch (err) {
+          console.error('Error checking unlock status', err);
+        }
+      }
+    };
+    if (currentUser?.id && property?.id) {
+      checkUnlockStatus();
+    }
+  }, [currentUser?.id, property?.id]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id]);
@@ -263,14 +276,38 @@ const PropertyDetail: React.FC = () => {
 
   // Logic for contact permissions
   const isOwnerFree = ownerDetails?.plan === 'free';
-  const isUserPremium = currentUser?.plan === 'premium';
-  // Can contact if owner is premium OR user is premium
-  const canContact = !isOwnerFree || isUserPremium;
+  const isUserPremium = currentUser && ['weekly', 'monthly', 'quarterly', 'premium'].includes(currentUser.plan as string); // Check valid active plans
+  const isTenant = currentUser?.userType === 'tenant';
 
-  console.log('🎨 Rendering property detail page for:', property.title);
-  console.log('📊 Property data:', property);
-  console.log('👤 Owner details:', ownerDetails);
-  console.log('👤 Current user:', currentUser);
+  // Can contact freely if owner is premium OR user is a premium owner
+  // If owner is free and user is tenant, depends on contactUnlocked
+  const canContactFree = !isOwnerFree || (!isTenant && isUserPremium);
+  const canViewContact = canContactFree || contactUnlocked;
+
+  const handleUnlockContact = async () => {
+    if (!currentUser?.id) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    setShowCreditModal(false);
+
+    try {
+      setIsUnlocking(true);
+      const res: any = await api.unlockContact(String(currentUser.id), String(property.id));
+      if (res.success || res.unlocked) {
+        setContactUnlocked(true);
+        toast.success(res.isFree ? 'El propietario es premium, el contacto es gratis.' : '¡Contacto desbloqueado con éxito!');
+      } else {
+        toast.error(res.error || 'No tienes suficientes créditos para desbloquear este contacto.');
+      }
+    } catch (error: any) {
+      console.error('Error unlocking contact:', error);
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Error al desbloquear el contacto.');
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12 sm:pb-16">
@@ -896,27 +933,27 @@ const PropertyDetail: React.FC = () => {
 
                   {/* Owner Plan Message - Responsive */}
                   <div className="mt-3 sm:mt-4 px-1 sm:px-2">
-                    {isOwnerFree ? (
-                      !canContact ? (
-                        <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-100">
-                          El propietario tiene plan gratis, no puedes contactarlo por WhatsApp. Haciendo click en 'Me interesa' hazle saber que quieres alquilar su publicación.
-                        </p>
-                      ) : (
-                        <p className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                          Como eres usuario Premium, puedes contactar a este propietario directamente.
-                        </p>
-                      )
-                    ) : (
+                    {canContactFree ? (
                       <p className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
                         El plan de <span className="font-semibold">{ownerDetails?.name || 'el propietario'}</span> es premium y lo puedes contactar de forma gratuita.
                       </p>
+                    ) : (
+                      contactUnlocked ? (
+                        <p className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                          Has desbloqueado el contacto de este propietario.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-100">
+                          El propietario tiene plan gratis. {isTenant ? 'Necesitas usar un crédito para ver su información de contacto.' : 'Actualiza a Premium para contactarlo directamente.'}
+                        </p>
+                      )
                     )}
                   </div>
                 </div>
 
                 {/* Actions - Mobile Optimized */}
                 <div className="space-y-2.5 sm:space-y-3">
-                  {isOwnerFree && (
+                  {isOwnerFree && !isTenant && (
                     <button
                       onClick={handleInterest}
                       className="w-full min-h-[48px] bg-blue-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-lg shadow-blue-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
@@ -926,7 +963,7 @@ const PropertyDetail: React.FC = () => {
                     </button>
                   )}
 
-                  {canContact ? (
+                  {canViewContact ? (
                     <a
                       href={`https://wa.me/${ownerDetails?.whatsapp}?text=Hola, estoy interesado en la propiedad: ${property.title} (ID: ${property.id})`}
                       target="_blank"
@@ -937,14 +974,25 @@ const PropertyDetail: React.FC = () => {
                       <span>Contactar por WhatsApp</span>
                     </a>
                   ) : (
-                    <Link
-                      to="/perfil?tab=billing"
-                      className="w-full min-h-[48px] bg-gray-100 text-gray-500 py-3.5 px-4 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-all flex items-center justify-center space-x-2 group cursor-pointer border border-gray-200 text-xs sm:text-sm"
-                    >
-                      <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span className="hidden sm:inline">Actualiza a Premium para contactar</span>
-                      <span className="sm:hidden">Actualiza a Premium</span>
-                    </Link>
+                    isTenant ? (
+                      <button
+                        onClick={() => setShowCreditModal(true)}
+                        disabled={isUnlocking}
+                        className="w-full min-h-[48px] bg-emerald-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-emerald-700 active:bg-emerald-800 transition-all flex items-center justify-center space-x-2 group cursor-pointer shadow-sm disabled:opacity-70 disabled:cursor-not-allowed text-xs sm:text-sm"
+                      >
+                        <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span>{isUnlocking ? 'Desbloqueando...' : 'Desbloquear Contacto (1 Crédito)'}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        to="/perfil?tab=billing"
+                        className="w-full min-h-[48px] bg-gray-100 text-gray-500 py-3.5 px-4 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-all flex items-center justify-center space-x-2 group cursor-pointer border border-gray-200 text-xs sm:text-sm"
+                      >
+                        <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span className="hidden sm:inline">Actualiza a Premium para contactar</span>
+                        <span className="sm:hidden">Actualiza a Premium</span>
+                      </Link>
+                    )
                   )}
 
                   <button
@@ -1001,6 +1049,67 @@ const PropertyDetail: React.FC = () => {
         onSuccess={handleAuthSuccess}
         defaultTab="login"
       />
+
+      {/* Credit Unlock Modal */}
+      {showCreditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl text-center space-y-6">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="h-8 w-8 text-emerald-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Desbloquear Contacto</h3>
+
+            {currentUser?.creditBalance?.availableCredits === 0 && !currentUser.creditBalance?.hasUnlimited ? (
+              <div className="space-y-4">
+                <p className="text-gray-600">No tienes créditos disponibles para desbloquear este contacto.</p>
+                <div className="flex flex-col space-y-3">
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('estuarriendo_pending_redirect', `/propiedad/${property.id}`);
+                      navigate('/planes');
+                    }}
+                    className="w-full py-3 px-4 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition block text-center"
+                  >
+                    Comprar Créditos
+                  </button>
+                  <button
+                    onClick={() => setShowCreditModal(false)}
+                    className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  ¿Deseas usar <span className="font-bold text-gray-900">1 crédito</span> para ver la información de contacto de este propietario?
+                  {currentUser?.creditBalance?.hasUnlimited && (
+                    <span className="block mt-2 font-medium text-emerald-600">
+                      Tienes créditos ilimitados.
+                    </span>
+                  )}
+                </p>
+                <div className="flex space-x-3 mt-4">
+                  <button
+                    onClick={() => setShowCreditModal(false)}
+                    className="flex-1 py-3 px-4 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleUnlockContact}
+                    className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition flex items-center justify-center"
+                    disabled={isUnlocking}
+                  >
+                    {isUnlocking ? 'Procesando...' : 'Confirmar'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

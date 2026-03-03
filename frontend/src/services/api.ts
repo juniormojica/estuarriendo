@@ -12,7 +12,12 @@ import {
   StudentRequest,
   Notification,
   VerificationDocuments,
-  VerificationStatus
+  VerificationStatus,
+  CreditBalance,
+  CreditTransaction,
+  ContactUnlock,
+  PropertyReport,
+  PropertyReportReason
 } from '../types';
 import { mockProperties } from '../data/mockData';
 import apiClient from '../lib/axios';
@@ -1327,6 +1332,63 @@ export const api = {
       await apiClient.delete(`/users/${id}`);
     } catch (error) {
       console.error('Error deleting user:', error);
+      throw error;
+    }
+  },
+
+  // ==========================================
+  // Credit System Methods
+  // ==========================================
+
+  async getCreditBalance(userId: string): Promise<CreditBalance | null> {
+    try {
+      const response = await apiClient.get(`/credits/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching credit balance:', error);
+      return null;
+    }
+  },
+
+  async getCreditTransactions(userId: string): Promise<CreditTransaction[]> {
+    try {
+      const response = await apiClient.get(`/credits/${userId}/transactions`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching credit transactions:', error);
+      return [];
+    }
+  },
+
+  async checkContactUnlocked(userId: string, propertyId: string | number): Promise<{ unlocked: boolean; unlockData?: ContactUnlock }> {
+    try {
+      const response = await apiClient.get(`/credits/check-unlock/${userId}/${propertyId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error checking contact unlock:', error);
+      return { unlocked: false };
+    }
+  },
+
+  async unlockContact(tenantId: string, propertyId: string | number): Promise<{ success: boolean; unlockData?: ContactUnlock; ownerContact?: User; remainingCredits?: number; hasUnlimited?: boolean; error?: string }> {
+    try {
+      const response = await apiClient.post('/credits/unlock-contact', { tenantId, propertyId });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error unlocking contact:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to unlock contact'
+      };
+    }
+  },
+
+  async createPropertyReport(data: { reporterId: string; propertyId: string | number; reason: PropertyReportReason; description?: string }): Promise<PropertyReport | null> {
+    try {
+      const response = await apiClient.post('/property-reports', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating property report:', error);
       throw error;
     }
   }

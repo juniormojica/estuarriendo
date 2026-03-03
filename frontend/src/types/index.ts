@@ -50,10 +50,17 @@ export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' 
 export type PaymentRequestStatus = 'pending' | 'verified' | 'rejected';
 
 // Tipos de Notificación
-export type NotificationType = 'property_interest' | 'payment_verified' | 'payment_rejected' | 'payment_submitted' | 'property_submitted' | 'property_approved' | 'property_rejected' | 'verification_submitted' | 'verification_approved' | 'verification_rejected';
+export type NotificationType = 'property_interest' | 'payment_verified' | 'payment_rejected' | 'payment_submitted' | 'property_submitted' | 'property_approved' | 'property_rejected' | 'verification_submitted' | 'verification_approved' | 'verification_rejected' | 'credit_purchased' | 'credit_used' | 'credit_refunded' | 'property_reported' | 'report_resolved';
 
 // Estados de la Solicitud de Estudiante
 export type StudentRequestStatus = 'open' | 'closed';
+
+// Tipos del Sistema de Créditos
+export type CreditPlanType = '5_credits' | '10_credits' | 'unlimited';
+export type CreditTransactionType = 'purchase' | 'use' | 'refund' | 'expire';
+export type ContactUnlockStatus = 'active' | 'refunded';
+export type PropertyReportReason = 'already_rented' | 'incorrect_info' | 'scam' | 'other';
+export type PropertyReportStatus = 'pending' | 'confirmed' | 'rejected';
 
 // ===== CONTAINER ARCHITECTURE TYPES =====
 // Rental modes for properties
@@ -414,7 +421,7 @@ export interface User {
 
   // Planes/Suscripción
   plan?: PlanType;
-  planType?: SubscriptionType;
+  planType?: SubscriptionType | CreditPlanType;
   planStartedAt?: string;
   planExpiresAt?: string;
   paymentRequestId?: string;
@@ -422,6 +429,9 @@ export interface User {
 
   // New Analytics Profile Data
   profile?: UserProfileData;
+
+  // Credit System
+  creditBalance?: CreditBalance;
 }
 
 export interface UserProfileData {
@@ -463,11 +473,13 @@ export interface PaymentRequest {
     email: string;
   };
   amount: number;
-  planType: SubscriptionType;
+  planType: SubscriptionType | CreditPlanType;
   planDuration: number; // days
+  paymentMethod?: 'bank_transfer' | 'mercado_pago';
+  mercadoPagoPaymentId?: string;
   referenceCode: string;
-  proofImageUrl: string; // Cloudinary URL
-  proofImagePublicId: string; // Cloudinary public ID
+  proofImageUrl?: string; // Cloudinary URL
+  proofImagePublicId?: string; // Cloudinary public ID
   status: PaymentRequestStatus;
   createdAt: string;
   processedAt?: string;
@@ -509,6 +521,59 @@ export interface Notification {
   interestedUserName?: string;
   read: boolean;
   createdAt: string;
+}
+
+export interface CreditBalance {
+  id?: number;
+  userId: string;
+  availableCredits: number; // -1 means unlimited
+  totalPurchased: number;
+  totalUsed: number;
+  totalRefunded: number;
+  hasUnlimited?: boolean;
+  unlimitedUntil?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreditTransaction {
+  id?: number;
+  userId: string;
+  type: CreditTransactionType;
+  amount: number;
+  balanceAfter: number;
+  description: string;
+  referenceId?: number;
+  referenceType?: string;
+  createdAt?: string;
+}
+
+export interface ContactUnlock {
+  id?: number;
+  tenantId: string;
+  propertyId: number;
+  ownerId: string;
+  creditTransactionId?: number;
+  status: ContactUnlockStatus;
+  createdAt?: string;
+}
+
+export interface PropertyReport {
+  id?: number;
+  reporterId: string;
+  propertyId: number;
+  contactUnlockId?: number;
+  reason: PropertyReportReason;
+  description?: string;
+  status: PropertyReportStatus;
+  creditRefunded: boolean;
+  adminNotes?: string;
+  processedBy?: string;
+  createdAt?: string;
+  processedAt?: string;
+  // Relations
+  reporter?: { id: string, name: string, email: string };
+  property?: { id: number, title: string, ownerId: string };
 }
 
 
