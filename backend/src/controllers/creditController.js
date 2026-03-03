@@ -120,7 +120,7 @@ export const unlockContact = async (req, res) => {
 
         if (!balance) {
             await t.rollback();
-            return res.status(403).json({ error: 'Insufficient credits. Please purchase a credit plan.' });
+            return res.status(403).json({ error: 'No tienes suficientes créditos. Por favor adquiere un plan.' });
         }
 
         // Check if has unlimited active
@@ -129,7 +129,7 @@ export const unlockContact = async (req, res) => {
 
         if (!hasUnlimited && !hasCredits) {
             await t.rollback();
-            return res.status(403).json({ error: 'Insufficient credits. Please purchase a credit plan.' });
+            return res.status(403).json({ error: 'No tienes suficientes créditos. Por favor adquiere un plan.' });
         }
 
         let transactionId = null;

@@ -1059,7 +1059,7 @@ const PropertyDetail: React.FC = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Desbloquear Contacto</h3>
 
-            {currentUser?.creditBalance?.availableCredits === 0 && !currentUser.creditBalance?.hasUnlimited ? (
+            {(!currentUser?.creditBalance?.availableCredits || currentUser?.creditBalance?.availableCredits <= 0) && !currentUser?.creditBalance?.hasUnlimited ? (
               <div className="space-y-4">
                 <p className="text-gray-600">No tienes créditos disponibles para desbloquear este contacto.</p>
                 <div className="flex flex-col space-y-3">
