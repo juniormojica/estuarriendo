@@ -9,7 +9,7 @@ import { directUpload, CLOUDINARY_FOLDERS } from '../services/directUploadServic
 interface PaymentUploadFormProps {
     user: User;
     onSuccess: () => void;
-    selectedPlan: 'weekly' | 'monthly' | 'quarterly' | null;
+    selectedPlan: 'weekly' | 'monthly' | 'quarterly' | '5_credits' | '10_credits' | 'unlimited' | null;
 }
 
 const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, selectedPlan }) => {
@@ -22,10 +22,13 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const referenceCode = `ESTU-P-${user.id.substring(0, 4).toUpperCase()}-${Date.now().toString().substring(9)}`;
 
-    const plans = {
+    const plans: Record<string, { name: string; price: number; duration: number }> = {
         weekly: { name: 'Semanal', price: 12500, duration: 7 },
         monthly: { name: 'Mensual', price: 20000, duration: 30 },
-        quarterly: { name: 'Trimestral', price: 28000, duration: 90 }
+        quarterly: { name: 'Trimestral', price: 28000, duration: 90 },
+        '5_credits': { name: '5 Créditos de Contacto', price: 7000, duration: 0 },
+        '10_credits': { name: '10 Créditos de Contacto', price: 10000, duration: 0 },
+        'unlimited': { name: 'Pase Ilimitado Mensual', price: 20000, duration: 30 }
     };
 
     const selectedPlanData = selectedPlan ? plans[selectedPlan] : null;

@@ -5,6 +5,7 @@ import { useAppSelector } from '../store/hooks';
 import { api } from '../services/api';
 import { User as UserIcon, Shield, CreditCard, CheckCircle, AlertCircle, Save, Loader, Clock, ShieldCheck, XCircle } from 'lucide-react';
 import PaymentFlowSection from '../components/PaymentFlowSection';
+import PaymentUploadForm from '../components/PaymentUploadForm';
 import VerificationForm from '../components/VerificationForm';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,6 +24,7 @@ const UserProfile: React.FC = () => {
     const [creditBalance, setCreditBalance] = useState<CreditBalance | null>(null);
     const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
     const [loadingCredits, setLoadingCredits] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'transfer' | null>(null);
 
     // Form states for non-basic info
     const [formData, setFormData] = useState<Partial<User>>({});
@@ -677,12 +679,116 @@ const UserProfile: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <button
-                                                    onClick={() => navigate('/planes')}
+                                                    onClick={() => {
+                                                        // Ensure we have a clean URL before navigating
+                                                        navigate('/planes', { replace: true });
+                                                    }}
                                                     className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition"
                                                 >
                                                     Comprar Más Créditos
                                                 </button>
                                             </div>
+
+                                            {/* CHECKOUT FLOW */}
+                                            {(() => {
+                                                const planParam = new URLSearchParams(location.search).get('plan');
+                                                const creditPlansList: Record<string, { name: string, price: number, link: string }> = {
+                                                    '5_credits': { name: '5 Créditos de Contacto', price: 7000, link: 'https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=YOUR_PREF_ID' },
+                                                    '10_credits': { name: '10 Créditos de Contacto', price: 10000, link: 'https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=YOUR_PREF_ID' },
+                                                    'unlimited': { name: 'Pase Ilimitado Mensual', price: 20000, link: 'https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=YOUR_PREF_ID' }
+                                                };
+                                                const selectedCreditPlan = planParam ? creditPlansList[planParam] : null;
+
+                                                if (!selectedCreditPlan) return null;
+
+                                                return (
+                                                    <div className="bg-white rounded-xl border-2 border-emerald-500 shadow-lg overflow-hidden mt-8 animate-fadeIn">
+                                                        <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                                                            <div>
+                                                                <h3 className="text-xl font-bold text-gray-900">Finalizar Compra</h3>
+                                                                <p className="text-emerald-700 font-medium">Estás a punto de adquirir: {selectedCreditPlan.name}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-medium text-gray-500">Total a pagar</p>
+                                                                <p className="text-2xl font-black text-gray-900">${selectedCreditPlan.price.toLocaleString('es-CO')}</p>
+                                                            </div>
+                                                        </div>
+
+                                                        {paymentRequest && paymentRequest.status === 'pending' ? (
+                                                            <div className="p-8">
+                                                                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
+                                                                    <Clock className="h-16 w-16 text-yellow-500 mb-4" />
+                                                                    <h4 className="text-xl font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
+                                                                    <p className="text-yellow-700 mb-4 max-w-md">
+                                                                        Hemos recibido tu comprobante. Los créditos se asignarán en un máximo de 2 horas.
+                                                                    </p>
+                                                                    <div className="text-sm text-yellow-600 bg-yellow-100 inline-block px-4 py-2 rounded-full font-mono font-bold">
+                                                                        Referencia: {paymentRequest.referenceCode}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-6 sm:p-8 space-y-6">
+                                                                <h4 className="text-lg font-semibold text-gray-900">Selecciona tu método de pago:</h4>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <button
+                                                                        onClick={() => setPaymentMethod('mercadopago')}
+                                                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'mercadopago' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-gray-200 hover:border-emerald-400 hover:bg-gray-50'}`}
+                                                                    >
+                                                                        <div className="text-center">
+                                                                            <span className="block font-bold text-gray-900 mb-1">Mercado Pago</span>
+                                                                            <span className="text-sm text-gray-500">Pago inmediato (PSE, Tarjeta)</span>
+                                                                        </div>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setPaymentMethod('transfer')}
+                                                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'transfer' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-gray-200 hover:border-emerald-400 hover:bg-gray-50'}`}
+                                                                    >
+                                                                        <div className="text-center">
+                                                                            <span className="block font-bold text-gray-900 mb-1">Transferencia</span>
+                                                                            <span className="text-sm text-gray-500">Subir comprobante manual</span>
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+
+                                                                <div className="pt-6 border-t border-gray-100 transition-all duration-300">
+                                                                    {paymentMethod === 'mercadopago' && (
+                                                                        <div className="text-center py-6">
+                                                                            <a
+                                                                                href={selectedCreditPlan.link}
+                                                                                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto"
+                                                                            >
+                                                                                Pagar con Mercado Pago
+                                                                            </a>
+                                                                            <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {paymentMethod === 'transfer' && (
+                                                                        <div className="animate-fadeIn">
+                                                                            <PaymentUploadForm
+                                                                                user={user}
+                                                                                onSuccess={() => {
+                                                                                    setMessage({ type: 'success', text: 'Comprobante enviado exitosamente.' });
+                                                                                    setTimeout(() => window.location.reload(), 1500);
+                                                                                }}
+                                                                                selectedPlan={planParam as '5_credits' | '10_credits' | 'unlimited'}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {!paymentMethod && (
+                                                                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                                                            <p className="text-gray-500">Selecciona un método de pago arriba para continuar</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
+                                            {/* END CHECKOUT FLOW */}
 
                                             {creditTransactions.length > 0 && (
                                                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
