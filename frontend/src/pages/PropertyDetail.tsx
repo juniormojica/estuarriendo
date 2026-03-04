@@ -159,7 +159,7 @@ const PropertyDetail: React.FC = () => {
       // If user is a tenant, fetch live credit balance
       if (currentUser?.userType === 'tenant') {
         try {
-          const balance = await api.getCreditBalance();
+          const balance = await api.getCreditBalance(String(currentUser.id));
           setCreditBalance(balance);
         } catch (err) {
           console.error('Error fetching live credit balance', err);
