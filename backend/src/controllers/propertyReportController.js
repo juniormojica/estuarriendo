@@ -42,6 +42,24 @@ export const createPropertyReport = async (req, res) => {
             creditRefunded: false
         });
 
+        // Notify admins about the new report
+        const admins = await User.findAll({ where: { role: 'superAdmin' } });
+        const property = await Property.findByPk(propertyId);
+
+        const adminNotifications = admins.map(admin => ({
+            userId: admin.id,
+            type: NotificationType.PROPERTY_REPORTED,
+            title: 'Nuevo Reporte de Propiedad',
+            message: `Un usuario ha reportado la propiedad "${property ? property.title : 'N/A'}" como "${reason}".`,
+            propertyId,
+            propertyTitle: property ? property.title : null,
+            createdAt: new Date()
+        }));
+
+        if (adminNotifications.length > 0) {
+            await Notification.bulkCreate(adminNotifications);
+        }
+
         res.status(201).json(report);
     } catch (error) {
         console.error('Error creating property report:', error);
@@ -109,7 +127,7 @@ export const confirmPropertyReport = async (req, res) => {
             return res.status(404).json({ error: 'Reporte no encontrado' });
         }
 
-        if (report.status !== PropertyReportStatus.PENDING) {
+        if (report.status !== PropertyReportStatus.PENDING && report.status !== PropertyReportStatus.INVESTIGATING) {
             await t.rollback();
             return res.status(400).json({ error: 'El reporte ya fue procesado' });
         }
@@ -170,9 +188,9 @@ export const confirmPropertyReport = async (req, res) => {
             // Notify owner
             await Notification.create({
                 userId: property.ownerId,
-                type: NotificationType.PROPERTY_REPORTED,
-                title: 'Propiedad marcada como arrendada',
-                message: `Tu propiedad "${property.title}" ha sido marcada como arrendada debido al reporte de un usuario.`,
+                type: NotificationType.REPORT_RESOLVED,
+                title: 'Propiedad Marcada como Arrendada',
+                message: `Tras la validación de un reporte por parte de un administrador, tu propiedad "${property.title}" ha sido marcada como arrendada y retirada de listas.`,
                 propertyId: property.id,
                 propertyTitle: property.title,
                 createdAt: new Date()
@@ -213,7 +231,7 @@ export const rejectPropertyReport = async (req, res) => {
             return res.status(404).json({ error: 'Reporte no encontrado' });
         }
 
-        if (report.status !== PropertyReportStatus.PENDING) {
+        if (report.status !== PropertyReportStatus.PENDING && report.status !== PropertyReportStatus.INVESTIGATING) {
             return res.status(400).json({ error: 'El reporte ya fue procesado' });
         }
 
@@ -238,11 +256,24 @@ export const rejectPropertyReport = async (req, res) => {
             userId: report.reporterId,
             type: NotificationType.REPORT_RESOLVED,
             title: 'Reporte Rechazado',
-            message: `Tu reporte sobre la propiedad "${property ? property.title : 'N/A'}" ha sido rechazado tras revisión.`,
+            message: `Tu reporte sobre la propiedad "${property ? property.title : 'N/A'}" ha sido rechazado tras revisión. El crédito no fue devuelto.`,
             propertyId: report.propertyId,
             propertyTitle: property ? property.title : null,
             createdAt: new Date()
         });
+
+        // Notify owner
+        if (property && property.ownerId) {
+            await Notification.create({
+                userId: property.ownerId,
+                type: NotificationType.REPORT_RESOLVED,
+                title: 'Reporte de Propiedad Desestimado',
+                message: `Se recibió un reporte sobre tu propiedad "${property.title}", pero tras la revisión administrativa determinamos que no procedía.`,
+                propertyId: property.id,
+                propertyTitle: property.title,
+                createdAt: new Date()
+            });
+        }
 
         res.json(report);
     } catch (error) {
