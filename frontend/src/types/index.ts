@@ -60,7 +60,8 @@ export type CreditPlanType = '5_credits' | '10_credits' | 'unlimited';
 export type CreditTransactionType = 'purchase' | 'use' | 'refund' | 'expire';
 export type ContactUnlockStatus = 'active' | 'refunded';
 export type PropertyReportReason = 'already_rented' | 'incorrect_info' | 'scam' | 'other';
-export type PropertyReportStatus = 'pending' | 'confirmed' | 'rejected';
+export type PropertyReportStatus = 'pending' | 'investigating' | 'confirmed' | 'rejected';
+export type ReportActivityAction = 'contact_attempt' | 'note_added' | 'owner_contacted' | 'owner_confirmed_rented' | 'owner_denied' | 'confirmed' | 'rejected';
 
 // ===== CONTAINER ARCHITECTURE TYPES =====
 // Rental modes for properties
@@ -558,6 +559,16 @@ export interface ContactUnlock {
   createdAt?: string;
 }
 
+export interface ReportActivityLog {
+  id: number;
+  reportId: number;
+  adminId: string;
+  action: ReportActivityAction;
+  notes: string;
+  createdAt: string;
+  admin?: { id: string, name: string };
+}
+
 export interface PropertyReport {
   id?: number;
   reporterId: string;
@@ -573,9 +584,16 @@ export interface PropertyReport {
   processedAt?: string;
   // Relations
   reporter?: { id: string, name: string, email: string };
-  property?: { id: number, title: string, ownerId: string };
+  property?: {
+    id: number;
+    title: string;
+    ownerId: string;
+    address?: string;
+    cityId?: number;
+    owner?: { id: string; name: string; email: string; phone: string; whatsapp: string; }
+  };
+  activityLogs?: ReportActivityLog[];
 }
-
 
 /**
  * =================================================================================

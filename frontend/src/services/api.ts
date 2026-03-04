@@ -1423,8 +1423,27 @@ export const api = {
       console.error('Error rejecting property report:', error);
       throw error;
     }
-  }
+  },
 
+  async addReportActivity(reportId: string | number, data: { adminId: string; action: string; notes: string }): Promise<any> {
+    try {
+      const response = await apiClient.post(`/property-reports/${reportId}/activity`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding report activity:', error);
+      throw error;
+    }
+  },
+
+  async getReportActivity(reportId: string | number): Promise<any[]> {
+    try {
+      const response = await apiClient.get(`/property-reports/${reportId}/activity`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching report activity logs:', error);
+      return [];
+    }
+  }
 }
 
 // Helper for student requests

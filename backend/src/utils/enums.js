@@ -127,6 +127,17 @@ export const PropertyReportReason = {
 
 export const PropertyReportStatus = {
     PENDING: 'pending',
+    INVESTIGATING: 'investigating',
+    CONFIRMED: 'confirmed',
+    REJECTED: 'rejected'
+};
+
+export const ReportActivityAction = {
+    CONTACT_ATTEMPT: 'contact_attempt',
+    NOTE_ADDED: 'note_added',
+    OWNER_CONTACTED: 'owner_contacted',
+    OWNER_CONFIRMED_RENTED: 'owner_confirmed_rented',
+    OWNER_DENIED: 'owner_denied',
     CONFIRMED: 'confirmed',
     REJECTED: 'rejected'
 };

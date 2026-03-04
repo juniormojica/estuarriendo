@@ -43,6 +43,7 @@ import CreditBalance from './CreditBalance.js';
 import CreditTransaction from './CreditTransaction.js';
 import ContactUnlock from './ContactUnlock.js';
 import PropertyReport from './PropertyReport.js';
+import ReportActivityLog from './ReportActivityLog.js';
 
 /**
  * Define Model Associations
@@ -528,6 +529,27 @@ PropertyReport.belongsTo(Property, {
     as: 'property'
 });
 
+// PropertyReport <-> ReportActivityLog (One-to-Many)
+PropertyReport.hasMany(ReportActivityLog, {
+    foreignKey: 'reportId',
+    as: 'activityLogs',
+    onDelete: 'CASCADE'
+});
+ReportActivityLog.belongsTo(PropertyReport, {
+    foreignKey: 'reportId',
+    as: 'report'
+});
+
+// User (Admin) <-> ReportActivityLog (One-to-Many)
+User.hasMany(ReportActivityLog, {
+    foreignKey: 'adminId',
+    as: 'reportActivities'
+});
+ReportActivityLog.belongsTo(User, {
+    foreignKey: 'adminId',
+    as: 'admin'
+});
+
 /**
  * Export all models and sequelize instance
  */
@@ -570,7 +592,8 @@ export {
     CreditBalance,
     CreditTransaction,
     ContactUnlock,
-    PropertyReport
+    PropertyReport,
+    ReportActivityLog
 };
 
 export default {
@@ -612,5 +635,6 @@ export default {
     CreditBalance,
     CreditTransaction,
     ContactUnlock,
-    PropertyReport
+    PropertyReport,
+    ReportActivityLog
 };

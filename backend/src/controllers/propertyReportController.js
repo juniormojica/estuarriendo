@@ -1,5 +1,5 @@
-import { User, Property, ContactUnlock, PropertyReport, CreditBalance, CreditTransaction } from '../models/index.js';
-import { PropertyReportStatus, CreditTransactionType, ContactUnlockStatus, NotificationType } from '../utils/enums.js';
+import { User, Property, ContactUnlock, PropertyReport, CreditBalance, CreditTransaction, ReportActivityLog } from '../models/index.js';
+import { PropertyReportStatus, CreditTransactionType, ContactUnlockStatus, NotificationType, ReportActivityAction } from '../utils/enums.js';
 import { Notification } from '../models/index.js';
 import { sequelize } from '../config/database.js';
 
@@ -65,7 +65,17 @@ export const getPropertyReports = async (req, res) => {
             where,
             include: [
                 { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
-                { model: Property, as: 'property', attributes: ['id', 'title', 'ownerId'] }
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title', 'ownerId'],
+                    include: [{ model: User, as: 'owner', attributes: ['id', 'name', 'email', 'phone', 'whatsapp'] }]
+                },
+                {
+                    model: ReportActivityLog,
+                    as: 'activityLogs',
+                    include: [{ model: User, as: 'admin', attributes: ['id', 'name'] }]
+                }
             ],
             limit: parseInt(limit),
             offset: parseInt(offset),
@@ -109,6 +119,14 @@ export const confirmPropertyReport = async (req, res) => {
         report.adminNotes = adminNotes;
         report.processedBy = adminId;
         report.processedAt = new Date();
+
+        // Log the confirmation
+        await ReportActivityLog.create({
+            reportId: report.id,
+            adminId,
+            action: ReportActivityAction.CONFIRMED,
+            notes: adminNotes || 'Reporte confirmado por administración. Crédito devuelto.'
+        }, { transaction: t });
 
         // 2. Refund credit if applicable
         if (report.contactUnlock && report.contactUnlock.status === ContactUnlockStatus.ACTIVE) {
@@ -204,6 +222,14 @@ export const rejectPropertyReport = async (req, res) => {
         report.processedBy = adminId;
         report.processedAt = new Date();
         await report.save();
+
+        // Log the rejection
+        await ReportActivityLog.create({
+            reportId: report.id,
+            adminId,
+            action: ReportActivityAction.REJECTED,
+            notes: adminNotes || 'Reporte rechazado por administración.'
+        });
 
         const property = await Property.findByPk(report.propertyId);
 
