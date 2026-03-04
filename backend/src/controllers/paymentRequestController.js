@@ -201,7 +201,7 @@ export const verifyPaymentRequest = async (req, res) => {
         });
 
         // Determine if it's a credit plan or owner premium plan
-        const isCreditPlan = ['5_credits', '10_credits', 'unlimited'].includes(request.planType);
+        const isCreditPlan = ['5_credits', '10_credits', '20_credits'].includes(request.planType);
 
         let subscriptionDetails = null;
 
@@ -226,11 +226,7 @@ export const verifyPaymentRequest = async (req, res) => {
 
             if (request.planType === '5_credits') creditsToAdd = 5;
             else if (request.planType === '10_credits') creditsToAdd = 10;
-            else if (request.planType === 'unlimited') {
-                creditsToAdd = -1; // -1 represents unlimited
-                unlimitedUntil = new Date(now);
-                unlimitedUntil.setDate(unlimitedUntil.getDate() + 30); // 30 days of unlimited
-            }
+            else if (request.planType === '20_credits') creditsToAdd = 20;
 
             if (creditsToAdd > 0) {
                 // If they had unlimited and now buy credits (rare), or just buying more credits

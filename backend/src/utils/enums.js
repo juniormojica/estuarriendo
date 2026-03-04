@@ -68,7 +68,7 @@ export const SubscriptionType = {
     QUARTERLY: 'quarterly',
     CREDITS_5: '5_credits',
     CREDITS_10: '10_credits',
-    CREDITS_UNLIMITED: 'unlimited'
+    CREDITS_20: '20_credits'
 };
 
 export const PaymentRequestStatus = {
@@ -103,7 +103,7 @@ export const StudentRequestStatus = {
 export const CreditPlanType = {
     FIVE: '5_credits',
     TEN: '10_credits',
-    UNLIMITED: 'unlimited'
+    TWENTY: '20_credits'
 };
 
 export const CreditTransactionType = {
