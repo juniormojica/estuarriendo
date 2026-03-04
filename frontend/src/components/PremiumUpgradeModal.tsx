@@ -98,7 +98,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                                     className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all"
                                 >
                                     <span className="text-xs text-gray-600 mb-1">Semanal</span>
-                                    <span className="text-lg font-bold text-gray-900">$12.500</span>
+                                    <span className="text-lg font-bold text-gray-900">$12.999</span>
                                     <span className="text-xs text-gray-500">7 días</span>
                                 </Link>
                                 <Link
@@ -107,7 +107,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                                 >
                                     <span className="absolute -top-2 bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">Popular</span>
                                     <span className="text-xs text-emerald-700 mb-1 font-medium">Mensual</span>
-                                    <span className="text-lg font-bold text-emerald-700">$20.000</span>
+                                    <span className="text-lg font-bold text-emerald-700">$19.999</span>
                                     <span className="text-xs text-emerald-600">30 días</span>
                                 </Link>
                                 <Link
@@ -115,8 +115,8 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                                     className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all"
                                 >
                                     <span className="text-xs text-gray-600 mb-1">Trimestral</span>
-                                    <span className="text-lg font-bold text-gray-900">$28.000</span>
-                                    <span className="text-xs text-emerald-600 font-medium">Ahorra $32K</span>
+                                    <span className="text-lg font-bold text-gray-900">$49.999</span>
+                                    <span className="text-xs text-emerald-600 font-medium">Ahorra $9,998</span>
                                 </Link>
                             </div>
                         </div>

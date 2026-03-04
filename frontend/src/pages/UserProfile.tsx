@@ -702,9 +702,9 @@ const UserProfile: React.FC = () => {
                                             {(() => {
                                                 const planParam = new URLSearchParams(location.search).get('plan');
                                                 const creditPlansList: Record<string, { name: string, price: number, link: string }> = {
-                                                    '5_credits': { name: '5 Créditos de Contacto', price: 7000, link: 'https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=YOUR_PREF_ID' },
-                                                    '10_credits': { name: '10 Créditos de Contacto', price: 10000, link: 'https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=YOUR_PREF_ID' },
-                                                    'unlimited': { name: 'Pase Ilimitado Mensual', price: 20000, link: 'https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=YOUR_PREF_ID' }
+                                                    '5_credits': { name: '5 Créditos de Contacto', price: 8999, link: 'https://mpago.li/14Mt9hc' },
+                                                    '10_credits': { name: '10 Créditos de Contacto', price: 12999, link: '' },
+                                                    '20_credits': { name: '20 Créditos de Contacto', price: 19999, link: '' }
                                                 };
                                                 const selectedCreditPlan = planParam ? creditPlansList[planParam] : null;
 
@@ -763,13 +763,24 @@ const UserProfile: React.FC = () => {
                                                                 <div className="pt-6 border-t border-gray-100 transition-all duration-300">
                                                                     {paymentMethod === 'mercadopago' && (
                                                                         <div className="text-center py-6">
-                                                                            <a
-                                                                                href={selectedCreditPlan.link}
-                                                                                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto"
-                                                                            >
-                                                                                Pagar con Mercado Pago
-                                                                            </a>
-                                                                            <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
+                                                                            {selectedCreditPlan.link ? (
+                                                                                <>
+                                                                                    <a
+                                                                                        href={selectedCreditPlan.link}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto"
+                                                                                    >
+                                                                                        Pagar con Mercado Pago
+                                                                                    </a>
+                                                                                    <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
+                                                                                </>
+                                                                            ) : (
+                                                                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                                                                    <p className="text-yellow-800 font-medium">Link de Mercado Pago no disponible aún para este plan.</p>
+                                                                                    <p className="text-yellow-600 text-sm mt-1">Puedes usar transferencia manual en su lugar.</p>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     )}
 
@@ -781,7 +792,7 @@ const UserProfile: React.FC = () => {
                                                                                     setMessage({ type: 'success', text: 'Comprobante enviado exitosamente.' });
                                                                                     setTimeout(() => window.location.reload(), 1500);
                                                                                 }}
-                                                                                selectedPlan={planParam as '5_credits' | '10_credits' | 'unlimited'}
+                                                                                selectedPlan={planParam as '5_credits' | '10_credits' | '20_credits'}
                                                                             />
                                                                         </div>
                                                                     )}
