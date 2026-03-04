@@ -5,6 +5,7 @@ import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import { api } from '../services/api';
 import NotificationBell from './NotificationBell';
+import { CreditBalance } from '../types';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -13,6 +14,7 @@ const Header: React.FC = () => {
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const [newOpportunitiesCount, setNewOpportunitiesCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [tenantCredits, setTenantCredits] = useState<CreditBalance | null>(null);
 
   useEffect(() => {
     const loadNewOpportunitiesCount = async () => {
@@ -35,7 +37,20 @@ const Header: React.FC = () => {
       }
     };
 
+    const loadTenantCredits = async () => {
+      if (currentUser?.userType === 'tenant') {
+        try {
+          // Add a small delay so other requests take priority or balance is fully synced
+          const balance = await api.getCreditBalance(currentUser.id.toString());
+          setTenantCredits(balance);
+        } catch (error) {
+          console.error('Error loading tenant credits:', error);
+        }
+      }
+    };
+
     loadNewOpportunitiesCount();
+    loadTenantCredits();
   }, [currentUser]);
 
   // Close mobile menu when route changes
@@ -172,6 +187,21 @@ const Header: React.FC = () => {
             {/* Auth Section */}
             {currentUser ? (
               <div className="flex items-center space-x-3 ml-2">
+                {currentUser.userType === 'tenant' && tenantCredits && (
+                  <button
+                    onClick={() => navigate('/perfil?tab=billing')}
+                    className="flex items-center bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors shadow-sm cursor-pointer border border-emerald-200"
+                    title="Balance de Créditos"
+                  >
+                    <span className="font-bold mr-1.5 text-emerald-600">🟡</span>
+                    <span className="text-sm font-semibold">
+                      {tenantCredits.hasUnlimited && tenantCredits.unlimitedUntil && new Date(tenantCredits.unlimitedUntil) > new Date()
+                        ? 'Ilimitados'
+                        : `${tenantCredits.availableCredits} Créditos`}
+                    </span>
+                  </button>
+                )}
+
                 <span
                   onClick={() => navigate('/perfil')}
                   className="text-sm text-gray-700 font-medium hover:text-gray-900 cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
@@ -254,11 +284,29 @@ const Header: React.FC = () => {
             <div className="p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-b border-gray-200">
               <p className="text-xs text-gray-600 uppercase tracking-wide">Hola,</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{currentUser.name}</p>
-              <p className="text-sm text-gray-600 mt-1.5 inline-block px-3 py-1 bg-white/60 rounded-full">
-                {currentUser.userType === 'owner' ? 'Propietario' :
-                  currentUser.userType === 'tenant' ? 'Estudiante' :
-                    currentUser.userType === 'admin' ? 'Administrador' : 'Super Admin'}
-              </p>
+              <div className="flex flex-col mt-2 space-y-2">
+                <p className="text-sm text-gray-600 inline-block w-max px-3 py-1 bg-white/60 rounded-full">
+                  {currentUser.userType === 'owner' ? 'Propietario' :
+                    currentUser.userType === 'tenant' ? 'Estudiante' :
+                      currentUser.userType === 'admin' ? 'Administrador' : 'Super Admin'}
+                </p>
+                {currentUser.userType === 'tenant' && tenantCredits && (
+                  <button
+                    onClick={() => {
+                      navigate('/perfil?tab=billing');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center w-max bg-white/80 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-white transition-colors"
+                  >
+                    <span className="font-bold mr-1.5 text-emerald-600">🟡</span>
+                    <span className="text-sm font-semibold">
+                      {tenantCredits.hasUnlimited && tenantCredits.unlimitedUntil && new Date(tenantCredits.unlimitedUntil) > new Date()
+                        ? 'Ilimitados'
+                        : `${tenantCredits.availableCredits} Créditos`}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

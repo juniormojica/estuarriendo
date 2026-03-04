@@ -85,7 +85,7 @@ export const createPaymentRequest = async (req, res) => {
         const { userId, amount, planType, planDuration, referenceCode, proofImageUrl, proofImagePublicId, paymentMethod, mercadoPagoPaymentId } = req.body;
 
         // Validate required fields
-        if (!userId || !amount || !planType || !planDuration || !referenceCode) {
+        if (!userId || !amount || !planType || planDuration === undefined || planDuration === null || !referenceCode) {
             return res.status(400).json({ error: 'Faltan campos requeridos' });
         }
 

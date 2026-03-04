@@ -151,23 +151,31 @@ const UserProfile: React.FC = () => {
 
     // Fetch credits for tenant
     useEffect(() => {
-        const loadCredits = async () => {
-            if (activeTab === 'billing' && user?.userType === 'tenant') {
+        if (activeTab === 'billing' && user?.userType === 'tenant') {
+            const fetchCreditsAndPayments = async () => {
                 setLoadingCredits(true);
                 try {
-                    const balance = await api.getCreditBalance(user.id.toString());
-                    const txs = await api.getCreditTransactions(user.id.toString());
+                    const balance = await api.getCreditBalance();
                     setCreditBalance(balance);
-                    setCreditTransactions(txs);
+
+                    const transactions = await api.getCreditTransactions();
+                    setCreditTransactions(transactions);
+
+                    // Check for pending payment requests for this tenant
+                    const allReqs = await api.getPaymentRequests();
+                    const userPendingReq = allReqs.find(req => req.userId === user.id && req.status === 'pending');
+                    if (userPendingReq) {
+                        setPaymentRequest(userPendingReq);
+                    }
                 } catch (error) {
-                    console.error('Error fetching credits:', error);
+                    console.error('Error al cargar datos de facturación:', error);
                 } finally {
                     setLoadingCredits(false);
                 }
-            }
-        };
-        loadCredits();
-    }, [activeTab, user?.id, user?.userType]);
+            };
+            fetchCreditsAndPayments();
+        }
+    }, [activeTab, user?.userType, user?.id]);
 
     const handleProfileChange = (field: string, value: any) => {
         setFormData(prev => ({

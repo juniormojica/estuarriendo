@@ -23,11 +23,11 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
     const referenceCode = `ESTU-P-${user.id.substring(0, 4).toUpperCase()}-${Date.now().toString().substring(9)}`;
 
     const plans: Record<string, { name: string; price: number; duration: number }> = {
-        weekly: { name: 'Semanal', price: 12500, duration: 7 },
-        monthly: { name: 'Mensual', price: 20000, duration: 30 },
-        quarterly: { name: 'Trimestral', price: 28000, duration: 90 },
-        '5_credits': { name: '5 Créditos de Contacto', price: 7000, duration: 0 },
-        '10_credits': { name: '10 Créditos de Contacto', price: 10000, duration: 0 },
+        weekly: { name: 'Semanal', price: 15000, duration: 7 },
+        monthly: { name: 'Mensual', price: 40000, duration: 30 },
+        quarterly: { name: 'Trimestral', price: 100000, duration: 90 },
+        '5_credits': { name: '5 Créditos', price: 7000, duration: 1 },
+        '10_credits': { name: '10 Créditos', price: 10000, duration: 1 },
         'unlimited': { name: 'Pase Ilimitado Mensual', price: 20000, duration: 30 }
     };
 

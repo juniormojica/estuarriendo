@@ -49,6 +49,7 @@ const PropertyDetail: React.FC = () => {
   const [contactUnlocked, setContactUnlocked] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<any>(null); // Added state for lived credit balance
 
   // Get property from Redux state - use currentProperty which is set by fetchPropertyById
   const property = currentProperty;
@@ -142,9 +143,9 @@ const PropertyDetail: React.FC = () => {
     }
   }, [property?.id, property?.owner?.email, property?.ownerId]);
 
-  // Check contact unlock status
+  // Check contact unlock status and fetch live credits
   useEffect(() => {
-    const checkUnlockStatus = async () => {
+    const fetchAuthData = async () => {
       // If user is authenticated and we have a property
       if (currentUser?.id && property?.id) {
         try {
@@ -154,9 +155,19 @@ const PropertyDetail: React.FC = () => {
           console.error('Error checking unlock status', err);
         }
       }
+
+      // If user is a tenant, fetch live credit balance
+      if (currentUser?.userType === 'tenant') {
+        try {
+          const balance = await api.getCreditBalance();
+          setCreditBalance(balance);
+        } catch (err) {
+          console.error('Error fetching live credit balance', err);
+        }
+      }
     };
-    if (currentUser?.id && property?.id) {
-      checkUnlockStatus();
+    if (currentUser?.id) {
+      fetchAuthData();
     }
   }, [currentUser?.id, property?.id]);
   useEffect(() => {
@@ -1059,7 +1070,7 @@ const PropertyDetail: React.FC = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Desbloquear Contacto</h3>
 
-            {(!currentUser?.creditBalance?.availableCredits || currentUser?.creditBalance?.availableCredits <= 0) && !currentUser?.creditBalance?.hasUnlimited ? (
+            {(!creditBalance?.availableCredits || creditBalance.availableCredits <= 0) && !creditBalance?.hasUnlimited ? (
               <div className="space-y-4">
                 <p className="text-gray-600">No tienes créditos disponibles para desbloquear este contacto.</p>
                 <div className="flex flex-col space-y-3">
@@ -1084,7 +1095,7 @@ const PropertyDetail: React.FC = () => {
               <div className="space-y-4">
                 <p className="text-gray-600">
                   ¿Deseas usar <span className="font-bold text-gray-900">1 crédito</span> para ver la información de contacto de este propietario?
-                  {currentUser?.creditBalance?.hasUnlimited && (
+                  {creditBalance?.hasUnlimited && (
                     <span className="block mt-2 font-medium text-emerald-600">
                       Tienes créditos ilimitados.
                     </span>

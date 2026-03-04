@@ -104,7 +104,7 @@ const AdminDashboard = () => {
                 const data = await api.getSystemConfig();
                 setSystemConfig(data);
             }
-            if (section === 'payments' && paymentRequests.length === 0) {
+            if (section === 'payments') {
                 const data = await api.getPaymentRequests();
                 setPaymentRequests(data);
             }
