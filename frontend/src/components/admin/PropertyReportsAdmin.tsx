@@ -11,6 +11,7 @@ const PropertyReportsAdmin: React.FC = () => {
     const toast = useToast();
     const { user: currentAdmin } = useAppSelector((state) => state.auth);
     const [reports, setReports] = useState<PropertyReport[]>([]);
+    const [counts, setCounts] = useState({ pending: 0, investigating: 0, confirmed: 0, rejected: 0, all: 0 });
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'pending' | 'investigating' | 'confirmed' | 'rejected' | 'all'>('pending');
 
@@ -30,15 +31,42 @@ const PropertyReportsAdmin: React.FC = () => {
 
     // const currentAdmin = JSON.parse(localStorage.getItem('estuarriendo_user') || '{}');
 
+    // Fetch counts once on mount, or re-fetch when reports resolve
+    useEffect(() => {
+        const fetchCounts = async () => {
+            try {
+                const allData = await api.getPropertyReports();
+                if (allData) calculateCounts(allData);
+            } catch (error) {
+                console.error('Error fetching global counts:', error);
+            }
+        };
+        fetchCounts();
+    }, []);
+
     useEffect(() => {
         fetchReports();
     }, [filter]);
+
+    const calculateCounts = (allReports: PropertyReport[]) => {
+        const newCounts = { pending: 0, investigating: 0, confirmed: 0, rejected: 0, all: allReports.length };
+        allReports.forEach(r => {
+            if (r.status in newCounts) {
+                newCounts[r.status as keyof typeof newCounts]++;
+            }
+        });
+        setCounts(newCounts);
+    };
 
     const fetchReports = async () => {
         setLoading(true);
         try {
             const data = await api.getPropertyReports(filter === 'all' ? undefined : filter as any);
             setReports(data || []);
+            // If viewing all, we can accurately recount
+            if (filter === 'all' && data) {
+                calculateCounts(data);
+            }
         } catch (error) {
             console.error('Error fetching reports:', error);
             toast.error('Error al cargar las solicitudes de devolución');
@@ -471,10 +499,13 @@ const PropertyReportsAdmin: React.FC = () => {
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${filter === f ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap flex items-center gap-2 ${filter === f ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
                             {f === 'pending' ? 'Pendientes' : f === 'investigating' ? 'En Revisión' : f === 'confirmed' ? 'Confirmados' : f === 'rejected' ? 'Rechazados' : 'Todos'}
+                            <span className={`px-2 py-0.5 rounded-full text-xs ${filter === f ? 'bg-indigo-100' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
+                                {counts[f]}
+                            </span>
                         </button>
                     ))}
                 </div>
