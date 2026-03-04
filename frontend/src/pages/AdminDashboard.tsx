@@ -452,6 +452,8 @@ const AdminDashboard = () => {
                         }}
                     />
                 );
+            case 'property-reports':
+                return <PropertyReportsAdmin />;
             default:
                 return null;
         }

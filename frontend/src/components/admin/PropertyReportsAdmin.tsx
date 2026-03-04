@@ -4,9 +4,10 @@ import { PropertyReport } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CheckCircle, XCircle, Clock, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { useToast } from '../../components/ToastProvider';
 
 const PropertyReportsAdmin: React.FC = () => {
+    const toast = useToast();
     const [reports, setReports] = useState<PropertyReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'pending' | 'confirmed' | 'rejected' | 'all'>('pending');
@@ -153,7 +154,9 @@ const PropertyReportsAdmin: React.FC = () => {
                                 {reports.map((report) => (
                                     <tr key={report.id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="p-4 text-sm whitespace-nowrap text-gray-500">
-                                            {formatDistanceToNow(new Date(report.createdAt), { addSuffix: true, locale: es })}
+                                            {report.createdAt
+                                                ? formatDistanceToNow(new Date(report.createdAt), { addSuffix: true, locale: es })
+                                                : 'N/A'}
                                         </td>
                                         <td className="p-4">
                                             <div className="font-medium text-gray-900 line-clamp-1 max-w-xs">{report.property?.title || 'ID: ' + report.propertyId}</div>

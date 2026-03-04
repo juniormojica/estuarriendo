@@ -11,7 +11,7 @@ export const createPropertyReport = async (req, res) => {
         const { reporterId, propertyId, reason, description } = req.body;
 
         if (!reporterId || !propertyId || !reason) {
-            return res.status(400).json({ error: 'reporterId, propertyId, and reason are required' });
+            return res.status(400).json({ error: 'Se requiere reporterId, propertyId y reason' });
         }
 
         // Ensure user actually unlocked this property
@@ -20,7 +20,7 @@ export const createPropertyReport = async (req, res) => {
         });
 
         if (!unlock) {
-            return res.status(403).json({ error: 'You must unlock the contact before reporting the property' });
+            return res.status(403).json({ error: 'Debes desbloquear el contacto antes de reportar la propiedad' });
         }
 
         // Ensure no existing pending report
@@ -29,7 +29,7 @@ export const createPropertyReport = async (req, res) => {
         });
 
         if (existingReport) {
-            return res.status(400).json({ error: 'You already have a pending report for this property' });
+            return res.status(400).json({ error: 'Ya tienes una solicitud de devolución pendiente para esta propiedad' });
         }
 
         const report = await PropertyReport.create({
@@ -45,7 +45,7 @@ export const createPropertyReport = async (req, res) => {
         res.status(201).json(report);
     } catch (error) {
         console.error('Error creating property report:', error);
-        res.status(500).json({ error: 'Failed to create report', message: error.message });
+        res.status(500).json({ error: 'Error al crear el reporte', message: error.message });
     }
 };
 
@@ -75,7 +75,7 @@ export const getPropertyReports = async (req, res) => {
         res.json(reports);
     } catch (error) {
         console.error('Error fetching property reports:', error);
-        res.status(500).json({ error: 'Failed to fetch reports', message: error.message });
+        res.status(500).json({ error: 'Error al obtener los reportes', message: error.message });
     }
 };
 
@@ -96,12 +96,12 @@ export const confirmPropertyReport = async (req, res) => {
 
         if (!report) {
             await t.rollback();
-            return res.status(404).json({ error: 'Report not found' });
+            return res.status(404).json({ error: 'Reporte no encontrado' });
         }
 
         if (report.status !== PropertyReportStatus.PENDING) {
             await t.rollback();
-            return res.status(400).json({ error: 'Report is already processed' });
+            return res.status(400).json({ error: 'El reporte ya fue procesado' });
         }
 
         // 1. Mark report as confirmed
@@ -177,7 +177,7 @@ export const confirmPropertyReport = async (req, res) => {
     } catch (error) {
         await t.rollback();
         console.error('Error confirming report:', error);
-        res.status(500).json({ error: 'Failed to confirm report', message: error.message });
+        res.status(500).json({ error: 'Error al confirmar el reporte', message: error.message });
     }
 };
 
@@ -192,11 +192,11 @@ export const rejectPropertyReport = async (req, res) => {
         const report = await PropertyReport.findByPk(id);
 
         if (!report) {
-            return res.status(404).json({ error: 'Report not found' });
+            return res.status(404).json({ error: 'Reporte no encontrado' });
         }
 
         if (report.status !== PropertyReportStatus.PENDING) {
-            return res.status(400).json({ error: 'Report is already processed' });
+            return res.status(400).json({ error: 'El reporte ya fue procesado' });
         }
 
         report.status = PropertyReportStatus.REJECTED;
@@ -221,7 +221,7 @@ export const rejectPropertyReport = async (req, res) => {
         res.json(report);
     } catch (error) {
         console.error('Error rejecting report:', error);
-        res.status(500).json({ error: 'Failed to reject report', message: error.message });
+        res.status(500).json({ error: 'Error al rechazar el reporte', message: error.message });
     }
 };
 
