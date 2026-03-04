@@ -17,7 +17,8 @@ import {
   CreditTransaction,
   ContactUnlock,
   PropertyReport,
-  PropertyReportReason
+  PropertyReportReason,
+  PropertyReportStatus
 } from '../types';
 import { mockProperties } from '../data/mockData';
 import apiClient from '../lib/axios';
@@ -1389,6 +1390,37 @@ export const api = {
       return response.data;
     } catch (error) {
       console.error('Error creating property report:', error);
+      throw error;
+    }
+  },
+
+  async getPropertyReports(status?: PropertyReportStatus): Promise<PropertyReport[]> {
+    try {
+      const endpoint = status ? `/property-reports?status=${status}` : '/property-reports';
+      const response = await apiClient.get(endpoint);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching property reports:', error);
+      return [];
+    }
+  },
+
+  async confirmPropertyReport(id: string | number, data: { adminId: string; adminNotes?: string }): Promise<PropertyReport | null> {
+    try {
+      const response = await apiClient.put(`/property-reports/${id}/confirm`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming property report:', error);
+      throw error;
+    }
+  },
+
+  async rejectPropertyReport(id: string | number, data: { adminId: string; adminNotes?: string }): Promise<PropertyReport | null> {
+    try {
+      const response = await apiClient.put(`/property-reports/${id}/reject`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error rejecting property report:', error);
       throw error;
     }
   }

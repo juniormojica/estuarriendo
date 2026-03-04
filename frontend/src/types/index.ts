@@ -44,7 +44,7 @@ export type ActivityLogType =
   | 'payment_verified';
 
 // Secciones de Navegación del Panel de Administración
-export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity' | 'payments' | 'verifications' | 'student-requests' | 'create-property';
+export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity' | 'payments' | 'verifications' | 'student-requests' | 'create-property' | 'property-reports';
 
 // Estados de la Solicitud de Pago
 export type PaymentRequestStatus = 'pending' | 'verified' | 'rejected';

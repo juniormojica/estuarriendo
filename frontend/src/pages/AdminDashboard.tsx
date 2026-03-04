@@ -20,7 +20,8 @@ import PaymentsAdmin from '../components/admin/PaymentsAdmin';
 import VerificationsAdmin from '../components/admin/VerificationsAdmin';
 import AdminPropertyCreator from '../components/admin/AdminPropertyCreator';
 import DashboardHome from '../components/admin/DashboardHome';
-import { CheckCircle, XCircle, FileText, Menu } from 'lucide-react';
+import PropertyReportsAdmin from '../components/admin/PropertyReportsAdmin';
+import { Menu } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
 const AdminDashboard = () => {
@@ -85,7 +86,7 @@ const AdminDashboard = () => {
         // Check for section query parameter
         const params = new URLSearchParams(location.search);
         const section = params.get('section');
-        if (section && ['dashboard', 'pending', 'properties', 'users', 'payments', 'amenities', 'config', 'student-requests', 'activity', 'all-properties', 'verifications'].includes(section)) {
+        if (section && ['dashboard', 'pending', 'properties', 'users', 'payments', 'amenities', 'config', 'student-requests', 'activity', 'all-properties', 'verifications', 'property-reports'].includes(section)) {
             setCurrentSection(section as AdminSection);
         }
     }, [location.search]);

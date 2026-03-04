@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Star, MessageCircle, GraduationCap, Heart, ShieldCheck, Lock,
-  Clock, Users, Ban, Volume2, Utensils, Coffee, Wifi, Zap, Home, ArrowRight
+  Clock, Users, Ban, Volume2, Utensils, Coffee, Wifi, Zap, Home, ArrowRight, Info
 } from 'lucide-react';
-import { User } from '../types';
+import { User, PropertyReportReason } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -50,6 +50,12 @@ const PropertyDetail: React.FC = () => {
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [creditBalance, setCreditBalance] = useState<any>(null); // Added state for lived credit balance
+
+  // Report state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState<PropertyReportReason | ''>('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [isReporting, setIsReporting] = useState(false);
 
   // Get property from Redux state - use currentProperty which is set by fetchPropertyById
   const property = currentProperty;
@@ -317,6 +323,29 @@ const PropertyDetail: React.FC = () => {
       toast.error(error.response?.data?.error || error.response?.data?.message || 'Error al desbloquear el contacto.');
     } finally {
       setIsUnlocking(false);
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!currentUser?.id || !property?.id || !reportReason) return;
+
+    try {
+      setIsReporting(true);
+      await api.createPropertyReport({
+        reporterId: String(currentUser.id),
+        propertyId: String(property.id),
+        reason: reportReason as PropertyReportReason,
+        description: reportDescription
+      });
+      setShowReportModal(false);
+      setReportReason('');
+      setReportDescription('');
+      toast.success('Solicitud enviada. Verificaremos con el arrendador y te devolveremos el crédito pronto.');
+    } catch (error: any) {
+      console.error('Error submitting report:', error);
+      toast.error(error.response?.data?.error || 'Error al enviar la solicitud. Es posible que ya tengas una en proceso.');
+    } finally {
+      setIsReporting(false);
     }
   };
 
@@ -975,15 +1004,35 @@ const PropertyDetail: React.FC = () => {
                   )}
 
                   {canViewContact ? (
-                    <a
-                      href={`https://wa.me/${ownerDetails?.whatsapp}?text=Hola, estoy interesado en la propiedad: ${property.title} (ID: ${property.id})`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full min-h-[48px] bg-emerald-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-emerald-700 active:bg-emerald-800 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center space-x-2 group text-sm sm:text-base"
-                    >
-                      <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
-                      <span>Contactar por WhatsApp</span>
-                    </a>
+                    <>
+                      <a
+                        href={`https://wa.me/${ownerDetails?.whatsapp}?text=Hola, estoy interesado en la propiedad: ${property.title} (ID: ${property.id})`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full min-h-[48px] bg-emerald-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-emerald-700 active:bg-emerald-800 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center space-x-2 group text-sm sm:text-base"
+                      >
+                        <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform" />
+                        <span>Contactar por WhatsApp</span>
+                      </a>
+
+                      {contactUnlocked && isTenant && (
+                        <div className="flex items-center justify-center space-x-1 mt-2 mb-1 group relative">
+                          <button
+                            onClick={() => setShowReportModal(true)}
+                            className="text-xs sm:text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors duration-200"
+                          >
+                            ¿La propiedad ya no está disponible? Solicitar devolución de crédito
+                          </button>
+                          <div className="relative flex items-center">
+                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 pointer-events-none">
+                              Avisanos si esta habitación fue rentada a otra persona y te devolveremos tu crédito luego de verificar la información con el arrendador.
+                              <svg className="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve"><polygon className="fill-current" points="0,0 127.5,127.5 255,0" /></svg>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     isTenant ? (
                       <button
@@ -1121,6 +1170,65 @@ const PropertyDetail: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl space-y-4">
+            <h3 className="text-xl font-bold text-gray-900 border-b pb-3">Solicitar Devolución del Crédito</h3>
+
+            <p className="text-sm text-gray-600">
+              Si el propietario te indicó que la propiedad ya no está disponible, infórmanos. Verificaremos la situación y, de ser confirmada, te devolveremos el crédito invertido.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Razón de la solicitud <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value as PropertyReportReason)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none"
+                >
+                  <option value="" disabled>Selecciona una razón...</option>
+                  <option value="already_rented">La propiedad ya fue arrendada a otra persona</option>
+                  <option value="incorrect_info">La información de contacto es incorrecta / no responde</option>
+                  <option value="scam">Sospecha de fraude / estafa</option>
+                  <option value="other">Otra razón</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Detalles adicionales (opcional)</label>
+                <textarea
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Ej: Me dijo por WhatsApp que la rentó ayer..."
+                  className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none resize-none h-24"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-4 border-t">
+              <button
+                onClick={() => setShowReportModal(false)}
+                className="flex-1 py-2.5 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition"
+                disabled={isReporting}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                disabled={!reportReason || isReporting}
+                className="flex-[2] py-2.5 px-4 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-200"
+              >
+                {isReporting ? 'Enviando...' : 'Enviar Solicitud'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
