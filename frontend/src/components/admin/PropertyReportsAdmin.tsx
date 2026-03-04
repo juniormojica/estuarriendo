@@ -3,11 +3,13 @@ import { api } from '../../services/api';
 import { PropertyReport, ReportActivityLog } from '../../types';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CheckCircle, XCircle, Clock, AlertTriangle, ShieldCheck, Search, Phone, MessageCircle, FileText, ChevronRight, User, Info, ArrowLeft } from 'lucide-react';
+import { Clock, Search, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Phone, FileText, MessageCircle, ChevronRight, User as UserIcon, Info, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../components/ToastProvider';
+import { useAppSelector } from '../../store/hooks';
 
 const PropertyReportsAdmin: React.FC = () => {
     const toast = useToast();
+    const { user: currentAdmin } = useAppSelector((state) => state.auth);
     const [reports, setReports] = useState<PropertyReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'pending' | 'investigating' | 'confirmed' | 'rejected' | 'all'>('pending');
@@ -26,7 +28,7 @@ const PropertyReportsAdmin: React.FC = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
 
-    const currentAdmin = JSON.parse(localStorage.getItem('estuarriendo_user') || '{}');
+    // const currentAdmin = JSON.parse(localStorage.getItem('estuarriendo_user') || '{}');
 
     useEffect(() => {
         fetchReports();
@@ -59,7 +61,15 @@ const PropertyReportsAdmin: React.FC = () => {
     };
 
     const handleAddActivity = async () => {
-        if (!selectedReport || !currentAdmin?.id || !newLogNote.trim()) return;
+        console.log('handleAddActivity triggered:', { selectedReport, currentAdminId: currentAdmin?.id, newLogNote });
+        if (!selectedReport || !currentAdmin?.id || !newLogNote.trim()) {
+            console.error('Missing required data for addActivity', {
+                hasReport: !!selectedReport,
+                hasAdminId: !!currentAdmin?.id,
+                hasNote: !!newLogNote.trim()
+            });
+            return;
+        }
 
         setIsProcessing(true);
         try {
@@ -208,7 +218,7 @@ const PropertyReportsAdmin: React.FC = () => {
                         {/* Tenant Info */}
                         <div className="bg-white rounded-xl shadow-sm border p-5">
                             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <User className="w-4 h-4 text-gray-500" /> Datos del Inquilino (Reportante)
+                                <UserIcon className="w-4 h-4 text-gray-500" /> Datos del Inquilino (Reportante)
                             </h3>
                             <div className="space-y-3">
                                 <div>
@@ -293,7 +303,11 @@ const PropertyReportsAdmin: React.FC = () => {
                                                     <span className="font-bold text-gray-900 text-sm">{getActionLabel(log.action)}</span>
                                                     <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{log.admin?.name || 'Admin'}</span>
                                                 </div>
-                                                <p className="text-xs text-gray-500 mb-2">{format(new Date(log.createdAt), "dd MMM yyyy, h:mm a", { locale: es })}</p>
+                                                <p className="text-xs text-gray-500 mb-2">
+                                                    {log.createdAt && !isNaN(new Date(log.createdAt).getTime())
+                                                        ? format(new Date(log.createdAt), "dd MMM yyyy, h:mm a", { locale: es })
+                                                        : 'Recientemente'}
+                                                </p>
                                                 <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{log.notes}</p>
                                             </div>
                                         </div>
