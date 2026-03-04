@@ -23,9 +23,13 @@ export const createPropertyReport = async (req, res) => {
             return res.status(403).json({ error: 'Debes desbloquear el contacto antes de reportar la propiedad' });
         }
 
-        // Ensure no existing pending report
+        // Ensure no existing pending/investigating report
         const existingReport = await PropertyReport.findOne({
-            where: { reporterId, propertyId, status: PropertyReportStatus.PENDING }
+            where: {
+                reporterId,
+                propertyId,
+                status: [PropertyReportStatus.PENDING, PropertyReportStatus.INVESTIGATING]
+            }
         });
 
         if (existingReport) {
@@ -42,22 +46,26 @@ export const createPropertyReport = async (req, res) => {
             creditRefunded: false
         });
 
-        // Notify admins about the new report
-        const admins = await User.findAll({ where: { role: 'superAdmin' } });
-        const property = await Property.findByPk(propertyId);
+        // Notify admins about the new report (non-blocking)
+        try {
+            const admins = await User.findAll({ where: { userType: 'superAdmin' } });
+            const property = await Property.findByPk(propertyId);
 
-        const adminNotifications = admins.map(admin => ({
-            userId: admin.id,
-            type: NotificationType.PROPERTY_REPORTED,
-            title: 'Nuevo Reporte de Propiedad',
-            message: `Un usuario ha reportado la propiedad "${property ? property.title : 'N/A'}" como "${reason}".`,
-            propertyId,
-            propertyTitle: property ? property.title : null,
-            createdAt: new Date()
-        }));
+            const adminNotifications = admins.map(admin => ({
+                userId: admin.id,
+                type: NotificationType.PROPERTY_REPORTED,
+                title: 'Nuevo Reporte de Propiedad',
+                message: `Un usuario ha reportado la propiedad "${property ? property.title : 'N/A'}" como "${reason}".`,
+                propertyId,
+                propertyTitle: property ? property.title : null,
+                createdAt: new Date()
+            }));
 
-        if (adminNotifications.length > 0) {
-            await Notification.bulkCreate(adminNotifications);
+            if (adminNotifications.length > 0) {
+                await Notification.bulkCreate(adminNotifications);
+            }
+        } catch (notifError) {
+            console.error('Error sending admin notifications (report was still created):', notifError);
         }
 
         res.status(201).json(report);
