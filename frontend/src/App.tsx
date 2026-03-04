@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ToastProvider } from './components/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
+import SuccessPaymentPage from './pages/SuccessPaymentPage';
 import ScrollToTop from './components/ScrollToTop';
 import PageLoadingFallback from './components/PageLoadingFallback';
 
@@ -134,6 +135,14 @@ function AppContent() {
                     element={
                       <ProtectedRoute allowedUserTypes={['tenant']}>
                         <StudentRequestPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payment-success"
+                    element={
+                      <ProtectedRoute>
+                        <SuccessPaymentPage />
                       </ProtectedRoute>
                     }
                   />

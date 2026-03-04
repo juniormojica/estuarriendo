@@ -154,7 +154,7 @@ const PlansPage: React.FC = () => {
                             </div>
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
-                                    to="/perfil?tab=billing&plan=unlimited"
+                                    to="/perfil?tab=billing&plan=20_credits"
                                     state={state}
                                     className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
                                 >
