@@ -53,7 +53,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-6 flex-1">
                                 <h3 className="text-lg font-semibold text-gray-900">Paquete Básico</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$7.000</span>
+                                    <span className="text-4xl font-extrabold tracking-tight">$8.999</span>
                                 </p>
                                 <p className="mt-4 text-sm text-gray-500">Ideal si ya tienes algunas opciones en mente.</p>
 
@@ -98,7 +98,7 @@ const PlansPage: React.FC = () => {
                                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
                                 </div>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$10.000</span>
+                                    <span className="text-4xl font-extrabold tracking-tight">$12.999</span>
                                 </p>
                                 <p className="mt-4 text-sm text-gray-500">La mejor relación costo-beneficio para buscar sin estrés.</p>
 
@@ -109,7 +109,7 @@ const PlansPage: React.FC = () => {
                                     </li>
                                     <li className="flex">
                                         <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
-                                        <span className="ml-3 text-sm text-emerald-600 font-medium">Ahorras $4.000 vs. Básico</span>
+                                        <span className="ml-3 text-sm text-emerald-600 font-medium">Ahorras $4.999 vs. Básico</span>
                                     </li>
                                     <li className="flex">
                                         <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
@@ -131,25 +131,24 @@ const PlansPage: React.FC = () => {
                         {/* Unlimited */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
                             <div className="p-6 flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900">Pase Ilimitado</h3>
+                                <h3 className="text-lg font-semibold text-gray-900">Paquete Pro</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$20.000</span>
-                                    <span className="ml-1 text-base font-semibold text-gray-500">/mes</span>
+                                    <span className="text-4xl font-extrabold tracking-tight">$19.999</span>
                                 </p>
-                                <p className="mt-4 text-sm text-gray-500">Contacta a todos los propietarios que quieras por 30 días.</p>
+                                <p className="mt-4 text-sm text-gray-500">Para quienes buscan tener múltiples opciones para contactar.</p>
 
                                 <ul className="mt-4 space-y-3">
                                     <li className="flex">
                                         <Zap className="flex-shrink-0 w-5 h-5 text-emerald-500" />
-                                        <span className="ml-3 text-sm text-gray-500"><strong>Contactos Ilimitados</strong></span>
+                                        <span className="ml-3 text-sm text-gray-500"><strong>20</strong> Créditos de Contacto</span>
                                     </li>
                                     <li className="flex">
                                         <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
-                                        <span className="ml-3 text-sm text-gray-500">Duración de 30 días continuos</span>
+                                        <span className="ml-3 text-sm text-emerald-600 font-medium">Ahorras $15.997 vs. Básico</span>
                                     </li>
                                     <li className="flex">
                                         <Award className="flex-shrink-0 w-5 h-5 text-emerald-500" />
-                                        <span className="ml-3 text-sm text-gray-500">Estatus VIP al contactar</span>
+                                        <span className="ml-3 text-sm text-gray-500">Créditos no vencen</span>
                                     </li>
                                 </ul>
                             </div>
@@ -159,7 +158,7 @@ const PlansPage: React.FC = () => {
                                     state={state}
                                     className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
                                 >
-                                    Obtener Pase Ilimitado
+                                    Comprar 20 Créditos
                                 </Link>
                             </div>
                         </div>
@@ -174,7 +173,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-6 flex-1">
                                 <h3 className="text-lg font-semibold text-gray-900">Plan Semanal</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$12.500</span>
+                                    <span className="text-4xl font-extrabold tracking-tight">$12.999</span>
                                     <span className="ml-1 text-base font-semibold text-gray-500">/semana</span>
                                 </p>
                                 <p className="mt-4 text-sm text-gray-500">Ideal para pruebas rápidas o necesidades temporales.</p>
@@ -219,7 +218,7 @@ const PlansPage: React.FC = () => {
                                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
                                 </div>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$20.000</span>
+                                    <span className="text-4xl font-extrabold tracking-tight">$19.999</span>
                                     <span className="ml-1 text-base font-semibold text-gray-500">/mes</span>
                                 </p>
                                 <p className="mt-4 text-sm text-gray-500">La mejor opción para la mayoría de los propietarios.</p>
@@ -231,7 +230,7 @@ const PlansPage: React.FC = () => {
                                     </li>
                                     <li className="flex">
                                         <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
-                                        <span className="ml-3 text-sm text-gray-500"><strong>10 imágenes</strong> + 1 video</span>
+                                        <span className="ml-3 text-sm text-gray-500">Hasta <strong>10 imágenes</strong></span>
                                     </li>
                                     <li className="flex">
                                         <Shield className="flex-shrink-0 w-5 h-5 text-emerald-500" />
@@ -258,10 +257,10 @@ const PlansPage: React.FC = () => {
                             <div className="p-6 flex-1">
                                 <h3 className="text-lg font-semibold text-gray-900">Plan Trimestral</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$28.000</span>
+                                    <span className="text-4xl font-extrabold tracking-tight">$49.999</span>
                                     <span className="ml-1 text-base font-semibold text-gray-500">/3 meses</span>
                                 </p>
-                                <p className="mt-4 text-sm text-emerald-600 font-medium">¡Ahorra $32.000 comparado con el plan mensual!</p>
+                                <p className="mt-4 text-sm text-emerald-600 font-medium">¡Ahorra $9.998 comparado con el plan mensual!</p>
 
                                 <ul className="mt-4 space-y-3">
                                     <li className="flex">
