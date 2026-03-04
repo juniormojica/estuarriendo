@@ -155,10 +155,11 @@ const UserProfile: React.FC = () => {
             const fetchCreditsAndPayments = async () => {
                 setLoadingCredits(true);
                 try {
-                    const balance = await api.getCreditBalance();
+                    // user is already checked to be present in the outer if statement
+                    const balance = await api.getCreditBalance(String(user.id));
                     setCreditBalance(balance);
 
-                    const transactions = await api.getCreditTransactions();
+                    const transactions = await api.getCreditTransactions(String(user.id));
                     setCreditTransactions(transactions);
 
                     // Check for pending payment requests for this tenant

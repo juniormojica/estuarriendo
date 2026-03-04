@@ -82,7 +82,7 @@ app.use('/api/', globalLimiter);
 // 3. Stricter Rate Limiter for Authentication routes
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 15, // Limit each IP to 15 login/register requests per windowMs
+    limit: 50, // Limit each IP to 50 auth requests per windowMs
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Demasiados intentos de inicio de sesión o registro. Por favor intenta en 15 minutos.' }
