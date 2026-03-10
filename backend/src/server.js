@@ -30,7 +30,9 @@ import unitRoutes from './routes/unitRoutes.js';
 import commonAreaRoutes from './routes/commonAreaRoutes.js';
 import creditRoutes from './routes/creditRoutes.js';
 import propertyReportRoutes from './routes/propertyReportRoutes.js';
-
+import mercadoPagoRoutes from './routes/mercadoPagoRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
+import { startPlanScheduler, stopPlanScheduler } from './services/planScheduler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -143,7 +145,8 @@ app.use('/api/units', unitRoutes);
 app.use('/api/common-areas', commonAreaRoutes);
 app.use('/api/credits', creditRoutes);
 app.use('/api/property-reports', propertyReportRoutes);
-
+app.use('/api/mercadopago', mercadoPagoRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -177,6 +180,9 @@ const startServer = async () => {
             console.log('✅ Database models synchronized');
         }
 
+        // Start the plan expiration scheduler
+        await startPlanScheduler();
+
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on port ${PORT}`);
             console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -205,5 +211,18 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Graceful shutdown handling for the scheduler
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    await stopPlanScheduler();
+    process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+    console.log('SIGINT signal received: closing HTTP server');
+    await stopPlanScheduler();
+    process.exit(0);
+});
 
 export default app;
