@@ -87,7 +87,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
     return (
         <div ref={wrapperRef} className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ciudad {required && <span className="text-red-500">*</span>}
+                Ciudad <span className="text-red-500">*</span>
             </label>
 
             {value ? (
