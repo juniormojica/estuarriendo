@@ -223,11 +223,12 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
 
         // Check if property is currently rejected or approved and reset status to pending
         const currentProperty = await Property.findByPk(propertyId);
-        if (currentProperty && (currentProperty.status === 'rejected' || currentProperty.status === 'approved')) {
+        if (currentProperty && (currentProperty.status === 'rejected' || currentProperty.status === 'approved') && !corePropertyData.skipStatusReset) {
             // Reset status to pending when a rejected or approved property is updated
             corePropertyData.status = 'pending';
             corePropertyData.rejectionReason = null; // Clear rejection reason
         }
+        delete corePropertyData.skipStatusReset;
 
         // 2. Update core property data
         if (Object.keys(corePropertyData).length > 0) {
@@ -487,7 +488,11 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         {
             model: Location,
             as: 'location',
-            ...(cityId && { where: { cityId } })
+            ...(cityId && { where: { cityId } }),
+            include: [
+                { model: City, as: 'city' },
+                { model: Department, as: 'department' }
+            ]
         },
         {
             model: Contact,

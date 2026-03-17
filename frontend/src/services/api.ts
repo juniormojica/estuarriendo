@@ -102,9 +102,10 @@ export const api = {
 
     if (filters) {
       if (filters.city) {
-        filteredProperties = filteredProperties.filter(p =>
-          p.location?.city?.toLowerCase().includes(filters.city!.toLowerCase())
-        );
+        filteredProperties = filteredProperties.filter(p => {
+          const cityName = typeof p.location?.city === 'object' ? (p.location.city as any).name : p.location?.city;
+          return cityName?.toLowerCase().includes(filters.city!.toLowerCase());
+        });
       }
 
       if (filters.type) {
@@ -404,7 +405,9 @@ export const api = {
     await delay(300);
     const properties = getStoredProperties();
     const approvedProperties = properties.filter(p => p.status === 'approved');
-    const cities = Array.from(new Set(approvedProperties.map(p => p.location?.city || ''))).filter(Boolean);
+    const cities = Array.from(new Set(approvedProperties.map(p => {
+      return typeof p.location?.city === 'object' ? (p.location.city as any).name : (p.location?.city || '');
+    }))).filter(Boolean);
     return cities.sort();
   },
 

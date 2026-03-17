@@ -19,8 +19,8 @@ const HomePage: React.FC = () => {
   const availableCities = Array.from(new Set(
     (properties || [])
       .filter(p => p && p.location?.city)
-      .map(p => p.location?.city)
-      .filter((city): city is string => city !== undefined)
+      .map(p => typeof p.location?.city === 'object' ? (p.location.city as any).name : p.location?.city)
+      .filter((city): city is string => typeof city === 'string' && city.trim() !== '')
   )).sort();
 
   useEffect(() => {

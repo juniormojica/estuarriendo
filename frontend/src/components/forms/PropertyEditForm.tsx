@@ -18,6 +18,7 @@ export interface PropertyEditFormProps {
     property: Property;
     onSuccess?: () => void;
     onCancel?: () => void;
+    isAdmin?: boolean;
 }
 
 interface EditFormData {
@@ -45,7 +46,8 @@ interface EditFormData {
 const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
     property,
     onSuccess,
-    onCancel
+    onCancel,
+    isAdmin
 }) => {
     const dispatch = useAppDispatch();
     const toast = useToast();
@@ -272,7 +274,7 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 amenityIds: formData.amenityIds,
 
                 // Institutions - backend expects "institutions" key
-                institutions: formData.nearbyInstitutions,
+                institutions: formData.nearbyInstitutions as any,
 
                 // Images - send as array of objects with url and metadata
                 images: formData.imageUrls.map((url, index) => ({
@@ -280,7 +282,9 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                     caption: null,
                     displayOrder: index,
                     isPrimary: index === 0
-                })) as any
+                })) as any,
+
+                ...(isAdmin ? { skipStatusReset: true } : {})
             };
 
             const resultAction = await dispatch(updateProperty({
