@@ -9,7 +9,7 @@ import { directUpload, CLOUDINARY_FOLDERS } from '../services/directUploadServic
 interface PaymentUploadFormProps {
     user: User;
     onSuccess: () => void;
-    selectedPlan: 'weekly' | 'monthly' | 'quarterly' | '5_credits' | '10_credits' | 'unlimited' | null;
+    selectedPlan: 'weekly' | 'monthly' | 'quarterly' | '5_credits' | '10_credits' | '20_credits' | null;
 }
 
 const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, selectedPlan }) => {
@@ -23,12 +23,12 @@ const PaymentUploadForm: React.FC<PaymentUploadFormProps> = ({ user, onSuccess, 
     const referenceCode = `ESTU-P-${user.id.substring(0, 4).toUpperCase()}-${Date.now().toString().substring(9)}`;
 
     const plans: Record<string, { name: string; price: number; duration: number }> = {
-        weekly: { name: 'Semanal', price: 15000, duration: 7 },
-        monthly: { name: 'Mensual', price: 40000, duration: 30 },
-        quarterly: { name: 'Trimestral', price: 100000, duration: 90 },
-        '5_credits': { name: '5 Créditos', price: 7000, duration: 1 },
-        '10_credits': { name: '10 Créditos', price: 10000, duration: 1 },
-        'unlimited': { name: 'Pase Ilimitado Mensual', price: 20000, duration: 30 }
+        weekly: { name: 'Semanal', price: 12999, duration: 7 },
+        monthly: { name: 'Mensual', price: 19999, duration: 30 },
+        quarterly: { name: 'Trimestral', price: 49999, duration: 90 },
+        '5_credits': { name: '5 Créditos', price: 8999, duration: 1 },
+        '10_credits': { name: '10 Créditos', price: 12999, duration: 1 },
+        '20_credits': { name: '20 Créditos', price: 19999, duration: 1 },
     };
 
     const selectedPlanData = selectedPlan ? plans[selectedPlan] : null;

@@ -19,7 +19,7 @@ export const UserType = {
     OWNER: 'owner',
     TENANT: 'tenant',
     ADMIN: 'admin',
-    SUPER_ADMIN: 'superAdmin'
+    SUPER_ADMIN: 'super_admin'
 };
 
 export const PaymentMethod = {

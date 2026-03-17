@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { User, PaymentRequest } from '../types';
-import { Clock, AlertCircle } from 'lucide-react';
+import { Clock, AlertCircle, Loader } from 'lucide-react';
 import PlanComparisonCards from './PlanComparisonCards';
 import PaymentUploadForm from './PaymentUploadForm';
+import { api } from '../services/api';
 
 interface PaymentFlowSectionProps {
     user: User;
@@ -10,15 +11,11 @@ interface PaymentFlowSectionProps {
     onPaymentSuccess: () => void;
 }
 
-const ownerPlanLinks: Record<string, string> = {
-    weekly: 'https://www.mercadopago.com.co/subscriptions/checkout?preapproval_plan_id=4c24839bb711495d85bbcb828114e61f',
-    monthly: '',
-    quarterly: ''
-};
-
 const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRequest, onPaymentSuccess }) => {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'transfer' | null>(null);
+    const [isGeneratingMPLink, setIsGeneratingMPLink] = useState(false);
+    const [mpError, setMpError] = useState('');
 
     const isPremium = user.plan === 'premium';
     const isExpired = user.planExpiresAt ? new Date(user.planExpiresAt) < new Date() : false;
@@ -39,7 +36,23 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
         return null;
     }
 
-    const mpLink = selectedPlan ? ownerPlanLinks[selectedPlan] || '' : '';
+    const handleMPPayment = async () => {
+        if (!selectedPlan) return;
+        setIsGeneratingMPLink(true);
+        setMpError('');
+        try {
+            const link = await api.createMPCheckoutLink(user.id.toString(), selectedPlan, user.email);
+            if (link) {
+                window.location.href = link;
+            } else {
+                setMpError('Error al generar el link de pago seguro. Por favor intenta de nuevo.');
+            }
+        } catch (error) {
+            setMpError('Ocurrió un error de conexión al generar el pago.');
+        } finally {
+            setIsGeneratingMPLink(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -160,24 +173,23 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
                                 <div className="pt-6 border-t border-gray-100 transition-all duration-300">
                                     {paymentMethod === 'mercadopago' && (
                                         <div className="text-center py-6">
-                                            {mpLink ? (
-                                                <>
-                                                    <a
-                                                        href={mpLink}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto"
-                                                    >
-                                                        Pagar con Mercado Pago
-                                                    </a>
-                                                    <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
-                                                </>
-                                            ) : (
-                                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                                    <p className="text-yellow-800 font-medium">Link de Mercado Pago no disponible aún para este plan.</p>
-                                                    <p className="text-yellow-600 text-sm mt-1">Puedes usar transferencia manual en su lugar.</p>
+                                            {mpError && (
+                                                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                                                    {mpError}
                                                 </div>
                                             )}
+                                            <button
+                                                onClick={handleMPPayment}
+                                                disabled={isGeneratingMPLink || !selectedPlan}
+                                                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
+                                            >
+                                                {isGeneratingMPLink ? (
+                                                    <><Loader className="w-5 h-5 mr-2 animate-spin" /> Conectando con Mercado Pago...</>
+                                                ) : (
+                                                    'Pagar con Mercado Pago'
+                                                )}
+                                            </button>
+                                            <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
                                         </div>
                                     )}
 

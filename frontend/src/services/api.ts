@@ -751,6 +751,18 @@ export const api = {
     }
   },
 
+  async createMPCheckoutLink(userId: string, planType: string, userEmail?: string): Promise<string | null> {
+    try {
+      console.log('📤 Requesting MP checkout link for:', { userId, planType, userEmail });
+      const response = await apiClient.post('/mercadopago/create-preference', { userId, planType, userEmail });
+      console.log('✅ MP checkout link created:', response.data.init_point);
+      return response.data.init_point;
+    } catch (error: any) {
+      console.error('❌ Error creating MP checkout link:', error);
+      return null;
+    }
+  },
+
   async getPaymentRequests(): Promise<PaymentRequest[]> {
     try {
       const response = await apiClient.get<PaymentRequest[]>('/payment-requests');

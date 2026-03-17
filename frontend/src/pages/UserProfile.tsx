@@ -25,6 +25,8 @@ const UserProfile: React.FC = () => {
     const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
     const [loadingCredits, setLoadingCredits] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'transfer' | null>(null);
+    const [isGeneratingMPLink, setIsGeneratingMPLink] = useState(false);
+    const [mpError, setMpError] = useState('');
 
     // Form states for non-basic info
     const [formData, setFormData] = useState<Partial<User>>({});
@@ -223,6 +225,24 @@ const UserProfile: React.FC = () => {
             setMessage({ type: 'error', text: errorMessage });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleMPPayment = async (planType: string) => {
+        if (!user || user.userType !== 'tenant') return;
+        setIsGeneratingMPLink(true);
+        setMpError('');
+        try {
+            const link = await api.createMPCheckoutLink(user.id.toString(), planType, user.email);
+            if (link) {
+                window.location.href = link;
+            } else {
+                setMpError('Error al generar el link de pago seguro. Por favor intenta de nuevo.');
+            }
+        } catch (error) {
+            setMpError('Ocurrió un error de conexión al generar el pago.');
+        } finally {
+            setIsGeneratingMPLink(false);
         }
     };
 
@@ -702,7 +722,7 @@ const UserProfile: React.FC = () => {
                                             {(() => {
                                                 const planParam = new URLSearchParams(location.search).get('plan');
                                                 const creditPlansList: Record<string, { name: string, price: number, link: string }> = {
-                                                    '5_credits': { name: '5 Créditos de Contacto', price: 8999, link: 'https://mpago.li/14Mt9hc' },
+                                                    '5_credits': { name: '5 Créditos de Contacto', price: 8999, link: 'https://mpago.li/13RRpyn' },
                                                     '10_credits': { name: '10 Créditos de Contacto', price: 12999, link: '' },
                                                     '20_credits': { name: '20 Créditos de Contacto', price: 19999, link: '' }
                                                 };
@@ -763,24 +783,23 @@ const UserProfile: React.FC = () => {
                                                                 <div className="pt-6 border-t border-gray-100 transition-all duration-300">
                                                                     {paymentMethod === 'mercadopago' && (
                                                                         <div className="text-center py-6">
-                                                                            {selectedCreditPlan.link ? (
-                                                                                <>
-                                                                                    <a
-                                                                                        href={selectedCreditPlan.link}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto"
-                                                                                    >
-                                                                                        Pagar con Mercado Pago
-                                                                                    </a>
-                                                                                    <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
-                                                                                </>
-                                                                            ) : (
-                                                                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                                                                    <p className="text-yellow-800 font-medium">Link de Mercado Pago no disponible aún para este plan.</p>
-                                                                                    <p className="text-yellow-600 text-sm mt-1">Puedes usar transferencia manual en su lugar.</p>
+                                                                            {mpError && (
+                                                                                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                                                                                    {mpError}
                                                                                 </div>
                                                                             )}
+                                                                            <button
+                                                                                onClick={() => planParam && handleMPPayment(planParam)}
+                                                                                disabled={isGeneratingMPLink}
+                                                                                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
+                                                                            >
+                                                                                {isGeneratingMPLink ? (
+                                                                                    <><Loader className="w-5 h-5 mr-2 animate-spin" /> Conectando con Mercado Pago...</>
+                                                                                ) : (
+                                                                                    'Pagar con Mercado Pago'
+                                                                                )}
+                                                                            </button>
+                                                                            <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
                                                                         </div>
                                                                     )}
 
