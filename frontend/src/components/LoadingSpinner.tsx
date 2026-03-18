@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import EstuSpinner from './EstuSpinner';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -8,16 +9,20 @@ interface LoadingSpinnerProps {
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 'md', text, className = '' }) => {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12'
-  };
+  // Para tamaño pequeño, usamos el spinner circular clásico (ideal para botones)
+  if (size === 'sm') {
+    return (
+      <div className={`flex flex-col items-center justify-center ${className || 'p-2'}`}>
+        <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+        {text && <p className="mt-2 text-sm text-gray-600">{text}</p>}
+      </div>
+    );
+  }
 
+  // Para tamaños medianos y grandes, usamos nuestra animación personalizada
   return (
-    <div className={`flex flex-col items-center justify-center ${className || 'p-8'}`}>
-      <Loader2 className={`${sizeClasses[size]} animate-spin text-emerald-600`} />
-      {text && <p className="mt-2 text-sm text-gray-600">{text}</p>}
+    <div className={className}>
+      <EstuSpinner size={size} text={text} />
     </div>
   );
 };
