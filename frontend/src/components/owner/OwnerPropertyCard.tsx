@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    MapPin, Edit, Trash2, Users, Eye,
-    CheckCircle, Clock, XCircle, ChevronDown, ChevronUp,
+    MapPin, Edit, Trash2, Users,
+    XCircle, ChevronDown, ChevronUp,
     Building2, DoorOpen
 } from 'lucide-react';
 import { Property } from '../../types';
+import { api } from '../../services/api';
+import { authService } from '../../services/authService';
 
 interface OwnerPropertyCardProps {
     property: Property;
@@ -25,6 +27,22 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
     onToggleExpand
 }) => {
     const navigate = useNavigate();
+    const [interestCount, setInterestCount] = useState(0);
+
+    useEffect(() => {
+        const fetchInterestCount = async () => {
+            const user = authService.getStoredUser();
+            if (!user?.id) return;
+            try {
+                const interests = await api.getPropertyInterests(user.id, String(property.id));
+                setInterestCount(interests.length);
+            } catch (err) {
+                console.error('Error fetching interest count:', err);
+            }
+        };
+        fetchInterestCount();
+    }, [property.id]);
+
     const getStatusDisplay = () => {
         switch (property.status) {
             case 'approved':
@@ -180,6 +198,27 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
                                 {property.isRented ? 'Marcar Disponible' : 'Marcar Rentada'}
                             </button>
                         )}
+
+                        {/* View Interested Users Button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onViewInterests(String(property.id), property.title);
+                            }}
+                            className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors relative ${
+                                interestCount > 0
+                                    ? 'text-green-700 bg-green-50 hover:bg-green-100 font-semibold'
+                                    : 'text-blue-600 hover:bg-blue-50'
+                            }`}
+                        >
+                            <Users size={14} className="mr-1.5" />
+                            Ver Interesados
+                            {interestCount > 0 && (
+                                <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold rounded-full bg-green-600 text-white min-w-[20px]">
+                                    {interestCount}
+                                </span>
+                            )}
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -225,4 +264,3 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
 };
 
 export default OwnerPropertyCard;
-

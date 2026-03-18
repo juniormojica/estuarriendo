@@ -933,49 +933,43 @@ export const api = {
   },
 
   // Notify owner of interest
-  async notifyOwnerInterest(ownerId: string, propertyId: string, interestedUserId: string): Promise<boolean> {
-    await delay(500);
-
-    // Get property and user details
-    const properties = getStoredProperties();
-    const users = getStoredUsers();
-    const property = properties.find(p => p.id === propertyId);
-    const interestedUser = users.find(u => u.id === interestedUserId);
-
-    if (!property || !interestedUser) {
+  async notifyOwnerInterest(
+    ownerId: string,
+    propertyId: string,
+    interestedUserId: string,
+    interestedUserName: string,
+    propertyTitle: string
+  ): Promise<boolean> {
+    try {
+      await apiClient.post('/notifications', {
+        userId: ownerId,
+        type: 'property_interest',
+        title: 'Nuevo interesado en tu propiedad',
+        message: `${interestedUserName} está interesado en "${propertyTitle}"`,
+        propertyId: propertyId,
+        propertyTitle: propertyTitle,
+        interestedUserId: interestedUserId
+      });
+      console.log(`Notification created for owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
+      return true;
+    } catch (error) {
+      console.error('Error creating interest notification:', error);
       return false;
     }
-
-    // Create notification
-    const notifications = getStoredNotifications();
-    const newNotification: Notification = {
-      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      userId: ownerId,
-      type: 'property_interest',
-      title: 'Nuevo interés en tu propiedad',
-      message: `${interestedUser.name} está interesado en "${property.title}"`,
-      propertyId: propertyId,
-      propertyTitle: property.title,
-      interestedUserId: interestedUserId,
-      interestedUserName: interestedUser.name,
-      read: false,
-      createdAt: new Date().toISOString()
-    };
-
-    notifications.push(newNotification);
-    saveNotifications(notifications);
-
-    console.log(`Notification created for owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
-    return true;
   },
 
   // Get interested users for a property
-  async getPropertyInterests(propertyId: string): Promise<Notification[]> {
-    await delay(300);
-    const notifications = getStoredNotifications();
-    return notifications
-      .filter(n => n.propertyId === propertyId && n.type === 'property_interest')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  async getPropertyInterests(ownerId: string, propertyId: string): Promise<Notification[]> {
+    try {
+      const response = await apiClient.get<Notification[]>(`/notifications/user/${ownerId}`);
+      // Filter for this property and only interest type
+      return response.data
+        .filter(n => String(n.propertyId) === String(propertyId) && n.type === 'property_interest')
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (error) {
+      console.error('Error fetching property interests:', error);
+      return [];
+    }
   },
 
   // Get notifications for a user

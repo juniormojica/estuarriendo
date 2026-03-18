@@ -30,61 +30,58 @@ const NotificationBell: React.FC = () => {
         }
     };
 
-    const handleMarkAsRead = async (notificationId: string) => {
-        await dispatch(markAsRead(notificationId));
-    };
+
+
 
     const handleMarkAllAsRead = async () => {
         await dispatch(markAllAsRead());
     };
 
     const handleNotificationClick = (notification: any) => {
-        // Delete notification instead of marking as read
+        // For property_interest, mark as read instead of deleting (so they persist for the Interested Users modal)
+        if (notification.type === 'property_interest') {
+            if (!notification.read) {
+                dispatch(markAsRead(String(notification.id)));
+            }
+            navigate('/mis-propiedades');
+            setIsOpen(false);
+            return;
+        }
+
+        // Delete notification for all other types
         dispatch(deleteNotification(notification.id));
 
-        // Navigate based on notification type (property_interest is informative only, no navigation)
+        // Navigate based on notification type
         switch (notification.type) {
             case 'payment_verified':
-                // User: Navigate to profile billing tab to see updated subscription
                 navigate('/mi-perfil?tab=billing');
                 break;
             case 'payment_rejected':
-                // User: Navigate to profile billing tab to resubmit payment
                 navigate('/mi-perfil?tab=billing');
                 break;
             case 'payment_submitted':
-                // Admin: Navigate to admin dashboard payments section
                 navigate('/admin?section=payments');
                 break;
             case 'property_submitted':
-                // Admin: Navigate to admin dashboard pending properties section
                 navigate('/admin?section=pending');
                 break;
             case 'property_approved':
-                // Owner: Navigate to my properties page
                 navigate('/mis-propiedades');
                 break;
             case 'property_rejected':
-                // Owner: Navigate to edit property page to fix issues
                 if (notification.propertyId) {
                     navigate(`/editar-propiedad/${notification.propertyId}`);
                 } else {
                     navigate('/mis-propiedades');
                 }
                 break;
-            case 'property_interest':
-                // Informative only - no navigation
-                break;
             case 'verification_submitted':
-                // Admin: Navigate to admin dashboard verifications section
                 navigate('/admin?section=verifications');
                 break;
             case 'verification_approved':
-                // User: Navigate to profile
                 navigate('/mi-perfil');
                 break;
             case 'verification_rejected':
-                // User: Navigate to profile verification tab to fix issues
                 navigate('/mi-perfil?tab=verification');
                 break;
             default:

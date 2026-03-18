@@ -66,6 +66,7 @@ const PropertyDetail: React.FC = () => {
   const [reportReason, setReportReason] = useState<PropertyReportReason | ''>('');
   const [reportDescription, setReportDescription] = useState('');
   const [isReporting, setIsReporting] = useState(false);
+  const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
 
   // Get property from Redux state - use currentProperty which is set by fetchPropertyById
   const property = currentProperty;
@@ -290,14 +291,28 @@ const PropertyDetail: React.FC = () => {
   };
 
   const handleInterest = async () => {
-    console.log('Button clicked! property:', property, 'currentUser:', currentUser, 'ownerDetails:', ownerDetails);
-    if (!property || !currentUser || !currentUser.id || !ownerDetails) return;
+    if (hasExpressedInterest) return;
+    if (!property || !currentUser || !currentUser.id || !currentUser.name || !ownerDetails) return;
+    
+    setHasExpressedInterest(true);
     try {
-      await api.notifyOwnerInterest(property.ownerId, property.id.toString(), currentUser.id);
-      alert('Se ha notificado al propietario de tu interés.');
+      const success = await api.notifyOwnerInterest(
+        property.ownerId, 
+        property.id.toString(), 
+        currentUser.id,
+        currentUser.name, // The user's name
+        property.title
+      );
+      
+      if (success) {
+        toast.success('Se ha notificado al propietario de tu interés.');
+      } else {
+        throw new Error('No se pudo notificar');
+      }
     } catch (error) {
       console.error('Error notifying owner:', error);
-      alert('Hubo un error al notificar al propietario.');
+      toast.error('Hubo un error al notificar al propietario.');
+      setHasExpressedInterest(false);
     }
   };
 
@@ -1006,10 +1021,15 @@ const PropertyDetail: React.FC = () => {
                   {isOwnerFree && !isTenant && (
                     <button
                       onClick={handleInterest}
-                      className="w-full min-h-[48px] bg-blue-600 text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-lg shadow-blue-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
+                      disabled={hasExpressedInterest}
+                      className={`w-full min-h-[48px] text-white py-3.5 px-4 rounded-xl font-semibold transition-all shadow-lg flex items-center justify-center space-x-2 text-sm sm:text-base ${
+                        hasExpressedInterest 
+                          ? 'bg-blue-400 cursor-not-allowed shadow-blue-100' 
+                          : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-blue-200'
+                      }`}
                     >
                       <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>Me interesa</span>
+                      <span>{hasExpressedInterest ? 'Ya notificaste tu interés' : 'Me interesa'}</span>
                     </button>
                   )}
 

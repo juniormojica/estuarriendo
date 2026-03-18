@@ -34,7 +34,10 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
     const loadInterests = async () => {
         setLoading(true);
         try {
-            const data = await api.getPropertyInterests(propertyId);
+            const user = authService.getStoredUser();
+            if (!user?.id) return;
+            
+            const data = await api.getPropertyInterests(user.id, propertyId);
             setInterests(data);
 
             // If user is premium, we could pre-fetch contact details if they aren't fully in the notification
@@ -126,7 +129,7 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                                                     </div>
                                                     <div className="ml-3">
                                                         <p className="text-sm font-medium text-gray-900">
-                                                            {interest.interestedUserName || 'Usuario Interesado'}
+                                                            {interest.interestedUserName || interest.message?.split(' está interesado')[0] || 'Usuario Interesado'}
                                                         </p>
                                                         <p className="text-xs text-gray-500">
                                                             Interesado desde: {new Date(interest.createdAt).toLocaleDateString()}
