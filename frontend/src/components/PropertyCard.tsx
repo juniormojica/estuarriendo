@@ -27,6 +27,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
   const [pendingFavoriteAction, setPendingFavoriteAction] = useState<'add' | null>(null);
   const toast = useToast();
 
+  const truncateText = (text: string, maxLength: number) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
+
   if (!property || !property.id) {
     return null;
   }
@@ -220,13 +226,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           </div>
 
           {/* Description - Hidden on mobile to save space */}
-          <p className="hidden sm:block text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
-            {property.description}
-          </p>
+          {property.description && property.description.trim().length > 0 && (
+            <p className="hidden sm:block text-gray-600 text-sm mb-3 line-clamp-2" title={property.description}>
+              {truncateText(property.description, 100)}
+            </p>
+          )}
         </Link>
 
         {/* Property Details */}
-        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-50">
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-50 mt-auto">
           {property.isContainer && property.rentalMode === 'by_unit' ? (
             <div className="flex items-center" title="Habitaciones Disponibles">
               <Bed className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-emerald-600" />
