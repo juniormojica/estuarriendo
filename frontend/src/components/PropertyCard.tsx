@@ -235,7 +235,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
 
         {/* Property Details */}
         <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-50 mt-auto">
-          {property.isContainer && property.rentalMode === 'by_unit' ? (
+          {property.isContainer && (property.totalUnits || (property.units && property.units.length > 0)) ? (
             <div className="flex items-center" title="Habitaciones Disponibles">
               <Bed className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-emerald-600" />
               <span className="font-medium text-emerald-700">
@@ -272,7 +272,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-xs text-gray-400 font-medium">Precio</span>
             <div className="flex items-baseline">
-              {property.isContainer && property.rentalMode === 'by_unit' && property.minUnitRent ? (
+              {property.isContainer && property.minUnitRent && (property.totalUnits || (property.units && property.units.length > 0)) ? (
                 <>
                   <span className="text-xs text-gray-500 mr-1">Desde</span>
                   <span className="text-lg sm:text-xl font-bold text-emerald-600 truncate">
