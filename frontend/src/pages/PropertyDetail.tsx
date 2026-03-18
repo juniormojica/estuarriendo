@@ -510,7 +510,7 @@ const PropertyDetail: React.FC = () => {
             </div>
 
             {/* FOR CONTAINERS: Banner + Rooms Section */}
-            {property.isContainer && property.rentalMode === 'by_unit' && (
+            {property.isContainer && property.units && property.units.length > 0 && (
               <>
                 {/* Container Type Banner */}
                 <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
