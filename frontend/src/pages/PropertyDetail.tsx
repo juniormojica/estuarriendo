@@ -937,13 +937,13 @@ const PropertyDetail: React.FC = () => {
                 {/* Price - Responsive */}
                 <div className="text-center mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-100">
                   <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                    {property.isContainer && property.rentalMode === 'by_unit'
+                    {property.isContainer && property.units && property.units.length > 0
                       ? 'Rango de precios de habitaciones'
                       : 'Precio de alquiler'}
                   </p>
 
-                  {property.isContainer && property.rentalMode === 'by_unit' && property.units && property.units.length > 0 ? (
-                    // Show price range for containers rented by unit
+                  {property.isContainer && property.units && property.units.length > 0 ? (
+                    // Show price range for containers with rooms
                     <>
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <div className="bg-emerald-50 p-3 sm:p-4 rounded-xl border border-emerald-100">
