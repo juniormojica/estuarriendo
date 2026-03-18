@@ -37,6 +37,16 @@ const PropertyDetail: React.FC = () => {
   const { items: amenities } = useAppSelector((state) => state.amenities);
   const { currentProperty } = useAppSelector((state) => state.properties);
 
+  const getContainerLinkText = (containerType?: string) => {
+    const typeLower = (containerType || '').toLowerCase();
+    if (typeLower === 'apartamento') {
+      return 'Ver apartamento completo y otras habitaciones';
+    } else if (typeLower === 'aparta-estudio' || typeLower === 'apartaestudio') {
+      return 'Ver apartaestudio completo y otras habitaciones';
+    }
+    return 'Ver pensión completa y otras habitaciones';
+  };
+
   const [ownerDetails, setOwnerDetails] = useState<{ name: string; whatsapp: string; email: string; plan: 'free' | 'premium' } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -384,19 +394,19 @@ const PropertyDetail: React.FC = () => {
 
                 {/* Parent Container Banner - For Individual Rooms */}
                 {property.parentId && property.container && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 mb-2 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                    <div className="bg-amber-100 p-2 rounded-full flex-shrink-0">
-                      <Home className="h-5 w-5 text-amber-600" />
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-2 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="bg-blue-100 p-2 rounded-full flex-shrink-0">
+                      <Home className="h-5 w-5 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-amber-900">
+                      <p className="text-sm text-blue-900">
                         Esta habitacion pertenece a <span className="font-semibold">{property.container.title}</span>.
                       </p>
                       <Link
                         to={`/propiedad/${property.parentId}`}
-                        className="text-xs sm:text-sm text-amber-700 font-medium hover:text-amber-800 hover:underline flex items-center mt-0.5 group"
+                        className="text-xs sm:text-sm text-blue-700 font-medium hover:text-blue-800 hover:underline flex items-center mt-0.5 group"
                       >
-                        Ver pensión completa y otras habitaciones <ArrowRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-1" />
+                        {getContainerLinkText(property.container.type?.name)} <ArrowRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </div>
                   </div>

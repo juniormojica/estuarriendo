@@ -374,6 +374,7 @@ export const findPropertyWithAssociations = async (propertyId) => {
                 model: Property,
                 as: 'container',
                 include: [
+                    { model: PropertyType, as: 'type' },
                     { model: PropertyImage, as: 'images' },
                     { model: CommonArea, as: 'commonAreas', through: { attributes: [] } },
                     { model: PropertyService, as: 'services' },
