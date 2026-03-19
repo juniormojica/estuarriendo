@@ -35,7 +35,12 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
         resolver: zodResolver(containerServicesSchema) as any,
         mode: 'onBlur',
         defaultValues: {
-            services: container.services || [],
+            services: (container.services || []).map(s => ({
+                serviceType: s.serviceType,
+                isIncluded: s.isIncluded,
+                additionalCost: s.additionalCost || 0,
+                description: s.description || undefined,
+            })),
         },
     });
 
@@ -185,10 +190,10 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
             </div>
 
             {/* Error message */}
-            {errors.services && (
+            {errors.services?.root?.message && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <p className="text-sm text-red-600" role="alert">
-                        {errors.services.message || 'Debes seleccionar al menos un servicio'}
+                        {errors.services.root.message}
                     </p>
                 </div>
             )}
