@@ -261,7 +261,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                                 </button>
 
                                 {/* Drag Indicator */}
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all flex items-center justify-center">
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all flex items-center justify-center pointer-events-none">
                                     <ImageIcon className="text-white opacity-0 group-hover:opacity-70 transition-opacity" size={24} />
                                 </div>
                             </div>
