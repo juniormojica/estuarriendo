@@ -7,6 +7,7 @@ import { FormCurrencyInput } from './FormCurrencyInput';
 import type { PropertyService, PropertyContainer } from '../../types';
 import containerService from '../../services/containerService';
 import { useToast } from '../ToastProvider';
+import ConfirmReviewModal from '../ConfirmReviewModal';
 
 interface ContainerEditServicesProps {
     container: PropertyContainer;
@@ -24,6 +25,8 @@ interface ServiceOption {
 const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container, onUpdate, onSuccess }) => {
     const toast = useToast();
     const [isSaving, setIsSaving] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pendingData, setPendingData] = useState<ContainerServicesData | null>(null);
 
     const {
         control,
@@ -78,13 +81,13 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
         return fields.findIndex(field => field.serviceType === serviceType);
     };
 
-    const onSubmit = async (data: ContainerServicesData) => {
-        if (!container.id) return;
+    const handleConfirm = async () => {
+        if (!pendingData || !container.id) return;
 
         setIsSaving(true);
         try {
             const updated = await containerService.updateContainer(container.id, {
-                services: data.services
+                services: pendingData.services
             });
             toast.success('Servicios actualizados correctamente');
             if (onUpdate) {
@@ -93,6 +96,7 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
             if (onSuccess) {
                 onSuccess();
             }
+            setIsModalOpen(false);
         } catch (error: any) {
             console.error('Error updating services:', error);
             toast.error(error.response?.data?.message || 'Error al actualizar los servicios');
@@ -101,13 +105,18 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
         }
     };
 
+    const handleFormSubmit = (data: ContainerServicesData) => {
+        setPendingData(data);
+        setIsModalOpen(true);
+    };
+
     const groupedServices = {
         food: serviceOptions.filter(s => s.category === 'food'),
         utilities: serviceOptions.filter(s => s.category === 'utilities'),
         other: serviceOptions.filter(s => s.category === 'other'),
     };
 
-    const renderServiceCard = (option: ServiceOption, index: number) => {
+    const renderServiceCard = (option: ServiceOption) => {
         const isSelected = isServiceSelected(option.serviceType);
         const serviceIndex = getServiceIndex(option.serviceType);
         const service = serviceIndex >= 0 ? services[serviceIndex] : null;
@@ -165,11 +174,12 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+        <>
+        <form onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Alimentación</h3>
                 <div className="space-y-3">
-                    {groupedServices.food.map((option, idx) => renderServiceCard(option, idx))}
+                    {groupedServices.food.map((option) => renderServiceCard(option))}
                 </div>
             </div>
 
@@ -177,7 +187,7 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
             <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Servicios Básicos</h3>
                 <div className="space-y-3">
-                    {groupedServices.utilities.map((option, idx) => renderServiceCard(option, idx))}
+                    {groupedServices.utilities.map((option) => renderServiceCard(option))}
                 </div>
             </div>
 
@@ -185,7 +195,7 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
             <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Servicios Adicionales</h3>
                 <div className="space-y-3">
-                    {groupedServices.other.map((option, idx) => renderServiceCard(option, idx))}
+                    {groupedServices.other.map((option) => renderServiceCard(option))}
                 </div>
             </div>
 
@@ -210,6 +220,14 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
                 </button>
             </div>
         </form>
+
+        <ConfirmReviewModal 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={handleConfirm}
+            isSaving={isSaving}
+        />
+        </>
     );
 };
 

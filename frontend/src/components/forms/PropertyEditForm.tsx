@@ -13,6 +13,7 @@ import InstitutionAutocomplete from '../InstitutionAutocomplete';
 import CityAutocomplete from '../CityAutocomplete';
 import { City as LocationCity } from '../../services/locationService';
 import { FormNumericInput } from './FormNumericInput';
+import ConfirmReviewModal from '../ConfirmReviewModal';
 
 export interface PropertyEditFormProps {
     property: Property;
@@ -70,6 +71,7 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
     const [error, setError] = useState<string>('');
     const [propertyTypes, setPropertyTypes] = useState<PropertyTypeEntity[]>([]);
     const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Temp state for adding new institutions
     const [tempInstitution, setTempInstitution] = useState<Institution | null>(null);
@@ -233,8 +235,12 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
         }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setIsModalOpen(true);
+    };
+
+    const handleConfirm = async () => {
         setIsSaving(true);
         setError('');
 
@@ -309,6 +315,7 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
             console.error('Error updating property:', err);
         } finally {
             setIsSaving(false);
+            setIsModalOpen(false);
         }
     };
 
@@ -320,7 +327,8 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <>
+        <form onSubmit={handleFormSubmit} className="space-y-6">
             {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
                     <AlertCircle size={20} />
@@ -624,6 +632,14 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 </button>
             </div>
         </form >
+
+        <ConfirmReviewModal 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={handleConfirm}
+            isSaving={isSaving}
+        />
+        </>
     );
 };
 

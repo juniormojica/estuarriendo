@@ -273,7 +273,13 @@ export const updateContainer = async (req, res) => {
 
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const {
+            services,
+            rules,
+            commonAreaIds,
+            skipStatusReset,
+            ...propertyFields
+        } = req.body;
 
         const { Property } = await import('../models/index.js');
 
@@ -296,14 +302,27 @@ export const updateContainer = async (req, res) => {
             });
         }
 
-        await container.update(updateData, { transaction });
+        // Ensure only valid property fields are updated 
+        if (Object.keys(propertyFields).length > 0) {
+            await container.update(propertyFields, { transaction });
+        }
+
+        // Important: Update status to 'pending' after an owner edit
+        // Only skip if explicitly asked (e.g., admin action) or if already pending 
+        if (!skipStatusReset && container.status === 'approved') {
+            await container.update({
+                status: 'pending',
+                reviewedAt: null,
+                submittedAt: new Date()
+            }, { transaction });
+        }
 
         // Update services if provided
-        if (updateData.services) {
+        if (services) {
             const { PropertyService } = await import('../models/index.js');
             await PropertyService.destroy({ where: { propertyId: id }, transaction });
 
-            const servicePromises = updateData.services.map(service =>
+            const servicePromises = services.map(service =>
                 PropertyService.create({
                     propertyId: id,
                     ...service
@@ -313,11 +332,11 @@ export const updateContainer = async (req, res) => {
         }
 
         // Update rules if provided
-        if (updateData.rules) {
+        if (rules) {
             const { PropertyRule } = await import('../models/index.js');
             await PropertyRule.destroy({ where: { propertyId: id }, transaction });
 
-            const rulePromises = updateData.rules.map(rule =>
+            const rulePromises = rules.map(rule =>
                 PropertyRule.create({
                     propertyId: id,
                     ...rule
@@ -327,8 +346,8 @@ export const updateContainer = async (req, res) => {
         }
 
         // Update common areas if provided
-        if (updateData.commonAreaIds) {
-            await container.setCommonAreas(updateData.commonAreaIds, { transaction });
+        if (commonAreaIds) {
+            await container.setCommonAreas(commonAreaIds, { transaction });
         }
 
         await transaction.commit();

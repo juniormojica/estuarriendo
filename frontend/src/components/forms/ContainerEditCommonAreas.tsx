@@ -7,6 +7,7 @@ import type { CommonArea, PropertyContainer } from '../../types';
 import containerService from '../../services/containerService';
 import { iconMap } from '../../lib/icons';
 import { useToast } from '../ToastProvider';
+import ConfirmReviewModal from '../ConfirmReviewModal';
 
 interface ContainerEditCommonAreasProps {
     container: PropertyContainer;
@@ -19,6 +20,8 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
     const [commonAreas, setCommonAreas] = useState<CommonArea[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pendingData, setPendingData] = useState<ContainerCommonAreasData | null>(null);
 
     // Filter to get only common area strings that map to IDs if needed, but the container has `commonAreas` array with objects
     const initialAreaIds = container.commonAreas?.map(area => (area as any).id || area) || [];
@@ -71,13 +74,13 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
         setValue('commonAreaIds', newIds, { shouldValidate: true });
     };
 
-    const onSubmit = async (data: ContainerCommonAreasData) => {
-        if (!container.id) return;
+    const handleConfirm = async () => {
+        if (!pendingData || !container.id) return;
 
         setIsSaving(true);
         try {
             const updated = await containerService.updateContainer(container.id, {
-                commonAreaIds: data.commonAreaIds
+                commonAreaIds: pendingData.commonAreaIds
             });
             toast.success('Áreas comunes actualizadas correctamente');
             if (onUpdate) {
@@ -86,6 +89,7 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
             if (onSuccess) {
                 onSuccess();
             }
+            setIsModalOpen(false);
         } catch (error: any) {
             console.error('Error updating common areas:', error);
             toast.error(error.response?.data?.message || 'Error al actualizar las áreas comunes');
@@ -94,12 +98,18 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
         }
     };
 
+    const handleFormSubmit = (data: ContainerCommonAreasData) => {
+        setPendingData(data);
+        setIsModalOpen(true);
+    };
+
     if (loading) {
         return <div className="flex items-center justify-center p-8">Cargando...</div>;
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+        <>
+        <form onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm border p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {commonAreas.map(area => {
@@ -155,6 +165,14 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
                 </button>
             </div>
         </form>
+
+        <ConfirmReviewModal 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={handleConfirm}
+            isSaving={isSaving}
+        />
+        </>
     );
 };
 
