@@ -281,7 +281,7 @@ export const updateContainer = async (req, res) => {
             ...propertyFields
         } = req.body;
 
-        const { Property } = await import('../models/index.js');
+        const { Property, PropertyService, PropertyRule } = await import('../models/index.js');
 
         const container = await Property.findByPk(id, { transaction });
 
@@ -319,7 +319,6 @@ export const updateContainer = async (req, res) => {
 
         // Update services if provided
         if (services) {
-            const { PropertyService } = await import('../models/index.js');
             await PropertyService.destroy({ where: { propertyId: id }, transaction });
 
             const servicePromises = services.map(service =>
@@ -333,7 +332,6 @@ export const updateContainer = async (req, res) => {
 
         // Update rules if provided
         if (rules) {
-            const { PropertyRule } = await import('../models/index.js');
             await PropertyRule.destroy({ where: { propertyId: id }, transaction });
 
             const rulePromises = rules.map(rule =>
@@ -352,15 +350,18 @@ export const updateContainer = async (req, res) => {
 
         await transaction.commit();
 
-        const updatedContainer = await containerService.findContainerWithUnits(id);
-
         res.status(200).json({
             success: true,
             message: 'Pensión/apartamento actualizado exitosamente',
-            data: updatedContainer
+            data: {
+                id: container.id,
+                status: container.status
+            }
         });
     } catch (error) {
-        await transaction.rollback();
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
         console.error('Error updating container:', error);
         res.status(500).json({
             success: false,

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building, Server, CheckSquare, Users, Home } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchPropertyById, clearCurrentProperty } from '../store/slices/propertiesSlice';
+import { fetchPropertyForEdit, clearCurrentProperty } from '../store/slices/propertiesSlice';
 import PropertyEditForm from '../components/forms/PropertyEditForm';
 import ContainerEditServices from '../components/forms/ContainerEditServices';
 import ContainerEditRules from '../components/forms/ContainerEditRules';
@@ -20,7 +20,7 @@ const EditPropertyPage: React.FC = () => {
 
     useEffect(() => {
         if (id) {
-            dispatch(fetchPropertyById(id));
+            dispatch(fetchPropertyForEdit(id));
         }
 
         return () => {

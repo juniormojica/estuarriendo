@@ -81,6 +81,22 @@ export const fetchPropertyById = createAsyncThunk(
 );
 
 /**
+ * Fetch a single property by ID optimized for editing (skips massive joins)
+ * GET /api/properties/:id?lightweight=true
+ */
+export const fetchPropertyForEdit = createAsyncThunk(
+    'properties/fetchPropertyForEdit',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            const response = await axios.get(`/properties/${id}?lightweight=true`);
+            return response.data as Property;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch property for editing');
+        }
+    }
+);
+
+/**
  * Fetch properties by user/owner ID
  * GET /api/properties/user/:userId
  */
@@ -309,6 +325,23 @@ const propertiesSlice = createSlice({
                 }
             })
             .addCase(fetchPropertyById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+        // Fetch Property For Edit
+        builder
+            .addCase(fetchPropertyForEdit.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchPropertyForEdit.fulfilled, (state, action) => {
+                state.loading = false;
+                state.currentProperty = action.payload;
+                // We DON'T add to items array here because it's an incomplete lightweight object,
+                // and we don't want to overwrite the full object in cache.
+            })
+            .addCase(fetchPropertyForEdit.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });

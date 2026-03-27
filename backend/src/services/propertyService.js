@@ -303,6 +303,67 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
 };
 
 /**
+ * Lightweight query for pulling a property for the edit page.
+ * Loads only the essential relational data to avoid massive joins causing timeouts.
+ */
+export const findPropertyLightweight = async (propertyId) => {
+    const { PropertyService, PropertyRule } = await import('../models/index.js');
+    
+    return await Property.findByPk(propertyId, {
+        include: [
+            {
+                model: User,
+                as: 'owner',
+                attributes: ['id', 'email', 'name']
+            },
+            {
+                model: Location,
+                as: 'location',
+                include: [
+                    { model: City, as: 'city', attributes: ['id', 'name'] },
+                    { model: Department, as: 'department', attributes: ['id', 'name'] }
+                ]
+            },
+            {
+                model: Contact,
+                as: 'contact'
+            },
+            {
+                model: PropertyFeature,
+                as: 'features'
+            },
+            {
+                model: PropertyImage,
+                as: 'images',
+                order: [['orderPosition', 'ASC']]
+            },
+            {
+                model: PropertyType,
+                as: 'type'
+            },
+            {
+                model: Amenity,
+                as: 'amenities',
+                through: { attributes: [] }
+            },
+            {
+                model: PropertyService,
+                as: 'services'
+            },
+            {
+                model: PropertyRule,
+                as: 'rules'
+            },
+            {
+                model: CommonArea,
+                as: 'commonAreas',
+                through: { attributes: [] }
+            }
+        ]
+    });
+};
+
+/**
  * Find property with all associations
  */
 export const findPropertyWithAssociations = async (propertyId) => {

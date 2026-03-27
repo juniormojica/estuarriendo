@@ -80,7 +80,8 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
         setIsSaving(true);
         try {
             const updated = await containerService.updateContainer(container.id, {
-                commonAreaIds: pendingData.commonAreaIds
+                commonAreaIds: pendingData.commonAreaIds,
+                skipStatusReset: true
             });
             toast.success('Áreas comunes actualizadas correctamente');
             if (onUpdate) {
@@ -165,12 +166,13 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
                 </button>
             </div>
         </form>
-
         <ConfirmReviewModal 
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onConfirm={handleConfirm}
             isSaving={isSaving}
+            title="¿Guardar áreas comunes?"
+            message="Las áreas comunes se actualizarán inmediatamente en tu propiedad sin necesidad de revisión adicional."
         />
         </>
     );

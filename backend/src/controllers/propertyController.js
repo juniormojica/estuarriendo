@@ -122,8 +122,11 @@ export const getAllProperties = async (req, res) => {
 export const getPropertyById = async (req, res) => {
     try {
         const { id } = req.params;
+        const { lightweight } = req.query;
 
-        const property = await propertyService.findPropertyWithAssociations(id);
+        const property = lightweight === 'true' 
+            ? await propertyService.findPropertyLightweight(id)
+            : await propertyService.findPropertyWithAssociations(id);
 
         if (!property) {
             return res.status(404).json({ error: 'Propiedad no encontrada' });
