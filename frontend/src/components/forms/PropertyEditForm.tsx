@@ -328,28 +328,28 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
 
     return (
         <>
-        <form onSubmit={handleFormSubmit} className="space-y-6">
-            {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
-                    <AlertCircle size={20} />
-                    <span>{error}</span>
-                </div>
-            )}
+            <form onSubmit={handleFormSubmit} className="space-y-6">
+                {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
+                        <AlertCircle size={20} />
+                        <span>{error}</span>
+                    </div>
+                )}
 
-            {/* Basic Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                    <input
-                        type="text"
-                        required
-                        value={formData.title}
-                        onChange={(e) => handleInputChange('title', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                </div>
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                        <input
+                            type="text"
+                            required
+                            value={formData.title}
+                            onChange={(e) => handleInputChange('title', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                    </div>
 
-                <div>
+                    {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                     <select
                         required
@@ -363,282 +363,284 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                             </option>
                         ))}
                     </select>
-                </div>
+                </div> */}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Precio Mensual</label>
-                    <input
-                        type="number"
-                        required
-                        value={formData.monthlyRent}
-                        onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Depósito (Opcional)</label>
-                    <input
-                        type="number"
-                        value={formData.deposit || ''}
-                        onChange={(e) => handleInputChange('deposit', e.target.value ? Number(e.target.value) : undefined)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                </div>
-
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                    <textarea
-                        required
-                        rows={4}
-                        value={formData.description}
-                        onChange={(e) => handleInputChange('description', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                </div>
-            </div>
-
-            {/* Location */}
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Ubicación</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="col-span-2">
-                        <CityAutocomplete
-                            value={selectedCity}
-                            onChange={handleCityChange}
-                            placeholder="Buscar ciudad..."
-                            required
-                        />
-                    </div>
-
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-                        <input
-                            type="text"
-                            required
-                            value={formData.street}
-                            onChange={(e) => handleInputChange('street', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                        />
-                    </div>
-
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Barrio (Opcional)</label>
-                        <input
-                            type="text"
-                            value={formData.neighborhood || ''}
-                            onChange={(e) => handleInputChange('neighborhood', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                        />
-                    </div>
-
-                    {/* Map Location Picker - Only show if address is filled */}
-                    {selectedCity && formData.street && (
-                        <div className="col-span-2 mt-4">
-                            <h4 className="text-sm font-medium text-gray-900 mb-3">📍 Ubicación en el Mapa</h4>
-                            <p className="text-xs text-gray-600 mb-2">
-                                Ajusta el marcador para indicar la ubicación exacta de la propiedad
-                            </p>
-                            <LocationPicker
-                                address={{
-                                    street: formData.street,
-                                    city: selectedCity.name,
-                                    department: selectedCity.department?.name || '',
-                                    country: 'Colombia'
-                                }}
-                                coordinates={{
-                                    lat: formData.latitude || 0,
-                                    lng: formData.longitude || 0
-                                }}
-                                onCoordinatesChange={(lat, lng) => {
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        latitude: lat,
-                                        longitude: lng
-                                    }));
-                                }}
+                    {!property.isContainer && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Precio Mensual</label>
+                            <input
+                                type="number"
+                                required
+                                value={formData.monthlyRent || ''}
+                                onChange={(e) => handleInputChange('monthlyRent', e.target.value ? Number(e.target.value) : '')}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                             />
                         </div>
                     )}
 
-                    {/* Show message if address is incomplete */}
-                    {(!selectedCity || !formData.street) && (
-                        <div className="col-span-2 mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <p className="text-sm text-blue-700">
-                                💡 Selecciona una ciudad y completa la dirección para poder editar la ubicación en el mapa
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Depósito (Opcional)</label>
+                        <input
+                            type="number"
+                            value={formData.deposit || ''}
+                            onChange={(e) => handleInputChange('deposit', e.target.value ? Number(e.target.value) : undefined)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                    </div>
 
-            {/* Institutions */}
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Instituciones Cercanas</h3>
-                <div className="space-y-4">
-                    {formData.nearbyInstitutions.map((inst, index) => (
-                        <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <textarea
+                            required
+                            rows={4}
+                            value={formData.description}
+                            onChange={(e) => handleInputChange('description', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                    </div>
+                </div>
+
+                {/* Location */}
+                <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Ubicación</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="col-span-2">
+                            <CityAutocomplete
+                                value={selectedCity}
+                                onChange={handleCityChange}
+                                placeholder="Buscar ciudad..."
+                                required
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.street}
+                                onChange={(e) => handleInputChange('street', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Barrio (Opcional)</label>
+                            <input
+                                type="text"
+                                value={formData.neighborhood || ''}
+                                onChange={(e) => handleInputChange('neighborhood', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                            />
+                        </div>
+
+                        {/* Map Location Picker - Only show if address is filled */}
+                        {selectedCity && formData.street && (
+                            <div className="col-span-2 mt-4">
+                                <h4 className="text-sm font-medium text-gray-900 mb-3">📍 Ubicación en el Mapa</h4>
+                                <p className="text-xs text-gray-600 mb-2">
+                                    Ajusta el marcador para indicar la ubicación exacta de la propiedad
+                                </p>
+                                <LocationPicker
+                                    address={{
+                                        street: formData.street,
+                                        city: selectedCity.name,
+                                        department: selectedCity.department?.name || '',
+                                        country: 'Colombia'
+                                    }}
+                                    coordinates={{
+                                        lat: formData.latitude || 0,
+                                        lng: formData.longitude || 0
+                                    }}
+                                    onCoordinatesChange={(lat, lng) => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            latitude: lat,
+                                            longitude: lng
+                                        }));
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {/* Show message if address is incomplete */}
+                        {(!selectedCity || !formData.street) && (
+                            <div className="col-span-2 mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p className="text-sm text-blue-700">
+                                    💡 Selecciona una ciudad y completa la dirección para poder editar la ubicación en el mapa
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Institutions */}
+                <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Instituciones Cercanas</h3>
+                    <div className="space-y-4">
+                        {formData.nearbyInstitutions.map((inst, index) => (
+                            <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium">{institutionNames[inst.institutionId] || `Institución API ID: ${inst.institutionId}`}</p>
+                                </div>
+                                <div className="w-32">
+                                    <FormNumericInput
+                                        label=""
+                                        value={inst.distance || undefined}
+                                        placeholder="Distancia (m)"
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                            const newInstitutions = [...formData.nearbyInstitutions];
+                                            newInstitutions[index].distance = e.target.value ? Number(e.target.value) : null;
+                                            setFormData(prev => ({ ...prev, nearbyInstitutions: newInstitutions }));
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const newInstitutions = [...formData.nearbyInstitutions];
+                                        newInstitutions.splice(index, 1);
+                                        setFormData(prev => ({ ...prev, nearbyInstitutions: newInstitutions }));
+                                    }}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ))}
+
+                        <div className="flex gap-2">
                             <div className="flex-1">
-                                <p className="text-sm font-medium">{institutionNames[inst.institutionId] || `Institución API ID: ${inst.institutionId}`}</p>
+                                <InstitutionAutocomplete
+                                    value={tempInstitution}
+                                    onChange={setTempInstitution}
+                                    cityId={formData.cityId}
+                                    placeholder="Buscar institución..."
+                                    disabled={!formData.cityId}
+                                />
                             </div>
                             <div className="w-32">
                                 <FormNumericInput
                                     label=""
-                                    value={inst.distance || undefined}
+                                    value={tempDistance}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTempDistance(e.target.value)}
                                     placeholder="Distancia (m)"
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                        const newInstitutions = [...formData.nearbyInstitutions];
-                                        newInstitutions[index].distance = e.target.value ? Number(e.target.value) : null;
-                                        setFormData(prev => ({ ...prev, nearbyInstitutions: newInstitutions }));
-                                    }}
                                 />
                             </div>
                             <button
                                 type="button"
                                 onClick={() => {
-                                    const newInstitutions = [...formData.nearbyInstitutions];
-                                    newInstitutions.splice(index, 1);
-                                    setFormData(prev => ({ ...prev, nearbyInstitutions: newInstitutions }));
+                                    if (tempInstitution) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            nearbyInstitutions: [...prev.nearbyInstitutions, {
+                                                institutionId: tempInstitution.id,
+                                                distance: tempDistance ? parseInt(tempDistance) : null
+                                            }]
+                                        }));
+                                        setInstitutionNames(prev => ({
+                                            ...prev,
+                                            [tempInstitution.id]: tempInstitution.name
+                                        }));
+                                        setTempInstitution(null);
+                                        setTempDistance('');
+                                    }
                                 }}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                disabled={!tempInstitution}
+                                className="px-4 py-2 mt-6 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                             >
-                                <X className="w-4 h-4" />
+                                Agregar
                             </button>
                         </div>
-                    ))}
+                    </div>
+                </div>
 
-                    <div className="flex gap-2">
-                        <div className="flex-1">
-                            <InstitutionAutocomplete
-                                value={tempInstitution}
-                                onChange={setTempInstitution}
-                                cityId={formData.cityId}
-                                placeholder="Buscar institución..."
-                                disabled={!formData.cityId}
-                            />
+                {/* Details - Only show for individual rooms, not containers */}
+                {isRoom && (
+                    <div className="border-t pt-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²)</label>
+                                <input
+                                    type="number"
+                                    value={formData.area || ''}
+                                    onChange={(e) => handleInputChange('area', e.target.value ? Number(e.target.value) : undefined)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Piso (Opcional)</label>
+                                <input
+                                    type="number"
+                                    value={formData.floor || ''}
+                                    onChange={(e) => handleInputChange('floor', e.target.value ? Number(e.target.value) : undefined)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                                />
+                            </div>
                         </div>
-                        <div className="w-32">
-                            <FormNumericInput
-                                label=""
-                                value={tempDistance}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTempDistance(e.target.value)}
-                                placeholder="Distancia (m)"
-                            />
+                    </div>
+                )}
+
+                {/* Amenities - Only show for individual rooms, not containers */}
+                {isRoom && (
+                    <div className="border-t pt-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Características</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {amenities.map(amenity => (
+                                <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer p-2 border rounded hover:bg-gray-50">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.amenityIds.includes(Number(amenity.id))}
+                                        onChange={() => handleAmenityToggle(Number(amenity.id))}
+                                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                    />
+                                    <span className="text-sm text-gray-700">{amenity.name}</span>
+                                </label>
+                            ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Images */}
+                <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Imágenes</h3>
+                    <ImageUploader
+                        images={formData.imageUrls}
+                        onChange={handleImagesChange}
+                        maxImages={10}
+                        maxSizeMB={5}
+                        folder="properties"
+                    />
+                </div>
+
+                <div className="flex justify-end gap-4 pt-6 border-t">
+                    {onCancel && (
                         <button
                             type="button"
-                            onClick={() => {
-                                if (tempInstitution) {
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        nearbyInstitutions: [...prev.nearbyInstitutions, {
-                                            institutionId: tempInstitution.id,
-                                            distance: tempDistance ? parseInt(tempDistance) : null
-                                        }]
-                                    }));
-                                    setInstitutionNames(prev => ({
-                                        ...prev,
-                                        [tempInstitution.id]: tempInstitution.name
-                                    }));
-                                    setTempInstitution(null);
-                                    setTempDistance('');
-                                }
-                            }}
-                            disabled={!tempInstitution}
-                            className="px-4 py-2 mt-6 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                            onClick={onCancel}
+                            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                         >
-                            Agregar
+                            Cancelar
                         </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Details - Only show for individual rooms, not containers */}
-            {isRoom && (
-                <div className="border-t pt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²)</label>
-                            <input
-                                type="number"
-                                value={formData.area || ''}
-                                onChange={(e) => handleInputChange('area', e.target.value ? Number(e.target.value) : undefined)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Piso (Opcional)</label>
-                            <input
-                                type="number"
-                                value={formData.floor || ''}
-                                onChange={(e) => handleInputChange('floor', e.target.value ? Number(e.target.value) : undefined)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Amenities - Only show for individual rooms, not containers */}
-            {isRoom && (
-                <div className="border-t pt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Características</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {amenities.map(amenity => (
-                            <label key={amenity.id} className="flex items-center space-x-2 cursor-pointer p-2 border rounded hover:bg-gray-50">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.amenityIds.includes(Number(amenity.id))}
-                                    onChange={() => handleAmenityToggle(Number(amenity.id))}
-                                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                                />
-                                <span className="text-sm text-gray-700">{amenity.name}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Images */}
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Imágenes</h3>
-                <ImageUploader
-                    images={formData.imageUrls}
-                    onChange={handleImagesChange}
-                    maxImages={10}
-                    maxSizeMB={5}
-                    folder="properties"
-                />
-            </div>
-
-            <div className="flex justify-end gap-4 pt-6 border-t">
-                {onCancel && (
+                    )}
                     <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        type="submit"
+                        disabled={isSaving}
+                        className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50"
                     >
-                        Cancelar
+                        {isSaving ? <LoadingSpinner size="sm" /> : <Save size={20} />}
+                        <span>Guardar Cambios</span>
                     </button>
-                )}
-                <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                    {isSaving ? <LoadingSpinner size="sm" /> : <Save size={20} />}
-                    <span>Guardar Cambios</span>
-                </button>
-            </div>
-        </form >
+                </div>
+            </form >
 
-        <ConfirmReviewModal 
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onConfirm={handleConfirm}
-            isSaving={isSaving}
-        />
+            <ConfirmReviewModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={handleConfirm}
+                isSaving={isSaving}
+            />
         </>
     );
 };
