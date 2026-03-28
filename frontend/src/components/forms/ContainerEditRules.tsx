@@ -113,15 +113,16 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
         setIsSaving(true);
         try {
             const updated = await containerService.updateContainer(container.id, {
-                rules: pendingData.rules as PropertyRule[]
+                rules: pendingData.rules as PropertyRule[],
+                skipStatusReset: true
             });
             toast.success('Reglas actualizadas correctamente');
             if (onUpdate) {
                 onUpdate(updated);
             }
-            if (onSuccess) {
-                onSuccess();
-            }
+            // if (onSuccess) {
+            //     onSuccess();
+            // }
             setIsModalOpen(false);
         } catch (error: any) {
             console.error('Error updating rules:', error);
@@ -241,6 +242,8 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
             onClose={() => setIsModalOpen(false)}
             onConfirm={handleConfirm}
             isSaving={isSaving}
+            title="¿Guardar Reglas?"
+            message="Tus cambios se guardarán automáticamente, pero la propiedad no se enviará a revisión. Debes usar el botón 'Enviar a Revisión' al fondo de la página cuando termines con todas las pestañas."
         />
         </>
     );

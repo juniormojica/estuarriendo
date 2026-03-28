@@ -81,6 +81,7 @@ export const updateContainer = async (
             description?: string;
         }>;
         commonAreaIds: number[];
+        skipStatusReset?: boolean;
     }>
 ): Promise<PropertyContainer> => {
     const response = await apiClient.put(`/containers/${id}`, updateData);
@@ -130,6 +131,7 @@ export const createUnit = async (
         roomType: 'individual' | 'shared';
         bedsInRoom?: number;
         status?: string;
+        images?: Array<{ url: string; isPrimary?: boolean; displayOrder?: number }>;
     }
 ): Promise<PropertyUnit> => {
     const response = await apiClient.post(`/containers/${containerId}/units`, unitData);
@@ -157,6 +159,7 @@ export const updateUnit = async (
         area: number;
         roomType: 'individual' | 'shared';
         bedsInRoom: number;
+        images: Array<{ url: string; isPrimary?: boolean; displayOrder?: number }>;
     }>
 ): Promise<PropertyUnit> => {
     const response = await apiClient.put(`/units/${id}`, updateData);

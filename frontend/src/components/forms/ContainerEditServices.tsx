@@ -87,15 +87,16 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
         setIsSaving(true);
         try {
             const updated = await containerService.updateContainer(container.id, {
-                services: pendingData.services
+                services: pendingData.services,
+                skipStatusReset: true
             });
             toast.success('Servicios actualizados correctamente');
             if (onUpdate) {
                 onUpdate(updated);
             }
-            if (onSuccess) {
-                onSuccess();
-            }
+            // if (onSuccess) {
+            //     onSuccess();
+            // }
             setIsModalOpen(false);
         } catch (error: any) {
             console.error('Error updating services:', error);
@@ -226,6 +227,8 @@ const ContainerEditServices: React.FC<ContainerEditServicesProps> = ({ container
             onClose={() => setIsModalOpen(false)}
             onConfirm={handleConfirm}
             isSaving={isSaving}
+            title="¿Guardar Servicios?"
+            message="Tus cambios se guardarán automáticamente, pero la propiedad no se enviará a revisión. Debes usar el botón 'Enviar a Revisión' al fondo de la página cuando termines con todas las pestañas."
         />
         </>
     );

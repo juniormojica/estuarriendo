@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building, Server, CheckSquare, Users, Home } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchPropertyForEdit, clearCurrentProperty } from '../store/slices/propertiesSlice';
+import { fetchPropertyForEdit, clearCurrentProperty, updateProperty } from '../store/slices/propertiesSlice';
 import PropertyEditForm from '../components/forms/PropertyEditForm';
+import { useToast } from '../components/ToastProvider';
+import ConfirmReviewModal from '../components/ConfirmReviewModal';
 import ContainerEditServices from '../components/forms/ContainerEditServices';
 import ContainerEditRules from '../components/forms/ContainerEditRules';
 import ContainerEditCommonAreas from '../components/forms/ContainerEditCommonAreas';
@@ -14,9 +16,13 @@ const EditPropertyPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const toast = useToast();
 
     const { currentProperty: property, loading, error } = useAppSelector((state) => state.properties);
     const [activeTab, setActiveTab] = useState<'info' | 'services' | 'rules' | 'areas' | 'units'>('info');
+
+    const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
+    const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -35,6 +41,37 @@ const EditPropertyPage: React.FC = () => {
 
     const handleCancel = () => {
         navigate(-1);
+    };
+
+    const handleSendToReview = async () => {
+        if (!property) return;
+
+        setIsSubmittingRevision(true);
+        try {
+            // Send a minimal update without skipStatusReset
+            // This triggers the backend to change the property status to 'pending'
+            const updateData = {
+                title: property.title // Basic required string to send
+            };
+
+            const resultAction = await dispatch(updateProperty({
+                id: property.id.toString(),
+                data: updateData as any
+            }));
+
+            if (updateProperty.fulfilled.match(resultAction)) {
+                toast.success('✅ Propiedad enviada a revisión correctamente');
+                navigate('/dashboard?tab=properties');
+            } else {
+                toast.error('❌ Error al enviar la propiedad a revisión');
+            }
+        } catch (error) {
+            console.error('Error sending to review:', error);
+            toast.error('❌ Error al procesar la solicitud');
+        } finally {
+            setIsSubmittingRevision(false);
+            setIsRevisionModalOpen(false);
+        }
     };
 
     if (loading || !property) {
@@ -155,6 +192,33 @@ const EditPropertyPage: React.FC = () => {
                         />
                     )}
                 </div>
+
+                {/* Global Review Button Footer */}
+                {property && property.status !== 'pending' && (
+                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-40">
+                        <div className="max-w-5xl w-full flex items-center justify-between px-4 sm:px-6 lg:px-8">
+                            <div className="text-sm text-gray-600 hidden sm:block">
+                                <span className="font-medium text-amber-600">Atención:</span> Recuerda enviar tu propiedad a revisión cuando termines de hacer modificaciones.
+                            </div>
+                            <button
+                                onClick={() => setIsRevisionModalOpen(true)}
+                                className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg shadow-sm transition-colors"
+                            >
+                                <CheckSquare className="w-5 h-5" />
+                                Enviar a Revisión
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
+                <ConfirmReviewModal
+                    isOpen={isRevisionModalOpen}
+                    onClose={() => setIsRevisionModalOpen(false)}
+                    onConfirm={handleSendToReview}
+                    isSaving={isSubmittingRevision}
+                    title="¿Enviar a revisión final?"
+                    message="Al confirmar, se enviarán todos los cambios guardados de las distintas pestañas para su revisión por parte de un administrador. La propiedad quedará en estado pendiente. ¿Estás seguro de que terminaste de editar?"
+                />
             </div>
         </div>
     );

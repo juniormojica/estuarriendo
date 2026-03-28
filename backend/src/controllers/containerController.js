@@ -495,9 +495,21 @@ export const createUnit = async (req, res) => {
 
     try {
         const { containerId } = req.params;
-        const unitData = req.body;
+        const { images, ...unitData } = req.body;
 
         const unit = await containerService.createUnit(containerId, unitData, transaction);
+
+        const { PropertyImage } = await import('../models/index.js');
+
+        if (images && images.length > 0) {
+            const imageRecords = images.map((img, index) => ({
+                propertyId: unit.id,
+                url: typeof img === 'string' ? img : img.url,
+                isFeatured: typeof img === 'string' ? index === 0 : (img.isFeatured || index === 0),
+                orderPosition: typeof img === 'string' ? index : (img.orderPosition || index)
+            }));
+            await PropertyImage.bulkCreate(imageRecords, { transaction });
+        }
 
         await transaction.commit();
 
@@ -558,9 +570,9 @@ export const updateUnit = async (req, res) => {
 
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const { images, ...updateData } = req.body;
 
-        const { Property } = await import('../models/index.js');
+        const { Property, PropertyImage } = await import('../models/index.js');
 
         const unit = await Property.findByPk(id, { transaction });
 
@@ -581,6 +593,20 @@ export const updateUnit = async (req, res) => {
         }
 
         await unit.update(updateData, { transaction });
+
+        if (images !== undefined) {
+            await PropertyImage.destroy({ where: { propertyId: id }, transaction });
+            
+            if (images && images.length > 0) {
+                const imageRecords = images.map((img, index) => ({
+                    propertyId: id,
+                    url: typeof img === 'string' ? img : img.url,
+                    isFeatured: typeof img === 'string' ? index === 0 : (img.isFeatured || index === 0),
+                    orderPosition: typeof img === 'string' ? index : (img.orderPosition || index)
+                }));
+                await PropertyImage.bulkCreate(imageRecords, { transaction });
+            }
+        }
 
         await transaction.commit();
 

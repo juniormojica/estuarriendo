@@ -290,7 +290,7 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                     isPrimary: index === 0
                 })) as any,
 
-                ...(isAdmin ? { skipStatusReset: true } : {})
+                skipStatusReset: true
             };
 
             const resultAction = await dispatch(updateProperty({
@@ -300,9 +300,9 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
 
             if (updateProperty.fulfilled.match(resultAction)) {
                 toast.success('✅ Propiedad actualizada exitosamente');
-                if (onSuccess) {
-                    onSuccess();
-                }
+                // if (onSuccess) {
+                //     onSuccess();
+                // }
             } else {
                 const errorMessage = resultAction.payload as string || 'No se pudo actualizar la propiedad';
                 setError(errorMessage);
@@ -640,6 +640,8 @@ const PropertyEditForm: React.FC<PropertyEditFormProps> = ({
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={handleConfirm}
                 isSaving={isSaving}
+                title="¿Guardar Información Básica?"
+                message="Tus cambios se guardarán automáticamente, pero la propiedad no se enviará a revisión. Debes usar el botón 'Enviar a Revisión' al fondo de la página cuando termines con todas las pestañas."
             />
         </>
     );

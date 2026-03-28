@@ -22,7 +22,7 @@ const ConfirmReviewModal: React.FC<ConfirmReviewModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div 
+            <div
                 className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all duration-300 scale-100 opacity-100"
                 role="dialog"
                 aria-modal="true"
@@ -50,7 +50,7 @@ const ConfirmReviewModal: React.FC<ConfirmReviewModalProps> = ({
 
                 {/* Body */}
                 <div className="p-6 text-gray-600 leading-relaxed text-sm">
-                    {message.split('**').map((part, i) => 
+                    {message.split('**').map((part, i) =>
                         i % 2 === 1 ? <strong key={i} className="font-semibold text-gray-900">{part}</strong> : part
                     )}
                 </div>
@@ -63,7 +63,7 @@ const ConfirmReviewModal: React.FC<ConfirmReviewModalProps> = ({
                         disabled={isSaving}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50"
                     >
-                        Cancelar
+                        Seguir editando
                     </button>
                     <button
                         type="button"

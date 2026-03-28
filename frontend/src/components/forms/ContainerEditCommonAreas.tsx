@@ -87,9 +87,9 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
             if (onUpdate) {
                 onUpdate(updated);
             }
-            if (onSuccess) {
-                onSuccess();
-            }
+            // if (onSuccess) {
+            //     onSuccess();
+            // }
             setIsModalOpen(false);
         } catch (error: any) {
             console.error('Error updating common areas:', error);
@@ -172,7 +172,7 @@ const ContainerEditCommonAreas: React.FC<ContainerEditCommonAreasProps> = ({ con
             onConfirm={handleConfirm}
             isSaving={isSaving}
             title="¿Guardar áreas comunes?"
-            message="Las áreas comunes se actualizarán inmediatamente en tu propiedad sin necesidad de revisión adicional."
+            message="Tus cambios se guardarán automáticamente, pero la propiedad no se enviará a revisión. Debes usar el botón 'Enviar a Revisión' al fondo de la página cuando termines con todas las pestañas."
         />
         </>
     );
