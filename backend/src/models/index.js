@@ -149,6 +149,11 @@ UserProfile.belongsTo(City, {
     as: 'originCity'
 });
 
+UserProfile.belongsTo(City, {
+    foreignKey: 'studyCityId',
+    as: 'studyCity'
+});
+
 // User <-> Property (One-to-Many)
 User.hasMany(Property, {
     foreignKey: 'ownerId',

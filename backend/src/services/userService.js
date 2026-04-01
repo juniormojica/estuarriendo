@@ -160,7 +160,7 @@ export const updateUser = async (id, updates) => {
         idType, idNumber, ownerRole,
         // Profile fields
         birthDate, gender, referralSource, institutionId, academicProgram,
-        currentSemester, originCityId, livingPreference, totalPropertiesManaged,
+        currentSemester, originCityId, studyCityId, livingPreference, totalPropertiesManaged,
         yearsAsLandlord, managesPersonally, profile,
         ...userUpdates
     } = updates;
@@ -216,7 +216,7 @@ export const updateUser = async (id, updates) => {
     const profileData = {
         ...(profile || {}),
         birthDate, gender, referralSource, institutionId, academicProgram,
-        currentSemester, originCityId, livingPreference, totalPropertiesManaged,
+        currentSemester, originCityId, studyCityId, livingPreference, totalPropertiesManaged,
         yearsAsLandlord, managesPersonally
     };
 

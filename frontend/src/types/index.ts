@@ -448,6 +448,8 @@ export interface UserProfileData {
   currentSemester?: number;
   originCityId?: number;
   originCity?: City; // Hydrated
+  studyCityId?: number;
+  studyCity?: City; // Hydrated
   livingPreference?: 'solo' | 'shared' | 'indifferent'; // 'solo', 'shared', 'indifferent'
 
   // Owner Specific

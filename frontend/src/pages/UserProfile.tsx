@@ -11,7 +11,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileBasicInfoSchema, ProfileBasicInfoFormValues } from '../lib/validations';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-
+import CityAutocomplete from '../components/CityAutocomplete';
+import InstitutionAutocomplete from '../components/InstitutionAutocomplete';
 const UserProfile: React.FC = () => {
     const { user: authUser, loading: authLoading } = useAppSelector((state) => state.auth);
     const navigate = useNavigate();
@@ -33,10 +34,6 @@ const UserProfile: React.FC = () => {
 
     // Form states for non-basic info
     const [formData, setFormData] = useState<Partial<User>>({});
-
-    // Select options
-    const [cities, setCities] = useState<any[]>([]);
-    const [institutions, setInstitutions] = useState<any[]>([]);
 
     const location = useLocation();
 
@@ -129,29 +126,6 @@ const UserProfile: React.FC = () => {
             setLoading(false);
         };
         loadUserAndPayment();
-
-        // Fetch cities and institutions
-        const fetchData = async () => {
-            try {
-                const insts = await api.getAllInstitutions();
-                setInstitutions(insts);
-
-                // Mock cities for now or derive from institutions/properties
-                setCities([
-                    { id: 1, name: 'Bogotá' },
-                    { id: 2, name: 'Medellín' },
-                    { id: 3, name: 'Cali' },
-                    { id: 4, name: 'Barranquilla' },
-                    { id: 5, name: 'Bucaramanga' },
-                    { id: 6, name: 'Cartagena' },
-                    { id: 7, name: 'Pereira' },
-                    { id: 8, name: 'Manizales' }
-                ]);
-            } catch (e) {
-                console.error('Error loading form data options', e);
-            }
-        };
-        fetchData();
     }, [location.search, authUser, authLoading, navigate, reset]);
 
     // Fetch credits for tenant
@@ -513,16 +487,17 @@ const UserProfile: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Ciudad de Origen</label>
-                                                <select
-                                                    value={formData.profile?.originCityId || ''}
-                                                    onChange={(e) => handleProfileChange('originCityId', Number(e.target.value))}
-                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                                >
-                                                    <option value="">Seleccionar</option>
-                                                    {cities.map(city => (
-                                                        <option key={city.id} value={city.id}>{city.name}</option>
-                                                    ))}
-                                                </select>
+                                                <CityAutocomplete
+                                                    hideLabel={true}
+                                                    value={formData.profile?.originCity || null}
+                                                    onChange={(city) => {
+                                                        const profile = { ...formData.profile };
+                                                        profile.originCityId = city?.id;
+                                                        profile.originCity = city || undefined;
+                                                        setFormData(prev => ({ ...prev, profile }));
+                                                    }}
+                                                    placeholder="Buscar ciudad de origen..."
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">¿Cómo nos conociste?</label>
@@ -551,17 +526,37 @@ const UserProfile: React.FC = () => {
                                             </h2>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                 <div className="sm:col-span-2">
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Ciudad donde estudias</label>
+                                                    <CityAutocomplete
+                                                        hideLabel={true}
+                                                        value={formData.profile?.studyCity || null}
+                                                        onChange={(city) => {
+                                                            const profile = { ...formData.profile };
+                                                            profile.studyCityId = city?.id;
+                                                            profile.studyCity = city || undefined;
+                                                            // Si cambia la ciudad, limpiar la institución si existe para evitar inconsistencias
+                                                            if (!city || city.id !== formData.profile?.studyCityId) {
+                                                                profile.institutionId = undefined;
+                                                                profile.institution = undefined;
+                                                            }
+                                                            setFormData(prev => ({ ...prev, profile }));
+                                                        }}
+                                                        placeholder="Buscar ciudad de estudio..."
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-2">
                                                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Institución Educativa</label>
-                                                    <select
-                                                        value={formData.profile?.institutionId || ''}
-                                                        onChange={(e) => handleProfileChange('institutionId', Number(e.target.value))}
-                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                                    >
-                                                        <option value="">Seleccionar Institución</option>
-                                                        {institutions.map(inst => (
-                                                            <option key={inst.id} value={inst.id}>{inst.name}</option>
-                                                        ))}
-                                                    </select>
+                                                    <InstitutionAutocomplete
+                                                        cityId={formData.profile?.studyCityId || null}
+                                                        value={formData.profile?.institution || null}
+                                                        onChange={(institution) => {
+                                                            const profile = { ...formData.profile };
+                                                            profile.institutionId = institution?.id;
+                                                            profile.institution = institution || undefined;
+                                                            setFormData(prev => ({ ...prev, profile }));
+                                                        }}
+                                                        placeholder="Buscar institución..."
+                                                    />
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Programa Académico</label>
