@@ -9,20 +9,19 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const OpportunitiesPage: React.FC = () => {
     const navigate = useNavigate();
-    const [currentUser, setCurrentUser] = useState(authService.getStoredUser());
+    const [currentUser] = useState(authService.getStoredUser());
     const [opportunities, setOpportunities] = useState<StudentRequest[]>([]);
     const [filteredOpportunities, setFilteredOpportunities] = useState<StudentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [showPremiumModal, setShowPremiumModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
-    const [selectedOpportunity, setSelectedOpportunity] = useState<StudentRequest | null>(null);
     const [contactOpportunity, setContactOpportunity] = useState<StudentRequest | null>(null);
     const [detailOpportunity, setDetailOpportunity] = useState<StudentRequest | null>(null);
 
     const [filters, setFilters] = useState({
         universityTarget: '',
-        budgetMax: '',
+        propertyPrice: '',
         propertyTypeDesired: ''
     });
 
@@ -75,13 +74,16 @@ const OpportunitiesPage: React.FC = () => {
         let filtered = [...opportunities];
 
         if (filters.universityTarget) {
+            const searchTerm = filters.universityTarget.toLowerCase();
             filtered = filtered.filter(opp =>
-                opp.universityTarget?.toLowerCase().includes(filters.universityTarget.toLowerCase())
+                opp.universityTarget?.toLowerCase().includes(searchTerm) ||
+                opp.institution?.name?.toLowerCase().includes(searchTerm) ||
+                opp.city?.toLowerCase().includes(searchTerm)
             );
         }
 
-        if (filters.budgetMax) {
-            filtered = filtered.filter(opp => opp.budgetMax <= parseFloat(filters.budgetMax));
+        if (filters.propertyPrice) {
+            filtered = filtered.filter(opp => opp.budgetMax >= parseFloat(filters.propertyPrice));
         }
 
         if (filters.propertyTypeDesired) {
@@ -93,7 +95,6 @@ const OpportunitiesPage: React.FC = () => {
 
     const handleContactClick = (opportunity: StudentRequest) => {
         if (currentUser?.plan !== 'premium') {
-            setSelectedOpportunity(opportunity);
             setShowPremiumModal(true);
         } else {
             setContactOpportunity(opportunity);
@@ -175,14 +176,19 @@ const OpportunitiesPage: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 <DollarSign className="w-4 h-4 inline mr-1" />
-                                Presupuesto Máximo
+                                Precio de tu inmueble
                             </label>
                             <input
-                                type="number"
-                                value={filters.budgetMax}
-                                onChange={(e) => setFilters({ ...filters, budgetMax: e.target.value })}
+                                type="text"
+                                inputMode="numeric"
+                                value={filters.propertyPrice}
+                                onChange={(e) => {
+                                    // Solo permitir numéricos
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    setFilters({ ...filters, propertyPrice: value });
+                                }}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                placeholder="Ej: 500000"
+                                placeholder="Ej: 400000"
                             />
                         </div>
 
@@ -204,6 +210,18 @@ const OpportunitiesPage: React.FC = () => {
                             </select>
                         </div>
                     </div>
+                    {/* Botón Limpiar Filtros */}
+                    {(filters.universityTarget || filters.propertyPrice || filters.propertyTypeDesired) && (
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                onClick={() => setFilters({ universityTarget: '', propertyPrice: '', propertyTypeDesired: '' })}
+                                className="text-sm text-gray-500 hover:text-emerald-600 font-medium flex items-center transition-colors"
+                            >
+                                <X className="w-4 h-4 mr-1" />
+                                Limpiar Filtros
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Results Count */}
