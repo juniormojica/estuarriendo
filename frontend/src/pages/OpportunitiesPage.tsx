@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
 import { StudentRequest } from '../types';
-import { Search, Filter, MapPin, DollarSign, Home, Lock, Crown, X, Phone, Mail, MessageCircle, User } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Home, Lock, Crown, X, Phone, Mail, MessageCircle, User, Calendar, ArrowUpDown } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 
@@ -22,8 +22,11 @@ const OpportunitiesPage: React.FC = () => {
     const [filters, setFilters] = useState({
         universityTarget: '',
         propertyPrice: '',
-        propertyTypeDesired: ''
+        propertyTypeDesired: '',
+        city: '',
+        moveInDate: ''
     });
+    const [sortBy, setSortBy] = useState('recent');
 
     useScrollToTop([loading], 'instant');
 
@@ -49,7 +52,7 @@ const OpportunitiesPage: React.FC = () => {
 
     useEffect(() => {
         applyFilters();
-    }, [opportunities, filters]);
+    }, [opportunities, filters, sortBy]);
 
     useEffect(() => {
         const handleEsc = (event: KeyboardEvent) => {
@@ -70,6 +73,8 @@ const OpportunitiesPage: React.FC = () => {
         setLoading(false);
     };
 
+    const uniqueCities = Array.from(new Set(opportunities.map(opp => opp.city))).filter(Boolean).sort();
+
     const applyFilters = () => {
         let filtered = [...opportunities];
 
@@ -82,6 +87,10 @@ const OpportunitiesPage: React.FC = () => {
             );
         }
 
+        if (filters.city) {
+            filtered = filtered.filter(opp => opp.city === filters.city);
+        }
+
         if (filters.propertyPrice) {
             filtered = filtered.filter(opp => opp.budgetMax >= parseFloat(filters.propertyPrice));
         }
@@ -89,6 +98,27 @@ const OpportunitiesPage: React.FC = () => {
         if (filters.propertyTypeDesired) {
             filtered = filtered.filter(opp => opp.propertyTypeDesired === filters.propertyTypeDesired);
         }
+
+        if (filters.moveInDate) {
+            const filterDate = new Date(filters.moveInDate);
+            filterDate.setUTCHours(0, 0, 0, 0);
+            filtered = filtered.filter(opp => {
+                const oppDate = new Date(opp.moveInDate);
+                oppDate.setUTCHours(0, 0, 0, 0);
+                return oppDate >= filterDate;
+            });
+        }
+
+        // Ordenamiento
+        filtered.sort((a, b) => {
+            if (sortBy === 'highest_budget') {
+                return b.budgetMax - a.budgetMax;
+            } else if (sortBy === 'move_in_asc') {
+                return new Date(a.moveInDate).getTime() - new Date(b.moveInDate).getTime();
+            } else {
+                return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+            }
+        });
 
         setFilteredOpportunities(filtered);
     };
@@ -154,11 +184,46 @@ const OpportunitiesPage: React.FC = () => {
 
                 {/* Filters */}
                 <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-                    <div className="flex items-center mb-4">
-                        <Filter className="w-5 h-5 text-gray-600 mr-2" />
-                        <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                        <div className="flex items-center">
+                            <Filter className="w-5 h-5 text-gray-600 mr-2" />
+                            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                                Filtros
+                                {(filters.universityTarget || filters.propertyPrice || filters.propertyTypeDesired || filters.city || filters.moveInDate) && (
+                                    <span className="ml-3 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
+                                        {(filters.universityTarget ? 1 : 0) + (filters.propertyPrice ? 1 : 0) + (filters.propertyTypeDesired ? 1 : 0) + (filters.city ? 1 : 0) + (filters.moveInDate ? 1 : 0)} activos
+                                    </span>
+                                )}
+                            </h2>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center">
+                                <ArrowUpDown className="w-4 h-4 text-gray-500 mr-2" />
+                                <select 
+                                    value={sortBy} 
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="text-sm font-medium text-gray-700 bg-transparent border-none focus:ring-0 cursor-pointer p-0"
+                                >
+                                    <option value="recent">Más recientes</option>
+                                    <option value="highest_budget">Mayor presupuesto</option>
+                                    <option value="move_in_asc">Mudanza próxima</option>
+                                </select>
+                            </div>
+
+                            {(filters.universityTarget || filters.propertyPrice || filters.propertyTypeDesired || filters.city || filters.moveInDate) && (
+                                <button
+                                    onClick={() => setFilters({ universityTarget: '', propertyPrice: '', propertyTypeDesired: '', city: '', moveInDate: '' })}
+                                    className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg text-gray-600 hover:text-emerald-600 hover:border-emerald-600 hover:bg-emerald-50 font-medium flex items-center transition-colors"
+                                >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Limpiar
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 <MapPin className="w-4 h-4 inline mr-1" />
@@ -175,6 +240,23 @@ const OpportunitiesPage: React.FC = () => {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <MapPin className="w-4 h-4 inline mr-1" />
+                                Ciudad
+                            </label>
+                            <select
+                                value={filters.city}
+                                onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            >
+                                <option value="">Todas las ciudades</option>
+                                {uniqueCities.map((city, idx) => (
+                                    <option key={idx} value={city as string}>{city as string}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 <DollarSign className="w-4 h-4 inline mr-1" />
                                 Precio de tu inmueble
                             </label>
@@ -183,60 +265,89 @@ const OpportunitiesPage: React.FC = () => {
                                 inputMode="numeric"
                                 value={filters.propertyPrice}
                                 onChange={(e) => {
-                                    // Solo permitir numéricos
                                     const value = e.target.value.replace(/[^0-9]/g, '');
                                     setFilters({ ...filters, propertyPrice: value });
                                 }}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                 placeholder="Ej: 400000"
                             />
+                            {filters.propertyPrice && (
+                                <p className="text-xs text-emerald-600 mt-1.5 font-medium flex items-center">
+                                    <span className="bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-800 mr-1">Buscando</span>
+                                    ≥ ${parseInt(filters.propertyPrice).toLocaleString('es-CO')}
+                                </p>
+                            )}
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <Home className="w-4 h-4 inline mr-1" />
-                                Tipo de Inmueble
+                                <Calendar className="w-4 h-4 inline mr-1" />
+                                Disponible Desde
                             </label>
-                            <select
-                                value={filters.propertyTypeDesired}
-                                onChange={(e) => setFilters({ ...filters, propertyTypeDesired: e.target.value })}
+                            <input
+                                type="date"
+                                value={filters.moveInDate}
+                                onChange={(e) => setFilters({ ...filters, moveInDate: e.target.value })}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                            >
-                                <option value="">Todos</option>
-                                <option value="habitacion">Habitación</option>
-                                <option value="apartamento">Apartamento</option>
-                                <option value="aparta-estudio">Aparta-estudio</option>
-                                <option value="pension">Pensión</option>
-                            </select>
+                            />
                         </div>
                     </div>
-                    {/* Botón Limpiar Filtros */}
-                    {(filters.universityTarget || filters.propertyPrice || filters.propertyTypeDesired) && (
-                        <div className="mt-4 flex justify-end">
-                            <button
-                                onClick={() => setFilters({ universityTarget: '', propertyPrice: '', propertyTypeDesired: '' })}
-                                className="text-sm text-gray-500 hover:text-emerald-600 font-medium flex items-center transition-colors"
-                            >
-                                <X className="w-4 h-4 mr-1" />
-                                Limpiar Filtros
-                            </button>
+
+                    <div className="border-t border-gray-100 pt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                            <Home className="w-4 h-4 inline mr-1" />
+                            Tipo de Inmueble
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {['', 'habitacion', 'apartamento', 'aparta-estudio', 'pension'].map((type) => (
+                                <button
+                                    key={type || 'todos'}
+                                    onClick={() => setFilters({ ...filters, propertyTypeDesired: type })}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                        filters.propertyTypeDesired === type
+                                            ? 'bg-emerald-600 text-white shadow-md scale-105'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                                    }`}
+                                >
+                                    {type === '' ? 'Todos' : type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')}
+                                </button>
+                            ))}
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Results Count */}
-                <div className="mb-6">
-                    <p className="text-gray-600">
-                        {filteredOpportunities.length} {filteredOpportunities.length === 1 ? 'oportunidad encontrada' : 'oportunidades encontradas'}
-                    </p>
-                </div>
+                {filteredOpportunities.length > 0 && (
+                    <div className="mb-6">
+                        <p className="text-gray-600">
+                            {filteredOpportunities.length} {filteredOpportunities.length === 1 ? 'oportunidad encontrada' : 'oportunidades encontradas'}
+                        </p>
+                    </div>
+                )}
 
                 {/* Opportunities Grid */}
                 {filteredOpportunities.length === 0 ? (
                     <div className="bg-white rounded-xl shadow-md p-12 text-center">
                         <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay oportunidades disponibles</h3>
-                        <p className="text-gray-600">Intenta ajustar los filtros o vuelve más tarde</p>
+                        {(filters.universityTarget || filters.propertyPrice || filters.propertyTypeDesired || filters.city || filters.moveInDate) ? (
+                            <div className="max-w-md mx-auto">
+                                <p className="text-gray-600 mb-2">Ningún estudiante coincide con tus filtros actuales.</p>
+                                {filters.propertyPrice && (
+                                    <p className="text-gray-500 text-sm mb-4">
+                                        Considera buscar estudiantes con presupuestos menores a <span className="font-semibold text-gray-700">${parseInt(filters.propertyPrice).toLocaleString('es-CO')}</span>.
+                                    </p>
+                                )}
+                                <button
+                                    onClick={() => setFilters({ universityTarget: '', propertyPrice: '', propertyTypeDesired: '', city: '', moveInDate: '' })}
+                                    className="px-6 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 font-medium transition-colors"
+                                >
+                                    Limpiar Filtros
+                                </button>
+                            </div>
+                        ) : (
+                            <p className="text-gray-600">Al parecer aún no hay estudiantes publicando solicitudes.</p>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
