@@ -10,6 +10,7 @@ import InterestedUsersModal from '../components/InterestedUsersModal';
 import PropertyStatusFilters from '../components/owner/PropertyStatusFilters';
 import OwnerPropertyCard from '../components/owner/OwnerPropertyCard';
 import OwnerContainerDetail from '../components/owner/OwnerContainerDetail';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const OwnerDashboard: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -18,6 +19,8 @@ const OwnerDashboard: React.FC = () => {
     const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
     const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
     const [expandedContainers, setExpandedContainers] = useState<Set<string>>(new Set());
+
+    useScrollToTop([activeFilter]);
 
     // State for Interested Users Modal
     const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);

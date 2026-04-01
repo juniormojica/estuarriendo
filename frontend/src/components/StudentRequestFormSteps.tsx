@@ -5,6 +5,7 @@ import { iconMap } from '../lib/icons';
 import CityAutocomplete from './CityAutocomplete';
 import InstitutionAutocomplete from './InstitutionAutocomplete';
 import { City, Institution } from '../types';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 interface FormData {
     city: string;
@@ -67,6 +68,8 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
         contractDuration: initialData?.contractDuration || '',
         additionalNotes: initialData?.additionalNotes || ''
     });
+
+    useScrollToTop([currentStep]);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -376,8 +379,8 @@ const StudentRequestFormSteps: React.FC<StudentRequestFormStepsProps> = ({
                         <button
                             key={amenity.id}
                             type="button"
-                            onClick={() => toggleAmenity(amenity.id)}
-                            className={`p-4 rounded-lg border-2 transition-all text-center ${formData.requiredAmenities.includes(amenity.id)
+                            onClick={() => toggleAmenity(String(amenity.id))}
+                            className={`p-4 rounded-lg border-2 transition-all text-center ${formData.requiredAmenities.includes(String(amenity.id))
                                 ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                                 : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300'
                                 }`}

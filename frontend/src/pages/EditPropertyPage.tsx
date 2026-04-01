@@ -11,6 +11,7 @@ import ContainerEditRules from '../components/forms/ContainerEditRules';
 import ContainerEditCommonAreas from '../components/forms/ContainerEditCommonAreas';
 import UnitManager from '../components/forms/UnitManager';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const EditPropertyPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -20,6 +21,8 @@ const EditPropertyPage: React.FC = () => {
 
     const { currentProperty: property, loading, error } = useAppSelector((state) => state.properties);
     const [activeTab, setActiveTab] = useState<'info' | 'services' | 'rules' | 'areas' | 'units'>('info');
+
+    useScrollToTop([activeTab]);
 
     const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
     const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);

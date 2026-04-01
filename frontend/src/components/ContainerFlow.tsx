@@ -14,7 +14,7 @@ import type { RentalMode, PropertyUnit } from '../types';
 import { createContainer, updateContainer, adminCreateContainer } from '../services/containerService';
 import { useAppDispatch } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
-
+import { useScrollToTop } from '../hooks/useScrollToTop';
 interface ContainerFlowProps {
     propertyId?: string; // For editing
     initialPropertyType?: string; // Skip type selector if already selected
@@ -124,9 +124,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
     }, [propertyId]);
 
     // Scroll to top when step changes
-    useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [currentStep]);
+    useScrollToTop([currentStep], 'smooth');
 
     const handleSubmit = async () => {
         try {

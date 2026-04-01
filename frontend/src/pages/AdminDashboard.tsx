@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Property, PropertyStats, User, SystemConfig, AdminSection, PaymentRequest, Amenity } from '../types';
+import { Property, PropertyStats, User, SystemConfig, AdminSection, PaymentRequest } from '../types';
 import { api } from '../services/api';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
@@ -23,6 +23,7 @@ import DashboardHome from '../components/admin/DashboardHome';
 import PropertyReportsAdmin from '../components/admin/PropertyReportsAdmin';
 import { Menu } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const AdminDashboard = () => {
     const dispatch = useAppDispatch();
@@ -32,6 +33,8 @@ const AdminDashboard = () => {
 
     const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
     const [loading, setLoading] = useState(true);
+
+    useScrollToTop([currentSection]);
 
     // Data states
     const [stats, setStats] = useState<PropertyStats>({

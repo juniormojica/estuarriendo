@@ -8,6 +8,7 @@ import { mockAmenities } from '../data/mockData';
 import { iconMap } from '../lib/icons';
 import StudentRequestFormSteps from '../components/StudentRequestFormSteps';
 import ConfirmModal from '../components/ConfirmModal';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const dealBreakerOptions = [
     { id: 'no-pets', name: 'Alérgico a mascotas', icon: '🐕' },
@@ -38,6 +39,8 @@ const StudentRequestPage: React.FC = () => {
     // New state for normalized locations and institutions
     const [selectedCity, setSelectedCity] = useState<City | null>(null);
     const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
+
+    useScrollToTop([existingRequest, isEditing], 'smooth');
 
     useEffect(() => {
         if (!currentUser) {

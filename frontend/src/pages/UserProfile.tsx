@@ -10,6 +10,7 @@ import VerificationForm from '../components/VerificationForm';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileBasicInfoSchema, ProfileBasicInfoFormValues } from '../lib/validations';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const UserProfile: React.FC = () => {
     const { user: authUser, loading: authLoading } = useAppSelector((state) => state.auth);
@@ -20,6 +21,8 @@ const UserProfile: React.FC = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing' | 'verification'>('profile');
     const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
+
+    useScrollToTop([activeTab], 'smooth');
 
     const [creditBalance, setCreditBalance] = useState<CreditBalance | null>(null);
     const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);

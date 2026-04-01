@@ -17,6 +17,7 @@ import CityAutocomplete from './CityAutocomplete';
 import InstitutionAutocomplete from './InstitutionAutocomplete';
 import LocationPicker from './LocationPicker';
 import LoadingSpinner from './LoadingSpinner';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import type { City, Institution, PropertyRule, Amenity, PropertyService } from '../types';
 import { adminCreateContainer } from '../services/containerService';
 import { getAmenityIcon } from '../lib/amenityIcons';
@@ -73,6 +74,8 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
     const [currentStep, setCurrentStep] = useState(savedDraft?.step || 1);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState<string>('');
+
+    useScrollToTop([currentStep, submitted]);
 
     // UI-only states
     const [selectedCity, setSelectedCity] = useState<City | null>(savedDraft?.selectedCity || null);
@@ -186,16 +189,14 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
         const isValid = await trigger(fieldsToValidate as any);
 
         if (isValid) {
-            setCurrentStep(prev => prev + 1);
+            setCurrentStep((prev: number) => prev + 1);
             setError('');
-            window.scrollTo(0, 0);
         }
     };
 
     const handleBack = () => {
-        setCurrentStep(prev => prev - 1);
+        setCurrentStep((prev: number) => prev - 1);
         setError('');
-        window.scrollTo(0, 0);
     };
 
     const onSubmit = async (data: RoomFormData) => {
@@ -236,7 +237,6 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                 if (createProperty.fulfilled.match(resultAction)) {
                     setSubmitted(true);
                     sessionStorage.removeItem('roomFlowDraft');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                     setError(resultAction.payload as string || 'Error al crear la propiedad');
                 }

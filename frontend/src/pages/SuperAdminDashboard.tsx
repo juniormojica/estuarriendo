@@ -7,6 +7,7 @@ import InstitutionManager from '../components/admin/InstitutionManager';
 import PropertyTypeManager from '../components/admin/PropertyTypeManager';
 import AmenityManager from '../components/admin/AmenityManager';
 import UserManager from '../components/admin/UserManager';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import './SuperAdminDashboard.css';
 
 type TabType = 'departments' | 'cities' | 'institutions' | 'propertyTypes' | 'amenities' | 'users';
@@ -15,6 +16,8 @@ const SuperAdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('departments');
     const { user } = useAppSelector((state) => state.auth);
     const navigate = useNavigate();
+
+    useScrollToTop([activeTab]);
 
     // Redirect if not super admin
     React.useEffect(() => {

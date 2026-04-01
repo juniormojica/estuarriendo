@@ -5,6 +5,7 @@ import { authService } from '../services/authService';
 import { StudentRequest } from '../types';
 import { Search, Filter, MapPin, DollarSign, Home, Lock, Crown, X, Phone, Mail, MessageCircle, User } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const OpportunitiesPage: React.FC = () => {
     const navigate = useNavigate();
@@ -24,6 +25,8 @@ const OpportunitiesPage: React.FC = () => {
         budgetMax: '',
         propertyTypeDesired: ''
     });
+
+    useScrollToTop([loading], 'instant');
 
     useEffect(() => {
         if (!currentUser) {
@@ -73,7 +76,7 @@ const OpportunitiesPage: React.FC = () => {
 
         if (filters.universityTarget) {
             filtered = filtered.filter(opp =>
-                opp.universityTarget.toLowerCase().includes(filters.universityTarget.toLowerCase())
+                opp.universityTarget?.toLowerCase().includes(filters.universityTarget.toLowerCase())
             );
         }
 
@@ -425,7 +428,7 @@ const OpportunitiesPage: React.FC = () => {
                                     <button
                                         onClick={() => {
                                             const message = `Hola, mi nombre es ${currentUser?.name || 'un propietario'}, te escribo porque vi tu publicación activa en la página de EstuArriendo y me gustaría ofrecerte algo que se adecua a tus necesidades.`;
-                                            const phoneNumber = (contactOpportunity.studentWhatsapp || contactOpportunity.studentPhone).replace(/\D/g, '');
+                                            const phoneNumber = (contactOpportunity.studentWhatsapp || contactOpportunity.studentPhone)?.replace(/\D/g, '') || '';
                                             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
                                             window.open(whatsappUrl, '_blank');
                                         }}

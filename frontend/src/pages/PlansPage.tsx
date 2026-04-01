@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle, Star, Zap, Shield, Award, Users, Home } from 'lucide-react';
 import { useAppSelector } from '../store/hooks';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const PlansPage: React.FC = () => {
     const location = useLocation();
@@ -13,6 +14,8 @@ const PlansPage: React.FC = () => {
     const isTenant = isAuthenticated && user?.userType === 'tenant';
 
     const [activeTab, setActiveTab] = useState<'tenant' | 'owner'>(isOwner ? 'owner' : 'tenant');
+
+    useScrollToTop([activeTab]);
 
     // Update active tab if user role changes after initial render
     useEffect(() => {
