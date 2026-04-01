@@ -58,8 +58,20 @@ export const profileBasicInfoSchema = z.object({
     name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(100, 'El nombre es muy largo'),
     phone: phoneValidation,
     whatsapp: phoneValidation.optional().or(z.literal('')),
-    idType: z.enum(['CC', 'CE', 'NIT', 'Pasaporte', '']).optional().transform(v => v === '' ? undefined : v),
-    idNumber: z.string().optional()
+    idType: z.enum(['CC', 'CE', 'NIT', 'Pasaporte']).optional().or(z.literal('')),
+    idNumber: z.string()
+        .min(5, 'El número de documento debe tener al menos 5 caracteres')
+        .max(20, 'El número de documento es demasiado largo')
+        .regex(/^[a-zA-Z0-9-]+$/, 'Solo se permiten números, letras y guiones')
+        .optional()
+        .or(z.literal(''))
+}).refine((data) => {
+    const hasIdType = !!data.idType;
+    const hasIdNumber = !!data.idNumber;
+    return hasIdType === hasIdNumber;
+}, {
+    message: "Debes completar tanto el tipo como el número de documento juntos.",
+    path: ["idNumber"]
 });
 
 export type ProfileBasicInfoFormValues = z.infer<typeof profileBasicInfoSchema>;

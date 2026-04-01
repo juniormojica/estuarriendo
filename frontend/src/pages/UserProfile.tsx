@@ -205,8 +205,8 @@ const UserProfile: React.FC = () => {
                 name: data.name,
                 phone: data.phone,
                 whatsapp: data.whatsapp,
-                idType: data.idType,
-                idNumber: data.idNumber,
+                idType: data.idType === '' ? undefined : data.idType,
+                idNumber: data.idNumber === '' ? undefined : data.idNumber,
                 // Include profile data
                 profile: formData.profile
             });
@@ -403,7 +403,9 @@ const UserProfile: React.FC = () => {
                                     <h2 className="text-base sm:text-lg font-medium text-gray-900">Información Personal</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Nombre Completo</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                                Nombre Completo <span className="text-red-500">*</span>
+                                            </label>
                                             <input
                                                 type="text"
                                                 {...register('name')}
@@ -412,7 +414,10 @@ const UserProfile: React.FC = () => {
                                             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Correo Electrónico</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                                Correo Electrónico
+                                                <span className="ml-2 text-xs text-blue-600 font-normal bg-blue-50 px-2 py-0.5 rounded">No editable</span>
+                                            </label>
                                             <input
                                                 type="email"
                                                 value={user?.email || ''}
@@ -421,7 +426,9 @@ const UserProfile: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Teléfono</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                                Teléfono <span className="text-red-500">*</span>
+                                            </label>
                                             <input
                                                 type="tel"
                                                 {...register('phone')}
@@ -430,7 +437,9 @@ const UserProfile: React.FC = () => {
                                             {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">WhatsApp</label>
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                                WhatsApp <span className="text-gray-400 text-xs font-normal">(Opcional)</span>
+                                            </label>
                                             <input
                                                 type="tel"
                                                 {...register('whatsapp')}
@@ -441,7 +450,14 @@ const UserProfile: React.FC = () => {
                                     </div>
 
                                     <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Documento de Identidad</h2>
+                                        <div className="mb-3 sm:mb-4">
+                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 inline-flex items-center">
+                                                Documento de Identidad <span className="ml-2 text-gray-400 text-sm font-normal">(Opcional)</span>
+                                            </h2>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                Completa este apartado si deseas ser verificado. Si llenas uno, debes llenar ambos campos.
+                                            </p>
+                                        </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                             <div>
                                                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Tipo de Documento</label>
@@ -468,7 +484,9 @@ const UserProfile: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Información Personal Adicional</h2>
+                                        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
+                                            Información Personal Adicional <span className="text-gray-400 text-sm font-normal ml-2">(Opcional)</span>
+                                        </h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                             <div>
                                                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Fecha de Nacimiento</label>
@@ -528,7 +546,9 @@ const UserProfile: React.FC = () => {
 
                                     {user.userType === 'tenant' && (
                                         <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Información Académica</h2>
+                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
+                                                Información Académica <span className="text-gray-400 text-sm font-normal ml-2">(Opcional)</span>
+                                            </h2>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                 <div className="sm:col-span-2">
                                                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Institución Educativa</label>
@@ -583,7 +603,9 @@ const UserProfile: React.FC = () => {
 
                                     {user.userType === 'owner' && (
                                         <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Información del Arrendador</h2>
+                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
+                                                Información del Arrendador <span className="text-gray-400 text-sm font-normal ml-2">(Opcional)</span>
+                                            </h2>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                 <div>
                                                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Total Propiedades Administradas</label>
