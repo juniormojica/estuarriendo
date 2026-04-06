@@ -57,7 +57,7 @@ export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export const profileBasicInfoSchema = z.object({
     name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(100, 'El nombre es muy largo'),
     phone: phoneValidation,
-    whatsapp: phoneValidation.optional().or(z.literal('')),
+    whatsapp: phoneValidation,
     idType: z.enum(['CC', 'CE', 'NIT', 'Pasaporte']).optional().or(z.literal('')),
     idNumber: z.string()
         .min(5, 'El número de documento debe tener al menos 5 caracteres')

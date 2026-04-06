@@ -96,7 +96,7 @@ const UserProfile: React.FC = () => {
                     reset({
                         name: freshUser.name || '',
                         phone: freshUser.phone || '',
-                        whatsapp: freshUser.whatsapp || '',
+                        whatsapp: freshUser.whatsapp || freshUser.phone || '',
                         idType: (freshUser.idType as any) || undefined,
                         idNumber: freshUser.idNumber || ''
                     });
@@ -108,7 +108,7 @@ const UserProfile: React.FC = () => {
                     reset({
                         name: authUser.name || '',
                         phone: authUser.phone || '',
-                        whatsapp: authUser.whatsapp || '',
+                        whatsapp: authUser.whatsapp || authUser.phone || '',
                         idType: (authUser.idType as any) || undefined,
                         idNumber: authUser.idNumber || ''
                     });
@@ -191,7 +191,7 @@ const UserProfile: React.FC = () => {
             reset({
                 name: updatedUser.name || '',
                 phone: updatedUser.phone || '',
-                whatsapp: updatedUser.whatsapp || '',
+                whatsapp: updatedUser.whatsapp || updatedUser.phone || '',
                 idType: (updatedUser.idType as any) || undefined,
                 idNumber: updatedUser.idNumber || ''
             });
@@ -412,7 +412,7 @@ const UserProfile: React.FC = () => {
                                         </div>
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                                                WhatsApp <span className="text-gray-400 text-xs font-normal">(Opcional)</span>
+                                                WhatsApp <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="tel"
