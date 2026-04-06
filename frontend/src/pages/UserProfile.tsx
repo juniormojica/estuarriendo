@@ -23,7 +23,7 @@ const UserProfile: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing' | 'verification'>('profile');
     const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
 
-    useScrollToTop([activeTab], 'smooth');
+    useScrollToTop([activeTab, message], 'smooth');
 
     const [creditBalance, setCreditBalance] = useState<CreditBalance | null>(null);
     const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
