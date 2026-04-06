@@ -979,22 +979,45 @@ const UserProfile: React.FC = () => {
                                             Beneficios de la Verificación
                                         </h3>
                                         <ul className="space-y-2 text-sm text-emerald-800">
-                                            <li className="flex items-start">
-                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                                                <span>Aumenta la confianza de los estudiantes en tus propiedades</span>
-                                            </li>
-                                            <li className="flex items-start">
-                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                                                <span>Badge de "Propietario Verificado" en todas tus publicaciones</span>
-                                            </li>
-                                            <li className="flex items-start">
-                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                                                <span>Mayor visibilidad en los resultados de búsqueda</span>
-                                            </li>
-                                            <li className="flex items-start">
-                                                <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                                                <span>Ayuda a prevenir fraudes y estafas en la plataforma</span>
-                                            </li>
+                                            {user.userType === 'owner' ? (
+                                                <>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Aumenta la confianza de los estudiantes en tus propiedades</span>
+                                                    </li>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Badge de "Propietario Verificado" en todas tus publicaciones</span>
+                                                    </li>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Mayor visibilidad en los resultados de búsqueda</span>
+                                                    </li>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Ayuda a prevenir fraudes y estafas en la plataforma</span>
+                                                    </li>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Aumenta la confianza de los propietarios al solicitar un arriendo</span>
+                                                    </li>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Badge de "Estudiante Verificado" en tu perfil</span>
+                                                    </li>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Mayor probabilidad de ser aceptado en una propiedad</span>
+                                                    </li>
+                                                    <li className="flex items-start">
+                                                        <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                                                        <span>Ayuda a mantener una comunidad segura en la plataforma</span>
+                                                    </li>
+                                                </>
+                                            )}
                                         </ul>
                                     </div>
 
@@ -1006,7 +1029,10 @@ const UserProfile: React.FC = () => {
                                                 <h3 className="text-lg font-semibold text-emerald-900">¡Identidad Verificada!</h3>
                                             </div>
                                             <p className="text-sm text-emerald-800">
-                                                Tu identidad ha sido verificada exitosamente. Ahora tus propiedades mostrarán el badge de "Propietario Verificado".
+                                                {user.userType === 'owner' 
+                                                    ? 'Tu identidad ha sido verificada exitosamente. Ahora tus propiedades mostrarán el badge de "Propietario Verificado".'
+                                                    : 'Tu identidad ha sido verificada exitosamente. Ahora tu perfil mostrará el badge de "Estudiante Verificado".'
+                                                }
                                             </p>
                                             {user.verificationProcessedAt && (
                                                 <p className="text-xs text-emerald-700 mt-2">
