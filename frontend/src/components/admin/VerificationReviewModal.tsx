@@ -180,49 +180,84 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                 {/* Body Content */}
                 <div className="flex-1 flex overflow-hidden">
                     {/* Left Sidebar - Thumbnails */}
-                    <div className="w-64 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto hidden md:flex flex-col gap-3">
-                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Documentos</h3>
-                        {loadingProgress ? (
-                            <div className="flex justify-center p-4"><Loader className="w-6 h-6 animate-spin text-gray-400" /></div>
-                        ) : availableDocs.map((doc) => {
-                            const docStatus = progress?.documents[doc.id]?.status as DocumentVerificationStatus;
-                            const docUrl = progress?.documents[doc.id]?.url;
+                    <div className="w-64 bg-gray-50 border-r border-gray-200 hidden md:flex flex-col">
+                        <div className="p-4 flex-1 overflow-y-auto">
+                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Documentos</h3>
+                            <div className="flex flex-col gap-3">
+                                {loadingProgress ? (
+                                    <div className="flex justify-center p-4"><Loader className="w-6 h-6 animate-spin text-gray-400" /></div>
+                                ) : availableDocs.map((doc) => {
+                                    const docStatus = progress?.documents[doc.id]?.status as DocumentVerificationStatus;
+                                    const docUrl = progress?.documents[doc.id]?.url;
 
-                            return (
-                                <button
-                                    key={doc.id}
-                                    onClick={() => {
-                                        setActiveDoc(doc.id);
-                                        setIsRejecting(false);
-                                    }}
-                                    className={`w-full text-left p-3 rounded-lg border transition-all duration-200 group ${activeDoc === doc.id
-                                        ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-100'
-                                        : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    <div className="flex flex-col gap-2 mb-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-sm font-medium ${activeDoc === doc.id ? 'text-blue-700' : 'text-gray-700'}`}>
-                                                {doc.label}
-                                            </span>
-                                            {activeDoc === doc.id && <ChevronRight className="w-4 h-4 text-blue-500" />}
-                                        </div>
-                                        {getStatusBadge(docStatus)}
+                                    return (
+                                        <button
+                                            key={doc.id}
+                                            onClick={() => {
+                                                setActiveDoc(doc.id);
+                                                setIsRejecting(false);
+                                            }}
+                                            className={`w-full text-left p-3 rounded-lg border transition-all duration-200 group ${activeDoc === doc.id
+                                                ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-100'
+                                                : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            <div className="flex flex-col gap-2 mb-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`text-sm font-medium ${activeDoc === doc.id ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                        {doc.label}
+                                                    </span>
+                                                    {activeDoc === doc.id && <ChevronRight className="w-4 h-4 text-blue-500" />}
+                                                </div>
+                                                {getStatusBadge(docStatus)}
+                                            </div>
+                                            <div className="aspect-video w-full bg-gray-100 rounded overflow-hidden relative">
+                                                <img
+                                                    src={docUrl!}
+                                                    alt={doc.label}
+                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                                {!loadingProgress && availableDocs.length === 0 && (
+                                    <p className="text-sm text-gray-500 text-center mt-4">Sin documentos subidos</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Match Info Panel */}
+                        <div className="p-4 border-t border-gray-200 bg-white">
+                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                                Match de Identidad
+                            </h3>
+                            <div className="space-y-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100 shadow-sm text-sm">
+                                <div>
+                                    <span className="block text-gray-500 text-[11px] uppercase tracking-wide mb-0.5">👤 Nombre Completo</span>
+                                    <span className="font-medium text-gray-900 block truncate" title={progress?.userInfo?.name || user.name}>
+                                        {progress?.userInfo?.name || user.name}
+                                    </span>
+                                </div>
+                                {progress?.userInfo?.idNumber && (
+                                    <div>
+                                        <span className="block text-gray-500 text-[11px] uppercase tracking-wide mb-0.5">🪪 Documento</span>
+                                        <span className="font-medium text-gray-900 block truncate">
+                                            {progress.userInfo.idType || 'CC'} {progress.userInfo.idNumber}
+                                        </span>
                                     </div>
-                                    <div className="aspect-video w-full bg-gray-100 rounded overflow-hidden relative">
-                                        <img
-                                            src={docUrl!}
-                                            alt={doc.label}
-                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                                            loading="lazy"
-                                        />
+                                )}
+                                {(activeDoc === 'idFront' || activeDoc === 'idBack') && progress?.userInfo?.birthDate && (
+                                    <div>
+                                        <span className="block text-gray-500 text-[11px] uppercase tracking-wide mb-0.5">📅 Nacimiento</span>
+                                        <span className="font-medium text-gray-900 block">
+                                            {new Date(progress.userInfo.birthDate).toLocaleDateString('es-CO', { timeZone: 'UTC' })}
+                                        </span>
                                     </div>
-                                </button>
-                            );
-                        })}
-                        {!loadingProgress && availableDocs.length === 0 && (
-                            <p className="text-sm text-gray-500 text-center mt-4">Sin documentos subidos</p>
-                        )}
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Main Content Area */}

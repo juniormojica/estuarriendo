@@ -1,4 +1,4 @@
-import { UserVerificationDocuments, User, UserVerification, Notification } from '../models/index.js';
+import { UserVerificationDocuments, User, UserVerification, Notification, UserIdentificationDetails, UserProfile } from '../models/index.js';
 import { VerificationStatus, DocumentVerificationStatus, NotificationType, UserType } from '../utils/enums.js';
 
 import { Op } from 'sequelize';
@@ -156,6 +156,16 @@ export const getPendingVerifications = async (req, res) => {
                         'selfie', 'selfieStatus', 'selfieRejectionReason',
                         'utilityBill', 'utilityBillStatus', 'utilityBillRejectionReason'
                     ] // Include document URLs and statuses
+                },
+                {
+                    model: UserIdentificationDetails,
+                    as: 'identification',
+                    attributes: ['idType', 'idNumber']
+                },
+                {
+                    model: UserProfile,
+                    as: 'profile',
+                    attributes: ['birthDate']
                 }
             ],
             order: [['joinedAt', 'DESC']]
@@ -416,15 +426,38 @@ export const getVerificationProgress = async (req, res) => {
         const { userId } = req.params;
 
         const docs = await UserVerificationDocuments.findByPk(userId);
-        const user = await User.findByPk(userId, { attributes: ['verificationStatus'] });
+        const user = await User.findByPk(userId, { 
+            attributes: ['verificationStatus', 'name', 'userType'],
+            include: [
+                {
+                    model: UserIdentificationDetails,
+                    as: 'identification',
+                    attributes: ['idType', 'idNumber']
+                },
+                {
+                    model: UserProfile,
+                    as: 'profile',
+                    attributes: ['birthDate']
+                }
+            ]
+        });
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        const userInfo = {
+            name: user.name,
+            userType: user.userType,
+            idType: user.identification?.idType,
+            idNumber: user.identification?.idNumber,
+            birthDate: user.profile?.birthDate
+        };
+
         if (!docs) {
             return res.json({
                 globalStatus: user.verificationStatus,
+                userInfo,
                 documents: {
                     idFront: { status: DocumentVerificationStatus.NOT_SUBMITTED, url: null, rejectionReason: null },
                     idBack: { status: DocumentVerificationStatus.NOT_SUBMITTED, url: null, rejectionReason: null },
@@ -436,6 +469,7 @@ export const getVerificationProgress = async (req, res) => {
 
         res.json({
             globalStatus: user.verificationStatus,
+            userInfo,
             documents: {
                 idFront: { status: docs.idFrontStatus, url: docs.idFront, rejectionReason: docs.idFrontRejectionReason },
                 idBack: { status: docs.idBackStatus, url: docs.idBack, rejectionReason: docs.idBackRejectionReason },

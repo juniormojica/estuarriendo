@@ -122,6 +122,13 @@ export interface VerificationProgressItem {
 
 export interface VerificationProgress {
   globalStatus: VerificationStatus;
+  userInfo?: {
+    name: string;
+    userType: UserType;
+    idType?: IdType;
+    idNumber?: string;
+    birthDate?: string;
+  };
   documents: {
     idFront: VerificationProgressItem;
     idBack: VerificationProgressItem;

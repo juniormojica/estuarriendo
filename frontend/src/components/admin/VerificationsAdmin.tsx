@@ -63,6 +63,22 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
                                 </div>
                             )}
 
+                            {/* Extra Context */}
+                            <div className="mb-4 text-sm text-gray-600 bg-gray-50 rounded-lg p-3 space-y-1">
+                                <p className="flex justify-between items-center">
+                                    <span className="text-gray-500 text-xs uppercase tracking-wide">Rol</span>
+                                    <span className="font-medium capitalize text-gray-800">{user.userType === 'owner' ? 'Propietario' : 'Estudiante/Inquilino'}</span>
+                                </p>
+                                {/* @ts-ignore */}
+                                {user.identification?.idNumber && (
+                                    <p className="flex justify-between items-center">
+                                        <span className="text-gray-500 text-xs uppercase tracking-wide">Cédula</span>
+                                        {/* @ts-ignore */}
+                                        <span className="font-medium text-gray-800">{user.identification.idType} {user.identification.idNumber}</span>
+                                    </p>
+                                )}
+                            </div>
+
                             <div className="mt-auto pt-4 border-t border-gray-100">
                                 <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                                     <span className="flex items-center gap-1.5">
