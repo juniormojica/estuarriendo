@@ -66,7 +66,7 @@ const User = sequelize.define('User', {
         comment: 'When user first became premium'
     },
     verificationStatus: {
-        type: DataTypes.ENUM('not_submitted', 'pending', 'verified', 'rejected'),
+        type: DataTypes.ENUM('not_submitted', 'in_progress', 'pending', 'verified', 'rejected'),
         allowNull: false,
         defaultValue: 'not_submitted',
         field: 'verification_status',

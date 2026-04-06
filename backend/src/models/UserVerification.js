@@ -36,13 +36,13 @@ const UserVerification = sequelize.define('UserVerification', {
         allowNull: false,
         defaultValue: VerificationStatus.NOT_SUBMITTED,
         field: 'verification_status',
-        comment: 'Current verification status'
+        comment: 'Current verification status (not_submitted, in_progress, pending, verified, rejected)'
     },
     verificationRejectionReason: {
         type: DataTypes.TEXT,
         allowNull: true,
         field: 'verification_rejection_reason',
-        comment: 'Reason for verification rejection'
+        comment: 'Global reason for verification rejection'
     },
     availableForVisit: {
         type: DataTypes.BOOLEAN,

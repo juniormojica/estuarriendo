@@ -4,16 +4,29 @@ import {
     getVerificationDocuments,
     getPendingVerifications,
     approveVerification,
-    rejectVerification
+    rejectVerification,
+    submitSingleDocument,
+    getVerificationProgress,
+    reviewSingleDocument
 } from '../controllers/verificationController.js';
 
 const router = express.Router();
 
-// Submit verification documents
-router.post('/submit', submitVerificationDocuments);
-
 // Get all pending verifications (admin)
 router.get('/pending/all', getPendingVerifications);
+
+// ----------------------------------------
+// INDIVIDUAL DOCUMENT REVIEW
+// ----------------------------------------
+router.get('/progress/:userId', getVerificationProgress);
+router.post('/document/submit', submitSingleDocument);
+router.patch('/document/:userId/review', reviewSingleDocument);
+
+// ----------------------------------------
+// LEGACY BATCH REVIEW (Fallback)
+// ----------------------------------------
+// Submit verification documents
+router.post('/submit', submitVerificationDocuments);
 
 // Get verification documents (admin)
 router.get('/:userId', getVerificationDocuments);

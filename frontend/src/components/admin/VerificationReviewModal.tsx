@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, XCircle, ChevronRight, User as UserIcon, Calendar, Mail, AlertTriangle, ZoomIn } from 'lucide-react';
-import { User } from '../../types';
+import { X, Check, XCircle, ChevronRight, User as UserIcon, Calendar, Mail, AlertTriangle, ZoomIn, Loader, Clock } from 'lucide-react';
+import { User, VerificationProgress, DocumentVerificationStatus } from '../../types';
+import { api } from '../../services/api';
+import { useToast } from '../ToastProvider';
 
 interface VerificationReviewModalProps {
     isOpen: boolean;
     onClose: () => void;
     user: User | null;
-    onApprove: (userId: string) => Promise<void>;
-    onReject: (userId: string, reason: string) => Promise<void>;
+    onRefresh: () => Promise<void>;
 }
 
 type DocType = 'idFront' | 'idBack' | 'selfie' | 'utilityBill';
@@ -16,13 +17,30 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
     isOpen,
     onClose,
     user,
-    onApprove,
-    onReject
+    onRefresh
 }) => {
+    const toast = useToast();
+    const [progress, setProgress] = useState<VerificationProgress | null>(null);
+    const [loadingProgress, setLoadingProgress] = useState(false);
+    
     const [activeDoc, setActiveDoc] = useState<DocType>('idFront');
     const [isRejecting, setIsRejecting] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const fetchProgress = async () => {
+        if (!user) return;
+        setLoadingProgress(true);
+        try {
+            const data = await api.getVerificationProgress(user.id);
+            setProgress(data);
+        } catch (error) {
+            console.error('Error fetching progress:', error);
+            toast.error('Error al cargar progreso de documentos');
+        } finally {
+            setLoadingProgress(false);
+        }
+    };
 
     // Reset state when user changes or modal opens
     useEffect(() => {
@@ -30,6 +48,9 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
             setActiveDoc('idFront');
             setIsRejecting(false);
             setRejectionReason('');
+            fetchProgress();
+        } else {
+            setProgress(null);
         }
     }, [isOpen, user]);
 
@@ -54,21 +75,31 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
 
     if (!isOpen || !user) return null;
 
-    const documents = [
-        { id: 'idFront', label: 'Cédula (Frente)', url: user.verificationDocuments?.idFront },
-        { id: 'idBack', label: 'Cédula (Dorso)', url: user.verificationDocuments?.idBack },
-        { id: 'selfie', label: 'Selfie', url: user.verificationDocuments?.selfie },
-        { id: 'utilityBill', label: 'Recibo Público', url: user.verificationDocuments?.utilityBill },
-    ].filter(doc => doc.url) as { id: DocType; label: string; url: string }[];
+    const availableDocs = [
+        { id: 'idFront', label: 'Cédula (Frente)' },
+        { id: 'idBack', label: 'Cédula (Dorso)' },
+        { id: 'selfie', label: 'Selfie' },
+        { id: 'utilityBill', label: 'Recibo Público' },
+    ].filter(doc => progress?.documents[doc.id as DocType]?.url) as { id: DocType; label: string }[];
+
+    const activeDocInfo = progress?.documents[activeDoc];
+    const currentDocUrl = activeDocInfo?.url;
 
     const handleApprove = async () => {
         if (!user.id) return;
         setIsProcessing(true);
         try {
-            await onApprove(user.id);
-            onClose();
+            const res = await api.reviewSingleVerificationDocument(user.id, activeDoc, 'approved');
+            if (res.success) {
+                toast.success('Documento aprobado exitosamente');
+                await fetchProgress(); // reload internal state
+                await onRefresh(); // reload standard table state
+            } else {
+                toast.error(res.message);
+            }
         } catch (error) {
             console.error('Error approving:', error);
+            toast.error('Error al aprobar documento');
         } finally {
             setIsProcessing(false);
         }
@@ -80,16 +111,32 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
 
         setIsProcessing(true);
         try {
-            await onReject(user.id, rejectionReason);
-            onClose();
+            const res = await api.reviewSingleVerificationDocument(user.id, activeDoc, 'rejected', rejectionReason);
+            if (res.success) {
+                toast.success('Documento rechazado exitosamente');
+                setIsRejecting(false);
+                setRejectionReason('');
+                await fetchProgress();
+                await onRefresh();
+            } else {
+                toast.error(res.message);
+            }
         } catch (error) {
             console.error('Error rejecting:', error);
+            toast.error('Error al rechazar documento');
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const currentDocUrl = user.verificationDocuments?.[activeDoc];
+    const getStatusBadge = (status: DocumentVerificationStatus) => {
+        switch (status) {
+            case 'approved': return <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded flex items-center gap-1"><Check className="w-3 h-3"/> Aprobado</span>;
+            case 'pending': return <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded flex items-center gap-1"><Clock className="w-3 h-3"/> Pendiente</span>;
+            case 'rejected': return <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded flex items-center gap-1"><XCircle className="w-3 h-3"/> Rechazado</span>;
+            default: return null;
+        }
+    };
 
     return (
         <div
@@ -135,41 +182,60 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                     {/* Left Sidebar - Thumbnails */}
                     <div className="w-64 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto hidden md:flex flex-col gap-3">
                         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Documentos</h3>
-                        {documents.map((doc) => (
-                            <button
-                                key={doc.id}
-                                onClick={() => setActiveDoc(doc.id)}
-                                className={`w-full text-left p-3 rounded-lg border transition-all duration-200 group ${activeDoc === doc.id
-                                    ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-100'
-                                    : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                    }`}
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className={`text-sm font-medium ${activeDoc === doc.id ? 'text-blue-700' : 'text-gray-700'}`}>
-                                        {doc.label}
-                                    </span>
-                                    {activeDoc === doc.id && <ChevronRight className="w-4 h-4 text-blue-500" />}
-                                </div>
-                                <div className="aspect-video w-full bg-gray-100 rounded overflow-hidden relative">
-                                    <img
-                                        src={doc.url}
-                                        alt={doc.label}
-                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                                        loading="lazy"
-                                    />
-                                </div>
-                            </button>
-                        ))}
+                        {loadingProgress ? (
+                            <div className="flex justify-center p-4"><Loader className="w-6 h-6 animate-spin text-gray-400" /></div>
+                        ) : availableDocs.map((doc) => {
+                            const docStatus = progress?.documents[doc.id]?.status as DocumentVerificationStatus;
+                            const docUrl = progress?.documents[doc.id]?.url;
+
+                            return (
+                                <button
+                                    key={doc.id}
+                                    onClick={() => {
+                                        setActiveDoc(doc.id);
+                                        setIsRejecting(false);
+                                    }}
+                                    className={`w-full text-left p-3 rounded-lg border transition-all duration-200 group ${activeDoc === doc.id
+                                        ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-100'
+                                        : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    <div className="flex flex-col gap-2 mb-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className={`text-sm font-medium ${activeDoc === doc.id ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                {doc.label}
+                                            </span>
+                                            {activeDoc === doc.id && <ChevronRight className="w-4 h-4 text-blue-500" />}
+                                        </div>
+                                        {getStatusBadge(docStatus)}
+                                    </div>
+                                    <div className="aspect-video w-full bg-gray-100 rounded overflow-hidden relative">
+                                        <img
+                                            src={docUrl!}
+                                            alt={doc.label}
+                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                </button>
+                            );
+                        })}
+                        {!loadingProgress && availableDocs.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center mt-4">Sin documentos subidos</p>
+                        )}
                     </div>
 
                     {/* Main Content Area */}
                     <div className="flex-1 flex flex-col bg-gray-900 relative">
                         {/* Mobile Tabs */}
                         <div className="md:hidden flex overflow-x-auto bg-gray-800 p-2 gap-2 snap-x">
-                            {documents.map((doc) => (
+                            {availableDocs.map((doc) => (
                                 <button
                                     key={doc.id}
-                                    onClick={() => setActiveDoc(doc.id)}
+                                    onClick={() => {
+                                        setActiveDoc(doc.id);
+                                        setIsRejecting(false);
+                                    }}
                                     className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors snap-center ${activeDoc === doc.id
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -182,7 +248,9 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
 
                         {/* Image Viewer */}
                         <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative group">
-                            {currentDocUrl ? (
+                            {loadingProgress ? (
+                                <Loader className="w-12 h-12 animate-spin text-gray-400" />
+                            ) : currentDocUrl ? (
                                 <img
                                     src={currentDocUrl}
                                     alt="Documento seleccionado"
@@ -215,7 +283,9 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                 {/* Footer Actions */}
                 <div className="p-4 border-t border-gray-200 bg-white flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-sm text-gray-500 hidden sm:block">
-                        Revisando documento {documents.findIndex(d => d.id === activeDoc) + 1} de {documents.length}
+                        {activeDocInfo?.status === 'approved' && <span className="text-green-600 font-medium">Este documento ya fue aprobado.</span>}
+                        {activeDocInfo?.status === 'rejected' && <span className="text-red-600 font-medium">Este documento está rechazado.</span>}
+                        {activeDocInfo?.status === 'pending' && <span className="text-yellow-600 font-medium">Pendiente de revisión.</span>}
                     </div>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -223,14 +293,15 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                             <>
                                 <button
                                     onClick={() => setIsRejecting(true)}
-                                    className="flex-1 sm:flex-none px-6 py-2.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-300 font-medium transition-colors flex items-center justify-center gap-2"
+                                    disabled={loadingProgress || !activeDocInfo?.url || activeDocInfo?.status !== 'pending'}
+                                    className="flex-1 sm:flex-none px-6 py-2.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-300 font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <XCircle className="w-4 h-4" />
-                                    Rechazar
+                                    Rechazar Documento
                                 </button>
                                 <button
                                     onClick={handleApprove}
-                                    disabled={isProcessing}
+                                    disabled={isProcessing || loadingProgress || !activeDocInfo?.url || activeDocInfo?.status !== 'pending'}
                                     className="flex-1 sm:flex-none px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isProcessing ? (
@@ -238,7 +309,7 @@ export const VerificationReviewModal: React.FC<VerificationReviewModalProps> = (
                                     ) : (
                                         <Check className="w-4 h-4" />
                                     )}
-                                    Aprobar Verificación
+                                    Aprobar Documento
                                 </button>
                             </>
                         ) : (

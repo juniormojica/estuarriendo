@@ -955,13 +955,19 @@ const UserProfile: React.FC = () => {
                                         {user.verificationStatus === 'pending' && (
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
                                                 <Clock className="w-4 h-4 mr-1" />
-                                                En Revisión
+                                                En Revisión Global
+                                            </span>
+                                        )}
+                                        {user.verificationStatus === 'in_progress' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                                <Clock className="w-4 h-4 mr-1" />
+                                                En Progreso
                                             </span>
                                         )}
                                         {user.verificationStatus === 'rejected' && (
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                                <XCircle className="w-4 h-4 mr-1" />
-                                                Rechazado
+                                                <AlertCircle className="w-4 h-4 mr-1" />
+                                                Revisión de Rechazos
                                             </span>
                                         )}
                                         {(!user.verificationStatus || user.verificationStatus === 'not_submitted') && (
@@ -1023,7 +1029,7 @@ const UserProfile: React.FC = () => {
 
                                     {/* Verification Status Content */}
                                     {user.verificationStatus === 'verified' && (
-                                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6">
+                                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 mb-6">
                                             <div className="flex items-center space-x-3 mb-2">
                                                 <CheckCircle className="w-6 h-6 text-emerald-600" />
                                                 <h3 className="text-lg font-semibold text-emerald-900">¡Identidad Verificada!</h3>
@@ -1034,53 +1040,13 @@ const UserProfile: React.FC = () => {
                                                     : 'Tu identidad ha sido verificada exitosamente. Ahora tu perfil mostrará el badge de "Estudiante Verificado".'
                                                 }
                                             </p>
-                                            {user.verificationProcessedAt && (
-                                                <p className="text-xs text-emerald-700 mt-2">
-                                                    Verificado el {new Date(user.verificationProcessedAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                </p>
-                                            )}
                                         </div>
                                     )}
 
-                                    {user.verificationStatus === 'pending' && (
-                                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-                                            <div className="flex items-center space-x-3 mb-2">
-                                                <Clock className="w-6 h-6 text-yellow-600" />
-                                                <h3 className="text-lg font-semibold text-yellow-900">Verificación en Proceso</h3>
-                                            </div>
-                                            <p className="text-sm text-yellow-800">
-                                                Hemos recibido tus documentos y están siendo revisados. El proceso de verificación puede tomar hasta 24 horas.
-                                            </p>
-                                            {user.verificationSubmittedAt && (
-                                                <p className="text-xs text-yellow-700 mt-2">
-                                                    Enviado el {new Date(user.verificationSubmittedAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {user.verificationStatus === 'rejected' && (
-                                        <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
-                                            <div className="flex items-center space-x-3 mb-2">
-                                                <XCircle className="w-6 h-6 text-red-600" />
-                                                <h3 className="text-lg font-semibold text-red-900">Verificación Rechazada</h3>
-                                            </div>
-                                            <p className="text-sm text-red-800 mb-2">
-                                                Tu solicitud de verificación fue rechazada. Por favor revisa la razón y vuelve a intentarlo.
-                                            </p>
-                                            {user.verificationRejectionReason && (
-                                                <div className="bg-red-100 rounded-lg p-3 mt-3">
-                                                    <p className="text-xs font-semibold text-red-900 mb-1">Razón del rechazo:</p>
-                                                    <p className="text-sm text-red-800">{user.verificationRejectionReason}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Show form for not_submitted or rejected status */}
-                                    {(!user.verificationStatus || user.verificationStatus === 'not_submitted' || user.verificationStatus === 'rejected') && (
+                                    {/* Always show the new VerificationForm for tracking single document updates (unless fully verified without needing form anymore, but we can show it so they see their docs!) */}
+                                    {user.verificationStatus !== 'verified' && (
                                         <div>
-                                            <h3 className="text-md font-semibold text-gray-900 mb-4">Documentos Requeridos</h3>
+                                            <h3 className="text-md font-semibold text-gray-900 mb-4">Gestión de Documentos</h3>
                                             <VerificationForm userId={user.id} userRole={user.userType === 'tenant' ? 'student' : 'owner'} onSuccess={handleVerificationSuccess} />
                                         </div>
                                     )}

@@ -52,8 +52,16 @@ export const PropertyStatus = {
 
 export const VerificationStatus = {
     NOT_SUBMITTED: 'not_submitted',
+    IN_PROGRESS: 'in_progress',
     PENDING: 'pending',
     VERIFIED: 'verified',
+    REJECTED: 'rejected'
+};
+
+export const DocumentVerificationStatus = {
+    NOT_SUBMITTED: 'not_submitted',
+    PENDING: 'pending',
+    APPROVED: 'approved',
     REJECTED: 'rejected'
 };
 
@@ -85,6 +93,9 @@ export const NotificationType = {
     PROPERTY_SUBMITTED: 'property_submitted',
     PROPERTY_APPROVED: 'property_approved',
     PROPERTY_REJECTED: 'property_rejected',
+    VERIFICATION_DOC_SUBMITTED: 'verification_doc_submitted',
+    VERIFICATION_DOC_APPROVED: 'verification_doc_approved',
+    VERIFICATION_DOC_REJECTED: 'verification_doc_rejected',
     VERIFICATION_SUBMITTED: 'verification_submitted',
     VERIFICATION_APPROVED: 'verification_approved',
     VERIFICATION_REJECTED: 'verification_rejected',

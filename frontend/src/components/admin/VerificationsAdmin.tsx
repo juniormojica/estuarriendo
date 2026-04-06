@@ -20,26 +20,6 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
         setIsReviewOpen(true);
     };
 
-    const handleApprove = async (userId: string) => {
-        const success = await api.updateVerificationStatus(userId, 'verified');
-        if (success) {
-            toast.success('Usuario verificado exitosamente');
-            await onRefresh();
-        } else {
-            toast.error('Error al verificar usuario');
-        }
-    };
-
-    const handleReject = async (userId: string, reason: string) => {
-        const success = await api.updateVerificationStatus(userId, 'rejected', reason);
-        if (success) {
-            toast.success('Verificación rechazada');
-            await onRefresh();
-        } else {
-            toast.error('Error al rechazar verificación');
-        }
-    };
-
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Verificaciones Pendientes</h2>
@@ -60,9 +40,15 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
                                     <h3 className="text-lg font-bold text-gray-900 line-clamp-1" title={user.name}>{user.name}</h3>
                                     <p className="text-sm text-gray-500 line-clamp-1" title={user.email}>{user.email}</p>
                                 </div>
-                                <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                    Pendiente
-                                </span>
+                                {user.verificationStatus === 'in_progress' ? (
+                                    <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                        En Progreso
+                                    </span>
+                                ) : (
+                                    <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                        Pendiente
+                                    </span>
+                                )}
                             </div>
 
                             {user.verificationSubmittedAt && (
@@ -110,8 +96,7 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
                 isOpen={isReviewOpen}
                 onClose={() => setIsReviewOpen(false)}
                 user={selectedUser}
-                onApprove={handleApprove}
-                onReject={handleReject}
+                onRefresh={onRefresh}
             />
         </div>
     );

@@ -1,5 +1,5 @@
 import { UserVerificationDocuments, User, UserVerification, Notification } from '../models/index.js';
-import { VerificationStatus, NotificationType, UserType } from '../utils/enums.js';
+import { VerificationStatus, DocumentVerificationStatus, NotificationType, UserType } from '../utils/enums.js';
 
 import { Op } from 'sequelize';
 
@@ -137,17 +137,25 @@ export const getVerificationDocuments = async (req, res) => {
 // Get all pending verifications (admin only)
 export const getPendingVerifications = async (req, res) => {
     try {
-        // Find users with PENDING status
+        // Find users with PENDING or IN_PROGRESS status
         const pendingUsers = await User.findAll({
             where: {
-                verificationStatus: VerificationStatus.PENDING
+                verificationStatus: {
+                    [Op.in]: [VerificationStatus.PENDING, VerificationStatus.IN_PROGRESS]
+                }
             },
             attributes: ['id', 'name', 'email', 'phone', 'verificationStatus', 'joinedAt'],
             include: [
                 {
                     model: UserVerificationDocuments,
                     as: 'verificationDocuments',
-                    attributes: ['submittedAt', 'idFront', 'idBack', 'selfie', 'utilityBill'] // Include document URLs
+                    attributes: [
+                        'submittedAt',
+                        'idFront', 'idFrontStatus', 'idFrontRejectionReason',
+                        'idBack', 'idBackStatus', 'idBackRejectionReason',
+                        'selfie', 'selfieStatus', 'selfieRejectionReason',
+                        'utilityBill', 'utilityBillStatus', 'utilityBillRejectionReason'
+                    ] // Include document URLs and statuses
                 }
             ],
             order: [['joinedAt', 'DESC']]
@@ -319,10 +327,232 @@ export const rejectVerification = async (req, res) => {
     }
 };
 
+// ==========================================
+// NEW INDIVIDUAL DOCUMENT FLOW
+// ==========================================
+
+export const submitSingleDocument = async (req, res) => {
+    try {
+        const { userId, documentType, documentUrl, idNumber } = req.body;
+
+        if (!userId || !documentType || !documentUrl) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const validDocumentTypes = ['idFront', 'idBack', 'selfie', 'utilityBill'];
+        if (!validDocumentTypes.includes(documentType)) {
+            return res.status(400).json({ error: 'Invalid document type' });
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Upsert user verification document record
+        const [docs, created] = await UserVerificationDocuments.findOrCreate({
+            where: { userId },
+            defaults: {
+                [documentType]: documentUrl,
+                [`${documentType}Status`]: DocumentVerificationStatus.PENDING,
+                submittedAt: new Date()
+            }
+        });
+
+        if (!created) {
+            // Check if document was already approved, if so don't allow overwrite
+            // (Unless we want to allow replacing approved docs? Usually not)
+            const currentStatus = docs[`${documentType}Status`];
+            if (currentStatus === DocumentVerificationStatus.APPROVED) {
+                return res.status(400).json({ error: 'Document is already approved and cannot be modified' });
+            }
+
+            // Update specific document
+            docs[documentType] = documentUrl;
+            docs[`${documentType}Status`] = DocumentVerificationStatus.PENDING;
+            docs[`${documentType}RejectionReason`] = null;
+            docs.submittedAt = new Date();
+            await docs.save();
+        }
+
+        // Update User verification status to IN_PROGRESS if NOT_SUBMITTED
+        if (user.verificationStatus === VerificationStatus.NOT_SUBMITTED || user.verificationStatus === VerificationStatus.REJECTED) {
+            user.verificationStatus = VerificationStatus.IN_PROGRESS;
+            await user.save();
+        }
+
+        // Notify Admins
+        try {
+            const superAdmin = await User.findOne({ where: { userType: UserType.SUPER_ADMIN } });
+            if (superAdmin) {
+                await Notification.create({
+                    userId: superAdmin.id,
+                    type: NotificationType.VERIFICATION_DOC_SUBMITTED,
+                    title: 'Nuevo Documento Subido',
+                    message: `${user.name} ha subido su ${documentType}.`,
+                    metadata: { tenantId: user.id, documentType },
+                    isRead: false,
+                    createdAt: new Date()
+                });
+            }
+        } catch (notificationError) {
+            console.error('Error creating notification:', notificationError);
+        }
+
+        res.json({
+            message: 'Document submitted successfully',
+            documentType,
+            status: DocumentVerificationStatus.PENDING
+        });
+
+    } catch (error) {
+        console.error('Error submitting single document:', error);
+        res.status(500).json({ error: 'Failed to submit document', message: error.message });
+    }
+};
+
+export const getVerificationProgress = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const docs = await UserVerificationDocuments.findByPk(userId);
+        const user = await User.findByPk(userId, { attributes: ['verificationStatus'] });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (!docs) {
+            return res.json({
+                globalStatus: user.verificationStatus,
+                documents: {
+                    idFront: { status: DocumentVerificationStatus.NOT_SUBMITTED, url: null, rejectionReason: null },
+                    idBack: { status: DocumentVerificationStatus.NOT_SUBMITTED, url: null, rejectionReason: null },
+                    selfie: { status: DocumentVerificationStatus.NOT_SUBMITTED, url: null, rejectionReason: null },
+                    utilityBill: { status: DocumentVerificationStatus.NOT_SUBMITTED, url: null, rejectionReason: null }
+                }
+            });
+        }
+
+        res.json({
+            globalStatus: user.verificationStatus,
+            documents: {
+                idFront: { status: docs.idFrontStatus, url: docs.idFront, rejectionReason: docs.idFrontRejectionReason },
+                idBack: { status: docs.idBackStatus, url: docs.idBack, rejectionReason: docs.idBackRejectionReason },
+                selfie: { status: docs.selfieStatus, url: docs.selfie, rejectionReason: docs.selfieRejectionReason },
+                utilityBill: { status: docs.utilityBillStatus, url: docs.utilityBill, rejectionReason: docs.utilityBillRejectionReason }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching verification progress:', error);
+        res.status(500).json({ error: 'Failed to fetch verification progress', message: error.message });
+    }
+};
+
+export const reviewSingleDocument = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { documentType, status, reason } = req.body; // status should be 'approved' or 'rejected'
+
+        if (!userId || !documentType || !status) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const validDocumentTypes = ['idFront', 'idBack', 'selfie', 'utilityBill'];
+        if (!validDocumentTypes.includes(documentType)) {
+            return res.status(400).json({ error: 'Invalid document type' });
+        }
+
+        if (status === DocumentVerificationStatus.REJECTED && !reason) {
+            return res.status(400).json({ error: 'Reason is required when rejecting a document' });
+        }
+
+        const docs = await UserVerificationDocuments.findByPk(userId);
+        const user = await User.findByPk(userId);
+
+        if (!docs || !user) {
+            return res.status(404).json({ error: 'Documentation or user not found' });
+        }
+
+        // Apply document status update
+        docs[`${documentType}Status`] = status;
+        if (status === DocumentVerificationStatus.REJECTED) {
+            docs[`${documentType}RejectionReason`] = reason;
+        } else {
+            docs[`${documentType}RejectionReason`] = null;
+        }
+        await docs.save();
+
+        // Notify user about the specific document
+        try {
+            await Notification.create({
+                userId: user.id,
+                type: status === DocumentVerificationStatus.APPROVED ? NotificationType.VERIFICATION_DOC_APPROVED : NotificationType.VERIFICATION_DOC_REJECTED,
+                title: status === DocumentVerificationStatus.APPROVED ? 'Documento Aprobado' : 'Documento Rechazado',
+                message: status === DocumentVerificationStatus.APPROVED 
+                    ? `Tu documento (${documentType}) fue aprobado.` 
+                    : `Tu documento (${documentType}) fue rechazado: ${reason}`,
+                metadata: { documentType },
+                isRead: false,
+                createdAt: new Date()
+            });
+        } catch (notificationError) {
+            console.error('Error creating notification:', notificationError);
+        }
+
+        // Check if ALL required documents are now APPROVED to update Global Status
+        const requiredDocs = ['idFrontStatus', 'idBackStatus', 'selfieStatus'];
+        if (user.userType === UserType.OWNER) requiredDocs.push('utilityBillStatus');
+
+        const allApproved = requiredDocs.every(docStatusField => docs[docStatusField] === DocumentVerificationStatus.APPROVED);
+        const anyRejected = requiredDocs.some(docStatusField => docs[docStatusField] === DocumentVerificationStatus.REJECTED);
+
+        if (allApproved) {
+            user.verificationStatus = VerificationStatus.VERIFIED;
+            await user.save();
+            // Optional: send generic "You are fully verified" notification
+            try {
+                await Notification.create({
+                    userId: user.id,
+                    type: NotificationType.VERIFICATION_APPROVED,
+                    title: '¡Identidad Verificada!',
+                    message: 'Todos tus documentos han sido validados exitosamente.',
+                    isRead: false,
+                    createdAt: new Date()
+                });
+            } catch (err) {}
+        } else if (anyRejected) {
+            // Keep IN_PROGRESS, but maybe flag some sort of pending revision?
+            // "REJECTED" at user level could mean "entire request denied", but we use individual docs for that.
+            user.verificationStatus = VerificationStatus.IN_PROGRESS;
+            await user.save();
+        } else {
+            // At least one is still IN_PROGRESS/PENDING
+            user.verificationStatus = VerificationStatus.IN_PROGRESS;
+            await user.save();
+        }
+
+        res.json({
+            message: `Document ${documentType} marked as ${status}`,
+            documentType,
+            status,
+            globalStatus: user.verificationStatus
+        });
+
+    } catch (error) {
+        console.error('Error reviewing document:', error);
+        res.status(500).json({ error: 'Failed to review document', message: error.message });
+    }
+};
+
 export default {
     submitVerificationDocuments,
     getVerificationDocuments,
     getPendingVerifications,
     approveVerification,
-    rejectVerification
+    rejectVerification,
+    submitSingleDocument,
+    getVerificationProgress,
+    reviewSingleDocument
 };

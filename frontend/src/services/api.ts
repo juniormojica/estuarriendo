@@ -13,6 +13,8 @@ import {
   Notification,
   VerificationDocuments,
   VerificationStatus,
+  DocumentVerificationStatus,
+  VerificationProgress,
   CreditBalance,
   CreditTransaction,
   ContactUnlock,
@@ -1044,6 +1046,45 @@ export const api = {
       console.error('❌ Error submitting verification:', error);
       const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Error al enviar los documentos.';
       return { success: false, message: errorMessage };
+    }
+  },
+
+  async submitSingleVerificationDocument(userId: string, documentType: string, documentUrl: string, idNumber?: string): Promise<{ success: boolean; message: string; status?: DocumentVerificationStatus }> {
+    try {
+      const response = await apiClient.post('/verification/document/submit', {
+        userId,
+        documentType,
+        documentUrl,
+        idNumber
+      });
+      return { success: true, message: 'Documento subido con éxito', status: response.data.status };
+    } catch (error: any) {
+      console.error('Error submitting single document:', error);
+      return { success: false, message: error.response?.data?.error || 'Error al subir el documento' };
+    }
+  },
+
+  async getVerificationProgress(userId: string): Promise<VerificationProgress | null> {
+    try {
+      const response = await apiClient.get<VerificationProgress>(`/verification/progress/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting verification progress:', error);
+      return null;
+    }
+  },
+
+  async reviewSingleVerificationDocument(userId: string, documentType: string, status: DocumentVerificationStatus, reason?: string): Promise<{ success: boolean; message: string; globalStatus?: VerificationStatus }> {
+    try {
+      const response = await apiClient.patch(`/verification/document/${userId}/review`, {
+        documentType,
+        status,
+        reason
+      });
+      return { success: true, message: 'Revisión guardada con éxito', globalStatus: response.data.globalStatus };
+    } catch (error: any) {
+      console.error('Error reviewing document:', error);
+      return { success: false, message: error.response?.data?.error || 'Error al guardar la revisión' };
     }
   },
 

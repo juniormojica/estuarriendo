@@ -26,7 +26,8 @@ export type PropertyType = 'pension' | 'habitacion' | 'apartamento' | 'aparta-es
 export type PropertyStatus = 'pending' | 'approved' | 'rejected';
 
 // Estado de Verificación de Usuario
-export type VerificationStatus = 'not_submitted' | 'pending' | 'verified' | 'rejected';
+export type VerificationStatus = 'not_submitted' | 'in_progress' | 'pending' | 'verified' | 'rejected';
+export type DocumentVerificationStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected';
 
 // Tipos de Plan de Suscripción
 export type PlanType = 'free' | 'premium';
@@ -107,10 +108,26 @@ export interface BillingDetails {
 }
 
 export interface VerificationDocuments {
-  idFront: string;  // base64
-  idBack: string;   // base64
-  selfie: string;   // base64
-  utilityBill: string; // base64
+  idFront: string;  // Cloudinary URL
+  idBack: string;   // Cloudinary URL
+  selfie: string;   // Cloudinary URL
+  utilityBill: string | null; // Cloudinary URL
+}
+
+export interface VerificationProgressItem {
+  status: DocumentVerificationStatus;
+  url: string | null;
+  rejectionReason: string | null;
+}
+
+export interface VerificationProgress {
+  globalStatus: VerificationStatus;
+  documents: {
+    idFront: VerificationProgressItem;
+    idBack: VerificationProgressItem;
+    selfie: VerificationProgressItem;
+    utilityBill: VerificationProgressItem;
+  }
 }
 
 /**
