@@ -1,5 +1,6 @@
 import { UserVerificationDocuments, User, UserVerification, Notification, UserIdentificationDetails, UserProfile } from '../models/index.js';
 import { VerificationStatus, DocumentVerificationStatus, NotificationType, UserType } from '../utils/enums.js';
+import { sseService } from '../services/sseService.js';
 
 import { Op } from 'sequelize';
 
@@ -94,6 +95,12 @@ export const submitVerificationDocuments = async (req, res) => {
             console.error('Error creating admin notifications:', error);
             // Continue execution, notification failure shouldn't block submission
         }
+
+        // Broadcast SSE event
+        sseService.broadcast('verification_submitted', {
+            userId: user.id,
+            userName: user.name
+        });
 
         res.status(201).json({
             message: 'Verification documents submitted successfully',
@@ -408,6 +415,13 @@ export const submitSingleDocument = async (req, res) => {
         } catch (notificationError) {
             console.error('Error creating notification:', notificationError);
         }
+
+        // Broadcast SSE event
+        sseService.broadcast('verification_doc_submitted', {
+            userId: user.id,
+            userName: user.name,
+            documentType
+        });
 
         res.json({
             message: 'Document submitted successfully',

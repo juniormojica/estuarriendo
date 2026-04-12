@@ -24,6 +24,8 @@ import PropertyReportsAdmin from '../components/admin/PropertyReportsAdmin';
 import { Menu } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 import { useScrollToTop } from '../hooks/useScrollToTop';
+import { useAdminSSE } from '../hooks/useAdminSSE';
+import toastLib from 'react-hot-toast';
 
 const AdminDashboard = () => {
     const dispatch = useAppDispatch();
@@ -190,6 +192,83 @@ const AdminDashboard = () => {
             setPendingVerifications(verificationsData);
         }
     };
+
+    // Instantiate SSE hook
+    const { isConnected } = useAdminSSE({
+        property_submitted: () => {
+            toastLib.custom((t) => (
+                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <span className="text-gray-800 dark:text-gray-200">🏠 Nueva propiedad pendiente de revisión</span>
+                    <button 
+                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
+                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                        Refrescar
+                    </button>
+                </div>
+            ), { duration: 5000 });
+        },
+        container_submitted: () => {
+            toastLib.custom((t) => (
+                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <span className="text-gray-800 dark:text-gray-200">🏢 Nueva pensión pendiente de revisión</span>
+                    <button 
+                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
+                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                        Refrescar
+                    </button>
+                </div>
+            ), { duration: 5000 });
+        },
+        verification_submitted: (data) => {
+            toastLib.custom((t) => (
+                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <span className="text-gray-800 dark:text-gray-200">🛡️ Documentos de verificación recibidos de <b>{data?.userName}</b></span>
+                    <button 
+                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
+                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                        Refrescar
+                    </button>
+                </div>
+            ), { duration: 5000 });
+        },
+        payment_submitted: (data) => {
+            toastLib.custom((t) => (
+                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <span className="text-gray-800 dark:text-gray-200">💳 Nueva solicitud de pago de <b>{data?.userName}</b></span>
+                    <button 
+                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
+                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                        Refrescar
+                    </button>
+                </div>
+            ), { duration: 5000 });
+        },
+        payment_auto_verified: (data) => {
+             toast.success(`💳 Pago verificado automáticamente para ${data?.userName}`);
+             refreshData();
+        },
+        student_request_created: () => {
+             toastLib.custom((t) => (
+                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <span className="text-gray-800 dark:text-gray-200">🎓 Nueva solicitud de estudiante</span>
+                    <button 
+                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
+                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                        Refrescar
+                    </button>
+                </div>
+            ), { duration: 4000 });
+        },
+        property_report_created: () => {
+            toast.error(`⚠️ Nueva propiedad reportada`);
+            refreshData();
+        }
+    });
 
     const handleApprove = async (id: string) => {
         try {
@@ -488,6 +567,7 @@ const AdminDashboard = () => {
                 verificationCount={pendingVerifications.length}
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
+                isConnected={isConnected}
             />
 
             <div className="flex-1 overflow-auto">

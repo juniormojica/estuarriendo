@@ -10,6 +10,7 @@ interface AdminSidebarProps {
     verificationCount?: number;
     isOpen?: boolean;
     onClose?: () => void;
+    isConnected?: boolean;
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -19,7 +20,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     paymentCount = 0,
     verificationCount = 0,
     isOpen = false,
-    onClose
+    onClose,
+    isConnected = false
 }) => {
     const menuItems = [
         {
@@ -94,7 +96,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div className="h-full flex flex-col">
             <div className="mb-8 flex justify-between items-center">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">Panel Admin</h2>
+                    <div className="flex items-center gap-2 mb-1">
+                        <h2 className="text-xl font-bold text-gray-900">Panel Admin</h2>
+                        <div 
+                            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] animate-pulse' : 'bg-red-500'}`} 
+                            title={isConnected ? "Conexión en tiempo real activa" : "Sin conexión en tiempo real"}
+                        />
+                    </div>
                     <p className="text-sm text-gray-500">EstuArriendo</p>
                 </div>
                 {onClose && (

@@ -1,6 +1,7 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { User, ActivityLog, CreditBalance, CreditTransaction, Subscription } from '../models/index.js';
 import { notifyPaymentVerified, notifyCreditPurchased } from '../services/notificationService.js';
+import { sseService } from '../services/sseService.js';
 import { Op } from 'sequelize';
 
 const getMpClient = () => {
@@ -180,6 +181,13 @@ async function processPaymentSuccess(externalReference, paymentId) {
             });
             console.log(`[MercadoPago Webhook] Granted Premium to ${user.id} until ${expiresAt}`);
         }
+
+        // Broadcast SSE event
+        sseService.broadcast('payment_auto_verified', {
+            userId: user.id,
+            userName: user.name,
+            planType
+        });
     } catch (error) {
         console.error(`[MercadoPago Webhook] Error processing payment ${paymentId}:`, error);
     }

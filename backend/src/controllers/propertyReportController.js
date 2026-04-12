@@ -1,6 +1,7 @@
 import { User, Property, ContactUnlock, PropertyReport, CreditBalance, CreditTransaction, ReportActivityLog } from '../models/index.js';
 import { PropertyReportStatus, CreditTransactionType, ContactUnlockStatus, NotificationType, ReportActivityAction } from '../utils/enums.js';
 import { Notification } from '../models/index.js';
+import { sseService } from '../services/sseService.js';
 import { sequelize } from '../config/database.js';
 
 /**
@@ -67,6 +68,13 @@ export const createPropertyReport = async (req, res) => {
         } catch (notifError) {
             console.error('Error sending admin notifications (report was still created):', notifError);
         }
+
+        // Broadcast SSE event
+        sseService.broadcast('property_report_created', {
+            reporterId,
+            propertyId,
+            reason
+        });
 
         res.status(201).json(report);
     } catch (error) {

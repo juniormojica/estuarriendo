@@ -1,6 +1,7 @@
 import containerService from '../services/containerService.js';
 import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
+import { sseService } from '../services/sseService.js';
 
 /**
  * Container Controller
@@ -215,6 +216,13 @@ export const createContainer = async (req, res) => {
             userId: ownerId,
             propertyId: container.id,
             timestamp: new Date()
+        });
+
+        // Broadcast SSE event
+        sseService.broadcast('container_submitted', {
+            containerId: container.id,
+            title: completeContainer.title,
+            ownerName: req.user ? req.user.name : 'Propietario'
         });
 
         res.status(201).json({

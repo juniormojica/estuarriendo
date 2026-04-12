@@ -1,5 +1,6 @@
 import { StudentRequest, User, City, Institution } from '../models/index.js';
 import { StudentRequestStatus } from '../utils/enums.js';
+import { sseService } from '../services/sseService.js';
 import { Op } from 'sequelize';
 
 /**
@@ -145,6 +146,11 @@ export const createStudentRequest = async (req, res) => {
             status: StudentRequestStatus.OPEN,
             createdAt: new Date(),
             updatedAt: new Date()
+        });
+
+        // Broadcast SSE event
+        sseService.broadcast('student_request_created', {
+            studentId: requestData.studentId
         });
 
         res.status(201).json(request);

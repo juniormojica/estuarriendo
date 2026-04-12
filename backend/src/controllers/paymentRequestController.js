@@ -1,6 +1,8 @@
 import { PaymentRequest, User } from '../models/index.js';
 import { PaymentRequestStatus, PlanType } from '../utils/enums.js';
 import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } from '../services/notificationService.js';
+import { sseService } from '../services/sseService.js';
+
 
 /**
  * PaymentRequest Controller
@@ -153,6 +155,14 @@ export const createPaymentRequest = async (req, res) => {
             console.error('Error sending admin notifications:', notifError);
             // Don't fail the request if notification fails
         }
+
+        // Broadcast SSE event
+        sseService.broadcast('payment_submitted', {
+            userId: user.id,
+            userName: user.name,
+            planType,
+            amount
+        });
 
         res.status(201).json({
             message: 'Payment request submitted successfully',
