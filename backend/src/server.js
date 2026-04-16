@@ -42,9 +42,9 @@ const PORT = process.env.PORT || 3001;
 const corsOptions = {
     origin: function (origin, callback) {
         // 1. Definimos los orígenes permitidos desde las variables de entorno o locales
-        const allowedOrigins = process.env.FRONTEND_URL
-            ? process.env.FRONTEND_URL.split(',')
-            : ['http://localhost:5173', 'https://localhost:5173'];
+        const allowedOrigins = process.env.ALLOWED_ORIGINS
+            ? process.env.ALLOWED_ORIGINS.split(',')
+            : ['http://localhost:5173', 'https://localhost:5173', 'http://localhost:3000'];
 
         // 2. Permitimos la petición si:
         // - No hay origin (como peticiones de servidor a servidor o Postman)

@@ -70,7 +70,7 @@ const UserProfile: React.FC = () => {
             }, 3000);
             return () => clearTimeout(timeout);
         }
-    }, [location.search, navigate]);
+    }, [location.search, router]);
 
     useEffect(() => {
         // Handle tab parameter
@@ -127,7 +127,7 @@ const UserProfile: React.FC = () => {
             setLoading(false);
         };
         loadUserAndPayment();
-    }, [location.search, authUser, authLoading, navigate, reset]);
+    }, [location.search, authUser, authLoading, router, reset]);
 
     // Fetch credits for tenant
     useEffect(() => {

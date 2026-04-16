@@ -60,7 +60,7 @@ const RegistrationPage = () => {
                 router.push('/');
             }
         }
-    }, [user, navigate]);
+    }, [user, router]);
 
     const handleOwnerInputChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
         const { name, value } = e.target;

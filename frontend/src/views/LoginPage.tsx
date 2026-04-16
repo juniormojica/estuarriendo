@@ -45,7 +45,7 @@ const LoginPage = () => {
                 router.push('/');
             }
         }
-    }, [user, navigate]);
+    }, [user, router]);
 
     const onSubmit = async (data: LoginFormValues) => {
         await dispatch(loginUser({ email: data.email, password: data.password }));

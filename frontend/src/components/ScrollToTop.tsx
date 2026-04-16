@@ -1,9 +1,10 @@
 'use client';
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const ScrollToTop = () => {
-    const { pathname, search } = usePathname();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
     useEffect(() => {
         // Use timeout to ensure it runs after DOM elements have painted
@@ -14,7 +15,7 @@ const ScrollToTop = () => {
                 behavior: 'instant'
             });
         }, 0);
-    }, [pathname, search]);
+    }, [pathname, searchParams]);
 
     return null;
 };

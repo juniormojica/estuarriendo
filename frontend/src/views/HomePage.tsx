@@ -29,13 +29,13 @@ const HomePage: React.FC = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    const state = (null as any) as { scrollToSearch?: boolean } | null;
-    if (state?.scrollToSearch) {
+    // Scroll to search section if URL contains #search
+    if (typeof window !== 'undefined' && window.location.hash === '#search') {
       setTimeout(() => {
         searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     }
-  }, [location]);
+  }, []);
 
   const handleFiltersChange = (filters: SearchFilters) => {
     setSelectedCity(filters.city);
@@ -123,7 +123,7 @@ const HomePage: React.FC = () => {
                   onClick={() => {
                     setSelectedCity(undefined);
                     dispatch(setFilters({}));
-                    dispatch(fetchProperties());
+                    dispatch(fetchProperties({}));
                   }}
                   className="px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-all min-h-[44px] active:scale-95"
                 >

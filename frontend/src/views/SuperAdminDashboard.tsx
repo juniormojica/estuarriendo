@@ -25,7 +25,7 @@ const SuperAdminDashboard: React.FC = () => {
         if (!user || user.userType !== 'superAdmin') {
             router.push('/');
         }
-    }, [user, navigate]);
+    }, [user, router]);
 
     if (!user || user.userType !== 'superAdmin') {
         return null;
