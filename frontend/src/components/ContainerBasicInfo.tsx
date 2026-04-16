@@ -1,7 +1,8 @@
+'use client';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 import { Home, ArrowLeft, ArrowRight } from 'lucide-react';
 import { containerBasicInfoSchema, type ContainerBasicInfoData } from '../lib/schemas/container.schema';
 import { FormInput, FormTextarea, FormNumericInput } from './forms';
@@ -15,9 +16,9 @@ interface ContainerBasicInfoProps {
 }
 
 const ContainerBasicInfo: React.FC<ContainerBasicInfoProps> = ({ onNext, onBack, initialData, propertyType: propPropertyType }) => {
-    const location = useLocation();
-    // Prioritize prop over location.state, with fallback to 'pension'
-    const propertyType = propPropertyType || location.state?.propertyType || 'pension';
+    const pathname = usePathname();
+    // Prioritize prop over (null as any), with fallback to 'pension'
+    const propertyType = propPropertyType || (null as any)?.propertyType || 'pension';
 
     const {
         register,

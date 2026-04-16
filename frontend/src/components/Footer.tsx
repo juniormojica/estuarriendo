@@ -1,5 +1,6 @@
+'use client';
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Home, Mail, Phone, MapPin, Facebook, Instagram, Twitter, Heart } from 'lucide-react';
 
 const Footer: React.FC = () => {
@@ -56,22 +57,22 @@ const Footer: React.FC = () => {
                         <h3 className="text-white font-semibold mb-4">Enlaces Rápidos</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <Link to="/" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/" className="hover:text-emerald-500 transition-colors">
                                     Inicio
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/publicar" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/publicar" className="hover:text-emerald-500 transition-colors">
                                     Publicar Propiedad
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/favoritos" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/favoritos" className="hover:text-emerald-500 transition-colors">
                                     Mis Favoritos
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/sobre-nosotros" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/sobre-nosotros" className="hover:text-emerald-500 transition-colors">
                                     Sobre Nosotros
                                 </Link>
                             </li>
@@ -83,22 +84,22 @@ const Footer: React.FC = () => {
                         <h3 className="text-white font-semibold mb-4">Para Estudiantes</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <Link to="/como-buscar" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/como-buscar" className="hover:text-emerald-500 transition-colors">
                                     Cómo Buscar Alojamiento
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/consejos-seguridad" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/consejos-seguridad" className="hover:text-emerald-500 transition-colors">
                                     Consejos de Seguridad
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/preguntas-frecuentes" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/preguntas-frecuentes" className="hover:text-emerald-500 transition-colors">
                                     Preguntas Frecuentes
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/terminos" className="hover:text-emerald-500 transition-colors">
+                                <Link href="/terminos" className="hover:text-emerald-500 transition-colors">
                                     Términos y Condiciones
                                 </Link>
                             </li>
@@ -139,15 +140,15 @@ const Footer: React.FC = () => {
 
                         {/* Legal Links */}
                         <div className="flex flex-wrap justify-center gap-4 text-sm">
-                            <Link to="/privacidad" className="hover:text-emerald-500 transition-colors">
+                            <Link href="/privacidad" className="hover:text-emerald-500 transition-colors">
                                 Política de Privacidad
                             </Link>
                             <span className="text-gray-600">•</span>
-                            <Link to="/terminos" className="hover:text-emerald-500 transition-colors">
+                            <Link href="/terminos" className="hover:text-emerald-500 transition-colors">
                                 Términos de Uso
                             </Link>
                             <span className="text-gray-600">•</span>
-                            <Link to="/cookies" className="hover:text-emerald-500 transition-colors">
+                            <Link href="/cookies" className="hover:text-emerald-500 transition-colors">
                                 Política de Cookies
                             </Link>
                         </div>

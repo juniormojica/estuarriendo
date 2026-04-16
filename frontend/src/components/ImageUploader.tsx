@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useRef, DragEvent } from 'react';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { directUpload, CloudinaryFolder, CLOUDINARY_FOLDERS } from '../services/directUploadService';

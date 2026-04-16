@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { Users, Search, RefreshCw, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { api } from '../../services/api';

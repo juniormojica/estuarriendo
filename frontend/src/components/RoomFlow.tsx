@@ -1,5 +1,6 @@
+'use client';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter, redirect } from 'next/navigation';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -64,7 +65,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
     targetOwnerId,
     onAdminComplete
 }) => {
-    const navigate = useNavigate();
+    const router = useRouter();
     const dispatch = useAppDispatch();
     const { items: amenities } = useAppSelector((state) => state.amenities);
 
@@ -295,7 +296,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                         Tu habitación ha sido enviada exitosamente. Nuestro equipo la revisará y será publicada pronto.
                     </p>
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => router.push('/dashboard')}
                         className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
                     >
                         Volver al Dashboard

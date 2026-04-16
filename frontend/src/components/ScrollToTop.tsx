@@ -1,8 +1,9 @@
+'use client';
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 
 const ScrollToTop = () => {
-    const { pathname, search } = useLocation();
+    const { pathname, search } = usePathname();
 
     useEffect(() => {
         // Use timeout to ensure it runs after DOM elements have painted

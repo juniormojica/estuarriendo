@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { User, IdType } from '../../types';
 import { X, User as UserIcon, Mail, Phone, MessageCircle, Shield, CreditCard, Calendar, CheckCircle, XCircle, FileText, Edit2, Save, ArrowUpCircle, XOctagon, Ban, Power } from 'lucide-react';

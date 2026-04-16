@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { Calendar, DollarSign, Home, MapPin, Clock, FileText, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 import { mockAmenities } from '../data/mockData';

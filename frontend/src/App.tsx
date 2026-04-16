@@ -1,5 +1,6 @@
+'use client';
 import { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { getCurrentUser } from './store/slices/authSlice';

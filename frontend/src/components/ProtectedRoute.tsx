@@ -1,5 +1,6 @@
+'use client';
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { usePathname, redirect } from 'next/navigation';
 import { useAppSelector } from '../store/hooks';
 import authService from '../services/authService';
 
@@ -19,7 +20,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     allowedUserTypes
 }) => {
     const { user: reduxUser, loading } = useAppSelector((state) => state.auth);
-    const location = useLocation();
+    const pathname = usePathname();
 
     // Fallback to localStorage if Redux user is null
     const storedUser = authService.getStoredUser();

@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { SystemConfig } from '../../types';
 import { Save, Settings, List, MapPin, Building, GraduationCap, Home } from 'lucide-react';

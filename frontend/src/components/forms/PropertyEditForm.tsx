@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { Save, AlertCircle, X } from 'lucide-react';
 import { Property, PropertyTypeEntity, Institution } from '../../types';

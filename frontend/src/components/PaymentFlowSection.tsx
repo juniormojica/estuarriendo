@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { User, PaymentRequest } from '../types';
 import { Clock, AlertCircle, Loader } from 'lucide-react';

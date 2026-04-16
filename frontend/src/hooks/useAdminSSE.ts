@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAppSelector } from '../store/hooks';
 
@@ -31,7 +32,7 @@ export const useAdminSSE = (handlers: SSEEventHandlers) => {
         eventSourceRef.current.close();
       }
 
-      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       const eventSource = new EventSource(`${baseURL}/sse/admin?token=${token}`);
       eventSourceRef.current = eventSource;
 

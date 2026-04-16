@@ -1,5 +1,6 @@
+'use client';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter, redirect } from 'next/navigation';
 import { Building2, Home, Hotel, DoorOpen, ArrowLeft } from 'lucide-react';
 import type { PropertyType } from '../types';
 
@@ -9,7 +10,7 @@ interface PropertyTypeSelectorStepProps {
 }
 
 const PropertyTypeSelectorStep: React.FC<PropertyTypeSelectorStepProps> = ({ onSelect, selectedType }) => {
-    const navigate = useNavigate();
+    const router = useRouter();
 
     const propertyTypes = [
         {
@@ -47,7 +48,7 @@ const PropertyTypeSelectorStep: React.FC<PropertyTypeSelectorStepProps> = ({ onS
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <button
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => router.push('/dashboard')}
                     className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />

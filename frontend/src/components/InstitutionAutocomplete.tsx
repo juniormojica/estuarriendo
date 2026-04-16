@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GraduationCap, Building2, School, X, Loader2 } from 'lucide-react';
 import { searchInstitutions, getInstitutions, Institution } from '../services/institutionService';

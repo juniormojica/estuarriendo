@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { Upload, X, CheckCircle, AlertCircle, Loader, FileText, Camera, Receipt, Clock } from 'lucide-react';
 import { VerificationProgress, DocumentVerificationStatus, VerificationStatus } from '../types';

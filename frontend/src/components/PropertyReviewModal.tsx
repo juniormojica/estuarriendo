@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { X, Check, Trash2, ChevronLeft, ChevronRight, MapPin, Home, Maximize, User, Phone, Mail, Calendar, DollarSign, Users, Coffee, Sofa, CheckCircle, XCircle, Building, Shield } from 'lucide-react';
 import { Property } from '../types';

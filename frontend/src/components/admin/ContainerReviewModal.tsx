@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { Property, PropertyUnit } from '../../types';
 import { X, Check, CheckCircle, XCircle, Home, MapPin, Wifi, Layout, Users, Bed, BedDouble, User, Phone, Mail, Calendar, DollarSign, Coffee, Shield, Sofa, Building, GraduationCap } from 'lucide-react';

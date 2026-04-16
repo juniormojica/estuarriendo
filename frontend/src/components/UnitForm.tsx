@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import {
     X, Upload, Trash2, Wind, Snowflake, Wifi, Tv, Bed, Bath, Briefcase,

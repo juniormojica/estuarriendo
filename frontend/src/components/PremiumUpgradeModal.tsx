@@ -1,6 +1,7 @@
+'use client';
 import React, { useEffect } from 'react';
 import { X, CheckCircle, Star, Image as ImageIcon, Zap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 interface PremiumUpgradeModalProps {
     isOpen: boolean;
@@ -94,7 +95,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                             <h4 className="text-sm font-semibold text-gray-900 text-center">Elige tu plan</h4>
                             <div className="grid grid-cols-3 gap-2">
                                 <Link
-                                    to="/perfil?tab=billing&plan=weekly"
+                                    href="/perfil?tab=billing&plan=weekly"
                                     className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all"
                                 >
                                     <span className="text-xs text-gray-600 mb-1">Semanal</span>
@@ -102,7 +103,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                                     <span className="text-xs text-gray-500">7 días</span>
                                 </Link>
                                 <Link
-                                    to="/perfil?tab=billing&plan=monthly"
+                                    href="/perfil?tab=billing&plan=monthly"
                                     className="flex flex-col items-center p-3 border-2 border-emerald-600 bg-emerald-50 rounded-lg relative"
                                 >
                                     <span className="absolute -top-2 bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">Popular</span>
@@ -111,7 +112,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ isOpen, onClo
                                     <span className="text-xs text-emerald-600">30 días</span>
                                 </Link>
                                 <Link
-                                    to="/perfil?tab=billing&plan=quarterly"
+                                    href="/perfil?tab=billing&plan=quarterly"
                                     className="flex flex-col items-center p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all"
                                 >
                                     <span className="text-xs text-gray-600 mb-1">Trimestral</span>

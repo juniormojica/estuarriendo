@@ -1,11 +1,12 @@
+'use client';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter, redirect } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchNotifications, markAsRead, markAllAsRead, deleteNotification } from '../store/slices/notificationsSlice';
 
 const NotificationBell: React.FC = () => {
-    const navigate = useNavigate();
+    const router = useRouter();
     const dispatch = useAppDispatch();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -43,7 +44,7 @@ const NotificationBell: React.FC = () => {
             if (!notification.read) {
                 dispatch(markAsRead(String(notification.id)));
             }
-            navigate('/mis-propiedades');
+            router.push('/mis-propiedades');
             setIsOpen(false);
             return;
         }
@@ -54,35 +55,35 @@ const NotificationBell: React.FC = () => {
         // Navigate based on notification type
         switch (notification.type) {
             case 'payment_verified':
-                navigate('/mi-perfil?tab=billing');
+                router.push('/mi-perfil?tab=billing');
                 break;
             case 'payment_rejected':
-                navigate('/mi-perfil?tab=billing');
+                router.push('/mi-perfil?tab=billing');
                 break;
             case 'payment_submitted':
-                navigate('/admin?section=payments');
+                router.push('/admin?section=payments');
                 break;
             case 'property_submitted':
-                navigate('/admin?section=pending');
+                router.push('/admin?section=pending');
                 break;
             case 'property_approved':
-                navigate('/mis-propiedades');
+                router.push('/mis-propiedades');
                 break;
             case 'property_rejected':
                 if (notification.propertyId) {
-                    navigate(`/editar-propiedad/${notification.propertyId}`);
+                    router.push(`/editar-propiedad/${notification.propertyId}`);
                 } else {
-                    navigate('/mis-propiedades');
+                    router.push('/mis-propiedades');
                 }
                 break;
             case 'verification_submitted':
-                navigate('/admin?section=verifications');
+                router.push('/admin?section=verifications');
                 break;
             case 'verification_approved':
-                navigate('/mi-perfil');
+                router.push('/mi-perfil');
                 break;
             case 'verification_rejected':
-                navigate('/mi-perfil?tab=verification');
+                router.push('/mi-perfil?tab=verification');
                 break;
             default:
                 break;

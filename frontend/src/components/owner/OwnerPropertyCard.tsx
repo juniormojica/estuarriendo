@@ -1,5 +1,7 @@
+'use client';
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, redirect } from 'next/navigation';
 import {
     MapPin, Edit, Trash2, Users,
     XCircle, ChevronDown, ChevronUp,
@@ -26,7 +28,7 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
     isExpanded = false,
     onToggleExpand
 }) => {
-    const navigate = useNavigate();
+    const router = useRouter();
     const [interestCount, setInterestCount] = useState(0);
 
     useEffect(() => {
@@ -97,7 +99,7 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
 
     return (
         <div
-            onClick={() => navigate(`/propiedad/${property.id}`)}
+            onClick={() => router.push(`/propiedad/${property.id}`)}
             className={`bg-white border rounded-lg transition-all cursor-pointer ${isExpanded ? 'border-primary-500 ring-1 ring-primary-500 shadow-md' : 'border-gray-200 hover:shadow-lg hover:border-primary-300'
                 }`}>
             <div className="p-5">
@@ -175,7 +177,7 @@ const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
                     <div className="flex items-center gap-2">
                         {/* Edit Button */}
                         <Link
-                            to={`/editar-propiedad/${property.id}`}
+                            href={`/editar-propiedad/${property.id}`}
                             className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                         >
                             <Edit size={14} className="mr-1.5" />

@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useMemo } from 'react';
 import PropertyCard from './PropertyCard';
 import { useAppDispatch, useAppSelector } from '../store/hooks';

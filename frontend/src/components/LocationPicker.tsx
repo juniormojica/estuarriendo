@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Search, AlertCircle, Loader } from 'lucide-react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
@@ -34,7 +35,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string>('');
 
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     // Default center (Colombia)
     const defaultCenter = { lat: 4.5709, lng: -74.2973 };

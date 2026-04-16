@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { X, Check, XCircle, ChevronRight, User as UserIcon, Calendar, Mail, AlertTriangle, ZoomIn, Loader, Clock } from 'lucide-react';
 import { User, VerificationProgress, DocumentVerificationStatus } from '../../types';

@@ -1,5 +1,7 @@
+'use client';
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, redirect } from 'next/navigation';
 import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Property } from '../types';
@@ -20,7 +22,7 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRemoveButton = false, onRemoveFavorite }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { items: amenities } = useAppSelector((state) => state.amenities);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -105,9 +107,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
     e.stopPropagation();
 
     if (!canContact) {
-      navigate('/perfil?tab=billing');
+      router.push('/perfil?tab=billing');
     } else {
-      navigate(`/propiedad/${property.id}`);
+      router.push(`/propiedad/${property.id}`);
     }
   };
 
@@ -118,7 +120,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
       transition={{ duration: 0.3, delay: index * 0.1 }}
       className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
     >
-      <Link to={`/propiedad/${property.id}`} className="relative block overflow-hidden">
+      <Link href={`/propiedad/${property.id}`} className="relative block overflow-hidden">
         {/* Image - Responsive aspect ratio */}
         <div className="aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden">
           <img
@@ -184,7 +186,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
 
       {/* Content Section */}
       <div className="p-3 sm:p-4 md:p-5 flex flex-col flex-grow">
-        <Link to={`/propiedad/${property.id}`} className="block">
+        <Link href={`/propiedad/${property.id}`} className="block">
           {/* Title */}
           <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2 mb-2">
             {property.title}

@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { ActivityLog, ActivityStatistics, ActivityLogType } from '../../types';
 import { api } from '../../services/api';

@@ -1,98 +1,72 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { cn } from '../lib/utils';
+'use client';
+
+import Image from 'next/image';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Image as ImageIcon } from 'lucide-react';
 
-interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
-    src: string;
-    alt: string;
-    className?: string;
-    fallbackSrc?: string;
+interface LazyImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+  fallbackSrc?: string;
+  width?: number;
+  height?: number;
+  fill?: boolean;
+  priority?: boolean;
+  sizes?: string;
 }
 
 const LazyImage: React.FC<LazyImageProps> = ({
-    src,
-    alt,
-    className,
-    fallbackSrc = 'https://via.placeholder.com/400x300?text=No+Image',
-    ...props
+  src,
+  alt,
+  className,
+  fallbackSrc = '/placeholder-property.webp',
+  width,
+  height,
+  fill = true,
+  priority = false,
+  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
 }) => {
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [error, setError] = useState(false);
-    const [shouldLoad, setShouldLoad] = useState(false);
-    const imgRef = useRef<HTMLImageElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
-    useEffect(() => {
-        // Fallback if IntersectionObserver is not supported
-        if (!('IntersectionObserver' in window)) {
-            setShouldLoad(true);
-            return;
-        }
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    setShouldLoad(true);
-                    observer.disconnect();
-                }
-            },
-            {
-                rootMargin: '200px', // Pre-load when 200px away from viewport
-                threshold: 0.01
-            }
-        );
-
-        if (imgRef.current) {
-            observer.observe(imgRef.current);
-        }
-
-        return () => {
-            observer.disconnect();
-        };
-    }, []);
-
-    return (
-        <div
-            ref={imgRef}
-            className={cn(
-                "relative overflow-hidden bg-gray-100",
-                className
-            )}
-        >
-            {/* Skeleton Loading State */}
-            {(!isLoaded || !shouldLoad) && !error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-200 animate-pulse">
-                    <ImageIcon className="w-8 h-8 text-gray-400" />
-                </div>
-            )}
-
-            {/* Error State */}
-            {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 border border-gray-200">
-                    <span className="text-xs text-gray-400 text-center px-2 py-1">Error al cargar imagen</span>
-                </div>
-            )}
-
-            {/* The Actual Image */}
-            {shouldLoad && (
-                <img
-                    src={error ? fallbackSrc : src}
-                    alt={alt}
-                    className={cn(
-                        "w-full h-full object-cover transition-opacity duration-500 ease-in-out",
-                        isLoaded ? "opacity-100" : "opacity-0",
-                        className
-                    )}
-                    onLoad={() => setIsLoaded(true)}
-                    onError={() => {
-                        setError(true);
-                        setIsLoaded(true);
-                    }}
-                    loading="lazy" // Native fallback
-                    {...props}
-                />
-            )}
+  return (
+    <div className={cn("relative overflow-hidden bg-gray-100", className)}>
+      {!isLoaded && !error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 animate-pulse z-10">
+          <ImageIcon className="w-8 h-8 text-gray-400" />
         </div>
-    );
+      )}
+
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 border border-gray-200 z-10">
+          <span className="text-xs text-gray-400 text-center px-2 py-1">
+            Error al cargar imagen
+          </span>
+        </div>
+      )}
+
+      <Image
+        src={error ? fallbackSrc : src}
+        alt={alt}
+        fill={fill}
+        width={!fill ? width : undefined}
+        height={!fill ? height : undefined}
+        sizes={sizes}
+        priority={priority}
+        className={cn(
+          "object-cover transition-opacity duration-500",
+          isLoaded ? "opacity-100" : "opacity-0"
+        )}
+        onLoad={() => setIsLoaded(true)}
+        onError={() => {
+          setError(true);
+          setIsLoaded(true);
+        }}
+      />
+    </div>
+  );
 };
 
 export default LazyImage;
