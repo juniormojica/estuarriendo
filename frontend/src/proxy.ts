@@ -16,7 +16,7 @@ const protectedPaths = [
   '/super-admin',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get('estuarriendo_token')?.value;
   const { pathname } = request.nextUrl;
 
