@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname, redirect } from 'next/navigation';
+import Image from 'next/image';
+import { useRouter, usePathname } from 'next/navigation';
 import { Plus, Menu, X } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
@@ -124,7 +125,14 @@ const Header: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
-            <img src="/logo.svg" alt="EstuArriendo" className="h-8 sm:h-10" />
+            <Image
+              src="/logo.svg"
+              alt="EstuArriendo"
+              width={140}
+              height={40}
+              className="h-8 sm:h-10 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
