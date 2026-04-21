@@ -1,6 +1,8 @@
 import { PaymentRequest, User } from '../models/index.js';
 import { PaymentRequestStatus, PlanType } from '../utils/enums.js';
 import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } from '../services/notificationService.js';
+import { sseService } from '../services/sseService.js';
+
 
 /**
  * PaymentRequest Controller
@@ -82,11 +84,16 @@ export const getUserPaymentRequests = async (req, res) => {
 // Create payment request
 export const createPaymentRequest = async (req, res) => {
     try {
-        const { userId, amount, planType, planDuration, referenceCode, proofImageUrl, proofImagePublicId } = req.body;
+        const { userId, amount, planType, planDuration, referenceCode, proofImageUrl, proofImagePublicId, paymentMethod, mercadoPagoPaymentId } = req.body;
 
         // Validate required fields
-        if (!userId || !amount || !planType || !planDuration || !referenceCode || !proofImageUrl) {
-            return res.status(400).json({ error: 'All fields are required' });
+        if (!userId || !amount || !planType || planDuration === undefined || planDuration === null || !referenceCode) {
+            return res.status(400).json({ error: 'Faltan campos requeridos' });
+        }
+
+        // If it's a bank transfer, proofImageUrl is required
+        if (paymentMethod !== 'mercado_pago' && !proofImageUrl) {
+            return res.status(400).json({ error: 'El comprobante de pago es requerido para transferencias' });
         }
 
         // Verify user exists
@@ -116,9 +123,11 @@ export const createPaymentRequest = async (req, res) => {
             planType,
             planDuration,
             referenceCode,
-            proofImageUrl: proofImageUrl,
+            proofImageUrl: proofImageUrl || null,
             proofImagePublicId: proofImagePublicId || null,
             status: PaymentRequestStatus.PENDING,
+            paymentMethod: paymentMethod || 'bank_transfer',
+            mercadoPagoPaymentId: mercadoPagoPaymentId || null,
             createdAt: new Date()
         });
 
@@ -146,6 +155,14 @@ export const createPaymentRequest = async (req, res) => {
             console.error('Error sending admin notifications:', notifError);
             // Don't fail the request if notification fails
         }
+
+        // Broadcast SSE event
+        sseService.broadcast('payment_submitted', {
+            userId: user.id,
+            userName: user.name,
+            planType,
+            amount
+        });
 
         res.status(201).json({
             message: 'Payment request submitted successfully',
@@ -186,8 +203,6 @@ export const verifyPaymentRequest = async (req, res) => {
 
         const user = request.user;
         const now = new Date();
-        const expiresAt = new Date(now);
-        expiresAt.setDate(expiresAt.getDate() + request.planDuration);
 
         // 1. Update payment request status
         await request.update({
@@ -195,27 +210,122 @@ export const verifyPaymentRequest = async (req, res) => {
             processedAt: now
         });
 
-        // 2. Create new Subscription record
-        const { Subscription } = await import('../models/index.js');
-        const subscription = await Subscription.create({
-            userId: user.id,
-            plan: PlanType.PREMIUM,
-            planType: request.planType,
-            startedAt: now,
-            expiresAt: expiresAt,
-            paymentRequestId: request.id,
-            status: 'active',
-            createdAt: now
-        });
+        // Determine if it's a credit plan or owner premium plan
+        const isCreditPlan = ['5_credits', '10_credits', '20_credits'].includes(request.planType);
 
-        // 3. Update User's plan (denormalized for quick access)
-        await user.update({
-            plan: PlanType.PREMIUM,
-            premiumSince: user.premiumSince || now,
-            updatedAt: now
-        });
+        let subscriptionDetails = null;
 
-        // 4. Create activity log
+        if (isCreditPlan) {
+            // -- ALGORITHM FOR TENANT CREDITS --
+            const { CreditBalance, CreditTransaction, Subscription } = await import('../models/index.js');
+
+            let balance = await CreditBalance.findOne({ where: { userId: user.id } });
+
+            if (!balance) {
+                balance = await CreditBalance.create({
+                    userId: user.id,
+                    availableCredits: 0,
+                    totalPurchased: 0,
+                    totalUsed: 0,
+                    totalRefunded: 0
+                });
+            }
+
+            let creditsToAdd = 0;
+            let unlimitedUntil = balance.unlimitedUntil;
+
+            if (request.planType === '5_credits') creditsToAdd = 5;
+            else if (request.planType === '10_credits') creditsToAdd = 10;
+            else if (request.planType === '20_credits') creditsToAdd = 20;
+
+            if (creditsToAdd > 0) {
+                // If they had unlimited and now buy credits (rare), or just buying more credits
+                if (balance.availableCredits !== -1) {
+                    balance.availableCredits += creditsToAdd;
+                }
+                balance.totalPurchased += creditsToAdd;
+            } else if (creditsToAdd === -1) {
+                balance.availableCredits = -1;
+                balance.unlimitedUntil = unlimitedUntil;
+            }
+
+            await balance.save();
+
+            // Log the transaction
+            await CreditTransaction.create({
+                userId: user.id,
+                type: 'purchase',
+                amount: creditsToAdd,
+                balanceAfter: balance.availableCredits,
+                description: `Compra de plan de créditos: ${request.planType}`,
+                referenceType: 'payment_request',
+                referenceId: request.id
+            });
+
+            // We can also create a subscription record to keep track of the purchase history uniformly
+            const expiresAt = new Date(now);
+            expiresAt.setDate(expiresAt.getDate() + request.planDuration);
+
+            const subscription = await Subscription.create({
+                userId: user.id,
+                plan: PlanType.FREE, // Tenants stay free but get credits
+                planType: request.planType,
+                startedAt: now,
+                expiresAt: expiresAt,
+                paymentRequestId: request.id,
+                status: 'active',
+                createdAt: now
+            });
+
+            subscriptionDetails = subscription;
+
+            // Notify user of credit purchase
+            const { notifyCreditPurchased } = await import('../services/notificationService.js');
+            if (notifyCreditPurchased) {
+                await notifyCreditPurchased({
+                    userId: user.id,
+                    userName: user.name,
+                    planType: request.planType,
+                    credits: creditsToAdd
+                });
+            }
+        } else {
+            // -- ALGORITHM FOR OWNER PREMIUM PLANS (Weekly, Monthly, Quarterly) --
+            const expiresAt = new Date(now);
+            expiresAt.setDate(expiresAt.getDate() + request.planDuration);
+
+            // 2. Create new Subscription record
+            const { Subscription } = await import('../models/index.js');
+            const subscription = await Subscription.create({
+                userId: user.id,
+                plan: PlanType.PREMIUM,
+                planType: request.planType,
+                startedAt: now,
+                expiresAt: expiresAt,
+                paymentRequestId: request.id,
+                status: 'active',
+                createdAt: now
+            });
+
+            subscriptionDetails = subscription;
+
+            // 3. Update User's plan
+            await user.update({
+                plan: PlanType.PREMIUM,
+                premiumSince: user.premiumSince || now,
+                updatedAt: now
+            });
+
+            // 5. Send notification to user
+            await notifyPaymentVerified({
+                userId: user.id,
+                userName: user.name,
+                planType: request.planType,
+                expiresAt: subscription.expiresAt
+            });
+        }
+
+        // 4. Create activity log (for both)
         const { ActivityLog } = await import('../models/index.js');
         await ActivityLog.create({
             type: 'payment_verified',
@@ -224,22 +334,14 @@ export const verifyPaymentRequest = async (req, res) => {
             timestamp: now
         });
 
-        // 5. Send notification to user
-        await notifyPaymentVerified({
-            userId: user.id,
-            userName: user.name,
-            planType: request.planType,
-            expiresAt: subscription.expiresAt
-        });
-
         res.json({
-            message: 'Payment verified and premium plan activated',
-            subscription: {
-                id: subscription.id,
-                plan: subscription.plan,
-                planType: subscription.planType,
-                expiresAt: subscription.expiresAt
-            },
+            message: 'Payment verified and plan activated',
+            subscription: subscriptionDetails ? {
+                id: subscriptionDetails.id,
+                plan: subscriptionDetails.plan,
+                planType: subscriptionDetails.planType,
+                expiresAt: subscriptionDetails.expiresAt
+            } : null,
             user: {
                 id: user.id,
                 plan: user.plan,

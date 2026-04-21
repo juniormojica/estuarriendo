@@ -1,10 +1,10 @@
 import React from 'react';
-import LoadingSpinner from './LoadingSpinner';
+import EstuSpinner from './EstuSpinner';
 
 const PageLoadingFallback: React.FC = () => {
     return (
         <div className="flex items-center justify-center min-h-[60vh]">
-            <LoadingSpinner text="Cargando página..." />
+            <EstuSpinner size="lg" showPhrases={true} />
         </div>
     );
 };

@@ -1,5 +1,6 @@
+'use client';
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Home, X, Save } from 'lucide-react';
@@ -12,11 +13,11 @@ import ImageUploader from '../ImageUploader';
 const unitSchema = z.object({
     title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
     description: z.string().optional(),
-    monthlyRent: z.number().min(10000, 'El precio mensual no puede ser menor a $10.000'),
-    deposit: z.number().optional().nullable(),
-    area: z.number().optional().nullable(),
+    monthlyRent: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number({ required_error: 'Requerido' }).min(10000, 'El precio mensual no puede ser menor a $10.000')),
+    deposit: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number().optional()),
+    area: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number().optional()),
     roomType: z.enum(['individual', 'shared']),
-    bedsInRoom: z.number().min(1, 'Debe haber al menos 1 cama').optional().nullable(),
+    bedsInRoom: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number().min(1, 'Debe haber al menos 1 cama').optional()),
 });
 
 type UnitFormData = z.infer<typeof unitSchema>;
@@ -40,6 +41,7 @@ const UnitEditForm: React.FC<UnitEditFormProps> = ({
 
     const {
         register,
+        control,
         handleSubmit,
         formState: { errors },
     } = useForm<UnitFormData>({
@@ -47,11 +49,11 @@ const UnitEditForm: React.FC<UnitEditFormProps> = ({
         defaultValues: unit ? {
             title: unit.title,
             description: unit.description || '',
-            monthlyRent: unit.monthlyRent,
-            deposit: unit.deposit,
-            area: unit.area,
+            monthlyRent: unit.monthlyRent ? Number(unit.monthlyRent) : 0,
+            deposit: unit.deposit ? Number(unit.deposit) : undefined,
+            area: unit.area ? Number(unit.area) : undefined,
             roomType: unit.roomType || 'individual',
-            bedsInRoom: unit.bedsInRoom,
+            bedsInRoom: unit.bedsInRoom ? Number(unit.bedsInRoom) : 1,
         } : {
             title: '',
             description: '',
@@ -141,22 +143,36 @@ const UnitEditForm: React.FC<UnitEditFormProps> = ({
                             </div>
 
                             <div>
-                                <FormCurrencyInput
-                                    label="Precio Mensual"
-                                    placeholder="Valor del arriendo mensual"
-                                    required
-                                    min={10000}
-                                    {...register('monthlyRent', { valueAsNumber: true })}
-                                    error={errors.monthlyRent}
+                                <Controller
+                                    name="monthlyRent"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <FormCurrencyInput
+                                            label="Precio Mensual"
+                                            placeholder="Valor del arriendo mensual"
+                                            required
+                                            min={10000}
+                                            value={field.value}
+                                            onValueChange={(val) => field.onChange(val || 0)}
+                                            error={errors.monthlyRent}
+                                        />
+                                    )}
                                 />
                             </div>
 
                             <div>
-                                <FormCurrencyInput
-                                    label="Depósito (Opcional)"
-                                    placeholder="Valor del depósito"
-                                    {...register('deposit', { valueAsNumber: true })}
-                                    error={errors.deposit as any}
+                                <Controller
+                                    name="deposit"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <FormCurrencyInput
+                                            label="Depósito (Opcional)"
+                                            placeholder="Valor del depósito"
+                                            value={field.value !== null ? field.value : undefined}
+                                            onValueChange={(val) => field.onChange(val)}
+                                            error={errors.deposit as any}
+                                        />
+                                    )}
                                 />
                             </div>
                         </div>

@@ -1,8 +1,10 @@
+'use client';
 import React, { useState } from 'react';
 import { User, PaymentRequest } from '../types';
-import { Clock, AlertCircle } from 'lucide-react';
+import { Clock, AlertCircle, Loader } from 'lucide-react';
 import PlanComparisonCards from './PlanComparisonCards';
 import PaymentUploadForm from './PaymentUploadForm';
+import { api } from '../services/api';
 
 interface PaymentFlowSectionProps {
     user: User;
@@ -12,6 +14,9 @@ interface PaymentFlowSectionProps {
 
 const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRequest, onPaymentSuccess }) => {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'transfer' | null>(null);
+    const [isGeneratingMPLink, setIsGeneratingMPLink] = useState(false);
+    const [mpError, setMpError] = useState('');
 
     const isPremium = user.plan === 'premium';
     const isExpired = user.planExpiresAt ? new Date(user.planExpiresAt) < new Date() : false;
@@ -19,8 +24,9 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
 
     const handlePlanSelect = (planId: string) => {
         setSelectedPlan(planId);
+        setPaymentMethod(null);
         setTimeout(() => {
-            document.getElementById('payment-upload-form')?.scrollIntoView({
+            document.getElementById('payment-method-section')?.scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest'
             });
@@ -30,6 +36,24 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
     if (!canUploadPayment) {
         return null;
     }
+
+    const handleMPPayment = async () => {
+        if (!selectedPlan) return;
+        setIsGeneratingMPLink(true);
+        setMpError('');
+        try {
+            const link = await api.createMPCheckoutLink(user.id.toString(), selectedPlan, user.email);
+            if (link) {
+                window.location.href = link;
+            } else {
+                setMpError('Error al generar el link de pago seguro. Por favor intenta de nuevo.');
+            }
+        } catch (error) {
+            setMpError('Ocurrió un error de conexión al generar el pago.');
+        } finally {
+            setIsGeneratingMPLink(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -78,6 +102,7 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
 
             {(!paymentRequest || paymentRequest.status === 'rejected') && (
                 <div className="bg-white rounded-xl border-2 border-gray-200 p-8">
+                    {/* Step Indicators */}
                     <div className="flex items-center justify-center mb-10">
                         <div className="flex items-center">
                             <div className="flex flex-col items-center">
@@ -90,16 +115,17 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
                             </div>
                             <div className={`w-24 h-1 mx-4 ${selectedPlan ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                             <div className="flex flex-col items-center">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${selectedPlan ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}>
-                                    2
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${paymentMethod ? 'bg-green-500 text-white' : selectedPlan ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}>
+                                    {paymentMethod ? '✓' : '2'}
                                 </div>
-                                <span className={`mt-2 text-sm font-medium ${selectedPlan ? 'text-blue-600' : 'text-gray-400'}`}>
-                                    Sube Comprobante
+                                <span className={`mt-2 text-sm font-medium ${paymentMethod ? 'text-green-600' : selectedPlan ? 'text-blue-600' : 'text-gray-400'}`}>
+                                    Método de Pago
                                 </span>
                             </div>
                         </div>
                     </div>
 
+                    {/* Step 1: Plan Selection */}
                     <div className="mb-8">
                         <h4 className="text-lg font-semibold text-gray-900 mb-4">Paso 1: Elige tu Plan Premium</h4>
                         <PlanComparisonCards
@@ -109,9 +135,10 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
                         />
                     </div>
 
-                    <div id="payment-upload-form" className={`transition-all duration-300 ${selectedPlan ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                    {/* Step 2: Payment Method */}
+                    <div id="payment-method-section" className={`transition-all duration-300 ${selectedPlan ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
                         <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                            Paso 2: Sube tu Comprobante de Pago
+                            Paso 2: Selecciona tu método de pago
                         </h4>
                         {!selectedPlan && (
                             <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-4">
@@ -120,11 +147,71 @@ const PaymentFlowSection: React.FC<PaymentFlowSectionProps> = ({ user, paymentRe
                                 </p>
                             </div>
                         )}
-                        <PaymentUploadForm
-                            user={user}
-                            onSuccess={onPaymentSuccess}
-                            selectedPlan={selectedPlan as 'weekly' | 'monthly' | 'quarterly'}
-                        />
+
+                        {selectedPlan && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <button
+                                        onClick={() => setPaymentMethod('mercadopago')}
+                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'mercadopago' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-gray-200 hover:border-emerald-400 hover:bg-gray-50'}`}
+                                    >
+                                        <div className="text-center">
+                                            <span className="block font-bold text-gray-900 mb-1">Mercado Pago</span>
+                                            <span className="text-sm text-gray-500">Pago inmediato (PSE, Tarjeta)</span>
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setPaymentMethod('transfer')}
+                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'transfer' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-gray-200 hover:border-emerald-400 hover:bg-gray-50'}`}
+                                    >
+                                        <div className="text-center">
+                                            <span className="block font-bold text-gray-900 mb-1">Transferencia</span>
+                                            <span className="text-sm text-gray-500">Subir comprobante manual</span>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <div className="pt-6 border-t border-gray-100 transition-all duration-300">
+                                    {paymentMethod === 'mercadopago' && (
+                                        <div className="text-center py-6">
+                                            {mpError && (
+                                                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                                                    {mpError}
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={handleMPPayment}
+                                                disabled={isGeneratingMPLink || !selectedPlan}
+                                                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
+                                            >
+                                                {isGeneratingMPLink ? (
+                                                    <><Loader className="w-5 h-5 mr-2 animate-spin" /> Conectando con Mercado Pago...</>
+                                                ) : (
+                                                    'Pagar con Mercado Pago'
+                                                )}
+                                            </button>
+                                            <p className="mt-4 text-sm text-gray-500">Serás redirigido a la pasarela segura de Mercado Pago.</p>
+                                        </div>
+                                    )}
+
+                                    {paymentMethod === 'transfer' && (
+                                        <div className="animate-fadeIn">
+                                            <PaymentUploadForm
+                                                user={user}
+                                                onSuccess={onPaymentSuccess}
+                                                selectedPlan={selectedPlan as 'weekly' | 'monthly' | 'quarterly'}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {!paymentMethod && (
+                                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                            <p className="text-gray-500">Selecciona un método de pago arriba para continuar</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

@@ -62,6 +62,7 @@ export const getUserSubscriptionHistory = async (req, res) => {
 export const expireOldSubscriptions = async (req, res) => {
     try {
         const now = new Date();
+        const { CreditBalance } = await import('../models/index.js');
 
         // Find all active subscriptions that have expired
         const expiredSubscriptions = await Subscription.findAll({
@@ -95,9 +96,28 @@ export const expireOldSubscriptions = async (req, res) => {
             expiredCount++;
         }
 
+        // --- Handle Unlimited Credit Expirations ---
+        const expiredCreditBalances = await CreditBalance.findAll({
+            where: {
+                unlimitedUntil: { [Op.lt]: now }
+            }
+        });
+
+        let expiredCreditsCount = 0;
+
+        for (const balance of expiredCreditBalances) {
+            await balance.update({
+                availableCredits: 0,
+                unlimitedUntil: null,
+                updatedAt: now
+            });
+            expiredCreditsCount++;
+        }
+
         res.json({
-            message: `Expired ${expiredCount} subscriptions`,
+            message: `Expired ${expiredCount} subscriptions and ${expiredCreditsCount} unlimited credit plans`,
             count: expiredCount,
+            creditsCount: expiredCreditsCount,
             expiredSubscriptions: expiredSubscriptions.map(s => ({
                 id: s.id,
                 userId: s.userId,

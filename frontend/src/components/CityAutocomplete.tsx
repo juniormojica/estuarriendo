@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, X, Loader2 } from 'lucide-react';
 import { searchCities, City } from '../services/locationService';
@@ -9,6 +10,7 @@ interface CityAutocompleteProps {
     required?: boolean;
     error?: string;
     disabled?: boolean;
+    hideLabel?: boolean;
 }
 
 const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
@@ -17,7 +19,8 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
     placeholder = 'Buscar ciudad...',
     required = false,
     error,
-    disabled = false
+    disabled = false,
+    hideLabel = false
 }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<City[]>([]);
@@ -86,9 +89,11 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
 
     return (
         <div ref={wrapperRef} className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ciudad {required && <span className="text-red-500">*</span>}
-            </label>
+            {!hideLabel && (
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ciudad {required && <span className="text-red-500">*</span>}
+                </label>
+            )}
 
             {value ? (
                 // Selected city display

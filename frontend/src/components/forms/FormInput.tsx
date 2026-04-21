@@ -1,3 +1,4 @@
+'use client';
 import { forwardRef } from 'react';
 import { FieldError } from 'react-hook-form';
 

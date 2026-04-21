@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { ActivityLog } from '../../types';
 import { Clock, RefreshCw } from 'lucide-react';

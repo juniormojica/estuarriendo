@@ -31,6 +31,17 @@ const PaymentRequest = sequelize.define('PaymentRequest', {
         allowNull: true,
         field: 'plan_type'
     },
+    paymentMethod: {
+        type: DataTypes.ENUM('bank_transfer', 'mercado_pago'),
+        allowNull: false,
+        defaultValue: 'bank_transfer',
+        field: 'payment_method'
+    },
+    mercadoPagoPaymentId: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: 'mercado_pago_payment_id'
+    },
     planDuration: {
         type: DataTypes.INTEGER,
         allowNull: true,
@@ -46,7 +57,7 @@ const PaymentRequest = sequelize.define('PaymentRequest', {
         type: DataTypes.STRING(500),
         allowNull: true,
         field: 'proof_image_url',
-        comment: 'Cloudinary URL of payment proof'
+        comment: 'Cloudinary URL of payment proof (optional for mercado_pago)'
     },
     proofImagePublicId: {
         type: DataTypes.STRING(255),

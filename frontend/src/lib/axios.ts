@@ -3,11 +3,12 @@ import toast from 'react-hot-toast';
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
     headers: {
         'Content-Type': 'application/json',
     },
-    timeout: 10000, // 10 seconds
+    withCredentials: true,
+    timeout: 30000, // 30 seconds
 });
 
 // Request interceptor to add JWT token to headers

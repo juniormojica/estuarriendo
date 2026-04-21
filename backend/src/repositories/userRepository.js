@@ -1,4 +1,4 @@
-import { User, UserVerificationDocuments, UserIdentificationDetails, UserProfile } from '../models/index.js';
+import { User, UserVerificationDocuments, UserIdentificationDetails, UserProfile, City, Institution } from '../models/index.js';
 
 /**
  * User Repository
@@ -27,7 +27,12 @@ export const findAll = async (options = {}) => {
             },
             {
                 model: UserProfile,
-                as: 'profile'
+                as: 'profile',
+                include: [
+                    { model: City, as: 'originCity' },
+                    { model: City, as: 'studyCity' },
+                    { model: Institution, as: 'institution' }
+                ]
             }
         ]
     };
@@ -57,7 +62,12 @@ export const findById = async (id, options = {}) => {
             },
             {
                 model: UserProfile,
-                as: 'profile'
+                as: 'profile',
+                include: [
+                    { model: City, as: 'originCity' },
+                    { model: City, as: 'studyCity' },
+                    { model: Institution, as: 'institution' }
+                ]
             }
         ]
     };

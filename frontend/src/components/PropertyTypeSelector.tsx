@@ -1,5 +1,6 @@
+'use client';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter, redirect } from 'next/navigation';
 import { Building2, Home, Hotel, DoorOpen } from 'lucide-react';
 
 interface PropertyTypeOption {
@@ -11,7 +12,7 @@ interface PropertyTypeOption {
 }
 
 const PropertyTypeSelector = () => {
-    const navigate = useNavigate();
+    const router = useRouter();
     const [selectedType, setSelectedType] = useState<string | null>(null);
 
     const propertyTypes: PropertyTypeOption[] = [
@@ -48,7 +49,7 @@ const PropertyTypeSelector = () => {
     const handleSelect = (type: PropertyTypeOption) => {
         setSelectedType(type.id);
         // Navigate to the appropriate form
-        navigate(type.route, { state: { propertyType: type.id } });
+        router.push(type.route, { state: { propertyType: type.id } });
     };
 
     return (

@@ -1,11 +1,12 @@
+'use client';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter, redirect } from 'next/navigation';
 import { X, PlusCircle, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WelcomeModal: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const navigate = useNavigate();
+    const router = useRouter();
 
     useEffect(() => {
         // Check if user has seen the welcome modal in this session
@@ -40,17 +41,17 @@ const WelcomeModal: React.FC = () => {
 
     const handlePublish = () => {
         handleClose();
-        navigate('/registro');
+        router.push('/registro');
     };
 
     const handleBrowse = () => {
         handleClose();
-        navigate('/', { state: { scrollToSearch: true } });
+        router.push('/', { state: { scrollToSearch: true } });
     };
 
     const handleLogin = () => {
         handleClose();
-        navigate('/login');
+        router.push('/login');
     };
 
     return (

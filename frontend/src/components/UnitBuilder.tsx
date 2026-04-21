@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Plus, Edit, Trash2, DollarSign, Bed } from 'lucide-react';
 import { useAppSelector } from '../store/hooks';

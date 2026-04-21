@@ -1,7 +1,11 @@
-import React from 'react';
+'use client';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { Property } from '../../types';
 import PropertyEditForm from '../forms/PropertyEditForm';
+import { useAppDispatch } from '../../store/hooks';
+import { fetchPropertyById } from '../../store/slices/propertiesSlice';
+import LoadingSpinner from '../LoadingSpinner';
 
 interface PropertyEditModalProps {
     property: Property;
@@ -16,6 +20,21 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     onClose,
     onSave
 }) => {
+    const dispatch = useAppDispatch();
+    const [fullProperty, setFullProperty] = useState<Property | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (isOpen && property) {
+            setLoading(true);
+            dispatch(fetchPropertyById(String(property.id)))
+                .unwrap()
+                .then(p => setFullProperty(p))
+                .catch(err => console.error("Error fetching property details:", err))
+                .finally(() => setLoading(false));
+        }
+    }, [isOpen, property, dispatch]);
+
     if (!isOpen) return null;
 
     return (
@@ -29,14 +48,25 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 </div>
 
                 <div className="p-6">
-                    <PropertyEditForm
-                        property={property}
-                        onSuccess={async () => {
-                            await onSave();
-                            onClose();
-                        }}
-                        onCancel={onClose}
-                    />
+                    {loading ? (
+                        <div className="flex justify-center p-8">
+                            <LoadingSpinner />
+                        </div>
+                    ) : fullProperty ? (
+                        <PropertyEditForm
+                            property={fullProperty}
+                            onSuccess={async () => {
+                                await onSave();
+                                onClose();
+                            }}
+                            onCancel={onClose}
+                            isAdmin
+                        />
+                    ) : (
+                        <div className="text-center text-red-500 py-8">
+                            Error al cargar los detalles de la propiedad.
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -19,7 +19,7 @@ const GlobalErrorFallback: React.FC<FallbackProps> = ({ error, resetErrorBoundar
                 </p>
 
                 {/* Only show error message in development */}
-                {import.meta.env.DEV && (
+                {process.env.NODE_ENV === 'development' && (
                     <div className="bg-gray-100 rounded-md p-4 mb-6 overflow-auto text-left">
                         <p className="text-xs font-mono text-red-800 break-words">{error?.message || String(error)}</p>
                     </div>

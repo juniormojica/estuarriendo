@@ -9,6 +9,8 @@ dist-ssr/
 frontend/dist/
 backend/dist/
 build/
+.next/
+frontend/.next/
 
 # Environment variables
 .env

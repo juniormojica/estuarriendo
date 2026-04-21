@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* Toast animations */
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* EstuSpinner animations */
+  @keyframes throwCap {
+    0% { transform: translateY(0) rotate(0deg); }
+    40% { transform: translateY(-70px) rotate(180deg); }
+    50% { transform: translateY(-80px) rotate(360deg); }
+    60% { transform: translateY(-70px) rotate(540deg); }
+    100% { transform: translateY(0) rotate(720deg); }
+  }
+
+  @keyframes raiseArms {
+    0% { transform: rotate(0deg); }
+    40% { transform: rotate(-30deg); }
+    50% { transform: rotate(-40deg); }
+    60% { transform: rotate(-30deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  @keyframes sparkle {
+    0%, 40% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1); }
+    60%, 100% { opacity: 0; transform: scale(0); }
+  }
+
+  @keyframes textCycle {
+    0%, 10% { opacity: 0; transform: translateY(5px); }
+    20%, 80% { opacity: 1; transform: translateY(0); }
+    90%, 100% { opacity: 0; transform: translateY(-5px); }
+  }
+
+  .animate-throwCap {
+    animation: throwCap 2.5s ease-in-out infinite;
+  }
+
+  .animate-raiseArms {
+    animation: raiseArms 2.5s ease-in-out infinite;
+  }
+
+  .animate-sparkle {
+    animation: sparkle 2.5s ease-in-out infinite;
+  }
+
+  .animate-textCycle {
+    animation: textCycle 3s ease-in-out infinite;
+  }
+
+  .animate-slideIn {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .animate-scaleIn {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  /* Mobile-first utilities */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Scrollbar hide for mobile */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

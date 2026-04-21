@@ -1,9 +1,10 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { X, User, Phone, Mail, Lock, ExternalLink } from 'lucide-react';
 import { Notification, User as UserType } from '../types';
 import { api } from '../services/api';
 import { authService } from '../services/authService';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 interface InterestedUsersModalProps {
     isOpen: boolean;
@@ -34,7 +35,10 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
     const loadInterests = async () => {
         setLoading(true);
         try {
-            const data = await api.getPropertyInterests(propertyId);
+            const user = authService.getStoredUser();
+            if (!user?.id) return;
+            
+            const data = await api.getPropertyInterests(user.id, propertyId);
             setInterests(data);
 
             // If user is premium, we could pre-fetch contact details if they aren't fully in the notification
@@ -126,7 +130,7 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                                                     </div>
                                                     <div className="ml-3">
                                                         <p className="text-sm font-medium text-gray-900">
-                                                            {interest.interestedUserName || 'Usuario Interesado'}
+                                                            {interest.interestedUserName || interest.message?.split(' está interesado')[0] || 'Usuario Interesado'}
                                                         </p>
                                                         <p className="text-xs text-gray-500">
                                                             Interesado desde: {new Date(interest.createdAt).toLocaleDateString()}
@@ -165,7 +169,7 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                                                             Actualiza a Premium para ver los datos de contacto y escribirle directamente.
                                                         </p>
                                                         <Link
-                                                            to="/planes"
+                                                            href="/planes"
                                                             className="inline-flex items-center min-h-[44px] px-3 sm:px-4 py-2 border border-transparent text-xs sm:text-sm leading-4 font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                                                         >
                                                             Actualizar Plan

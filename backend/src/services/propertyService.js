@@ -223,11 +223,12 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
 
         // Check if property is currently rejected or approved and reset status to pending
         const currentProperty = await Property.findByPk(propertyId);
-        if (currentProperty && (currentProperty.status === 'rejected' || currentProperty.status === 'approved')) {
+        if (currentProperty && (currentProperty.status === 'rejected' || currentProperty.status === 'approved') && !corePropertyData.skipStatusReset) {
             // Reset status to pending when a rejected or approved property is updated
             corePropertyData.status = 'pending';
             corePropertyData.rejectionReason = null; // Clear rejection reason
         }
+        delete corePropertyData.skipStatusReset;
 
         // 2. Update core property data
         if (Object.keys(corePropertyData).length > 0) {
@@ -302,6 +303,67 @@ export const updatePropertyWithAssociations = async (propertyId, updateData) => 
 };
 
 /**
+ * Lightweight query for pulling a property for the edit page.
+ * Loads only the essential relational data to avoid massive joins causing timeouts.
+ */
+export const findPropertyLightweight = async (propertyId) => {
+    const { PropertyService, PropertyRule } = await import('../models/index.js');
+    
+    return await Property.findByPk(propertyId, {
+        include: [
+            {
+                model: User,
+                as: 'owner',
+                attributes: ['id', 'email', 'name']
+            },
+            {
+                model: Location,
+                as: 'location',
+                include: [
+                    { model: City, as: 'city', attributes: ['id', 'name'] },
+                    { model: Department, as: 'department', attributes: ['id', 'name'] }
+                ]
+            },
+            {
+                model: Contact,
+                as: 'contact'
+            },
+            {
+                model: PropertyFeature,
+                as: 'features'
+            },
+            {
+                model: PropertyImage,
+                as: 'images',
+                order: [['orderPosition', 'ASC']]
+            },
+            {
+                model: PropertyType,
+                as: 'type'
+            },
+            {
+                model: Amenity,
+                as: 'amenities',
+                through: { attributes: [] }
+            },
+            {
+                model: PropertyService,
+                as: 'services'
+            },
+            {
+                model: PropertyRule,
+                as: 'rules'
+            },
+            {
+                model: CommonArea,
+                as: 'commonAreas',
+                through: { attributes: [] }
+            }
+        ]
+    });
+};
+
+/**
  * Find property with all associations
  */
 export const findPropertyWithAssociations = async (propertyId) => {
@@ -373,6 +435,7 @@ export const findPropertyWithAssociations = async (propertyId) => {
                 model: Property,
                 as: 'container',
                 include: [
+                    { model: PropertyType, as: 'type' },
                     { model: PropertyImage, as: 'images' },
                     { model: CommonArea, as: 'commonAreas', through: { attributes: [] } },
                     { model: PropertyService, as: 'services' },
@@ -487,7 +550,11 @@ export const findPropertiesWithAssociations = async (filters = {}, options = {})
         {
             model: Location,
             as: 'location',
-            ...(cityId && { where: { cityId } })
+            ...(cityId && { where: { cityId } }),
+            include: [
+                { model: City, as: 'city' },
+                { model: Department, as: 'department' }
+            ]
         },
         {
             model: Contact,

@@ -1,6 +1,7 @@
 import containerService from '../services/containerService.js';
 import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
+import { sseService } from '../services/sseService.js';
 
 /**
  * Container Controller
@@ -217,6 +218,13 @@ export const createContainer = async (req, res) => {
             timestamp: new Date()
         });
 
+        // Broadcast SSE event
+        sseService.broadcast('container_submitted', {
+            containerId: container.id,
+            title: completeContainer.title,
+            ownerName: req.user ? req.user.name : 'Propietario'
+        });
+
         res.status(201).json({
             success: true,
             message: 'Pensión/apartamento creado exitosamente',
@@ -273,9 +281,15 @@ export const updateContainer = async (req, res) => {
 
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const {
+            services,
+            rules,
+            commonAreaIds,
+            skipStatusReset,
+            ...propertyFields
+        } = req.body;
 
-        const { Property } = await import('../models/index.js');
+        const { Property, PropertyService, PropertyRule } = await import('../models/index.js');
 
         const container = await Property.findByPk(id, { transaction });
 
@@ -296,14 +310,26 @@ export const updateContainer = async (req, res) => {
             });
         }
 
-        await container.update(updateData, { transaction });
+        // Ensure only valid property fields are updated 
+        if (Object.keys(propertyFields).length > 0) {
+            await container.update(propertyFields, { transaction });
+        }
+
+        // Important: Update status to 'pending' after an owner edit
+        // Only skip if explicitly asked (e.g., admin action) or if already pending 
+        if (!skipStatusReset && container.status === 'approved') {
+            await container.update({
+                status: 'pending',
+                reviewedAt: null,
+                submittedAt: new Date()
+            }, { transaction });
+        }
 
         // Update services if provided
-        if (updateData.services) {
-            const { PropertyService } = await import('../models/index.js');
+        if (services) {
             await PropertyService.destroy({ where: { propertyId: id }, transaction });
 
-            const servicePromises = updateData.services.map(service =>
+            const servicePromises = services.map(service =>
                 PropertyService.create({
                     propertyId: id,
                     ...service
@@ -313,11 +339,10 @@ export const updateContainer = async (req, res) => {
         }
 
         // Update rules if provided
-        if (updateData.rules) {
-            const { PropertyRule } = await import('../models/index.js');
+        if (rules) {
             await PropertyRule.destroy({ where: { propertyId: id }, transaction });
 
-            const rulePromises = updateData.rules.map(rule =>
+            const rulePromises = rules.map(rule =>
                 PropertyRule.create({
                     propertyId: id,
                     ...rule
@@ -327,21 +352,24 @@ export const updateContainer = async (req, res) => {
         }
 
         // Update common areas if provided
-        if (updateData.commonAreaIds) {
-            await container.setCommonAreas(updateData.commonAreaIds, { transaction });
+        if (commonAreaIds) {
+            await container.setCommonAreas(commonAreaIds, { transaction });
         }
 
         await transaction.commit();
 
-        const updatedContainer = await containerService.findContainerWithUnits(id);
-
         res.status(200).json({
             success: true,
             message: 'Pensión/apartamento actualizado exitosamente',
-            data: updatedContainer
+            data: {
+                id: container.id,
+                status: container.status
+            }
         });
     } catch (error) {
-        await transaction.rollback();
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
         console.error('Error updating container:', error);
         res.status(500).json({
             success: false,
@@ -475,9 +503,21 @@ export const createUnit = async (req, res) => {
 
     try {
         const { containerId } = req.params;
-        const unitData = req.body;
+        const { images, ...unitData } = req.body;
 
         const unit = await containerService.createUnit(containerId, unitData, transaction);
+
+        const { PropertyImage } = await import('../models/index.js');
+
+        if (images && images.length > 0) {
+            const imageRecords = images.map((img, index) => ({
+                propertyId: unit.id,
+                url: typeof img === 'string' ? img : img.url,
+                isFeatured: typeof img === 'string' ? index === 0 : (img.isFeatured || index === 0),
+                orderPosition: typeof img === 'string' ? index : (img.orderPosition || index)
+            }));
+            await PropertyImage.bulkCreate(imageRecords, { transaction });
+        }
 
         await transaction.commit();
 
@@ -538,9 +578,9 @@ export const updateUnit = async (req, res) => {
 
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const { images, ...updateData } = req.body;
 
-        const { Property } = await import('../models/index.js');
+        const { Property, PropertyImage } = await import('../models/index.js');
 
         const unit = await Property.findByPk(id, { transaction });
 
@@ -561,6 +601,20 @@ export const updateUnit = async (req, res) => {
         }
 
         await unit.update(updateData, { transaction });
+
+        if (images !== undefined) {
+            await PropertyImage.destroy({ where: { propertyId: id }, transaction });
+            
+            if (images && images.length > 0) {
+                const imageRecords = images.map((img, index) => ({
+                    propertyId: id,
+                    url: typeof img === 'string' ? img : img.url,
+                    isFeatured: typeof img === 'string' ? index === 0 : (img.isFeatured || index === 0),
+                    orderPosition: typeof img === 'string' ? index : (img.orderPosition || index)
+                }));
+                await PropertyImage.bulkCreate(imageRecords, { transaction });
+            }
+        }
 
         await transaction.commit();
 

@@ -22,8 +22,6 @@ export interface AuthResponse {
 
 export interface ForgotPasswordResponse {
     message: string;
-    token?: string; // Only in development
-    email?: string; // Only in development
 }
 
 export interface ResetPasswordData {
@@ -67,8 +65,10 @@ export const authService = {
         // Transform and save user data
         if (response.data.token) {
             const transformedUser = transformUserData(response.data.user);
-            localStorage.setItem('estuarriendo_token', response.data.token);
-            localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('estuarriendo_token', response.data.token);
+                localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            }
             response.data.user = transformedUser;
         }
 
@@ -84,8 +84,10 @@ export const authService = {
         // Transform and save user data
         if (response.data.token) {
             const transformedUser = transformUserData(response.data.user);
-            localStorage.setItem('estuarriendo_token', response.data.token);
-            localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('estuarriendo_token', response.data.token);
+                localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            }
             response.data.user = transformedUser;
         }
 
@@ -100,7 +102,9 @@ export const authService = {
 
         // Transform and update user in localStorage
         const transformedUser = transformUserData(response.data);
-        localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+        }
 
         return transformedUser;
     },
@@ -108,9 +112,20 @@ export const authService = {
     /**
      * Logout user
      */
-    logout(): void {
-        localStorage.removeItem('estuarriendo_token');
-        localStorage.removeItem('estuarriendo_current_user');
+    async logout(): Promise<void> {
+        try {
+            await apiClient.post('/auth/logout');
+        } catch (error) {
+            console.error('Error in backend logout:', error);
+        } finally {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('estuarriendo_token');
+                localStorage.removeItem('estuarriendo_current_user');
+                
+                // Redirect user and force refresh to clear Next.js states
+                window.location.href = '/login';
+            }
+        }
     },
 
     /**
@@ -141,28 +156,36 @@ export const authService = {
      * Check if user is authenticated
      */
     isAuthenticated(): boolean {
-        const token = localStorage.getItem('estuarriendo_token');
-        return !!token;
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('estuarriendo_token');
+            return !!token;
+        }
+        return false;
     },
 
     /**
      * Get stored token
      */
     getToken(): string | null {
-        return localStorage.getItem('estuarriendo_token');
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('estuarriendo_token');
+        }
+        return null;
     },
 
     /**
      * Get stored user
      */
     getStoredUser(): User | null {
-        const stored = localStorage.getItem('estuarriendo_current_user');
-        if (stored) {
-            try {
-                return JSON.parse(stored);
-            } catch (e) {
-                console.error('Error parsing stored user:', e);
-                return null;
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('estuarriendo_current_user');
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch (e) {
+                    console.error('Error parsing stored user:', e);
+                    return null;
+                }
             }
         }
         return null;

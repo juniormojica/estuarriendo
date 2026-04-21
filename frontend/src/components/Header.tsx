@@ -1,18 +1,23 @@
+'use client';
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter, usePathname } from 'next/navigation';
 import { Plus, Menu, X } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import { api } from '../services/api';
 import NotificationBell from './NotificationBell';
+import { CreditBalance } from '../types';
 
 const Header: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const [newOpportunitiesCount, setNewOpportunitiesCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [tenantCredits, setTenantCredits] = useState<CreditBalance | null>(null);
 
   useEffect(() => {
     const loadNewOpportunitiesCount = async () => {
@@ -35,13 +40,26 @@ const Header: React.FC = () => {
       }
     };
 
+    const loadTenantCredits = async () => {
+      if (currentUser?.userType === 'tenant') {
+        try {
+          // Add a small delay so other requests take priority or balance is fully synced
+          const balance = await api.getCreditBalance(currentUser.id.toString());
+          setTenantCredits(balance);
+        } catch (error) {
+          console.error('Error loading tenant credits:', error);
+        }
+      }
+    };
+
     loadNewOpportunitiesCount();
+    loadTenantCredits();
   }, [currentUser]);
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -58,16 +76,16 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     dispatch(logout());
     setIsMobileMenuOpen(false);
-    navigate('/');
+    router.push('/');
   };
 
   const NavLink = ({ to, children, badge, mobile = false }: { to: string; children: React.ReactNode; badge?: number; mobile?: boolean }) => {
-    const isActive = location.pathname === to;
+    const isActive = pathname === to;
 
     if (mobile) {
       return (
         <Link
-          to={to}
+          href={to}
           className={`relative flex items-center justify-between w-full px-4 py-3.5 rounded-lg text-base font-medium transition-all ${isActive
             ? 'bg-emerald-50 text-emerald-700 border-l-4 border-emerald-600'
             : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
@@ -85,7 +103,7 @@ const Header: React.FC = () => {
 
     return (
       <Link
-        to={to}
+        href={to}
         className={`relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
           ? 'bg-emerald-50 text-emerald-700'
           : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
@@ -106,8 +124,15 @@ const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-            <img src="/logo.svg" alt="EstuArriendo" className="h-8 sm:h-10" />
+          <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
+            <Image
+              src="/logo.svg"
+              alt="EstuArriendo"
+              width={140}
+              height={40}
+              className="h-8 sm:h-10 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -156,7 +181,7 @@ const Header: React.FC = () => {
             {/* Publicar Button */}
             {(!currentUser || currentUser.userType === 'owner') && (
               <Link
-                to="/publicar"
+                href="/publicar"
                 className="flex items-center space-x-1.5 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 ml-2"
               >
                 <Plus className="h-4 w-4" />
@@ -172,8 +197,23 @@ const Header: React.FC = () => {
             {/* Auth Section */}
             {currentUser ? (
               <div className="flex items-center space-x-3 ml-2">
+                {currentUser.userType === 'tenant' && tenantCredits && (
+                  <button
+                    onClick={() => router.push('/perfil?tab=billing')}
+                    className="flex items-center bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors shadow-sm cursor-pointer border border-emerald-200"
+                    title="Balance de Créditos"
+                  >
+                    <span className="font-bold mr-1.5 text-emerald-600">🟡</span>
+                    <span className="text-sm font-semibold">
+                      {tenantCredits.hasUnlimited && tenantCredits.unlimitedUntil && new Date(tenantCredits.unlimitedUntil) > new Date()
+                        ? 'Ilimitados'
+                        : `${tenantCredits.availableCredits} Créditos`}
+                    </span>
+                  </button>
+                )}
+
                 <span
-                  onClick={() => navigate('/perfil')}
+                  onClick={() => router.push('/perfil')}
                   className="text-sm text-gray-700 font-medium hover:text-gray-900 cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Hola, {currentUser.name?.split(' ')[0]}
@@ -188,13 +228,13 @@ const Header: React.FC = () => {
             ) : (
               <div className="flex items-center space-x-2 ml-2">
                 <Link
-                  to="/login"
+                  href="/login"
                   className="text-gray-700 hover:text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
                   Ingresar
                 </Link>
                 <Link
-                  to="/registro"
+                  href="/registro"
                   className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors"
                 >
                   Registrarse
@@ -211,7 +251,7 @@ const Header: React.FC = () => {
             {/* Publicar Button - Mobile (Icon Only) */}
             {(!currentUser || currentUser.userType === 'owner') && (
               <Link
-                to="/publicar"
+                href="/publicar"
                 className="flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 rounded-full text-white bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md active:scale-95 transition-transform"
                 aria-label="Publicar propiedad"
               >
@@ -254,11 +294,29 @@ const Header: React.FC = () => {
             <div className="p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-b border-gray-200">
               <p className="text-xs text-gray-600 uppercase tracking-wide">Hola,</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{currentUser.name}</p>
-              <p className="text-sm text-gray-600 mt-1.5 inline-block px-3 py-1 bg-white/60 rounded-full">
-                {currentUser.userType === 'owner' ? 'Propietario' :
-                  currentUser.userType === 'tenant' ? 'Estudiante' :
-                    currentUser.userType === 'admin' ? 'Administrador' : 'Super Admin'}
-              </p>
+              <div className="flex flex-col mt-2 space-y-2">
+                <p className="text-sm text-gray-600 inline-block w-max px-3 py-1 bg-white/60 rounded-full">
+                  {currentUser.userType === 'owner' ? 'Propietario' :
+                    currentUser.userType === 'tenant' ? 'Estudiante' :
+                      currentUser.userType === 'admin' ? 'Administrador' : 'Super Admin'}
+                </p>
+                {currentUser.userType === 'tenant' && tenantCredits && (
+                  <button
+                    onClick={() => {
+                      router.push('/perfil?tab=billing');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center w-max bg-white/80 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-white transition-colors"
+                  >
+                    <span className="font-bold mr-1.5 text-emerald-600">🟡</span>
+                    <span className="text-sm font-semibold">
+                      {tenantCredits.hasUnlimited && tenantCredits.unlimitedUntil && new Date(tenantCredits.unlimitedUntil) > new Date()
+                        ? 'Ilimitados'
+                        : `${tenantCredits.availableCredits} Créditos`}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -328,13 +386,13 @@ const Header: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 <Link
-                  to="/login"
+                  href="/login"
                   className="block w-full px-4 py-3.5 text-center text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 border-2 border-gray-300 rounded-xl transition-all shadow-sm"
                 >
                   Ingresar
                 </Link>
                 <Link
-                  to="/registro"
+                  href="/registro"
                   className="block w-full px-4 py-3.5 text-center text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-md transition-all"
                 >
                   Registrarse

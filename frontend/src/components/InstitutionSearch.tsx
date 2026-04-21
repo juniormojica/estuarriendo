@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, X, Filter, Check } from 'lucide-react';
 import { api } from '../services/api';

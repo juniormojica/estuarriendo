@@ -1,3 +1,4 @@
+'use client';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Clock, Users, Ban, Volume2 } from 'lucide-react';

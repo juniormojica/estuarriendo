@@ -12,6 +12,7 @@ const router = express.Router();
 // Public routes (no authentication required)
 router.post('/register', authController.register);
 router.post('/login', authController.login);
+router.post('/logout', authController.logout);
 
 // Password reset routes (public)
 router.post('/forgot-password', authController.forgotPassword);

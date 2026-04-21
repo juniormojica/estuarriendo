@@ -1,5 +1,7 @@
+'use client';
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, redirect } from 'next/navigation';
 import { MapPin, Bed, Bath, Square, Star, MessageCircle, Heart, ShieldCheck, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Property } from '../types';
@@ -20,12 +22,18 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRemoveButton = false, onRemoveFavorite }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { items: amenities } = useAppSelector((state) => state.amenities);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingFavoriteAction, setPendingFavoriteAction] = useState<'add' | null>(null);
   const toast = useToast();
+
+  const truncateText = (text: string, maxLength: number) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
 
   if (!property || !property.id) {
     return null;
@@ -99,9 +107,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
     e.stopPropagation();
 
     if (!canContact) {
-      navigate('/perfil?tab=billing');
+      router.push('/perfil?tab=billing');
     } else {
-      navigate(`/propiedad/${property.id}`);
+      router.push(`/propiedad/${property.id}`);
     }
   };
 
@@ -112,7 +120,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
       transition={{ duration: 0.3, delay: index * 0.1 }}
       className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
     >
-      <Link to={`/propiedad/${property.id}`} className="relative block overflow-hidden">
+      <Link href={`/propiedad/${property.id}`} className="relative block overflow-hidden">
         {/* Image - Responsive aspect ratio */}
         <div className="aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden">
           <img
@@ -178,7 +186,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
 
       {/* Content Section */}
       <div className="p-3 sm:p-4 md:p-5 flex flex-col flex-grow">
-        <Link to={`/propiedad/${property.id}`} className="block">
+        <Link href={`/propiedad/${property.id}`} className="block">
           {/* Title */}
           <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2 mb-2">
             {property.title}
@@ -220,14 +228,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           </div>
 
           {/* Description - Hidden on mobile to save space */}
-          <p className="hidden sm:block text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
-            {property.description}
-          </p>
+          {property.description && property.description.trim().length > 0 && (
+            <p className="hidden sm:block text-gray-600 text-sm mb-3 line-clamp-2" title={property.description}>
+              {truncateText(property.description, 100)}
+            </p>
+          )}
         </Link>
 
         {/* Property Details */}
-        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-50">
-          {property.isContainer && property.rentalMode === 'by_unit' ? (
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-50 mt-auto">
+          {property.isContainer && (property.totalUnits || (property.units && property.units.length > 0)) ? (
             <div className="flex items-center" title="Habitaciones Disponibles">
               <Bed className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-emerald-600" />
               <span className="font-medium text-emerald-700">
@@ -264,7 +274,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, index = 0, showRe
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-xs text-gray-400 font-medium">Precio</span>
             <div className="flex items-baseline">
-              {property.isContainer && property.rentalMode === 'by_unit' && property.minUnitRent ? (
+              {property.isContainer && property.minUnitRent && (property.totalUnits || (property.units && property.units.length > 0)) ? (
                 <>
                   <span className="text-xs text-gray-500 mr-1">Desde</span>
                   <span className="text-lg sm:text-xl font-bold text-emerald-600 truncate">

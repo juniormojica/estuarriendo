@@ -49,7 +49,7 @@ Basado en la arquitectura actual, la plataforma soporta múltiples vías de mone
 
 ## 6. Aspectos Técnicos
 La aplicación está construida con tecnologías modernas que garantizan escalabilidad y rendimiento:
-*   **Frontend:** React + Vite (Alta velocidad y reactividad).
+*   **Frontend:** Next.js 15 (App Router, Server Components y alta optimización SEO).
 *   **Estilos:** Tailwind CSS (Diseño moderno y adaptativo a móviles).
 *   **Lenguaje:** TypeScript (Robustez y menor propensión a errores).
 *   **Arquitectura:** Modular y escalable, preparada para crecer a otras ciudades.

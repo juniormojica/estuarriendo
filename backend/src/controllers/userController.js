@@ -91,7 +91,7 @@ export const updateUser = async (req, res) => {
 
             // For regular users updating their own profile, only allow specific fields
             if (isOwnProfile && !isAdmin) {
-                const allowedFields = ['name', 'phone', 'whatsapp', 'idType', 'idNumber'];
+                const allowedFields = ['name', 'phone', 'whatsapp', 'idType', 'idNumber', 'profile'];
                 const filteredUpdates = {};
 
                 allowedFields.forEach(field => {
@@ -99,6 +99,30 @@ export const updateUser = async (req, res) => {
                         filteredUpdates[field] = updates[field];
                     }
                 });
+
+                const { name, phone } = filteredUpdates;
+
+                if (name !== undefined && (!name || name.trim().length < 3)) {
+                    return res.status(400).json({ error: 'El nombre debe tener al menos 3 caracteres.' });
+                }
+
+                if (phone !== undefined && (!phone || phone.replace(/\D/g, '').length < 10)) {
+                    return res.status(400).json({ error: 'El teléfono debe tener al menos 10 dígitos.' });
+                }
+
+                const { idType, idNumber } = filteredUpdates;
+                const hasIdType = idType !== undefined && idType !== '' && idType !== null;
+                const hasIdNumber = idNumber !== undefined && idNumber !== '' && idNumber !== null;
+                if (hasIdType !== hasIdNumber) {
+                    return res.status(400).json({ error: 'Debes completar tanto el tipo como el número de documento.' });
+                }
+
+                if ('name' in filteredUpdates && filteredUpdates.name === '') {
+                    return res.status(400).json({ error: 'El nombre no puede estar vacío.' });
+                }
+                if ('phone' in filteredUpdates && filteredUpdates.phone === '') {
+                    return res.status(400).json({ error: 'El teléfono no puede estar vacío.' });
+                }
 
                 // Use filtered updates instead of all updates
                 const user = await userService.updateUser(id, filteredUpdates);

@@ -160,7 +160,7 @@ export const updateUser = async (id, updates) => {
         idType, idNumber, ownerRole,
         // Profile fields
         birthDate, gender, referralSource, institutionId, academicProgram,
-        currentSemester, originCityId, livingPreference, totalPropertiesManaged,
+        currentSemester, originCityId, studyCityId, livingPreference, totalPropertiesManaged,
         yearsAsLandlord, managesPersonally, profile,
         ...userUpdates
     } = updates;
@@ -213,14 +213,24 @@ export const updateUser = async (id, updates) => {
 
     // Handle User Profile Updates
     // Combine flat fields and nested 'profile' object
-    const profileData = {
-        ...(profile || {}),
+    const flatProfileFields = {
         birthDate, gender, referralSource, institutionId, academicProgram,
-        currentSemester, originCityId, livingPreference, totalPropertiesManaged,
+        currentSemester, originCityId, studyCityId, livingPreference, totalPropertiesManaged,
         yearsAsLandlord, managesPersonally
     };
 
-    // Filter out undefined values
+    // Filter undefined values from flat fields so they don't overwrite valid nested profile fields
+    const validFlatProfileFields = Object.entries(flatProfileFields).reduce((acc, [key, value]) => {
+        if (value !== undefined) acc[key] = value;
+        return acc;
+    }, {});
+
+    const profileData = {
+        ...(profile || {}),
+        ...validFlatProfileFields
+    };
+
+    // Filter out undefined values from combined result for ORM
     const profileUpdates = Object.entries(profileData).reduce((acc, [key, value]) => {
         if (value !== undefined) {
             acc[key] = value;

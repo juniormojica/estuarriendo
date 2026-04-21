@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { PaymentRequest } from '../../types';
 import { api } from '../../services/api';

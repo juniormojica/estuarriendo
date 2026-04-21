@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { User } from '../../types';
 import { Search, Mail, Phone, MessageCircle, Home } from 'lucide-react';

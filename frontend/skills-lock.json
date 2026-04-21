@@ -5,6 +5,11 @@
       "source": "yanko-belov/code-craft",
       "sourceType": "github",
       "computedHash": "14e06b98e7c86b336e786bcc81ca855fa74d2b2c33d318164a42832e41244955"
+    },
+    "next-best-practices": {
+      "source": "vercel-labs/next-skills",
+      "sourceType": "github",
+      "computedHash": "db85045827ebeb83ac8dbc992b69188755eeb74dcf01cbf5e694d58aa494a106"
     }
   }
 }

@@ -28,7 +28,12 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import containerRoutes from './routes/containerRoutes.js';
 import unitRoutes from './routes/unitRoutes.js';
 import commonAreaRoutes from './routes/commonAreaRoutes.js';
-
+import creditRoutes from './routes/creditRoutes.js';
+import propertyReportRoutes from './routes/propertyReportRoutes.js';
+import mercadoPagoRoutes from './routes/mercadoPagoRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
+import sseRoutes from './routes/sseRoutes.js';
+import { startPlanScheduler, stopPlanScheduler } from './services/planScheduler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -37,9 +42,9 @@ const PORT = process.env.PORT || 3001;
 const corsOptions = {
     origin: function (origin, callback) {
         // 1. Definimos los orígenes permitidos desde las variables de entorno o locales
-        const allowedOrigins = process.env.FRONTEND_URL
-            ? process.env.FRONTEND_URL.split(',')
-            : ['http://localhost:5173', 'https://localhost:5173'];
+        const allowedOrigins = process.env.ALLOWED_ORIGINS
+            ? process.env.ALLOWED_ORIGINS.split(',')
+            : ['http://localhost:5173', 'https://localhost:5173', 'http://localhost:3000'];
 
         // 2. Permitimos la petición si:
         // - No hay origin (como peticiones de servidor a servidor o Postman)
@@ -74,13 +79,16 @@ const globalLimiter = rateLimit({
     message: { error: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.' }
 });
 
+// Mount SSE endpoints BEFORE rate limiter (they are long-lived connections)
+app.use('/api/sse', sseRoutes);
+
 // Apply global rate limiter to ALL API routes
 app.use('/api/', globalLimiter);
 
 // 3. Stricter Rate Limiter for Authentication routes
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 15, // Limit each IP to 15 login/register requests per windowMs
+    limit: 50, // Limit each IP to 50 auth requests per windowMs
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Demasiados intentos de inicio de sesión o registro. Por favor intenta en 15 minutos.' }
@@ -88,6 +96,11 @@ const authLimiter = rateLimit({
 
 // HTTP Request Logger Middleware
 app.use((req, res, next) => {
+    // Skip SSE endpoints - they use res.write() for streaming
+    if (req.path.startsWith('/api/sse')) {
+        return next();
+    }
+
     const start = Date.now();
 
     // Capture the original res.json to log after response
@@ -139,7 +152,10 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/containers', containerRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/common-areas', commonAreaRoutes);
-
+app.use('/api/credits', creditRoutes);
+app.use('/api/property-reports', propertyReportRoutes);
+app.use('/api/mercadopago', mercadoPagoRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -173,6 +189,9 @@ const startServer = async () => {
             console.log('✅ Database models synchronized');
         }
 
+        // Start the plan expiration scheduler
+        await startPlanScheduler();
+
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on port ${PORT}`);
             console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -201,5 +220,18 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Graceful shutdown handling for the scheduler
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    await stopPlanScheduler();
+    process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+    console.log('SIGINT signal received: closing HTTP server');
+    await stopPlanScheduler();
+    process.exit(0);
+});
 
 export default app;

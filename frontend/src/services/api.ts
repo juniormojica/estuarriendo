@@ -12,7 +12,15 @@ import {
   StudentRequest,
   Notification,
   VerificationDocuments,
-  VerificationStatus
+  VerificationStatus,
+  DocumentVerificationStatus,
+  VerificationProgress,
+  CreditBalance,
+  CreditTransaction,
+  ContactUnlock,
+  PropertyReport,
+  PropertyReportReason,
+  PropertyReportStatus
 } from '../types';
 import { mockProperties } from '../data/mockData';
 import apiClient from '../lib/axios';
@@ -96,9 +104,10 @@ export const api = {
 
     if (filters) {
       if (filters.city) {
-        filteredProperties = filteredProperties.filter(p =>
-          p.location?.city?.toLowerCase().includes(filters.city!.toLowerCase())
-        );
+        filteredProperties = filteredProperties.filter(p => {
+          const cityName = typeof p.location?.city === 'object' ? (p.location.city as any).name : p.location?.city;
+          return cityName?.toLowerCase().includes(filters.city!.toLowerCase());
+        });
       }
 
       if (filters.type) {
@@ -398,7 +407,9 @@ export const api = {
     await delay(300);
     const properties = getStoredProperties();
     const approvedProperties = properties.filter(p => p.status === 'approved');
-    const cities = Array.from(new Set(approvedProperties.map(p => p.location?.city || ''))).filter(Boolean);
+    const cities = Array.from(new Set(approvedProperties.map(p => {
+      return typeof p.location?.city === 'object' ? (p.location.city as any).name : (p.location?.city || '');
+    }))).filter(Boolean);
     return cities.sort();
   },
 
@@ -745,6 +756,18 @@ export const api = {
     }
   },
 
+  async createMPCheckoutLink(userId: string, planType: string, userEmail?: string): Promise<string | null> {
+    try {
+      console.log('📤 Requesting MP checkout link for:', { userId, planType, userEmail });
+      const response = await apiClient.post('/mercadopago/create-preference', { userId, planType, userEmail });
+      console.log('✅ MP checkout link created:', response.data.init_point);
+      return response.data.init_point;
+    } catch (error: any) {
+      console.error('❌ Error creating MP checkout link:', error);
+      return null;
+    }
+  },
+
   async getPaymentRequests(): Promise<PaymentRequest[]> {
     try {
       const response = await apiClient.get<PaymentRequest[]>('/payment-requests');
@@ -912,49 +935,43 @@ export const api = {
   },
 
   // Notify owner of interest
-  async notifyOwnerInterest(ownerId: string, propertyId: string, interestedUserId: string): Promise<boolean> {
-    await delay(500);
-
-    // Get property and user details
-    const properties = getStoredProperties();
-    const users = getStoredUsers();
-    const property = properties.find(p => p.id === propertyId);
-    const interestedUser = users.find(u => u.id === interestedUserId);
-
-    if (!property || !interestedUser) {
+  async notifyOwnerInterest(
+    ownerId: string,
+    propertyId: string,
+    interestedUserId: string,
+    interestedUserName: string,
+    propertyTitle: string
+  ): Promise<boolean> {
+    try {
+      await apiClient.post('/notifications', {
+        userId: ownerId,
+        type: 'property_interest',
+        title: 'Nuevo interesado en tu propiedad',
+        message: `${interestedUserName} está interesado en "${propertyTitle}"`,
+        propertyId: propertyId,
+        propertyTitle: propertyTitle,
+        interestedUserId: interestedUserId
+      });
+      console.log(`Notification created for owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
+      return true;
+    } catch (error) {
+      console.error('Error creating interest notification:', error);
       return false;
     }
-
-    // Create notification
-    const notifications = getStoredNotifications();
-    const newNotification: Notification = {
-      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      userId: ownerId,
-      type: 'property_interest',
-      title: 'Nuevo interés en tu propiedad',
-      message: `${interestedUser.name} está interesado en "${property.title}"`,
-      propertyId: propertyId,
-      propertyTitle: property.title,
-      interestedUserId: interestedUserId,
-      interestedUserName: interestedUser.name,
-      read: false,
-      createdAt: new Date().toISOString()
-    };
-
-    notifications.push(newNotification);
-    saveNotifications(notifications);
-
-    console.log(`Notification created for owner ${ownerId} about property ${propertyId} from user ${interestedUserId}`);
-    return true;
   },
 
   // Get interested users for a property
-  async getPropertyInterests(propertyId: string): Promise<Notification[]> {
-    await delay(300);
-    const notifications = getStoredNotifications();
-    return notifications
-      .filter(n => n.propertyId === propertyId && n.type === 'property_interest')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  async getPropertyInterests(ownerId: string, propertyId: string): Promise<Notification[]> {
+    try {
+      const response = await apiClient.get<Notification[]>(`/notifications/user/${ownerId}`);
+      // Filter for this property and only interest type
+      return response.data
+        .filter(n => String(n.propertyId) === String(propertyId) && n.type === 'property_interest')
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (error) {
+      console.error('Error fetching property interests:', error);
+      return [];
+    }
   },
 
   // Get notifications for a user
@@ -1029,6 +1046,45 @@ export const api = {
       console.error('❌ Error submitting verification:', error);
       const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Error al enviar los documentos.';
       return { success: false, message: errorMessage };
+    }
+  },
+
+  async submitSingleVerificationDocument(userId: string, documentType: string, documentUrl: string, idNumber?: string): Promise<{ success: boolean; message: string; status?: DocumentVerificationStatus }> {
+    try {
+      const response = await apiClient.post('/verification/document/submit', {
+        userId,
+        documentType,
+        documentUrl,
+        idNumber
+      });
+      return { success: true, message: 'Documento subido con éxito', status: response.data.status };
+    } catch (error: any) {
+      console.error('Error submitting single document:', error);
+      return { success: false, message: error.response?.data?.error || 'Error al subir el documento' };
+    }
+  },
+
+  async getVerificationProgress(userId: string): Promise<VerificationProgress | null> {
+    try {
+      const response = await apiClient.get<VerificationProgress>(`/verification/progress/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting verification progress:', error);
+      return null;
+    }
+  },
+
+  async reviewSingleVerificationDocument(userId: string, documentType: string, status: DocumentVerificationStatus, reason?: string): Promise<{ success: boolean; message: string; globalStatus?: VerificationStatus }> {
+    try {
+      const response = await apiClient.patch(`/verification/document/${userId}/review`, {
+        documentType,
+        status,
+        reason
+      });
+      return { success: true, message: 'Revisión guardada con éxito', globalStatus: response.data.globalStatus };
+    } catch (error: any) {
+      console.error('Error reviewing document:', error);
+      return { success: false, message: error.response?.data?.error || 'Error al guardar la revisión' };
     }
   },
 
@@ -1329,8 +1385,115 @@ export const api = {
       console.error('Error deleting user:', error);
       throw error;
     }
-  }
+  },
 
+  // ==========================================
+  // Credit System Methods
+  // ==========================================
+
+  async getCreditBalance(userId: string): Promise<CreditBalance | null> {
+    try {
+      const response = await apiClient.get(`/credits/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching credit balance:', error);
+      return null;
+    }
+  },
+
+  async getCreditTransactions(userId: string): Promise<CreditTransaction[]> {
+    try {
+      const response = await apiClient.get(`/credits/${userId}/transactions`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching credit transactions:', error);
+      return [];
+    }
+  },
+
+  async checkContactUnlocked(userId: string, propertyId: string | number): Promise<{ unlocked: boolean; unlockData?: ContactUnlock }> {
+    try {
+      const response = await apiClient.get(`/credits/check-unlock/${userId}/${propertyId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error checking contact unlock:', error);
+      return { unlocked: false };
+    }
+  },
+
+  async unlockContact(tenantId: string, propertyId: string | number): Promise<{ success: boolean; unlockData?: ContactUnlock; ownerContact?: User; remainingCredits?: number; hasUnlimited?: boolean; error?: string }> {
+    try {
+      const response = await apiClient.post('/credits/unlock-contact', { tenantId, propertyId });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error unlocking contact:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to unlock contact'
+      };
+    }
+  },
+
+  async createPropertyReport(data: { reporterId: string; propertyId: string | number; reason: PropertyReportReason; description?: string }): Promise<PropertyReport | null> {
+    try {
+      const response = await apiClient.post('/property-reports', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating property report:', error);
+      throw error;
+    }
+  },
+
+  async getPropertyReports(status?: PropertyReportStatus): Promise<PropertyReport[]> {
+    try {
+      const endpoint = status ? `/property-reports?status=${status}` : '/property-reports';
+      const response = await apiClient.get(endpoint);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching property reports:', error);
+      return [];
+    }
+  },
+
+  async confirmPropertyReport(id: string | number, data: { adminId: string; adminNotes?: string }): Promise<PropertyReport | null> {
+    try {
+      const response = await apiClient.put(`/property-reports/${id}/confirm`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming property report:', error);
+      throw error;
+    }
+  },
+
+  async rejectPropertyReport(id: string | number, data: { adminId: string; adminNotes?: string }): Promise<PropertyReport | null> {
+    try {
+      const response = await apiClient.put(`/property-reports/${id}/reject`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error rejecting property report:', error);
+      throw error;
+    }
+  },
+
+  async addReportActivity(reportId: string | number, data: { adminId: string; action: string; notes: string }): Promise<any> {
+    try {
+      const response = await apiClient.post(`/property-reports/${reportId}/activity`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding report activity:', error);
+      throw error;
+    }
+  },
+
+  async getReportActivity(reportId: string | number): Promise<any[]> {
+    try {
+      const response = await apiClient.get(`/property-reports/${reportId}/activity`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching report activity logs:', error);
+      return [];
+    }
+  }
 }
 
 // Helper for student requests

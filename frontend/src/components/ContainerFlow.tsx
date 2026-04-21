@@ -1,5 +1,6 @@
+'use client';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter, redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import PropertyTypeSelectorStep from './PropertyTypeSelectorStep';
 import ContainerBasicInfo from './ContainerBasicInfo';
@@ -14,7 +15,7 @@ import type { RentalMode, PropertyUnit } from '../types';
 import { createContainer, updateContainer, adminCreateContainer } from '../services/containerService';
 import { useAppDispatch } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
-
+import { useScrollToTop } from '../hooks/useScrollToTop';
 interface ContainerFlowProps {
     propertyId?: string; // For editing
     initialPropertyType?: string; // Skip type selector if already selected
@@ -59,7 +60,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
     targetOwnerId,
     onAdminComplete
 }) => {
-    const navigate = useNavigate();
+    const router = useRouter();
     const dispatch = useAppDispatch();
 
     // Load amenities on mount
@@ -124,9 +125,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
     }, [propertyId]);
 
     // Scroll to top when step changes
-    useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [currentStep]);
+    useScrollToTop([currentStep], 'smooth');
 
     const handleSubmit = async () => {
         try {
@@ -193,7 +192,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
             if (adminMode && onAdminComplete) {
                 onAdminComplete();
             } else {
-                navigate('/dashboard');
+                router.push('/dashboard');
             }
         } catch (err: any) {
             console.error('Error submitting container:', err);
@@ -381,7 +380,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
                 {/* Header */}
                 <div className="mb-8">
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => router.push('/dashboard')}
                         className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
                     >
                         <ArrowLeft className="h-5 w-5" />

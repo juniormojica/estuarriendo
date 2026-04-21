@@ -39,7 +39,7 @@ export const propertyServiceSchema = z.object({
  * Schema para reglas de convivencia
  */
 export const propertyRuleSchema = z.object({
-    ruleType: z.enum(['smoking', 'pets', 'visits', 'noise', 'curfew']),
+    ruleType: z.enum(['smoking', 'pets', 'visits', 'noise', 'curfew', 'tenant_profile', 'couples', 'children']),
     isAllowed: z.preprocess(
         (val) => {
             if (typeof val === 'string') return val === 'true';

@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +7,7 @@ import { containerRulesSchema, type ContainerRulesData } from '../../lib/schemas
 import type { PropertyRule, PropertyContainer } from '../../types';
 import containerService from '../../services/containerService';
 import { useToast } from '../ToastProvider';
+import ConfirmReviewModal from '../ConfirmReviewModal';
 
 interface ContainerEditRulesProps {
     container: PropertyContainer;
@@ -24,6 +26,8 @@ interface RuleOption {
 const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUpdate, onSuccess }) => {
     const toast = useToast();
     const [isSaving, setIsSaving] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pendingData, setPendingData] = useState<ContainerRulesData | null>(null);
 
     const {
         control,
@@ -35,7 +39,12 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
         resolver: zodResolver(containerRulesSchema) as any,
         mode: 'onBlur',
         defaultValues: {
-            rules: container.rules || [],
+            rules: (container.rules || []).map(r => ({
+                ruleType: r.ruleType,
+                isAllowed: r.isAllowed,
+                value: r.value || undefined,
+                description: r.description || undefined,
+            })) as PropertyRule[],
         },
     });
 
@@ -99,21 +108,23 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
         return fields.findIndex(field => field.ruleType === ruleType);
     };
 
-    const onSubmit = async (data: ContainerRulesData) => {
-        if (!container.id) return;
+    const handleConfirm = async () => {
+        if (!pendingData || !container.id) return;
 
         setIsSaving(true);
         try {
             const updated = await containerService.updateContainer(container.id, {
-                rules: data.rules as PropertyRule[]
+                rules: pendingData.rules as PropertyRule[],
+                skipStatusReset: true
             });
             toast.success('Reglas actualizadas correctamente');
             if (onUpdate) {
                 onUpdate(updated);
             }
-            if (onSuccess) {
-                onSuccess();
-            }
+            // if (onSuccess) {
+            //     onSuccess();
+            // }
+            setIsModalOpen(false);
         } catch (error: any) {
             console.error('Error updating rules:', error);
             toast.error(error.response?.data?.message || 'Error al actualizar las reglas');
@@ -122,8 +133,14 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
         }
     };
 
+    const handleFormSubmit = (data: ContainerRulesData) => {
+        setPendingData(data);
+        setIsModalOpen(true);
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit as any)} noValidate className="space-y-4">
+        <>
+        <form onSubmit={handleSubmit(handleFormSubmit as any)} noValidate className="space-y-4">
             {ruleOptions.map(option => {
                 const isSelected = isRuleSelected(option.ruleType);
                 const ruleIndex = getRuleIndex(option.ruleType);
@@ -200,10 +217,10 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
             })}
 
             {/* Error message */}
-            {errors.rules && (
+            {errors.rules?.root?.message && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <p className="text-sm text-red-600" role="alert">
-                        {errors.rules.message || 'Debes seleccionar al menos una regla'}
+                        {errors.rules.root.message}
                     </p>
                 </div>
             )}
@@ -220,6 +237,16 @@ const ContainerEditRules: React.FC<ContainerEditRulesProps> = ({ container, onUp
                 </button>
             </div>
         </form>
+
+        <ConfirmReviewModal 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={handleConfirm}
+            isSaving={isSaving}
+            title="¿Guardar Reglas?"
+            message="Tus cambios se guardarán automáticamente, pero la propiedad no se enviará a revisión. Debes usar el botón 'Enviar a Revisión' al fondo de la página cuando termines con todas las pestañas."
+        />
+        </>
     );
 };
 

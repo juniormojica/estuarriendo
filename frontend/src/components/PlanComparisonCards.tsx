@@ -26,14 +26,14 @@ const PlanComparisonCards: React.FC<PlanComparisonCardsProps> = ({
         {
             id: 'weekly',
             name: 'Semanal',
-            price: 12500,
+            price: 12999,
             duration: 7,
             description: '7 días de acceso premium'
         },
         {
             id: 'monthly',
             name: 'Mensual',
-            price: 20000,
+            price: 19999,
             duration: 30,
             description: '30 días de acceso premium',
             recommended: true
@@ -41,10 +41,10 @@ const PlanComparisonCards: React.FC<PlanComparisonCardsProps> = ({
         {
             id: 'quarterly',
             name: 'Trimestral',
-            price: 28000,
+            price: 49999,
             duration: 90,
             description: '90 días de acceso premium',
-            savings: 'Ahorra $32,000'
+            savings: 'Ahorra $9,998'
         }
     ];
 

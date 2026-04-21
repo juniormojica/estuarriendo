@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import { Home, Users, ArrowLeft, ArrowRight, Info } from 'lucide-react';
 import type { RentalMode } from '../types';

@@ -53,6 +53,15 @@ export const register = async (req, res) => {
             timestamp: new Date()
         });
 
+        // Set HTTP-only cookie for Next.js middleware
+        res.cookie('estuarriendo_token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+            path: '/'
+        });
+
         res.status(201).json(result);
     } catch (error) {
         handleError(res, error);
@@ -75,7 +84,35 @@ export const login = async (req, res) => {
         }
 
         const result = await authService.login(email, password);
+
+        // Set HTTP-only cookie for Next.js middleware
+        res.cookie('estuarriendo_token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+            path: '/'
+        });
+
         res.json(result);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+/**
+ * Logout user
+ * POST /api/auth/logout
+ */
+export const logout = async (req, res) => {
+    try {
+        res.clearCookie('estuarriendo_token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/'
+        });
+        res.json({ message: 'Sesión cerrada exitosamente' });
     } catch (error) {
         handleError(res, error);
     }
@@ -172,6 +209,7 @@ export const resetPassword = async (req, res) => {
 export default {
     register,
     login,
+    logout,
     getCurrentUser,
     forgotPassword,
     verifyResetToken,

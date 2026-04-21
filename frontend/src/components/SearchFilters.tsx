@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { SearchFilters as SearchFiltersType, Department } from '../types';

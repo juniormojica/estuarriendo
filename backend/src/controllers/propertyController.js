@@ -2,6 +2,7 @@ import { Property, User, Amenity, Notification, ActivityLog } from '../models/in
 import { PropertyStatus, NotificationType, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';
+import { sseService } from '../services/sseService.js';
 
 /**
  * Property Controller
@@ -122,8 +123,11 @@ export const getAllProperties = async (req, res) => {
 export const getPropertyById = async (req, res) => {
     try {
         const { id } = req.params;
+        const { lightweight } = req.query;
 
-        const property = await propertyService.findPropertyWithAssociations(id);
+        const property = lightweight === 'true' 
+            ? await propertyService.findPropertyLightweight(id)
+            : await propertyService.findPropertyWithAssociations(id);
 
         if (!property) {
             return res.status(404).json({ error: 'Propiedad no encontrada' });
@@ -309,6 +313,13 @@ export const createProperty = async (req, res) => {
             timestamp: new Date()
         });
 
+        // Broadcast SSE event
+        sseService.broadcast('property_submitted', { 
+            propertyId: property.id, 
+            title: property.title, 
+            ownerName: owner.name 
+        });
+
         res.status(201).json(completeProperty);
     } catch (error) {
         console.error('Error creating property:', error);
@@ -340,6 +351,13 @@ export const updateProperty = async (req, res) => {
 
         // Fetch updated property with all associations
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
+
+        if (updates.status === PropertyStatus.PENDING) {
+            sseService.broadcast('property_updated', {
+                propertyId: id,
+                title: property.title
+            });
+        }
 
         res.json(completeProperty);
     } catch (error) {

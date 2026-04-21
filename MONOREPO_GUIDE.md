@@ -4,7 +4,7 @@
 
 ```
 estuarriendo/
-├── frontend/          # Aplicación React/Vite
+├── frontend/          # Aplicación Next.js (App Router)
 ├── backend/           # API Express.js
 ├── .git/              # Control de versiones compartido
 ├── .gitignore         # Ignorar archivos para ambos proyectos

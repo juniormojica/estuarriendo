@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, School, AlertCircle } from 'lucide-react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
@@ -39,7 +40,7 @@ const PropertiesMap: React.FC<PropertiesMapProps> = ({ properties, selectedCity 
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const markersRef = useRef<google.maps.Marker[]>([]);
 
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     // Fetch institutions
     useEffect(() => {

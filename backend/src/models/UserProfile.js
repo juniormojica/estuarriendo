@@ -67,6 +67,15 @@ const UserProfile = sequelize.define('UserProfile', {
             key: 'id'
         }
     },
+    studyCityId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'study_city_id',
+        references: {
+            model: 'cities',
+            key: 'id'
+        }
+    },
     livingPreference: {
         type: DataTypes.STRING, // 'solo', 'shared', 'indifferent'
         allowNull: true,
