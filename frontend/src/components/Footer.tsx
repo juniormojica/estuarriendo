@@ -1,7 +1,8 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { Home, Mail, Phone, MapPin, Facebook, Instagram, Twitter, Heart } from 'lucide-react';
+import { Home, Mail, Phone, MapPin, Heart } from 'lucide-react';
+import { FacebookIcon, InstagramIcon, XIcon } from './icons/SocialIcons'
 
 const Footer: React.FC = () => {
     const currentYear = new Date().getFullYear();
@@ -29,7 +30,7 @@ const Footer: React.FC = () => {
                                 className="text-gray-400 hover:text-emerald-500 transition-colors"
                                 aria-label="Facebook"
                             >
-                                <Facebook className="h-5 w-5" />
+                                <FacebookIcon className="h-5 w-5" />
                             </a>
                             <a
                                 href="https://instagram.com"
@@ -38,7 +39,7 @@ const Footer: React.FC = () => {
                                 className="text-gray-400 hover:text-emerald-500 transition-colors"
                                 aria-label="Instagram"
                             >
-                                <Instagram className="h-5 w-5" />
+                                <InstagramIcon className="h-5 w-5" />
                             </a>
                             <a
                                 href="https://twitter.com"
@@ -47,7 +48,7 @@ const Footer: React.FC = () => {
                                 className="text-gray-400 hover:text-emerald-500 transition-colors"
                                 aria-label="Twitter"
                             >
-                                <Twitter className="h-5 w-5" />
+                                <XIcon className="h-5 w-5" />
                             </a>
                         </div>
                     </div>
