@@ -10,7 +10,7 @@ import { resetPasswordSchema, ResetPasswordFormValues } from '../lib/validations
 
 const ResetPasswordPage = () => {
     const router = useRouter();
-    const [searchParams] = useSearchParams();
+    const searchParams = useSearchParams();
     const token = searchParams.get('token') || '';
 
     const [showPassword, setShowPassword] = useState(false);

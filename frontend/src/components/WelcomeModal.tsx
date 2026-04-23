@@ -46,7 +46,7 @@ const WelcomeModal: React.FC = () => {
 
     const handleBrowse = () => {
         handleClose();
-        router.push('/', { state: { scrollToSearch: true } });
+        router.push('/?scrollToSearch=true');
     };
 
     const handleLogin = () => {

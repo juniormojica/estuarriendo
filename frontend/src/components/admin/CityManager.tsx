@@ -321,7 +321,7 @@ const CityManager: React.FC = () => {
                     title="Eliminar Ciudad"
                     message={`¿Estás seguro de que deseas eliminar la ciudad "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
                     onConfirm={handleDelete}
-                    onCancel={() => setDeleteConfirm(null)}
+                    onClose={() => setDeleteConfirm(null)}
                     confirmText="Eliminar"
                     cancelText="Cancelar"
                 />

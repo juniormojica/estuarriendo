@@ -79,7 +79,7 @@ const PropertyDetail: React.FC = () => {
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: mapsApiKey
+    googleMapsApiKey: mapsApiKey || ''
   });
 
   useEffect(() => {

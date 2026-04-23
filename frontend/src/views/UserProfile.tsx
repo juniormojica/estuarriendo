@@ -731,7 +731,7 @@ const UserProfile: React.FC = () => {
                                                 <button
                                                     onClick={() => {
                                                         // Ensure we have a clean URL before navigating
-                                                        router.push('/planes', { replace: true });
+                                                        router.replace('/planes');
                                                     }}
                                                     className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition"
                                                 >

@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import PropertyTypeSelector from '../components/PropertyTypeSelector';
-import ContainerBasicInfo, { ContainerBasicInfoData } from '../components/ContainerBasicInfo';
+import ContainerBasicInfo from '../components/ContainerBasicInfo';
+import { ContainerBasicInfoData } from '../lib/schemas/container.schema';
 import ContainerServices from '../components/ContainerServices';
 import type { PropertyService } from '../types';
 
@@ -70,6 +71,7 @@ const ComponentDemoPage = () => {
                 {currentStep === 'basic' && (
                     <ContainerBasicInfo
                         onNext={handleBasicInfoNext}
+                        onBack={() => setCurrentStep('selector')}
                         initialData={basicInfoData}
                     />
                 )}

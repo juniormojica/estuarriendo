@@ -8,7 +8,6 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 
 const PlansPage: React.FC = () => {
     const pathname = usePathname();
-    const state = (null as any) as { returnTo?: string } | null;
 
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
@@ -104,7 +103,6 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=5_credits"
-                                    state={state}
                                     className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
                                 >
                                     Comprar 5 Créditos
@@ -149,7 +147,6 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=10_credits"
-                                    state={state}
                                     className="block w-full min-h-[48px] bg-emerald-600 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-sm"
                                 >
                                     Comprar 10 Créditos
@@ -184,7 +181,6 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=20_credits"
-                                    state={state}
                                     className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
                                 >
                                     Comprar 20 Créditos

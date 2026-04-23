@@ -6,18 +6,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import ConfirmModal from '../ConfirmModal';
 import { useToast } from '../../components/ToastProvider';
 
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    userType: 'owner' | 'tenant' | 'admin' | 'superAdmin';
-    plan: 'free' | 'premium';
-    verificationStatus: 'pending' | 'verified' | 'rejected';
-    whatsapp?: string;
-    ownerRole?: 'landlord' | 'agent' | 'property_manager';
-    joinedAt: string;
-}
+import { User } from '../../types';
 
 const UserManager: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -48,7 +37,7 @@ const UserManager: React.FC = () => {
         plan: 'free' as User['plan'],
         verificationStatus: 'pending' as User['verificationStatus'],
         whatsapp: '',
-        ownerRole: '' as User['ownerRole'] | ''
+        role: '' as User['role'] | ''
     });
 
     useEffect(() => {
@@ -112,7 +101,7 @@ const UserManager: React.FC = () => {
                 plan: user.plan,
                 verificationStatus: user.verificationStatus,
                 whatsapp: user.whatsapp || '',
-                ownerRole: user.ownerRole || ''
+                role: user.role || ''
             });
         } else {
             setEditingUser(null);
@@ -125,7 +114,7 @@ const UserManager: React.FC = () => {
                 plan: 'free',
                 verificationStatus: 'pending',
                 whatsapp: '',
-                ownerRole: ''
+                role: ''
             });
         }
         setShowModal(true);
@@ -143,7 +132,7 @@ const UserManager: React.FC = () => {
             plan: 'free',
             verificationStatus: 'pending',
             whatsapp: '',
-            ownerRole: ''
+            role: ''
         });
     };
 
@@ -159,7 +148,7 @@ const UserManager: React.FC = () => {
                 plan: formData.plan,
                 verificationStatus: formData.verificationStatus,
                 whatsapp: formData.whatsapp || undefined,
-                ownerRole: formData.userType === 'owner' && formData.ownerRole ? formData.ownerRole : undefined,
+                role: formData.userType === 'owner' && formData.role ? formData.role : undefined,
                 ...(formData.password && { password: formData.password })
             };
 
@@ -216,7 +205,7 @@ const UserManager: React.FC = () => {
         );
     };
 
-    const getPlanBadge = (plan: string) => {
+    const getPlanBadge = (plan?: string) => {
         return plan === 'premium' ? (
             <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                 Premium
@@ -523,14 +512,13 @@ const UserManager: React.FC = () => {
                                             Rol de Propietario
                                         </label>
                                         <select
-                                            value={formData.ownerRole}
-                                            onChange={(e) => setFormData({ ...formData, ownerRole: e.target.value as User['ownerRole'] | '' })}
+                                            value={formData.role || ''}
+                                            onChange={(e) => setFormData({ ...formData, role: (e.target.value as User['role']) || '' })}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                                         >
                                             <option value="">Seleccionar...</option>
-                                            <option value="landlord">Arrendador</option>
-                                            <option value="agent">Agente</option>
-                                            <option value="property_manager">Administrador de Propiedades</option>
+                                            <option value="individual">Persona Natural (Individual)</option>
+                                            <option value="agency">Agencia Inmobiliaria</option>
                                         </select>
                                     </div>
                                 )}

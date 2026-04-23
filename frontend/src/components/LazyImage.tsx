@@ -15,6 +15,7 @@ interface LazyImageProps {
   fill?: boolean;
   priority?: boolean;
   sizes?: string;
+  onClick?: () => void;
 }
 
 const LazyImage: React.FC<LazyImageProps> = ({
@@ -27,12 +28,16 @@ const LazyImage: React.FC<LazyImageProps> = ({
   fill = true,
   priority = false,
   sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+  onClick,
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
 
   return (
-    <div className={cn("relative overflow-hidden bg-gray-100", className)}>
+    <div 
+      className={cn("relative overflow-hidden bg-gray-100", className)}
+      onClick={onClick}
+    >
       {!isLoaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-200 animate-pulse z-10">
           <ImageIcon className="w-8 h-8 text-gray-400" />

@@ -563,7 +563,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                                             key={amenity.id}
                                             className={`
                                                 flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all
-                                                ${amenitiesValue?.includes(amenity.id)
+                                                ${amenitiesValue?.includes(amenity.id as any)
                                                     ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                                                     : 'border-gray-200 hover:border-blue-300'
                                                 }
@@ -571,13 +571,13 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
                                         >
                                             <input
                                                 type="checkbox"
-                                                checked={amenitiesValue?.includes(amenity.id) || false}
+                                                checked={amenitiesValue?.includes(amenity.id as any) || false}
                                                 onChange={(e) => {
                                                     const current = amenitiesValue || [];
                                                     const newAmenities = e.target.checked
-                                                        ? [...current, amenity.id]
+                                                        ? [...current, amenity.id as number]
                                                         : current.filter(id => id !== amenity.id);
-                                                    setValue('amenities', newAmenities, { shouldValidate: true });
+                                                    setValue('amenities', newAmenities as number[], { shouldValidate: true });
                                                 }}
                                                 className="sr-only"
                                             />

@@ -241,7 +241,7 @@ const PropertyTypeManager: React.FC = () => {
                     title="Eliminar Tipo de Propiedad"
                     message={`¿Estás seguro de que deseas eliminar el tipo de propiedad "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
                     onConfirm={handleDelete}
-                    onCancel={() => setDeleteConfirm(null)}
+                    onClose={() => setDeleteConfirm(null)}
                     confirmText="Eliminar"
                     cancelText="Cancelar"
                 />
