@@ -27,8 +27,10 @@ router.get('/admin', (req, res) => {
 
         // Setup SSE Headers
         res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Cache-Control', 'no-cache, no-transform');
         res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no'); // Prevent proxy buffering (Nginx/Next.js)
+        res.setHeader('Access-Control-Allow-Origin', '*'); // Fallback CORS
         
         // Disable compression for SSE stream if it's enabled globally
         // (Depends on compression middleware, but good practice to flush immediately)

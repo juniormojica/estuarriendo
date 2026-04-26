@@ -6,22 +6,23 @@ import {
     getActivityStatistics,
     deleteOldLogs
 } from '../controllers/activityLogController.js';
+import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Get all activity logs with filters
-router.get('/', getAllActivityLogs);
+router.get('/', authenticateToken, getAllActivityLogs);
 
 // Get activity log by ID
-router.get('/:id', getActivityLogById);
+router.get('/:id', authenticateToken, getActivityLogById);
 
 // Create activity log
-router.post('/', createActivityLog);
+router.post('/', authenticateToken, createActivityLog);
 
 // Get activity statistics
-router.get('/statistics/summary', getActivityStatistics);
+router.get('/statistics/summary', authenticateToken, getActivityStatistics);
 
 // Delete old logs (cleanup)
-router.delete('/cleanup', deleteOldLogs);
+router.delete('/cleanup', authenticateToken, deleteOldLogs);
 
 export default router;

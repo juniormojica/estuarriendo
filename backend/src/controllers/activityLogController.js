@@ -43,7 +43,7 @@ export const getAllActivityLogs = async (req, res) => {
                 {
                     model: Property,
                     as: 'property',
-                    attributes: ['id', 'title', 'type'],
+                    attributes: ['id', 'title', 'typeId'],
                     required: false
                 }
             ],
@@ -75,7 +75,7 @@ export const getActivityLogById = async (req, res) => {
                 {
                     model: Property,
                     as: 'property',
-                    attributes: ['id', 'title', 'type'],
+                    attributes: ['id', 'title', 'typeId'],
                     required: false
                 }
             ]

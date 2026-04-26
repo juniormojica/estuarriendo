@@ -25,7 +25,7 @@ import PropertyReportsAdmin from '../components/admin/PropertyReportsAdmin';
 import { Menu } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-import { useAdminSSE } from '../hooks/useAdminSSE';
+import { useAdminPolling } from '../hooks/useAdminPolling';
 import toastLib from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -134,20 +134,25 @@ const AdminDashboard = () => {
             // Fetch amenities from Redux
             dispatch(fetchAmenities());
 
-            // Default lightweight fetches needed across dashboard (sidebar counts, pending lists, owners)
-            const [studentRequests, containers, usersData] = await Promise.all([
+            // Fetch all data needed for sidebar badges + initial render in parallel
+            const [studentRequests, containers, usersData, verifications, payments] = await Promise.all([
                 api.getStudentRequests(),
                 api.getPendingContainers(),
-                api.getUsers()
+                api.getUsers(),
+                api.getPendingVerifications(),
+                api.getPaymentRequests(),
             ]);
 
             setStudentRequestsCount(studentRequests.filter(r => r.status === 'open').length);
             setPendingContainers(containers);
             setUsers(usersData);
+            setPendingVerifications(verifications);
+            setPaymentRequests(payments);
 
             // Load data for the active section immediately
             await loadSectionData(currentSection);
         } catch (error) {
+
             console.error('Error loading admin data:', error);
         } finally {
             setLoading(false);
@@ -160,116 +165,76 @@ const AdminDashboard = () => {
         }
     }, [currentSection]);
 
-    // Calculate stats from Redux properties
+    // Calculate stats from Redux properties + pending containers
     useEffect(() => {
+        const pendingFromRedux = properties.filter(p => p.status === 'pending').length;
+        // Add containers that aren't already in Redux store to avoid double-counting
+        const containerIds = new Set(properties.map(p => p.id));
+        const extraContainers = pendingContainers.filter(c => !containerIds.has(c.id)).length;
+
         const calculatedStats: PropertyStats = {
             total: properties.length,
-            pending: properties.filter(p => p.status === 'pending').length,
+            pending: pendingFromRedux + extraContainers,
             approved: properties.filter(p => p.status === 'approved').length,
             rejected: properties.filter(p => p.status === 'rejected').length,
             featured: properties.filter(p => p.isFeatured).length,
-            totalRevenue: 0 // TODO: Calculate if needed
+            totalRevenue: 0
         };
         setStats(calculatedStats);
-    }, [properties, currentSection]); // Recalculate when properties change OR when section changes
+    }, [properties, pendingContainers]); // Recalculate when either changes
+
 
     const refreshData = async () => {
-        // Refresh properties from Redux with all statuses
-        await dispatch(fetchProperties({ status: 'all' }));
+        // Always refresh properties, containers, verifications, and payments
+        // so sidebar badges stay accurate regardless of which section is active.
+        const [, containers, verifications, payments] = await Promise.all([
+            dispatch(fetchProperties({ status: 'all' })),
+            api.getPendingContainers(),
+            api.getPendingVerifications(),
+            api.getPaymentRequests(),
+        ]);
 
-        // Refresh pending containers
-        const containers = await api.getPendingContainers();
         setPendingContainers(containers);
+        setPendingVerifications(verifications);
+        setPaymentRequests(payments);
 
-        // Refresh other data depending on the current section
+        // Also refresh section-specific data
         if (currentSection === 'users') {
             const usersData = await api.getUsers();
             setUsers(usersData);
-        } else if (currentSection === 'payments') {
-            const paymentsData = await api.getPaymentRequests();
-            setPaymentRequests(paymentsData);
-        } else if (currentSection === 'verifications') {
-            const verificationsData = await api.getPendingVerifications();
-            setPendingVerifications(verificationsData);
         }
     };
 
-    // Instantiate SSE hook
-    const { isConnected } = useAdminSSE({
+
+    // Smart polling — checks activity log every 15s for new entries.
+    // onRefresh=refreshData means data auto-updates without any user action.
+    const { isConnected } = useAdminPolling({
         property_submitted: () => {
-            toastLib.custom((t) => (
-                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <span className="text-gray-800 dark:text-gray-200">🏠 Nueva propiedad pendiente de revisión</span>
-                    <button 
-                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
-                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
-                    >
-                        Refrescar
-                    </button>
-                </div>
-            ), { duration: 5000 });
+            toastLib.success('🏠 Nueva propiedad pendiente de revisión', { id: 'new-property', duration: 5000 });
         },
         container_submitted: () => {
-            toastLib.custom((t) => (
-                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <span className="text-gray-800 dark:text-gray-200">🏢 Nueva pensión pendiente de revisión</span>
-                    <button 
-                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
-                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
-                    >
-                        Refrescar
-                    </button>
-                </div>
-            ), { duration: 5000 });
+            toastLib.success('🏢 Nueva pensión pendiente de revisión', { id: 'new-container', duration: 5000 });
         },
-        verification_submitted: (data) => {
-            toastLib.custom((t) => (
-                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <span className="text-gray-800 dark:text-gray-200">🛡️ Documentos de verificación recibidos de <b>{data?.userName}</b></span>
-                    <button 
-                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
-                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
-                    >
-                        Refrescar
-                    </button>
-                </div>
-            ), { duration: 5000 });
+        verification_submitted: (entry) => {
+            toastLib.success(`🛡️ Documentos de verificación recibidos de ${entry?.user?.name ?? 'un usuario'}`, { id: 'new-verification', duration: 5000 });
         },
-        payment_submitted: (data) => {
-            toastLib.custom((t) => (
-                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <span className="text-gray-800 dark:text-gray-200">💳 Nueva solicitud de pago de <b>{data?.userName}</b></span>
-                    <button 
-                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
-                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
-                    >
-                        Refrescar
-                    </button>
-                </div>
-            ), { duration: 5000 });
+        verification_doc_submitted: (entry) => {
+            toastLib.success(`📄 Nuevo documento de verificación de ${entry?.user?.name ?? 'un usuario'}`, { id: 'new-doc', duration: 5000 });
         },
-        payment_auto_verified: (data) => {
-             toast.success(`💳 Pago verificado automáticamente para ${data?.userName}`);
-             refreshData();
+        payment_submitted: (entry) => {
+            toastLib.success(`💳 Nueva solicitud de pago de ${entry?.user?.name ?? 'un usuario'}`, { id: 'new-payment', duration: 5000 });
+        },
+        payment_auto_verified: (entry) => {
+            toast.success(`💳 Pago verificado automáticamente para ${entry?.user?.name ?? 'un usuario'}`);
         },
         student_request_created: () => {
-             toastLib.custom((t) => (
-                <div className="bg-white px-6 py-4 shadow-md rounded-lg flex items-center space-x-4 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <span className="text-gray-800 dark:text-gray-200">🎓 Nueva solicitud de estudiante</span>
-                    <button 
-                        onClick={() => { refreshData(); toastLib.dismiss(t.id); }}
-                        className="text-indigo-600 font-semibold hover:text-indigo-700 dark:text-indigo-400"
-                    >
-                        Refrescar
-                    </button>
-                </div>
-            ), { duration: 4000 });
+            toastLib.success('🎓 Nueva solicitud de estudiante', { id: 'new-student', duration: 4000 });
         },
         property_report_created: () => {
-            toast.error(`⚠️ Nueva propiedad reportada`);
-            refreshData();
-        }
-    });
+            toast.error('⚠️ Nueva propiedad reportada');
+        },
+    }, refreshData);
+
 
     const handleApprove = async (id: string) => {
         try {
