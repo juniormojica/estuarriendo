@@ -10,6 +10,62 @@ import { api } from '../services/api';
 import NotificationBell from './NotificationBell';
 import { CreditBalance } from '../types';
 
+// ---------------------------------------------------------------------------
+// NavLink moved OUTSIDE Header so React can reconcile it consistently between
+// SSR and client renders. Defining components inside another component causes
+// the reconciler to treat them as new element types on every render, which is
+// one of the root causes of hydration mismatches.
+// ---------------------------------------------------------------------------
+interface NavLinkProps {
+  to: string;
+  children: React.ReactNode;
+  badge?: number;
+  mobile?: boolean;
+  pathname: string;
+}
+
+const NavLink: React.FC<NavLinkProps> = ({ to, children, badge, mobile = false, pathname }) => {
+  const isActive = pathname === to;
+
+  if (mobile) {
+    return (
+      <Link
+        href={to}
+        className={`relative flex items-center justify-between w-full px-4 py-3.5 rounded-lg text-base font-medium transition-all ${isActive
+          ? 'bg-emerald-50 text-emerald-700 border-l-4 border-emerald-600'
+          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+          }`}
+      >
+        <span>{children}</span>
+        {badge !== undefined && badge > 0 && (
+          <span className="flex items-center justify-center min-w-[24px] h-6 px-2 bg-red-500 text-white text-xs font-bold rounded-full">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      href={to}
+      className={`relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
+        ? 'bg-emerald-50 text-emerald-700'
+        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+        }`}
+    >
+      {children}
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+    </Link>
+  );
+};
+
+// ---------------------------------------------------------------------------
+
 const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
@@ -18,6 +74,17 @@ const Header: React.FC = () => {
   const [newOpportunitiesCount, setNewOpportunitiesCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tenantCredits, setTenantCredits] = useState<CreditBalance | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // `mounted` prevents rendering auth-dependent content on the server.
+  // The server always sees currentUser as null (no Redux/localStorage), so any
+  // JSX branch that depends on currentUser MUST be deferred to the client to
+  // avoid a server/client HTML mismatch (hydration error).
+  // ---------------------------------------------------------------------------
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const loadNewOpportunitiesCount = async () => {
@@ -79,46 +146,6 @@ const Header: React.FC = () => {
     router.push('/');
   };
 
-  const NavLink = ({ to, children, badge, mobile = false }: { to: string; children: React.ReactNode; badge?: number; mobile?: boolean }) => {
-    const isActive = pathname === to;
-
-    if (mobile) {
-      return (
-        <Link
-          href={to}
-          className={`relative flex items-center justify-between w-full px-4 py-3.5 rounded-lg text-base font-medium transition-all ${isActive
-            ? 'bg-emerald-50 text-emerald-700 border-l-4 border-emerald-600'
-            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
-            }`}
-        >
-          <span>{children}</span>
-          {badge !== undefined && badge > 0 && (
-            <span className="flex items-center justify-center min-w-[24px] h-6 px-2 bg-red-500 text-white text-xs font-bold rounded-full">
-              {badge > 99 ? '99+' : badge}
-            </span>
-          )}
-        </Link>
-      );
-    }
-
-    return (
-      <Link
-        href={to}
-        className={`relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
-          ? 'bg-emerald-50 text-emerald-700'
-          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
-          }`}
-      >
-        {children}
-        {badge !== undefined && badge > 0 && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full">
-            {badge > 99 ? '99+' : badge}
-          </span>
-        )}
-      </Link>
-    );
-  };
-
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -137,119 +164,126 @@ const Header: React.FC = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-2">
-            <NavLink to="/">Inicio</NavLink>
+            <NavLink to="/" pathname={pathname}>Inicio</NavLink>
 
-            {/* Hide Favoritos and Planes for admin/superAdmin users */}
-            {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'superAdmin')) && (
+            {/* Auth-dependent links — only rendered after client mount to avoid hydration mismatch */}
+            {mounted && (
               <>
-                <NavLink to="/favoritos">Favoritos</NavLink>
-                <NavLink to="/planes">Planes</NavLink>
-              </>
-            )}
-
-            {currentUser && (
-              <>
-                {/* Admin Panel Link */}
-                {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
-                  <NavLink to="/admin">Admin Panel</NavLink>
-                )}
-
-                {/* Super Admin Dashboard Link */}
-                {currentUser.userType === 'superAdmin' && (
-                  <NavLink to="/super-admin">Super Admin</NavLink>
-                )}
-
-                {/* Tenant Links */}
-                {currentUser.userType === 'tenant' && (
-                  <NavLink to="/busco-inmueble">Busco Inmueble</NavLink>
-                )}
-
-                {/* Owner Links */}
-                {currentUser.userType === 'owner' && (
+                {/* Hide Favoritos and Planes for admin/superAdmin users */}
+                {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'superAdmin')) && (
                   <>
-                    <NavLink to="/oportunidades" badge={newOpportunitiesCount}>
-                      Solicitudes
-                    </NavLink>
-                    <NavLink to="/mis-propiedades">Mis Propiedades</NavLink>
+                    <NavLink to="/favoritos" pathname={pathname}>Favoritos</NavLink>
+                    <NavLink to="/planes" pathname={pathname}>Planes</NavLink>
                   </>
                 )}
 
-                <NavLink to="/perfil">Mi Perfil</NavLink>
-              </>
-            )}
+                {currentUser && (
+                  <>
+                    {/* Admin Panel Link */}
+                    {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
+                      <NavLink to="/admin" pathname={pathname}>Admin Panel</NavLink>
+                    )}
 
-            {/* Publicar Button */}
-            {(!currentUser || currentUser.userType === 'owner') && (
-              <Link
-                href="/publicar"
-                className="flex items-center space-x-1.5 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 ml-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Publicar</span>
-              </Link>
+                    {/* Super Admin Dashboard Link */}
+                    {currentUser.userType === 'superAdmin' && (
+                      <NavLink to="/super-admin" pathname={pathname}>Super Admin</NavLink>
+                    )}
+
+                    {/* Tenant Links */}
+                    {currentUser.userType === 'tenant' && (
+                      <NavLink to="/busco-inmueble" pathname={pathname}>Busco Inmueble</NavLink>
+                    )}
+
+                    {/* Owner Links */}
+                    {currentUser.userType === 'owner' && (
+                      <>
+                        <NavLink to="/oportunidades" badge={newOpportunitiesCount} pathname={pathname}>
+                          Solicitudes
+                        </NavLink>
+                        <NavLink to="/mis-propiedades" pathname={pathname}>Mis Propiedades</NavLink>
+                      </>
+                    )}
+
+                    <NavLink to="/perfil" pathname={pathname}>Mi Perfil</NavLink>
+                  </>
+                )}
+
+                {/* Publicar Button — only shown when not logged in or when owner */}
+                {(!currentUser || currentUser.userType === 'owner') && (
+                  <Link
+                    href="/publicar"
+                    className="flex items-center space-x-1.5 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 ml-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Publicar</span>
+                  </Link>
+                )}
+              </>
             )}
 
             <div className="h-6 w-px bg-gray-300 mx-2"></div>
 
             {/* Notification Bell */}
-            {currentUser && <NotificationBell />}
+            {mounted && currentUser && <NotificationBell />}
 
             {/* Auth Section */}
-            {currentUser ? (
-              <div className="flex items-center space-x-3 ml-2">
-                {currentUser.userType === 'tenant' && tenantCredits && (
-                  <button
-                    onClick={() => router.push('/perfil?tab=billing')}
-                    className="flex items-center bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors shadow-sm cursor-pointer border border-emerald-200"
-                    title="Balance de Créditos"
-                  >
-                    <span className="font-bold mr-1.5 text-emerald-600">🟡</span>
-                    <span className="text-sm font-semibold">
-                      {tenantCredits.hasUnlimited && tenantCredits.unlimitedUntil && new Date(tenantCredits.unlimitedUntil) > new Date()
-                        ? 'Ilimitados'
-                        : `${tenantCredits.availableCredits} Créditos`}
-                    </span>
-                  </button>
-                )}
+            {mounted && (
+              currentUser ? (
+                <div className="flex items-center space-x-3 ml-2">
+                  {currentUser.userType === 'tenant' && tenantCredits && (
+                    <button
+                      onClick={() => router.push('/perfil?tab=billing')}
+                      className="flex items-center bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors shadow-sm cursor-pointer border border-emerald-200"
+                      title="Balance de Créditos"
+                    >
+                      <span className="font-bold mr-1.5 text-emerald-600">🟡</span>
+                      <span className="text-sm font-semibold">
+                        {tenantCredits.hasUnlimited && tenantCredits.unlimitedUntil && new Date(tenantCredits.unlimitedUntil) > new Date()
+                          ? 'Ilimitados'
+                          : `${tenantCredits.availableCredits} Créditos`}
+                      </span>
+                    </button>
+                  )}
 
-                <span
-                  onClick={() => router.push('/perfil')}
-                  className="text-sm text-gray-700 font-medium hover:text-gray-900 cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Hola, {currentUser.name?.split(' ')[0]}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  Salir
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2 ml-2">
-                <Link
-                  href="/login"
-                  className="text-gray-700 hover:text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Ingresar
-                </Link>
-                <Link
-                  href="/registro"
-                  className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors"
-                >
-                  Registrarse
-                </Link>
-              </div>
+                  <span
+                    onClick={() => router.push('/perfil')}
+                    className="text-sm text-gray-700 font-medium hover:text-gray-900 cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Hola, {currentUser.name?.split(' ')[0]}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    Salir
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 ml-2">
+                  <Link
+                    href="/login"
+                    className="text-gray-700 hover:text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Ingresar
+                  </Link>
+                  <Link
+                    href="/registro"
+                    className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors"
+                  >
+                    Registrarse
+                  </Link>
+                </div>
+              )
             )}
           </nav>
 
           {/* Mobile Right Section - Properly aligned */}
           <div className="flex items-center gap-2 md:hidden">
             {/* Notification Bell - Mobile */}
-            {currentUser && <NotificationBell />}
+            {mounted && currentUser && <NotificationBell />}
 
             {/* Publicar Button - Mobile (Icon Only) */}
-            {(!currentUser || currentUser.userType === 'owner') && (
+            {mounted && (!currentUser || currentUser.userType === 'owner') && (
               <Link
                 href="/publicar"
                 className="flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 rounded-full text-white bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md active:scale-95 transition-transform"
@@ -290,7 +324,7 @@ const Header: React.FC = () => {
       >
         <nav className="flex flex-col h-full overflow-y-auto">
           {/* User Info Section */}
-          {currentUser && (
+          {mounted && currentUser && (
             <div className="p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-b border-gray-200">
               <p className="text-xs text-gray-600 uppercase tracking-wide">Hola,</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{currentUser.name}</p>
@@ -323,52 +357,56 @@ const Header: React.FC = () => {
           {/* Navigation Links */}
           <div className="flex-1 py-6 px-4">
             <div className="space-y-2">
-              <NavLink to="/" mobile>Inicio</NavLink>
+              <NavLink to="/" mobile pathname={pathname}>Inicio</NavLink>
 
-              {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'superAdmin')) && (
+              {mounted && (
                 <>
-                  <NavLink to="/favoritos" mobile>Favoritos</NavLink>
-                  <NavLink to="/planes" mobile>Planes</NavLink>
-                </>
-              )}
-
-              {currentUser && (
-                <>
-                  {/* Divider for user-specific sections */}
-                  {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin' ||
-                    currentUser.userType === 'tenant' || currentUser.userType === 'owner') && (
-                      <div className="py-2">
-                        <div className="h-px bg-gray-200"></div>
-                      </div>
-                    )}
-
-                  {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
-                    <NavLink to="/admin" mobile>Admin Panel</NavLink>
-                  )}
-
-                  {currentUser.userType === 'superAdmin' && (
-                    <NavLink to="/super-admin" mobile>Super Admin</NavLink>
-                  )}
-
-                  {currentUser.userType === 'tenant' && (
-                    <NavLink to="/busco-inmueble" mobile>Busco Inmueble</NavLink>
-                  )}
-
-                  {currentUser.userType === 'owner' && (
+                  {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'superAdmin')) && (
                     <>
-                      <NavLink to="/oportunidades" badge={newOpportunitiesCount} mobile>
-                        Solicitudes
-                      </NavLink>
-                      <NavLink to="/mis-propiedades" mobile>Mis Propiedades</NavLink>
+                      <NavLink to="/favoritos" mobile pathname={pathname}>Favoritos</NavLink>
+                      <NavLink to="/planes" mobile pathname={pathname}>Planes</NavLink>
                     </>
                   )}
 
-                  {/* Divider before profile */}
-                  <div className="py-2">
-                    <div className="h-px bg-gray-200"></div>
-                  </div>
+                  {currentUser && (
+                    <>
+                      {/* Divider for user-specific sections */}
+                      {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin' ||
+                        currentUser.userType === 'tenant' || currentUser.userType === 'owner') && (
+                          <div className="py-2">
+                            <div className="h-px bg-gray-200"></div>
+                          </div>
+                        )}
 
-                  <NavLink to="/perfil" mobile>Mi Perfil</NavLink>
+                      {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
+                        <NavLink to="/admin" mobile pathname={pathname}>Admin Panel</NavLink>
+                      )}
+
+                      {currentUser.userType === 'superAdmin' && (
+                        <NavLink to="/super-admin" mobile pathname={pathname}>Super Admin</NavLink>
+                      )}
+
+                      {currentUser.userType === 'tenant' && (
+                        <NavLink to="/busco-inmueble" mobile pathname={pathname}>Busco Inmueble</NavLink>
+                      )}
+
+                      {currentUser.userType === 'owner' && (
+                        <>
+                          <NavLink to="/oportunidades" badge={newOpportunitiesCount} mobile pathname={pathname}>
+                            Solicitudes
+                          </NavLink>
+                          <NavLink to="/mis-propiedades" mobile pathname={pathname}>Mis Propiedades</NavLink>
+                        </>
+                      )}
+
+                      {/* Divider before profile */}
+                      <div className="py-2">
+                        <div className="h-px bg-gray-200"></div>
+                      </div>
+
+                      <NavLink to="/perfil" mobile pathname={pathname}>Mi Perfil</NavLink>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -376,28 +414,30 @@ const Header: React.FC = () => {
 
           {/* Auth Section - Mobile */}
           <div className="p-4 border-t border-gray-200 bg-gray-50">
-            {currentUser ? (
-              <button
-                onClick={handleLogout}
-                className="w-full px-4 py-3.5 text-base font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 border-2 border-red-200 rounded-xl transition-all active:scale-98 shadow-sm"
-              >
-                Cerrar Sesión
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <Link
-                  href="/login"
-                  className="block w-full px-4 py-3.5 text-center text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 border-2 border-gray-300 rounded-xl transition-all shadow-sm"
+            {mounted && (
+              currentUser ? (
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3.5 text-base font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 border-2 border-red-200 rounded-xl transition-all active:scale-98 shadow-sm"
                 >
-                  Ingresar
-                </Link>
-                <Link
-                  href="/registro"
-                  className="block w-full px-4 py-3.5 text-center text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-md transition-all"
-                >
-                  Registrarse
-                </Link>
-              </div>
+                  Cerrar Sesión
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <Link
+                    href="/login"
+                    className="block w-full px-4 py-3.5 text-center text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 border-2 border-gray-300 rounded-xl transition-all shadow-sm"
+                  >
+                    Ingresar
+                  </Link>
+                  <Link
+                    href="/registro"
+                    className="block w-full px-4 py-3.5 text-center text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-md transition-all"
+                  >
+                    Registrarse
+                  </Link>
+                </div>
+              )
             )}
           </div>
         </nav>
