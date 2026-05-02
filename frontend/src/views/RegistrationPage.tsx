@@ -5,19 +5,24 @@ import { useRouter } from 'next/navigation';
 import { UserRegistrationPayload } from '../types';
 import { CheckCircle, Eye, EyeOff, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { registerUser, clearError } from '../store/slices/authSlice';
+import { registerUser, clearError, googleLogin, googleCompleteRegistration, setGooglePendingData } from '../store/slices/authSlice';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, RegisterFormValues } from '../lib/validations';
+import GoogleSignInButton from '../components/GoogleSignInButton';
+import GoogleRegistrationModal from '../components/GoogleRegistrationModal';
+import type { GoogleRegistrationData } from '../services/authService';
 
 const RegistrationPage = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { user, loading, error } = useAppSelector((state) => state.auth);
+    const { user, loading, error, googlePendingData } = useAppSelector((state) => state.auth);
 
     const [userType, setUserType] = useState<'owner' | 'tenant'>('owner');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [googleModalError, setGoogleModalError] = useState<string | null>(null);
+    const [googleLoading, setGoogleLoading] = useState(false);
 
     // Some fields like role, idType, idNumber aren't in the base schema because they 
     // depend on userType. We'll track them manually or they could be nested in Zod.
@@ -94,7 +99,41 @@ const RegistrationPage = () => {
         await dispatch(registerUser(registrationData));
     };
 
+    const handleGoogleSuccess = async (credential: string) => {
+        setGoogleModalError(null);
+        await dispatch(googleLogin({ credential }));
+    };
+
+    const handleGoogleModalSubmit = async (data: { userType: 'owner' | 'tenant'; phone: string; whatsapp: string }) => {
+        if (!googlePendingData) return;
+        setGoogleLoading(true);
+        setGoogleModalError(null);
+        try {
+            const result = await dispatch(googleCompleteRegistration({
+                googleId: googlePendingData.googleId,
+                email: googlePendingData.email,
+                name: googlePendingData.name,
+                picture: googlePendingData.picture,
+                userType: data.userType,
+                phone: data.phone,
+                whatsapp: data.whatsapp,
+            } as GoogleRegistrationData));
+
+            if (googleCompleteRegistration.rejected.match(result)) {
+                setGoogleModalError(result.payload as string);
+            }
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
+    const handleCloseGoogleModal = () => {
+        dispatch(setGooglePendingData(null));
+        setGoogleModalError(null);
+    };
+
     return (
+        <>
         <div className="min-h-screen bg-gray-50 py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
                 <div className="text-center mb-6 sm:mb-8">
@@ -281,8 +320,34 @@ const RegistrationPage = () => {
                         </Link>
                     </p>
                 </div>
+
+                {/* Google Sign-Up Divider */}
+                <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                        <span className="px-3 bg-gray-50 text-gray-500">O regístrate con</span>
+                    </div>
+                </div>
+
+                <div className="bg-white shadow rounded-lg sm:rounded-xl p-4 sm:p-6">
+                    <GoogleSignInButton onSuccess={handleGoogleSuccess} text="signup_with" />
+                </div>
             </div>
         </div>
+
+        {/* Google Registration Modal */}
+        {googlePendingData && (
+                <GoogleRegistrationModal
+                    googleData={googlePendingData}
+                    onSubmit={handleGoogleModalSubmit}
+                    onClose={handleCloseGoogleModal}
+                    loading={googleLoading}
+                    error={googleModalError}
+                />
+            )}
+        </>
     );
 };
 

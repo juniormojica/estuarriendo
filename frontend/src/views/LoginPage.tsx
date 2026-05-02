@@ -4,16 +4,21 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { loginUser, clearError } from '../store/slices/authSlice';
+import { loginUser, clearError, googleLogin, googleCompleteRegistration, setGooglePendingData } from '../store/slices/authSlice';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginFormValues } from '../lib/validations';
+import GoogleSignInButton from '../components/GoogleSignInButton';
+import GoogleRegistrationModal from '../components/GoogleRegistrationModal';
+import type { GoogleRegistrationData } from '../services/authService';
 
 const LoginPage = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { user, loading, error } = useAppSelector((state) => state.auth);
+    const { user, loading, error, googlePendingData } = useAppSelector((state) => state.auth);
     const [showPassword, setShowPassword] = useState(false);
+    const [googleModalError, setGoogleModalError] = useState<string | null>(null);
+    const [googleLoading, setGoogleLoading] = useState(false);
 
     const {
         register,
@@ -51,8 +56,42 @@ const LoginPage = () => {
         await dispatch(loginUser({ email: data.email, password: data.password }));
     };
 
+    const handleGoogleSuccess = async (credential: string) => {
+        setGoogleModalError(null);
+        await dispatch(googleLogin({ credential }));
+    };
+
+    const handleGoogleModalSubmit = async (data: { userType: 'owner' | 'tenant'; phone: string; whatsapp: string }) => {
+        if (!googlePendingData) return;
+        setGoogleLoading(true);
+        setGoogleModalError(null);
+        try {
+            const result = await dispatch(googleCompleteRegistration({
+                googleId: googlePendingData.googleId,
+                email: googlePendingData.email,
+                name: googlePendingData.name,
+                picture: googlePendingData.picture,
+                userType: data.userType,
+                phone: data.phone,
+                whatsapp: data.whatsapp,
+            } as GoogleRegistrationData));
+
+            if (googleCompleteRegistration.rejected.match(result)) {
+                setGoogleModalError(result.payload as string);
+            }
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
+    const handleCloseGoogleModal = () => {
+        dispatch(setGooglePendingData(null));
+        setGoogleModalError(null);
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <>
+            <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-md mx-auto">
                 <div className="flex justify-center">
                     <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-100 flex items-center justify-center">
@@ -148,9 +187,34 @@ const LoginPage = () => {
                             </button>
                         </div>
                     </form>
+
+                    {/* Google Sign-In Divider */}
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-3 bg-white text-gray-500">O continúa con</span>
+                        </div>
+                    </div>
+
+                    {/* Google Button */}
+                    <GoogleSignInButton onSuccess={handleGoogleSuccess} text="continue_with" />
                 </div>
             </div>
         </div>
+
+            {/* Google Registration Modal */}
+            {googlePendingData && (
+                <GoogleRegistrationModal
+                    googleData={googlePendingData}
+                    onSubmit={handleGoogleModalSubmit}
+                    onClose={handleCloseGoogleModal}
+                    loading={googleLoading}
+                    error={googleModalError}
+                />
+            )}
+        </>
     );
 };
 
