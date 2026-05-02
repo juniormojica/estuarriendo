@@ -25,6 +25,14 @@ export default {
           dark: '#0F1F3D',
           lime: '#C8F135',
         },
+        semantic: {
+          bg: 'var(--bg-base)',
+          surface: 'var(--bg-surface)',
+          elevated: 'var(--bg-elevated)',
+          text: 'var(--text-primary)',
+          'text-muted': 'var(--text-secondary)',
+          border: 'var(--border-default)',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

@@ -34,10 +34,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${jakarta.variable} ${lato.variable}`} suppressHydrationWarning>
-      <body className="font-lato text-gray-900 bg-white dark:bg-gray-900 dark:text-gray-100 transition-colors">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body className="font-lato transition-colors duration-300">
+        <ThemeProvider attribute="class" defaultTheme="light">
           <Providers>
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+            <div className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300">
               <Header />
               <main className="flex-grow">
                 {children}
