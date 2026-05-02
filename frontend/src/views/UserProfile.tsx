@@ -265,20 +265,20 @@ const UserProfile: React.FC = () => {
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
+        <div className="min-h-screen bg-gray-50 dark:bg-brand-dark py-4 sm:py-6 lg:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header - Responsive */}
-                <h1 className="text-xl sm:text-2xl font-jakarta font-bold text-gray-900 mb-4 sm:mb-6 lg:mb-8">Mi Perfil</h1>
+                <h1 className="text-xl sm:text-2xl font-jakarta font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 lg:mb-8">Mi Perfil</h1>
 
                 <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                     {/* Tabs Navigation - Horizontal on Mobile, Vertical Sidebar on Desktop */}
                     <div className="w-full lg:w-64 flex-shrink-0">
                         {/* Mobile: Horizontal Scrollable Tabs */}
-                        <div className="lg:hidden bg-white rounded-lg shadow-sm p-2 mb-4 overflow-x-auto">
+                        <div className="lg:hidden bg-white dark:bg-[#1a2235] rounded-lg shadow-sm p-2 mb-4 overflow-x-auto border border-transparent dark:border-white/10">
                             <nav className="flex space-x-2 min-w-max">
                                 <button
                                     onClick={() => setActiveTab('profile')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'profile' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'profile' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <UserIcon className="w-4 h-4" />
@@ -286,7 +286,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('security')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'security' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'security' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <Shield className="w-4 h-4" />
@@ -294,7 +294,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('billing')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'billing' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'billing' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <CreditCard className="w-4 h-4" />
@@ -302,7 +302,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('verification')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'verification' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'verification' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <ShieldCheck className="w-4 h-4" />
@@ -318,11 +318,11 @@ const UserProfile: React.FC = () => {
                         </div>
 
                         {/* Desktop: Vertical Sidebar */}
-                        <div className="hidden lg:block bg-white rounded-xl shadow-sm p-4 lg:sticky lg:top-8">
+                        <div className="hidden lg:block bg-white dark:bg-[#1a2235] rounded-xl shadow-sm p-4 lg:sticky lg:top-8 border border-transparent dark:border-white/10">
                             <nav className="space-y-1">
                                 <button
                                     onClick={() => setActiveTab('profile')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <UserIcon className="w-5 h-5" />
@@ -330,7 +330,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('security')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <Shield className="w-5 h-5" />
@@ -338,7 +338,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('billing')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'billing' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'billing' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <CreditCard className="w-5 h-5" />
@@ -346,7 +346,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('verification')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'verification' ? 'bg-brand-lime/10 text-brand-blue/90' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'verification' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <ShieldCheck className="w-5 h-5" />
@@ -364,7 +364,7 @@ const UserProfile: React.FC = () => {
 
                     {/* Content - Responsive Padding */}
                     <div className="flex-1 min-w-0">
-                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
+                        <div className="bg-white dark:bg-[#1a2235] rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 lg:p-8 border border-transparent dark:border-white/10">
                             {message && (
                                 <div className={`mb-6 p-4 rounded-lg flex items-center justify-center ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                                     }`}>
@@ -375,10 +375,10 @@ const UserProfile: React.FC = () => {
 
                             {activeTab === 'profile' && (
                                 <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-4 sm:space-y-6 animate-fadeIn">
-                                    <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900">Información Personal</h2>
+                                    <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white">Información Personal</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 Nombre Completo <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -389,7 +389,7 @@ const UserProfile: React.FC = () => {
                                             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 Correo Electrónico
                                                 <span className="ml-2 text-xs text-blue-600 font-normal bg-blue-50 px-2 py-0.5 rounded">No editable</span>
                                             </label>
@@ -401,7 +401,7 @@ const UserProfile: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 Teléfono <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -412,7 +412,7 @@ const UserProfile: React.FC = () => {
                                             {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 WhatsApp <span className="text-red-500">*</span>
                                             </label>
                                             <input
@@ -426,16 +426,16 @@ const UserProfile: React.FC = () => {
 
                                     <div className="pt-4 sm:pt-6 border-t border-gray-100">
                                         <div className="mb-3 sm:mb-4">
-                                            <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 inline-flex items-center">
+                                            <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white inline-flex items-center">
                                                 Documento de Identidad <span className="ml-2 text-gray-400 text-sm font-normal">(Opcional)</span>
                                             </h2>
-                                            <p className="text-sm text-gray-500 mt-1">
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                                 Completa este apartado si deseas ser verificado. Si llenas uno, debes llenar ambos campos.
                                             </p>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Tipo de Documento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Tipo de Documento</label>
                                                 <select
                                                     {...register('idType')}
                                                     className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime ${errors.idType ? 'border-red-500' : ''}`}
@@ -448,7 +448,7 @@ const UserProfile: React.FC = () => {
                                                 {errors.idType && <p className="mt-1 text-sm text-red-600">{errors.idType.message}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Número de Documento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Número de Documento</label>
                                                 <input
                                                     type="text"
                                                     {...register('idNumber')}
@@ -458,13 +458,13 @@ const UserProfile: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                        <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 mb-3 sm:mb-4">
+                                    <div className="pt-4 sm:pt-6 border-t border-gray-100 dark:border-white/10">
+                                        <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
                                             Información Personal Adicional <span className="text-gray-400 text-sm font-normal ml-2">(Opcional)</span>
                                         </h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Fecha de Nacimiento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Fecha de Nacimiento</label>
                                                 <input
                                                     type="date"
                                                     value={formData.profile?.birthDate ? new Date(formData.profile.birthDate).toISOString().split('T')[0] : ''}
@@ -473,7 +473,7 @@ const UserProfile: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Género</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Género</label>
                                                 <select
                                                     value={formData.profile?.gender || ''}
                                                     onChange={(e) => handleProfileChange('gender', e.target.value)}
@@ -487,7 +487,7 @@ const UserProfile: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Ciudad de Origen</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Ciudad de Origen</label>
                                                 <CityAutocomplete
                                                     hideLabel={true}
                                                     value={formData.profile?.originCity || null}
@@ -501,7 +501,7 @@ const UserProfile: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">¿Cómo nos conociste?</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">¿Cómo nos conociste?</label>
                                                 <select
                                                     value={formData.profile?.referralSource || ''}
                                                     onChange={(e) => handleProfileChange('referralSource', e.target.value)}
@@ -527,7 +527,7 @@ const UserProfile: React.FC = () => {
                                             </h2>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                 <div className="sm:col-span-2">
-                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Ciudad donde estudias</label>
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Ciudad donde estudias</label>
                                                     <CityAutocomplete
                                                         hideLabel={true}
                                                         value={formData.profile?.studyCity || null}
@@ -654,7 +654,7 @@ const UserProfile: React.FC = () => {
 
                             {activeTab === 'security' && (
                                 <div className="space-y-4 sm:space-y-6 animate-fadeIn">
-                                    <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900">Cambiar Contraseña</h2>
+                                    <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white">Cambiar Contraseña</h2>
                                     <div className="max-w-md space-y-3 sm:space-y-4">
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Contraseña Actual</label>
@@ -695,7 +695,7 @@ const UserProfile: React.FC = () => {
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <h3 className="text-lg font-jakarta font-bold mb-1">Tu Cuenta</h3>
-                                                <p className="text-brand-lime/20 text-2xl font-jakarta font-bold">
+                                                <p className="text-white/80 text-2xl font-jakarta font-bold">
                                                     {user.userType === 'tenant' ? 'Estudiante / Inquilino' : (user.plan === 'premium' ? 'Propietario Premium' : 'Propietario Gratuito')}
                                                 </p>
                                             </div>
@@ -946,7 +946,7 @@ const UserProfile: React.FC = () => {
                             {activeTab === 'verification' && (
                                 <div className="space-y-6 animate-fadeIn">
                                     <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-jakarta font-bold text-gray-900">Verificación de Identidad</h2>
+                                        <h2 className="text-lg font-jakarta font-bold text-gray-900 dark:text-white">Verificación de Identidad</h2>
                                         {user.verificationStatus === 'verified' && (
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-lime/20 text-brand-dark">
                                                 <CheckCircle className="w-4 h-4 mr-1" />
@@ -981,11 +981,11 @@ const UserProfile: React.FC = () => {
 
                                     {/* Benefits of Verification */}
                                     <div className="bg-gradient-to-r from-brand-lime/10 to-brand-blue/10 border border-brand-lime/30 rounded-xl p-6">
-                                        <h3 className="text-sm font-semibold text-brand-dark mb-3 flex items-center">
+                                        <h3 className="text-sm font-semibold text-brand-dark dark:text-white mb-3 flex items-center">
                                             <ShieldCheck className="w-5 h-5 mr-2" />
                                             Beneficios de la Verificación
                                         </h3>
-                                        <ul className="space-y-2 text-sm text-brand-dark">
+                                        <ul className="space-y-2 text-sm text-brand-dark dark:text-gray-200">
                                             {user.userType === 'owner' ? (
                                                 <>
                                                     <li className="flex items-start">
@@ -1032,10 +1032,10 @@ const UserProfile: React.FC = () => {
                                     {user.verificationStatus === 'verified' && (
                                         <div className="bg-brand-lime/10 border border-brand-lime/30 rounded-xl p-6 mb-6">
                                             <div className="flex items-center space-x-3 mb-2">
-                                                <CheckCircle className="w-6 h-6 text-brand-blue" />
-                                                <h3 className="text-lg font-jakarta font-bold text-brand-dark">¡Identidad Verificada!</h3>
+                                                <CheckCircle className="w-6 h-6 text-brand-lime" />
+                                                <h3 className="text-lg font-jakarta font-bold text-brand-dark dark:text-white">¡Identidad Verificada!</h3>
                                             </div>
-                                            <p className="text-sm text-brand-dark">
+                                            <p className="text-sm text-brand-dark dark:text-gray-200">
                                                 {user.userType === 'owner' 
                                                     ? 'Tu identidad ha sido verificada exitosamente. Ahora tus propiedades mostrarán el badge de "Propietario Verificado".'
                                                     : 'Tu identidad ha sido verificada exitosamente. Ahora tu perfil mostrará el badge de "Estudiante Verificado".'
@@ -1047,7 +1047,7 @@ const UserProfile: React.FC = () => {
                                     {/* Always show the new VerificationForm for tracking single document updates (unless fully verified without needing form anymore, but we can show it so they see their docs!) */}
                                     {user.verificationStatus !== 'verified' && (
                                         <div>
-                                            <h3 className="text-md font-semibold text-gray-900 mb-4">Gestión de Documentos</h3>
+                                            <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Gestión de Documentos</h3>
                                             <VerificationForm userId={user.id} userRole={user.userType === 'tenant' ? 'student' : 'owner'} onSuccess={handleVerificationSuccess} />
                                         </div>
                                     )}
