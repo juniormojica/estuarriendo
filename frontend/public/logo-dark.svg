@@ -1,0 +1,18 @@
+<svg width="250" height="60" viewBox="0 0 250 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Minimal geometric icon: overlapping house roof and abstract book/mortarboard -->
+  <g transform="translate(5, 10)">
+    <!-- Lime green accent shape (dynamic, forward-looking) -->
+    <path d="M12 25 L32 10 L45 20 L25 35 Z" fill="#C8F135" />
+    
+    <!-- White house/cap shape for dark mode -->
+    <path d="M5 28 L25 13 L45 28 L35 38 L25 30 L15 38 Z" fill="#FFFFFF" />
+    
+    <!-- Small tech dot -->
+    <circle cx="38" cy="12" r="3" fill="#FFFFFF" />
+  </g>
+  
+  <!-- Text: EstuArriendo with embedded modern font style -->
+  <text x="60" y="38" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.5">
+    <tspan fill="#FFFFFF">Estu</tspan><tspan fill="#E2E8F0">Arriendo</tspan><tspan fill="#C8F135">.</tspan>
+  </text>
+</svg>

@@ -17,12 +17,11 @@ const Footer: React.FC = () => {
                     <div>
                         <div className="mb-6">
                             <Image
-                                src="/logo.svg"
+                                src="/logo-dark.svg"
                                 alt="EstuArriendo"
                                 width={160}
                                 height={40}
                                 className="h-10 w-auto"
-                                style={{ filter: 'brightness(0) invert(1)' }}
                             />
                         </div>
                         <p className="text-sm text-gray-400 mb-6 leading-relaxed">

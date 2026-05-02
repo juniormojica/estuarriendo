@@ -67,19 +67,20 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
   return (
     // Backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-md bg-white dark:bg-brand-dark rounded-2xl shadow-2xl overflow-hidden border border-gray-100 dark:border-white/10">
 
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors z-10"
+          className="absolute top-4 right-4 p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-10"
           aria-label="Cerrar"
         >
           <X className="h-5 w-5" />
         </button>
 
         {/* Header */}
-        <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 px-6 pt-8 pb-6 border-b border-gray-100">
+        <div className="relative bg-white dark:bg-brand-dark px-6 pt-8 pb-6 border-b border-gray-100 dark:border-white/10">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-brand-lime rounded-t-2xl" />
           <div className="flex items-center gap-4">
             {googleData.picture ? (
               <Image
@@ -87,20 +88,20 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
                 alt={googleData.name}
                 width={56}
                 height={56}
-                className="rounded-full ring-2 ring-white shadow-md"
+                className="rounded-full ring-2 ring-white dark:ring-brand-dark shadow-md"
               />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center ring-2 ring-white shadow-md">
-                <UserIcon className="h-7 w-7 text-emerald-600" />
+              <div className="w-14 h-14 rounded-full bg-brand-lime/20 flex items-center justify-center ring-2 ring-white dark:ring-brand-dark shadow-md">
+                <UserIcon className="h-7 w-7 text-brand-lime" />
               </div>
             )}
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{googleData.name}</h2>
-              <p className="text-sm text-gray-500">{googleData.email}</p>
-              <p className="text-xs text-emerald-600 font-medium mt-0.5">✓ Verificado con Google</p>
+              <h2 className="text-lg font-bold text-brand-dark dark:text-white">{googleData.name}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{googleData.email}</p>
+              <p className="text-xs text-brand-lime font-medium mt-0.5">✓ Verificado con Google</p>
             </div>
           </div>
-          <p className="mt-4 text-sm text-gray-600">
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
             Solo necesitamos un par de datos más para completar tu cuenta.
           </p>
         </div>
@@ -110,7 +111,7 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
 
           {/* Error message */}
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg text-sm text-red-700 dark:text-red-400">
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -118,7 +119,7 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
 
           {/* User type toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               ¿Cómo usarás EstuArriendo?
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -127,8 +128,8 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
                 onClick={() => setUserType('tenant')}
                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-sm font-medium ${
                   userType === 'tenant'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-brand-lime bg-brand-lime/10 text-brand-dark dark:text-brand-lime'
+                    : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-brand-lime/50 dark:hover:border-brand-lime/50 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
                 <UserIcon className="h-6 w-6" />
@@ -140,8 +141,8 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
                 onClick={() => setUserType('owner')}
                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-sm font-medium ${
                   userType === 'owner'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-brand-lime bg-brand-lime/10 text-brand-dark dark:text-brand-lime'
+                    : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-brand-lime/50 dark:hover:border-brand-lime/50 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
                 <Building2 className="h-6 w-6" />
@@ -153,7 +154,7 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
 
           {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Teléfono <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -163,28 +164,28 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
                 value={phone}
                 onChange={handlePhoneChange}
                 placeholder="Ej: 3001234567"
-                className={`w-full min-h-[44px] pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                  phoneError ? 'border-red-500' : 'border-gray-300'
+                className={`w-full min-h-[44px] pl-9 pr-3 py-2.5 border bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent ${
+                  phoneError ? 'border-red-500' : 'border-gray-300 dark:border-white/20'
                 }`}
               />
             </div>
             {phoneError && (
-              <p className="mt-1 text-xs text-red-600">{phoneError}</p>
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{phoneError}</p>
             )}
           </div>
 
           {/* WhatsApp */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 WhatsApp
               </label>
-              <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={sameAsPhone}
                   onChange={(e) => handleSameAsPhoneToggle(e.target.checked)}
-                  className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  className="rounded border-gray-300 dark:border-white/20 dark:bg-white/5 text-brand-lime focus:ring-brand-lime"
                 />
                 Igual al teléfono
               </label>
@@ -197,7 +198,7 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
                 onChange={handleWhatsappChange}
                 disabled={sameAsPhone}
                 placeholder="Ej: 3001234567"
-                className="w-full min-h-[44px] pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                className="w-full min-h-[44px] pl-9 pr-3 py-2.5 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-white/5 disabled:text-gray-400 dark:disabled:text-gray-500"
               />
             </div>
           </div>
@@ -206,7 +207,7 @@ const GoogleRegistrationModal: React.FC<GoogleRegistrationModalProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-sm"
+            className="w-full min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-brand-lime hover:brightness-95 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-brand-dark font-bold rounded-xl transition-all shadow-sm"
           >
             {loading ? (
               <>

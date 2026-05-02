@@ -158,7 +158,15 @@ const Header: React.FC = () => {
               alt="EstuArriendo"
               width={160}
               height={40}
-              className="h-9 sm:h-11 w-auto"
+              className="h-9 sm:h-11 w-auto dark:hidden"
+              priority
+            />
+            <Image
+              src="/logo-dark.svg"
+              alt="EstuArriendo"
+              width={160}
+              height={40}
+              className="h-9 sm:h-11 w-auto hidden dark:block"
               priority
             />
           </Link>
