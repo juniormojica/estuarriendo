@@ -1,25 +1,32 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { Home, Mail, Phone, MapPin, Heart } from 'lucide-react';
+import Image from 'next/image';
+import { Home, Mail, Phone, MapPin, Heart, CheckCircle, ShieldCheck, Lock, DollarSign } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, XIcon } from './icons/SocialIcons'
 
 const Footer: React.FC = () => {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="bg-gray-900 text-gray-300">
+        <footer className="bg-brand-dark text-gray-300 font-lato border-t-[8px] border-brand-lime">
             {/* Main Footer */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
                     {/* About Section */}
                     <div>
-                        <div className="flex items-center space-x-2 mb-4">
-                            <Home className="h-6 w-6 text-emerald-500" />
-                            <h3 className="text-white font-bold text-lg">EstuArriendo</h3>
+                        <div className="mb-6">
+                            <Image
+                                src="/logo.svg"
+                                alt="EstuArriendo"
+                                width={160}
+                                height={40}
+                                className="h-10 w-auto"
+                                style={{ filter: 'brightness(0) invert(1)' }}
+                            />
                         </div>
-                        <p className="text-sm text-gray-400 mb-4">
-                            Tu plataforma confiable para encontrar alojamiento estudiantil en Colombia.
+                        <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+                            Tu plataforma confiable para encontrar alojamiento estudiantil en América Latina.
                             Conectamos estudiantes con propiedades verificadas cerca de las universidades.
                         </p>
                         <div className="flex space-x-4">
@@ -55,8 +62,8 @@ const Footer: React.FC = () => {
 
                     {/* Quick Links */}
                     <div>
-                        <h3 className="text-white font-semibold mb-4">Enlaces Rápidos</h3>
-                        <ul className="space-y-2 text-sm">
+                        <h3 className="text-brand-lime font-jakarta font-bold text-lg mb-5">Enlaces Rápidos</h3>
+                        <ul className="space-y-3 text-sm">
                             <li>
                                 <Link href="/" className="hover:text-emerald-500 transition-colors">
                                     Inicio
@@ -82,8 +89,13 @@ const Footer: React.FC = () => {
 
                     {/* For Students */}
                     <div>
-                        <h3 className="text-white font-semibold mb-4">Para Estudiantes</h3>
-                        <ul className="space-y-2 text-sm">
+                        <h3 className="text-brand-lime font-jakarta font-bold text-lg mb-5">Para Estudiantes</h3>
+                        <ul className="space-y-3 text-sm">
+                            <li>
+                                <Link href="/planes" className="hover:text-white hover:underline transition-all">
+                                    Nuestros Planes
+                                </Link>
+                            </li>
                             <li>
                                 <Link href="/como-buscar" className="hover:text-emerald-500 transition-colors">
                                     Cómo Buscar Alojamiento
@@ -109,22 +121,22 @@ const Footer: React.FC = () => {
 
                     {/* Contact Info */}
                     <div>
-                        <h3 className="text-white font-semibold mb-4">Contacto</h3>
-                        <ul className="space-y-3 text-sm">
+                        <h3 className="text-brand-lime font-jakarta font-bold text-lg mb-5">Contacto</h3>
+                        <ul className="space-y-4 text-sm">
                             <li className="flex items-start space-x-3">
-                                <MapPin className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                                <MapPin className="h-5 w-5 text-brand-lime flex-shrink-0 mt-0.5" />
                                 <span>Valledupar, Cesar, Colombia</span>
                             </li>
                             <li className="flex items-start space-x-3">
-                                <Mail className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                <a href="mailto:info@estuarriendo.com" className="hover:text-emerald-500 transition-colors">
-                                    info@estuarriendo.com
+                                <Mail className="h-5 w-5 text-brand-lime flex-shrink-0 mt-0.5" />
+                                <a href="mailto:estuarriendo@gmail.com" className="hover:text-white transition-colors">
+                                    estuarriendo@gmail.com
                                 </a>
                             </li>
                             <li className="flex items-start space-x-3">
-                                <Phone className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                <a href="tel:+573000000000" className="hover:text-emerald-500 transition-colors">
-                                    +57 300 000 0000
+                                <Phone className="h-5 w-5 text-brand-lime flex-shrink-0 mt-0.5" />
+                                <a href="tel:+573058136982" className="hover:text-white transition-colors">
+                                    +57 305 813 6982
                                 </a>
                             </li>
                         </ul>
@@ -165,24 +177,24 @@ const Footer: React.FC = () => {
             </div>
 
             {/* Trust Badges */}
-            <div className="bg-gray-950 py-4">
+            <div className="bg-[#0B1529] py-5">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-wrap justify-center items-center gap-6 text-xs text-gray-500">
+                    <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 text-xs sm:text-sm text-gray-400 font-jakarta">
                         <div className="flex items-center space-x-2">
-                            <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
+                            <CheckCircle className="h-4 w-4 text-brand-lime" />
                             <span>Propiedades Verificadas</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
+                            <ShieldCheck className="h-4 w-4 text-brand-lime" />
                             <span>Soporte 24/7</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
+                            <Lock className="h-4 w-4 text-brand-lime" />
                             <span>100% Seguro</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
-                            <span>Sin Comisiones Ocultas</span>
+                            <DollarSign className="h-4 w-4 text-brand-lime" />
+                            <span>Transparencia Financiera</span>
                         </div>
                     </div>
                 </div>

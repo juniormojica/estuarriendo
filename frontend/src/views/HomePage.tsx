@@ -59,38 +59,58 @@ const HomePage: React.FC = () => {
       <WelcomeModal />
 
       {/* Hero Section - Mobile Optimized */}
-      <div className="relative bg-gray-900 text-white">
+      <div className="relative bg-brand-dark text-white overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1449844908441-8829872d2607?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80"
-            alt="Valledupar City View"
-            className="w-full h-full object-cover opacity-40"
+            src="/hero-illustration.png"
+            alt="Estudiantes universitarios buscando apartamento"
+            className="w-full h-full object-cover object-center opacity-30"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-800/75" />
+          <div className="absolute inset-0 bg-brand-dark/85" />
         </div>
 
         {/* Responsive padding and text sizes */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 md:py-32 lg:py-40">
           <div className="text-center">
             {/* Responsive heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 sm:mb-6 leading-tight">
-              Encuentra tu <span className="text-accent-400">alojamiento universitario</span> ideal
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-jakarta font-extrabold tracking-tight mb-6 leading-tight">
+              Encuentra tu <span className="text-brand-lime">alojamiento universitario</span> ideal
             </h1>
 
             {/* Responsive subheading */}
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-200 max-w-3xl mx-auto mb-6 sm:mb-8 font-light px-4">
-              Apartamentos, habitaciones y pensiones cerca de tu universidad en Colombia. Diseñado para estudiantes.
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10 font-lato px-4">
+              Apartamentos, habitaciones y pensiones para estudiantes en América Latina. Seguro, fácil y pensado para ti.
             </p>
 
             {/* Touch-friendly CTA button */}
             <button
               onClick={scrollToSearch}
-              className="inline-flex items-center justify-center space-x-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-base sm:text-lg font-bold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 active:scale-95 min-h-[48px]"
+              className="inline-flex items-center justify-center space-x-2 px-8 sm:px-10 py-4 sm:py-5 bg-brand-lime text-brand-dark font-jakarta text-base sm:text-lg font-bold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 hover:bg-brand-lime/90 transition-all duration-200 active:scale-95 min-h-[48px]"
             >
-              <span className="hidden sm:inline">Ver Publicaciones Disponibles</span>
+              <span className="hidden sm:inline">Ver Opciones de Vivienda</span>
               <span className="sm:hidden">Ver Propiedades</span>
-              <ChevronDown className="h-5 w-5 animate-bounce" />
+              <ChevronDown className="h-5 w-5 animate-bounce ml-2" />
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Strip */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-3 gap-4 text-center divide-x divide-gray-100">
+            <div className="flex flex-col items-center">
+              <span className="text-2xl sm:text-3xl font-jakarta font-extrabold text-brand-blue">500+</span>
+              <span className="text-xs sm:text-sm text-gray-500 font-lato mt-1">Propiedades</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-2xl sm:text-3xl font-jakarta font-extrabold text-brand-blue">12</span>
+              <span className="text-xs sm:text-sm text-gray-500 font-lato mt-1">Ciudades</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-2xl sm:text-3xl font-jakarta font-extrabold text-brand-lime">100%</span>
+              <span className="text-xs sm:text-sm text-gray-500 font-lato mt-1">Verificadas</span>
+            </div>
           </div>
         </div>
       </div>
@@ -110,9 +130,9 @@ const HomePage: React.FC = () => {
                 <button
                   key={city}
                   onClick={() => handleCityClick(city)}
-                  className={`px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-medium transition-all min-h-[44px] active:scale-95 ${selectedCity === city
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
+                  className={`px-4 sm:px-5 py-2 rounded-full text-sm sm:text-base font-jakarta font-medium transition-all min-h-[44px] active:scale-95 ${selectedCity === city
+                    ? 'bg-brand-blue text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-brand-blue/10 hover:text-brand-blue'
                     }`}
                 >
                   {city}

@@ -1,27 +1,18 @@
 <svg width="250" height="60" viewBox="0 0 250 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- House icon with graduation cap -->
+  <!-- Minimal geometric icon: overlapping house roof and abstract book/mortarboard -->
   <g transform="translate(5, 10)">
-    <!-- House base -->
-    <path d="M20 40 L20 25 L10 25 L10 40 Z" fill="#3B82F6"/>
-    <path d="M30 40 L30 25 L40 25 L40 40 Z" fill="#3B82F6"/>
-    <!-- House roof -->
-    <path d="M5 25 L25 10 L45 25 Z" fill="#2563EB"/>
-    <!-- Door -->
-    <rect x="20" y="30" width="10" height="10" fill="#1E40AF"/>
-    <!-- Graduation cap -->
-    <g transform="translate(15, 0)">
-      <!-- Cap top -->
-      <rect x="5" y="8" width="20" height="3" fill="#F97316" rx="1"/>
-      <!-- Cap base -->
-      <path d="M15 11 L8 14 L22 14 Z" fill="#EA580C"/>
-      <!-- Tassel -->
-      <line x1="25" y1="9.5" x2="28" y2="6" stroke="#F97316" stroke-width="1.5"/>
-      <circle cx="28" cy="5" r="1.5" fill="#F97316"/>
-    </g>
+    <!-- Lime green accent shape (dynamic, forward-looking) -->
+    <path d="M12 25 L32 10 L45 20 L25 35 Z" fill="#C8F135" />
+    
+    <!-- Deep blue house/cap shape -->
+    <path d="M5 28 L25 13 L45 28 L35 38 L25 30 L15 38 Z" fill="#1B3A6B" />
+    
+    <!-- Small tech dot -->
+    <circle cx="38" cy="12" r="3" fill="#1B3A6B" />
   </g>
   
-  <!-- Text: EstuArriendo -->
-  <text x="60" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1F2937">
-    Estu<tspan fill="#3B82F6">Arriendo</tspan>
+  <!-- Text: EstuArriendo with embedded modern font style -->
+  <text x="60" y="38" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.5">
+    <tspan fill="#1B3A6B">Estu</tspan><tspan fill="#0F1F3D">Arriendo</tspan><tspan fill="#C8F135">.</tspan>
   </text>
 </svg>

@@ -6,19 +6,7 @@ interface GoogleSignInButtonProps {
   text?: 'signin_with' | 'signup_with' | 'continue_with';
 }
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: object) => void;
-          renderButton: (element: HTMLElement, config: object) => void;
-          prompt: () => void;
-        };
-      };
-    };
-  }
-}
+
 
 const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   onSuccess,
@@ -34,9 +22,10 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     }
 
     const initializeGoogle = () => {
-      if (!window.google?.accounts?.id || !containerRef.current) return;
+      const google = (window as any).google;
+      if (!google?.accounts?.id || !containerRef.current) return;
 
-      window.google.accounts.id.initialize({
+      google.accounts.id.initialize({
         client_id: clientId,
         callback: (response: { credential: string }) => {
           onSuccess(response.credential);
@@ -45,7 +34,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         cancel_on_tap_outside: true,
       });
 
-      window.google.accounts.id.renderButton(containerRef.current, {
+      google.accounts.id.renderButton(containerRef.current, {
         theme: 'outline',
         size: 'large',
         width: containerRef.current.offsetWidth || 400,
@@ -56,7 +45,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     };
 
     // Check if script is already loaded
-    if (window.google?.accounts) {
+    if ((window as any).google?.accounts) {
       initializeGoogle();
       return;
     }

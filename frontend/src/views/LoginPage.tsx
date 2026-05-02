@@ -93,28 +93,28 @@ const LoginPage = () => {
         <>
             <div className="min-h-screen bg-white flex flex-col lg:flex-row">
                 {/* Left side: Solid Color + Branding (Desktop only) */}
-                <div className="hidden lg:flex lg:w-1/2 bg-blue-600 flex-col justify-between p-12 xl:p-20 text-white relative overflow-hidden">
+                <div className="hidden lg:flex lg:w-1/2 bg-brand-dark flex-col justify-between p-12 xl:p-20 text-white relative overflow-hidden">
                     {/* Decorative subtle element */}
                     <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
-                        <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-white blur-3xl mix-blend-overlay"></div>
-                        <div className="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-white blur-3xl mix-blend-overlay"></div>
+                        <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-brand-lime blur-3xl mix-blend-overlay"></div>
+                        <div className="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-brand-blue blur-3xl mix-blend-overlay"></div>
                     </div>
                     
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-16">
-                            <div className="bg-white p-2 rounded-xl">
-                                <LogIn className="h-6 w-6 text-blue-600" />
+                            <div className="bg-brand-lime p-2 rounded-xl">
+                                <LogIn className="h-6 w-6 text-brand-dark" />
                             </div>
-                            <span className="text-2xl font-bold tracking-tight">EstuArriendo</span>
+                            <span className="text-2xl font-jakarta font-bold tracking-tight">EstuArriendo</span>
                         </div>
-                        <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight mb-6">
+                        <h1 className="text-4xl lg:text-5xl font-jakarta font-extrabold tracking-tight leading-tight mb-6">
                             Bienvenido de nuevo a tu próximo hogar.
                         </h1>
-                        <p className="text-lg text-blue-100 max-w-md leading-relaxed">
+                        <p className="text-lg text-gray-300 max-w-md leading-relaxed font-lato">
                             Accede a tu cuenta para continuar explorando alojamientos o gestionando tus propiedades.
                         </p>
                     </div>
-                    <div className="text-sm text-blue-200 relative z-10 font-medium">
+                    <div className="text-sm text-gray-400 relative z-10 font-medium">
                         &copy; {new Date().getFullYear()} EstuArriendo. Todos los derechos reservados.
                     </div>
                 </div>
@@ -124,22 +124,22 @@ const LoginPage = () => {
                     
                     {/* Mobile/Tablet Header */}
                     <div className="lg:hidden flex justify-center mb-8">
-                        <div className="flex items-center gap-2 text-blue-600">
-                            <div className="bg-blue-100 p-2 rounded-xl">
+                        <div className="flex items-center gap-2 text-brand-blue">
+                            <div className="bg-brand-blue/10 p-2 rounded-xl">
                                 <LogIn className="h-6 w-6" />
                             </div>
-                            <span className="text-2xl font-bold tracking-tight text-gray-900">EstuArriendo</span>
+                            <span className="text-2xl font-jakarta font-bold tracking-tight text-gray-900">EstuArriendo</span>
                         </div>
                     </div>
 
                     <div className="w-full max-w-sm mx-auto">
                         <div className="mb-8 text-center lg:text-left">
-                            <h2 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">
+                            <h2 className="text-3xl font-jakarta font-extrabold text-gray-900 mb-2 tracking-tight">
                                 Inicia sesión
                             </h2>
                             <p className="text-sm text-gray-600">
                                 ¿No tienes cuenta?{' '}
-                                <Link href="/registro" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+                                <Link href="/registro" className="font-semibold text-brand-blue hover:text-brand-blue/80 transition-colors">
                                     Regístrate gratis
                                 </Link>
                             </p>
@@ -178,7 +178,7 @@ const LoginPage = () => {
                                         type="email"
                                         autoComplete="email"
                                         {...register('email')}
-                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
+                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
                                         placeholder="tu@correo.com"
                                     />
                                     {errors.email && (
@@ -196,7 +196,7 @@ const LoginPage = () => {
                                             type={showPassword ? "text" : "password"}
                                             autoComplete="current-password"
                                             {...register('password')}
-                                            className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white ${errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
+                                            className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
                                             placeholder="••••••••"
                                         />
                                         <button
@@ -217,7 +217,7 @@ const LoginPage = () => {
                                 </div>
 
                                 <div className="flex items-center justify-between lg:justify-end">
-                                    <Link href="/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+                                    <Link href="/forgot-password" className="text-sm font-semibold text-brand-blue hover:text-brand-blue/80 transition-colors">
                                         ¿Olvidaste tu contraseña?
                                     </Link>
                                 </div>
@@ -225,7 +225,7 @@ const LoginPage = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-jakarta font-bold text-white bg-brand-blue hover:bg-brand-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                                 >
                                     {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                                 </button>

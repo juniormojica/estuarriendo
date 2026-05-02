@@ -136,28 +136,28 @@ const RegistrationPage = () => {
         <>
         <div className="min-h-screen bg-white flex flex-col lg:flex-row">
             {/* Left side: Solid Color + Branding (Desktop only) */}
-            <div className="hidden lg:flex lg:w-1/2 bg-blue-600 flex-col justify-between p-12 xl:p-20 text-white relative overflow-hidden">
+            <div className="hidden lg:flex lg:w-1/2 bg-brand-dark flex-col justify-between p-12 xl:p-20 text-white relative overflow-hidden">
                 {/* Decorative subtle element */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
-                    <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-white blur-3xl mix-blend-overlay"></div>
-                    <div className="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-white blur-3xl mix-blend-overlay"></div>
+                    <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-brand-lime blur-3xl mix-blend-overlay"></div>
+                    <div className="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-brand-blue blur-3xl mix-blend-overlay"></div>
                 </div>
                 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-16">
-                        <div className="bg-white p-2 rounded-xl">
-                            <LogIn className="h-6 w-6 text-blue-600" />
+                        <div className="bg-brand-lime p-2 rounded-xl">
+                            <LogIn className="h-6 w-6 text-brand-dark" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight">EstuArriendo</span>
+                        <span className="text-2xl font-jakarta font-bold tracking-tight">EstuArriendo</span>
                     </div>
-                    <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight mb-6">
+                    <h1 className="text-4xl lg:text-5xl font-jakarta font-extrabold tracking-tight leading-tight mb-6">
                         Únete a nuestra comunidad.
                     </h1>
-                    <p className="text-lg text-blue-100 max-w-md leading-relaxed">
+                    <p className="text-lg text-gray-300 max-w-md leading-relaxed font-lato">
                         Encuentra tu alojamiento ideal o publica tu propiedad para miles de estudiantes buscando hogar.
                     </p>
                 </div>
-                <div className="text-sm text-blue-200 relative z-10 font-medium">
+                <div className="text-sm text-gray-400 relative z-10 font-medium">
                     &copy; {new Date().getFullYear()} EstuArriendo. Todos los derechos reservados.
                 </div>
             </div>
@@ -167,22 +167,22 @@ const RegistrationPage = () => {
                 
                 {/* Mobile/Tablet Header */}
                 <div className="lg:hidden flex justify-center mb-6">
-                    <div className="flex items-center gap-2 text-blue-600">
-                        <div className="bg-blue-100 p-2 rounded-xl">
+                    <div className="flex items-center gap-2 text-brand-blue">
+                        <div className="bg-brand-blue/10 p-2 rounded-xl">
                             <LogIn className="h-6 w-6" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight text-gray-900">EstuArriendo</span>
+                        <span className="text-2xl font-jakarta font-bold tracking-tight text-gray-900">EstuArriendo</span>
                     </div>
                 </div>
 
                 <div className="w-full max-w-xl mx-auto">
                     <div className="mb-8 text-center lg:text-left">
-                        <h2 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">
+                        <h2 className="text-3xl font-jakarta font-extrabold text-gray-900 mb-2 tracking-tight">
                             {userType === 'owner' ? 'Registra tu Inmueble' : 'Crea tu cuenta'}
                         </h2>
                         <p className="text-sm text-gray-600">
                             ¿Ya tienes cuenta?{' '}
-                            <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+                            <Link href="/login" className="font-semibold text-brand-blue hover:text-brand-blue/80 transition-colors">
                                 Ingresa aquí
                             </Link>
                         </p>
@@ -195,22 +195,22 @@ const RegistrationPage = () => {
                                 type="button"
                                 onClick={() => setUserType('owner')}
                                 className={`flex-1 sm:flex-none flex items-center justify-center min-h-[48px] px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 relative z-10 ${userType === 'owner'
-                                    ? 'text-blue-700 shadow-sm bg-white'
+                                    ? 'text-brand-blue shadow-sm bg-white'
                                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                                     }`}
                             >
-                                <Building2 className={`w-4 h-4 mr-2 transition-colors ${userType === 'owner' ? 'text-blue-600' : 'text-gray-400'}`} />
+                                <Building2 className={`w-4 h-4 mr-2 transition-colors ${userType === 'owner' ? 'text-brand-blue' : 'text-gray-400'}`} />
                                 Soy Propietario
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setUserType('tenant')}
                                 className={`flex-1 sm:flex-none flex items-center justify-center min-h-[48px] px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 relative z-10 ${userType === 'tenant'
-                                    ? 'text-blue-700 shadow-sm bg-white'
+                                    ? 'text-brand-blue shadow-sm bg-white'
                                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                                     }`}
                             >
-                                <UserIcon className={`w-4 h-4 mr-2 transition-colors ${userType === 'tenant' ? 'text-blue-600' : 'text-gray-400'}`} />
+                                <UserIcon className={`w-4 h-4 mr-2 transition-colors ${userType === 'tenant' ? 'text-brand-blue' : 'text-gray-400'}`} />
                                 Busco Inmueble
                             </button>
                         </div>
@@ -248,7 +248,7 @@ const RegistrationPage = () => {
                                             name="role"
                                             value={ownerData.role}
                                             onChange={handleOwnerInputChange}
-                                            className="appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white border-gray-300 hover:border-gray-400"
+                                            className="appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white border-gray-300 hover:border-gray-400"
                                         >
                                             <option value="individual">Propietario Individual</option>
                                             <option value="agency">Inmobiliaria / Administrador</option>
@@ -261,7 +261,7 @@ const RegistrationPage = () => {
                                     <input
                                         type="text"
                                         {...register('name')}
-                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white ${errors.name ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
+                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.name ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
                                         placeholder="Ej: Juan Pérez"
                                     />
                                     {errors.name && <p className="mt-1.5 text-sm text-red-600 font-medium animate-in fade-in">{errors.name.message}</p>}
@@ -275,7 +275,7 @@ const RegistrationPage = () => {
                                                 name="idType"
                                                 value={ownerData.idType}
                                                 onChange={handleOwnerInputChange}
-                                                className="appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white border-gray-300 hover:border-gray-400"
+                                                className="appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white border-gray-300 hover:border-gray-400"
                                             >
                                                 <option value="CC">Cédula de Ciudadanía</option>
                                                 <option value="NIT">NIT</option>
@@ -303,7 +303,7 @@ const RegistrationPage = () => {
                                     <input
                                         type="email"
                                         {...register('email')}
-                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
+                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
                                         placeholder="tu@correo.com"
                                     />
                                     {errors.email && <p className="mt-1.5 text-sm text-red-600 font-medium animate-in fade-in">{errors.email.message}</p>}
@@ -314,7 +314,7 @@ const RegistrationPage = () => {
                                     <input
                                         type="tel"
                                         {...register('phone')}
-                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white ${errors.phone ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
+                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.phone ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
                                         placeholder="Ej: 3001234567"
                                     />
                                     {errors.phone && <p className="mt-1.5 text-sm text-red-600 font-medium animate-in fade-in">{errors.phone.message}</p>}
@@ -326,7 +326,7 @@ const RegistrationPage = () => {
                                         <input
                                             type={showPassword ? "text" : "password"}
                                             {...register('password')}
-                                            className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white ${errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
+                                            className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
                                             placeholder="••••••••"
                                         />
                                         <button
@@ -346,7 +346,7 @@ const RegistrationPage = () => {
                                         <input
                                             type={showConfirmPassword ? "text" : "password"}
                                             {...register('confirmPassword')}
-                                            className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-white ${errors.confirmPassword ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
+                                            className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.confirmPassword ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'}`}
                                             placeholder="••••••••"
                                         />
                                         <button
@@ -365,7 +365,7 @@ const RegistrationPage = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-jakarta font-bold text-white bg-brand-blue hover:bg-brand-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                                 >
                                     {loading ? 'Registrando...' : 'Registrarse'}
                                     <CheckCircle className="ml-2 h-5 w-5" />

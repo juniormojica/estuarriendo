@@ -31,10 +31,10 @@ const PlansPage: React.FC = () => {
         <div className="min-h-screen bg-gray-50 py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto">
                 <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-jakarta font-extrabold text-gray-900 tracking-tight">
                         Elige el plan perfecto para ti
                     </h1>
-                    <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-500">
+                    <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-500 font-lato">
                         Tenemos opciones diseñadas a medida, seas un estudiante buscando alojamiento o un propietario buscando inquilinos.
                     </p>
                 </div>
@@ -46,7 +46,7 @@ const PlansPage: React.FC = () => {
                             <button
                                 onClick={() => setActiveTab('tenant')}
                                 className={`flex items-center px-6 py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${activeTab === 'tenant'
-                                    ? 'bg-emerald-50 text-emerald-700 shadow-sm'
+                                    ? 'bg-brand-blue text-white shadow-sm'
                                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
@@ -56,7 +56,7 @@ const PlansPage: React.FC = () => {
                             <button
                                 onClick={() => setActiveTab('owner')}
                                 className={`flex items-center px-6 py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${activeTab === 'owner'
-                                    ? 'bg-emerald-50 text-emerald-700 shadow-sm'
+                                    ? 'bg-brand-blue text-white shadow-sm'
                                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
@@ -67,7 +67,7 @@ const PlansPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="text-center mb-8">
-                        <span className="inline-block bg-emerald-100 text-emerald-800 text-sm px-4 py-2 rounded-full font-medium shadow-sm">
+                        <span className="inline-block bg-brand-blue/10 text-brand-blue text-sm px-4 py-2 rounded-full font-medium shadow-sm">
                             Planes para {isOwner ? 'Propietarios' : 'Estudiantes'}
                         </span>
                     </div>
@@ -79,23 +79,23 @@ const PlansPage: React.FC = () => {
                         {/* 5 Credits */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
                             <div className="p-6 flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900">Paquete Básico</h3>
+                                <h3 className="text-lg font-jakarta font-semibold text-gray-900">Paquete Básico</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$8.999</span>
+                                    <span className="text-4xl font-jakarta font-extrabold tracking-tight">$8.999</span>
                                 </p>
-                                <p className="mt-4 text-sm text-gray-500">Ideal si ya tienes algunas opciones en mente.</p>
+                                <p className="mt-4 text-sm text-gray-500 font-lato">Ideal si ya tienes algunas opciones en mente.</p>
 
-                                <ul className="mt-4 space-y-3">
+                                <ul className="mt-4 space-y-3 font-lato">
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500"><strong>5</strong> Créditos de Contacto</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Créditos no vencen</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Devolución si está arrendado</span>
                                     </li>
                                 </ul>
@@ -103,7 +103,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=5_credits"
-                                    className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
+                                    className="block w-full min-h-[48px] bg-brand-blue/10 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-jakarta font-bold text-brand-blue hover:bg-brand-blue/20 active:bg-brand-blue/30 transition-colors"
                                 >
                                     Comprar 5 Créditos
                                 </Link>
@@ -111,8 +111,8 @@ const PlansPage: React.FC = () => {
                         </div>
 
                         {/* 10 Credits (Popular) */}
-                        <div className="bg-white rounded-xl shadow-xl border-2 border-emerald-500 overflow-hidden transform scale-105 z-10 flex flex-col relative">
-                            <div className="absolute top-0 inset-x-0 bg-emerald-500 h-1.5"></div>
+                        <div className="bg-white rounded-xl shadow-xl border-2 border-brand-lime overflow-hidden transform scale-105 z-10 flex flex-col relative">
+                            <div className="absolute top-0 inset-x-0 bg-brand-lime h-1.5"></div>
                             <div className="absolute top-0 right-0 w-28 h-28 overflow-hidden z-20">
                                 <div className="absolute top-6 -right-8 w-32 bg-yellow-400 text-xs font-bold py-1 transform rotate-45 text-center shadow-sm">
                                     POPULAR
@@ -121,25 +121,25 @@ const PlansPage: React.FC = () => {
 
                             <div className="p-6 flex-1">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-gray-900">Paquete Estándar</h3>
+                                    <h3 className="text-lg font-jakarta font-semibold text-gray-900">Paquete Estándar</h3>
                                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
                                 </div>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$12.999</span>
+                                    <span className="text-4xl font-jakarta font-extrabold tracking-tight">$12.999</span>
                                 </p>
-                                <p className="mt-4 text-sm text-gray-500">La mejor relación costo-beneficio para buscar sin estrés.</p>
+                                <p className="mt-4 text-sm text-gray-500 font-lato">La mejor relación costo-beneficio para buscar sin estrés.</p>
 
-                                <ul className="mt-4 space-y-3">
+                                <ul className="mt-4 space-y-3 font-lato">
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500"><strong>10</strong> Créditos de Contacto</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
-                                        <span className="ml-3 text-sm text-emerald-600 font-medium">Ahorras $4.999 vs. Básico</span>
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
+                                        <span className="ml-3 text-sm text-brand-blue font-semibold">Ahorras $4.999 vs. Básico</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Devolución automática por reportes válidos</span>
                                     </li>
                                 </ul>
@@ -147,7 +147,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=10_credits"
-                                    className="block w-full min-h-[48px] bg-emerald-600 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-sm"
+                                    className="block w-full min-h-[48px] bg-brand-blue border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-jakarta font-bold text-white hover:bg-brand-blue/90 active:bg-brand-dark transition-colors shadow-sm"
                                 >
                                     Comprar 10 Créditos
                                 </Link>
@@ -157,23 +157,23 @@ const PlansPage: React.FC = () => {
                         {/* Unlimited */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
                             <div className="p-6 flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900">Paquete Pro</h3>
+                                <h3 className="text-lg font-jakarta font-semibold text-gray-900">Paquete Pro</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$19.999</span>
+                                    <span className="text-4xl font-jakarta font-extrabold tracking-tight">$19.999</span>
                                 </p>
-                                <p className="mt-4 text-sm text-gray-500">Para quienes buscan tener múltiples opciones para contactar.</p>
+                                <p className="mt-4 text-sm text-gray-500 font-lato">Para quienes buscan tener múltiples opciones para contactar.</p>
 
-                                <ul className="mt-4 space-y-3">
+                                <ul className="mt-4 space-y-3 font-lato">
                                     <li className="flex">
-                                        <Zap className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <Zap className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500"><strong>20</strong> Créditos de Contacto</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
-                                        <span className="ml-3 text-sm text-emerald-600 font-medium">Ahorras $15.997 vs. Básico</span>
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
+                                        <span className="ml-3 text-sm text-brand-blue font-semibold">Ahorras $15.997 vs. Básico</span>
                                     </li>
                                     <li className="flex">
-                                        <Award className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <Award className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Créditos no vencen</span>
                                     </li>
                                 </ul>
@@ -181,7 +181,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=20_credits"
-                                    className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
+                                    className="block w-full min-h-[48px] bg-brand-blue/10 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-jakarta font-bold text-brand-blue hover:bg-brand-blue/20 active:bg-brand-blue/30 transition-colors"
                                 >
                                     Comprar 20 Créditos
                                 </Link>
@@ -196,24 +196,24 @@ const PlansPage: React.FC = () => {
                         {/* Weekly */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
                             <div className="p-6 flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900">Plan Semanal</h3>
+                                <h3 className="text-lg font-jakarta font-semibold text-gray-900">Plan Semanal</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$12.999</span>
+                                    <span className="text-4xl font-jakarta font-extrabold tracking-tight">$12.999</span>
                                     <span className="ml-1 text-base font-semibold text-gray-500">/semana</span>
                                 </p>
-                                <p className="mt-4 text-sm text-gray-500">Ideal para pruebas rápidas o necesidades temporales.</p>
+                                <p className="mt-4 text-sm text-gray-500 font-lato">Ideal para pruebas rápidas o necesidades temporales.</p>
 
-                                <ul className="mt-4 space-y-3">
+                                <ul className="mt-4 space-y-3 font-lato">
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Duración de 7 días</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Hasta 10 imágenes por propiedad</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Sello de Verificación básico</span>
                                     </li>
                                 </ul>
@@ -221,7 +221,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=weekly"
-                                    className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
+                                    className="block w-full min-h-[48px] bg-brand-blue/10 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-jakarta font-bold text-brand-blue hover:bg-brand-blue/20 active:bg-brand-blue/30 transition-colors"
                                 >
                                     Seleccionar Plan Semanal
                                 </Link>
@@ -229,8 +229,8 @@ const PlansPage: React.FC = () => {
                         </div>
 
                         {/* Monthly */}
-                        <div className="bg-white rounded-xl shadow-xl border-2 border-emerald-500 overflow-hidden transform scale-105 z-10 flex flex-col relative">
-                            <div className="absolute top-0 inset-x-0 bg-emerald-500 h-1.5"></div>
+                        <div className="bg-white rounded-xl shadow-xl border-2 border-brand-lime overflow-hidden transform scale-105 z-10 flex flex-col relative">
+                            <div className="absolute top-0 inset-x-0 bg-brand-lime h-1.5"></div>
                             <div className="absolute top-0 right-0 w-28 h-28 overflow-hidden z-20">
                                 <div className="absolute top-6 -right-8 w-32 bg-yellow-400 text-xs font-bold py-1 transform rotate-45 text-center shadow-sm">
                                     POPULAR
@@ -239,26 +239,26 @@ const PlansPage: React.FC = () => {
 
                             <div className="p-6 flex-1">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-gray-900">Plan Mensual</h3>
+                                    <h3 className="text-lg font-jakarta font-semibold text-gray-900">Plan Mensual</h3>
                                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
                                 </div>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$19.999</span>
+                                    <span className="text-4xl font-jakarta font-extrabold tracking-tight">$19.999</span>
                                     <span className="ml-1 text-base font-semibold text-gray-500">/mes</span>
                                 </p>
-                                <p className="mt-4 text-sm text-gray-500">La mejor opción para la mayoría de los propietarios.</p>
+                                <p className="mt-4 text-sm text-gray-500 font-lato">La mejor opción para la mayoría de los propietarios.</p>
 
-                                <ul className="mt-4 space-y-3">
+                                <ul className="mt-4 space-y-3 font-lato">
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Duración de 30 días</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Hasta <strong>10 imágenes</strong></span>
                                     </li>
                                     <li className="flex">
-                                        <Shield className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <Shield className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Sello de <strong>Verificación Premium</strong></span>
                                     </li>
                                     <li className="flex">
@@ -270,7 +270,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=monthly"
-                                    className="block w-full min-h-[48px] bg-emerald-600 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors shadow-sm"
+                                    className="block w-full min-h-[48px] bg-brand-blue border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-jakarta font-bold text-white hover:bg-brand-blue/90 active:bg-brand-dark transition-colors shadow-sm"
                                 >
                                     Seleccionar Plan Mensual
                                 </Link>
@@ -280,24 +280,24 @@ const PlansPage: React.FC = () => {
                         {/* Quarterly */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
                             <div className="p-6 flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900">Plan Trimestral</h3>
+                                <h3 className="text-lg font-jakarta font-semibold text-gray-900">Plan Trimestral</h3>
                                 <p className="mt-2 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">$49.999</span>
+                                    <span className="text-4xl font-jakarta font-extrabold tracking-tight">$49.999</span>
                                     <span className="ml-1 text-base font-semibold text-gray-500">/3 meses</span>
                                 </p>
-                                <p className="mt-4 text-sm text-emerald-600 font-medium">¡Ahorra $9.998 comparado con el plan mensual!</p>
+                                <p className="mt-4 text-sm text-brand-blue font-semibold font-lato">¡Ahorra $9.998 comparado con el plan mensual!</p>
 
-                                <ul className="mt-4 space-y-3">
+                                <ul className="mt-4 space-y-3 font-lato">
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Duración de 90 días</span>
                                     </li>
                                     <li className="flex">
-                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <CheckCircle className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Todo lo del plan mensual</span>
                                     </li>
                                     <li className="flex">
-                                        <Award className="flex-shrink-0 w-5 h-5 text-emerald-500" />
+                                        <Award className="flex-shrink-0 w-5 h-5 text-brand-lime" />
                                         <span className="ml-3 text-sm text-gray-500">Prioridad máxima en soporte</span>
                                     </li>
                                     <li className="flex">
@@ -309,7 +309,7 @@ const PlansPage: React.FC = () => {
                             <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200">
                                 <Link
                                     href="/perfil?tab=billing&plan=quarterly"
-                                    className="block w-full min-h-[48px] bg-emerald-100 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-medium text-emerald-700 hover:bg-emerald-200 active:bg-emerald-300 transition-colors"
+                                    className="block w-full min-h-[48px] bg-brand-blue/10 border border-transparent rounded-lg py-3 px-4 text-center text-sm sm:text-base font-jakarta font-bold text-brand-blue hover:bg-brand-blue/20 active:bg-brand-blue/30 transition-colors"
                                 >
                                     Seleccionar Plan Trimestral
                                 </Link>
@@ -321,15 +321,15 @@ const PlansPage: React.FC = () => {
                 <div className="mt-8 sm:mt-10 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
                     <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
                         <div>
-                            <h3 className="text-base sm:text-lg font-bold text-gray-900">¿Tienes dudas sobre qué plan elegir?</h3>
-                            <p className="mt-2 text-sm sm:text-base text-gray-500">
+                            <h3 className="text-base sm:text-lg font-jakarta font-bold text-gray-900">¿Tienes dudas sobre qué plan elegir?</h3>
+                            <p className="mt-2 text-sm sm:text-base text-gray-500 font-lato">
                                 Nuestro equipo está disponible para ayudarte a seleccionar la mejor opción para tus necesidades. Contáctanos y te asesoraremos sin compromiso.
                             </p>
                         </div>
                         <div className="mt-4 lg:mt-0 flex justify-center lg:justify-end">
                             <a
-                                href="mailto:soporte@estuarriendo.com"
-                                className="inline-flex items-center min-h-[48px] px-6 py-3 border border-gray-300 shadow-sm text-sm sm:text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                                href="mailto:estuarriendo@gmail.com"
+                                className="inline-flex items-center min-h-[48px] px-6 py-3 border border-gray-300 shadow-sm text-sm sm:text-base font-jakarta font-bold rounded-lg text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue transition-colors"
                             >
                                 Contactar Soporte
                             </a>
