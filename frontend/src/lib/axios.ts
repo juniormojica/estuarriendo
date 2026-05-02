@@ -81,12 +81,15 @@ apiClient.interceptors.response.use(
                 window.location.href = '/login';
             }
         } else {
-            // Show global error toast for all other errors (except 401 unless we want to show it)
-            // Prevent showing toast if the request explicitly disabled it via a custom config flag (optional enhancement)
-            const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Ocurrió un error de conexión con el servidor.';
+            // Prevent toast spam for background polling or non-critical admin requests
+            const isSilentEndpoint = error.config?.url?.includes('/activity-logs');
 
-            // We use an ID to prevent spamming the same error toast multiple times
-            toast.error(errorMessage, { id: 'global-api-error' });
+            if (!isSilentEndpoint) {
+                // Show global error toast for all other errors
+                const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Ocurrió un error de conexión con el servidor.';
+                // We use an ID to prevent spamming the same error toast multiple times
+                toast.error(errorMessage, { id: 'global-api-error' });
+            }
         }
 
         return Promise.reject(error);

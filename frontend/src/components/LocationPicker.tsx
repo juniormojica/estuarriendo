@@ -70,7 +70,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             setIsLoading(true);
             setError('');
 
-            await loadGoogleMaps(apiKey);
+            await loadGoogleMaps(apiKey || '');
 
             // Initialize geocoder
             geocoderRef.current = new google.maps.Geocoder();

@@ -4,13 +4,10 @@ import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api';
 import ConfirmModal from '../ConfirmModal';
 import { useToast } from '../../components/ToastProvider';
+import { Amenity } from '../../types';
 import './ManagerStyles.css';
 
-interface Amenity {
-    id: number;
-    name: string;
-    icon?: string;
-}
+
 
 const AmenityManager: React.FC = () => {
     const [amenities, setAmenities] = useState<Amenity[]>([]);
@@ -241,7 +238,7 @@ const AmenityManager: React.FC = () => {
                     title="Eliminar Amenidad"
                     message={`¿Estás seguro de que deseas eliminar la amenidad "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
                     onConfirm={handleDelete}
-                    onCancel={() => setDeleteConfirm(null)}
+                    onClose={() => setDeleteConfirm(null)}
                     confirmText="Eliminar"
                     cancelText="Cancelar"
                 />

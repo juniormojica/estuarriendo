@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Property, User } from '../../types';
+import { Property, User, PropertyTypeEntity } from '../../types';
 import { Search, Filter, Eye, CheckCircle, XCircle, Trash2, Star, Edit } from 'lucide-react';
 
 interface PropertiesTableProps {

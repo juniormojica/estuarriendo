@@ -19,6 +19,10 @@ router.post('/forgot-password', authController.forgotPassword);
 router.get('/reset-password/:token', authController.verifyResetToken);
 router.post('/reset-password', authController.resetPassword);
 
+// Google OAuth routes (public)
+router.post('/google', authController.googleAuth);
+router.post('/google/complete-registration', authController.googleCompleteRegistration);
+
 // Protected routes (authentication required)
 router.get('/me', authMiddleware, authController.getCurrentUser);
 

@@ -91,15 +91,15 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
 
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-                    <div className="bg-white px-4 pt-4 pb-4 sm:p-6">
+                <div className="inline-block align-bottom bg-white dark:bg-brand-dark rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-transparent dark:border-white/10">
+                    <div className="bg-white dark:bg-brand-dark px-4 pt-4 pb-4 sm:p-6">
                         <div className="flex justify-between items-start gap-3">
-                            <h3 className="text-base sm:text-lg leading-6 font-medium text-gray-900 flex-1" id="modal-title">
+                            <h3 className="text-base sm:text-lg leading-6 font-medium text-brand-dark dark:text-white flex-1" id="modal-title">
                                 Interesados en: {propertyTitle}
                             </h3>
                             <button
                                 onClick={onClose}
-                                className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white rounded-md text-gray-400 hover:text-gray-500 active:text-gray-600 focus:outline-none"
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white dark:bg-brand-dark rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 active:text-gray-700 focus:outline-none transition-colors"
                                 aria-label="Cerrar"
                             >
                                 <X className="h-6 w-6" />
@@ -109,30 +109,30 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                         <div className="mt-4">
                             {loading ? (
                                 <div className="text-center py-4">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
-                                    <p className="mt-2 text-sm text-gray-500">Cargando interesados...</p>
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-lime mx-auto"></div>
+                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Cargando interesados...</p>
                                 </div>
                             ) : interests.length === 0 ? (
-                                <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                <div className="text-center py-8 bg-gray-50 dark:bg-white/5 rounded-lg border border-dashed border-gray-300 dark:border-white/20">
                                     <User className="mx-auto h-12 w-12 text-gray-400" />
-                                    <p className="mt-2 text-sm text-gray-500">Aún no hay personas interesadas en esta propiedad.</p>
+                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Aún no hay personas interesadas en esta propiedad.</p>
                                 </div>
                             ) : (
-                                <ul className="divide-y divide-gray-200 max-h-[60vh] sm:max-h-96 overflow-y-auto">
+                                <ul className="divide-y divide-gray-200 dark:divide-white/10 max-h-[60vh] sm:max-h-96 overflow-y-auto">
                                     {interests.map((interest) => (
                                         <li key={interest.id} className="py-4">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0">
-                                                        <span className="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100">
-                                                            <User className="h-full w-full text-gray-300 p-2" />
+                                                        <span className="inline-block h-10 w-10 rounded-full overflow-hidden bg-brand-lime/20 dark:bg-brand-lime/10">
+                                                            <User className="h-full w-full text-brand-lime p-2" />
                                                         </span>
                                                     </div>
                                                     <div className="ml-3">
-                                                        <p className="text-sm font-medium text-gray-900">
+                                                        <p className="text-sm font-medium text-brand-dark dark:text-white">
                                                             {interest.interestedUserName || interest.message?.split(' está interesado')[0] || 'Usuario Interesado'}
                                                         </p>
-                                                        <p className="text-xs text-gray-500">
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
                                                             Interesado desde: {new Date(interest.createdAt).toLocaleDateString()}
                                                         </p>
                                                     </div>
@@ -141,14 +141,14 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
 
                                             <div className="mt-3 sm:pl-13">
                                                 {isPremium ? (
-                                                    <div className="bg-emerald-50 rounded-md p-3 space-y-2">
-                                                        <div className="flex items-center text-sm text-emerald-700">
-                                                            <Mail className="h-4 w-4 mr-2" />
+                                                    <div className="bg-brand-lime/10 rounded-md p-3 space-y-2 border border-brand-lime/20 dark:border-brand-lime/10">
+                                                        <div className="flex items-center text-sm text-brand-dark dark:text-white">
+                                                            <Mail className="h-4 w-4 mr-2 text-brand-lime" />
                                                             {/* In a real app, we would have the email here */}
                                                             <span>{contactDetails[interest.interestedUserId!]?.email || 'email@ejemplo.com'}</span>
                                                         </div>
-                                                        <div className="flex items-center text-sm text-emerald-700">
-                                                            <Phone className="h-4 w-4 mr-2" />
+                                                        <div className="flex items-center text-sm text-brand-dark dark:text-white">
+                                                            <Phone className="h-4 w-4 mr-2 text-brand-lime" />
                                                             {/* In a real app, we would have the phone here */}
                                                             <span>{contactDetails[interest.interestedUserId!]?.phone || '300 123 4567'}</span>
                                                         </div>
@@ -156,21 +156,21 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                                                             href={`https://wa.me/57${contactDetails[interest.interestedUserId!]?.phone?.replace(/\s/g, '') || '3001234567'}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="inline-flex items-center text-xs font-medium text-emerald-600 hover:text-emerald-500 mt-1"
+                                                            className="inline-flex items-center text-xs font-bold text-brand-lime hover:brightness-110 mt-1"
                                                         >
                                                             <ExternalLink className="h-3 w-3 mr-1" />
                                                             Contactar por WhatsApp
                                                         </a>
                                                     </div>
                                                 ) : (
-                                                    <div className="bg-gray-50 rounded-md p-3 sm:p-4 border border-gray-200 text-center">
+                                                    <div className="bg-gray-50 dark:bg-white/5 rounded-md p-3 sm:p-4 border border-gray-200 dark:border-white/10 text-center">
                                                         <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mx-auto mb-2" />
-                                                        <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                                                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-3">
                                                             Actualiza a Premium para ver los datos de contacto y escribirle directamente.
                                                         </p>
                                                         <Link
                                                             href="/planes"
-                                                            className="inline-flex items-center min-h-[44px] px-3 sm:px-4 py-2 border border-transparent text-xs sm:text-sm leading-4 font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                                                            className="inline-flex items-center min-h-[44px] px-3 sm:px-4 py-2 border border-transparent text-xs sm:text-sm leading-4 font-bold rounded-md text-brand-dark bg-brand-lime hover:brightness-95 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-lime transition-all"
                                                         >
                                                             Actualizar Plan
                                                         </Link>
@@ -183,10 +183,10 @@ const InterestedUsersModal: React.FC<InterestedUsersModalProps> = ({
                             )}
                         </div>
                     </div>
-                    <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end">
+                    <div className="bg-gray-50 dark:bg-white/5 px-4 py-3 sm:px-6 flex justify-end border-t border-gray-100 dark:border-white/10">
                         <button
                             type="button"
-                            className="w-full sm:w-auto min-h-[48px] inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                            className="w-full sm:w-auto min-h-[48px] inline-flex justify-center rounded-md border border-gray-300 dark:border-white/20 shadow-sm px-4 py-2 bg-white dark:bg-white/5 text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 active:bg-gray-100 focus:outline-none transition-colors"
                             onClick={onClose}
                         >
                             Cerrar

@@ -13,7 +13,7 @@ import ImageUploader from '../ImageUploader';
 const unitSchema = z.object({
     title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
     description: z.string().optional(),
-    monthlyRent: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number({ required_error: 'Requerido' }).min(10000, 'El precio mensual no puede ser menor a $10.000')),
+    monthlyRent: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number().min(10000, 'El precio mensual no puede ser menor a $10.000')),
     deposit: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number().optional()),
     area: z.preprocess((v) => (v === '' || v === undefined || v === null || isNaN(Number(v)) ? undefined : Number(v)), z.number().optional()),
     roomType: z.enum(['individual', 'shared']),
@@ -45,7 +45,7 @@ const UnitEditForm: React.FC<UnitEditFormProps> = ({
         handleSubmit,
         formState: { errors },
     } = useForm<UnitFormData>({
-        resolver: zodResolver(unitSchema),
+        resolver: zodResolver(unitSchema) as any,
         defaultValues: unit ? {
             title: unit.title,
             description: unit.description || '',

@@ -54,13 +54,13 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                 // Remove by ID
                 amenities: amenityIds.filter(a =>
                     typeof a === 'object' ? a.id !== amenity.id : Number(a) !== amenity.id
-                )
+                ) as any
             }));
         } else {
             setFormData(prev => ({
                 ...prev,
                 // Store only the ID, not the full object
-                amenities: [...amenityIds, amenity.id]
+                amenities: [...amenityIds, amenity.id] as any
             }));
         }
     };
@@ -177,9 +177,9 @@ const UnitForm: React.FC<UnitFormProps> = ({ onSave, onClose, initialData, unitN
                         </label>
                         <div className="space-y-4">
                             <ImageUploader
-                                images={formData.images || []}
+                                images={(formData.images || []).map(img => typeof img === 'string' ? img : img.url)}
                                 onChange={(newImages) => {
-                                    setFormData(prev => ({ ...prev, images: newImages }));
+                                    setFormData(prev => ({ ...prev, images: newImages as any }));
                                     if (errors.images) {
                                         setErrors(prev => ({ ...prev, images: '' }));
                                     }

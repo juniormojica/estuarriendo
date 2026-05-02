@@ -1,4 +1,4 @@
-import { PropertyFormData, Property, User, PropertyTypeEntity } from '../types';
+import { PropertyFormData, Property, User, PropertyTypeEntity, PropertyType } from '../types';
 
 /**
  * Transform form data to backend format for property creation/update
@@ -101,7 +101,7 @@ export const transformPropertyFromBackend = (property: Property): PropertyFormDa
     return {
         title: property.title,
         description: property.description,
-        type: property.type?.name || 'apartamento',
+        type: (property.type?.name as PropertyType) || 'apartamento',
         monthlyRent: property.monthlyRent,
         price: property.monthlyRent, // Keep for backwards compatibility
         deposit: property.deposit,

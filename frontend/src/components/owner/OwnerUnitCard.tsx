@@ -6,6 +6,7 @@ interface OwnerUnitCardProps {
     unit: PropertyUnit;
     onToggleRented: (unitId: string) => void;
     onView: (unitId: string) => void;
+    containerId?: string | number;
 }
 
 const OwnerUnitCard: React.FC<OwnerUnitCardProps> = ({

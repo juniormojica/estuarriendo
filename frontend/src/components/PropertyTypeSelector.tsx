@@ -49,7 +49,7 @@ const PropertyTypeSelector = () => {
     const handleSelect = (type: PropertyTypeOption) => {
         setSelectedType(type.id);
         // Navigate to the appropriate form
-        router.push(type.route, { state: { propertyType: type.id } });
+        router.push(`${type.route}?propertyType=${type.id}`);
     };
 
     return (

@@ -19,7 +19,7 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
             >
                 <span className="font-semibold text-gray-900 pr-4">{question}</span>
                 {isOpen ? (
-                    <ChevronUp className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                    <ChevronUp className="h-5 w-5 text-brand-lime flex-shrink-0" />
                 ) : (
                     <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
                 )}
@@ -74,7 +74,7 @@ const FAQPage: React.FC = () => {
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
                     <div className="flex justify-center mb-4">
-                        <HelpCircle className="h-12 w-12 text-emerald-500" />
+                        <HelpCircle className="h-12 w-12 text-brand-lime" />
                     </div>
                     <h2 className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                         Preguntas Frecuentes
@@ -85,7 +85,7 @@ const FAQPage: React.FC = () => {
                 </div>
 
                 <div className="mb-12">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                    <h3 className="text-2xl font-jakarta font-bold text-gray-900 mb-6 flex items-center">
                         Para Estudiantes
                     </h3>
                     <div className="space-y-4">
@@ -96,7 +96,7 @@ const FAQPage: React.FC = () => {
                 </div>
 
                 <div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center pt-8 border-t border-gray-200">
+                    <h3 className="text-2xl font-jakarta font-bold text-gray-900 mb-6 flex items-center pt-8 border-t border-gray-200">
                         Para Propietarios
                     </h3>
                     <div className="space-y-4">
@@ -108,7 +108,7 @@ const FAQPage: React.FC = () => {
 
                 <div className="mt-16 text-center bg-white p-8 rounded-xl shadow-sm border border-gray-100">
                     <p className="text-gray-600 mb-4">¿No encontraste la respuesta que buscabas?</p>
-                    <a href="mailto:info@estuarriendo.com" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                    <a href="mailto:info@estuarriendo.com" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-blue hover:bg-brand-blue/90 transition-colors">
                         Contáctanos
                     </a>
                 </div>

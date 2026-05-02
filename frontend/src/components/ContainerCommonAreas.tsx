@@ -97,7 +97,7 @@ const ContainerCommonAreas: React.FC<ContainerCommonAreasProps> = ({ onNext, onB
                     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {commonAreas.map(area => {
-                                const IconComponent = iconMap[area.icon] || iconMap.default;
+                                const IconComponent = iconMap[(area.icon as keyof typeof iconMap) || 'default'] || iconMap.default;
                                 return (
                                     <label
                                         key={area.id}

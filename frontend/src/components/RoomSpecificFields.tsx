@@ -3,9 +3,9 @@ import { PropertyRule, Amenity } from '../types';
 
 interface RoomSpecificFieldsProps {
     rules: PropertyRule[];
-    selectedAmenities: number[];
+    selectedAmenities: (number | string)[];
     onRuleChange: (rule: PropertyRule) => void;
-    onAmenityToggle: (amenityId: number) => void;
+    onAmenityToggle: (amenityId: number | string) => void;
     availableAmenities: Amenity[];
 }
 

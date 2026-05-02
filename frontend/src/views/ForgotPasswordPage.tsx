@@ -42,20 +42,20 @@ const ForgotPasswordPage = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Mail className="h-6 w-6 text-blue-600" />
+                    <div className="h-12 w-12 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                        <Mail className="h-6 w-6 text-brand-blue" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                <h2 className="mt-6 text-center text-3xl font-jakarta font-extrabold text-gray-900">
                     Recuperar Contraseña
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
+                <p className="mt-2 text-center text-sm text-gray-600 font-lato">
                     Ingresa tu correo electrónico y te enviaremos instrucciones para resetear tu contraseña.
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <div className="bg-white py-8 px-4 shadow-sm sm:rounded-xl sm:px-10 border border-gray-100">
                     {!success ? (
                         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                             {error && (
@@ -86,7 +86,7 @@ const ForgotPasswordPage = () => {
                                         type="email"
                                         autoComplete="email"
                                         {...register('email')}
-                                        className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-300'
+                                        className={`appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all sm:text-sm bg-white ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'
                                             }`}
                                         placeholder="tu@email.com"
                                     />
@@ -100,14 +100,14 @@ const ForgotPasswordPage = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-jakarta font-bold text-white bg-brand-blue hover:bg-brand-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                                 >
                                     {loading ? 'Enviando...' : 'Enviar Instrucciones'}
                                 </button>
                             </div>
 
                             <div className="text-center">
-                                <Link href="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                                <Link href="/login" className="text-sm font-semibold text-brand-blue hover:text-brand-blue/80 transition-colors">
                                     Volver al inicio de sesión
                                 </Link>
                             </div>
@@ -125,7 +125,7 @@ const ForgotPasswordPage = () => {
                             </div>
 
                             <div className="text-center pt-4">
-                                <Link href="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                                <Link href="/login" className="text-sm font-semibold text-brand-blue hover:text-brand-blue/80 transition-colors">
                                     Volver al inicio de sesión
                                 </Link>
                             </div>

@@ -4,6 +4,7 @@ export default {
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     screens: {
       'xs': '480px',   // Small phones → Standard phones (iPhone 13, Poco M3, etc.)
@@ -14,7 +15,24 @@ export default {
       '2xl': '1536px', // Large desktops
     },
     extend: {
+      fontFamily: {
+        jakarta: ['var(--font-jakarta)', 'sans-serif'],
+        lato: ['var(--font-lato)', 'sans-serif'],
+      },
       colors: {
+        brand: {
+          blue: '#1B3A6B',
+          dark: '#0F1F3D',
+          lime: '#C8F135',
+        },
+        semantic: {
+          bg: 'var(--bg-base)',
+          surface: 'var(--bg-surface)',
+          elevated: 'var(--bg-elevated)',
+          text: 'var(--text-primary)',
+          'text-muted': 'var(--text-secondary)',
+          border: 'var(--border-default)',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

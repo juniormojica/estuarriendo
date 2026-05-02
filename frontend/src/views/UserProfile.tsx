@@ -257,7 +257,7 @@ const UserProfile: React.FC = () => {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <Loader className="w-8 h-8 animate-spin text-emerald-600" />
+                <Loader className="w-8 h-8 animate-spin text-brand-blue" />
             </div>
         );
     }
@@ -265,20 +265,20 @@ const UserProfile: React.FC = () => {
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
+        <div className="min-h-screen bg-gray-50 dark:bg-brand-dark py-4 sm:py-6 lg:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header - Responsive */}
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 lg:mb-8">Mi Perfil</h1>
+                <h1 className="text-xl sm:text-2xl font-jakarta font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 lg:mb-8">Mi Perfil</h1>
 
                 <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                     {/* Tabs Navigation - Horizontal on Mobile, Vertical Sidebar on Desktop */}
                     <div className="w-full lg:w-64 flex-shrink-0">
                         {/* Mobile: Horizontal Scrollable Tabs */}
-                        <div className="lg:hidden bg-white rounded-lg shadow-sm p-2 mb-4 overflow-x-auto">
+                        <div className="lg:hidden bg-white dark:bg-[#1a2235] rounded-lg shadow-sm p-2 mb-4 overflow-x-auto border border-transparent dark:border-white/10">
                             <nav className="flex space-x-2 min-w-max">
                                 <button
                                     onClick={() => setActiveTab('profile')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'profile' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'profile' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <UserIcon className="w-4 h-4" />
@@ -286,7 +286,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('security')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'security' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'security' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <Shield className="w-4 h-4" />
@@ -294,7 +294,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('billing')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'billing' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'billing' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <CreditCard className="w-4 h-4" />
@@ -302,13 +302,13 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('verification')}
-                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'verification' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                                    className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[44px] ${activeTab === 'verification' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 active:bg-gray-200'
                                         }`}
                                 >
                                     <ShieldCheck className="w-4 h-4" />
                                     <span>Verificación</span>
                                     {user.verificationStatus === 'verified' && (
-                                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                        <span className="w-2 h-2 bg-brand-lime rounded-full"></span>
                                     )}
                                     {user.verificationStatus === 'pending' && (
                                         <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
@@ -318,11 +318,11 @@ const UserProfile: React.FC = () => {
                         </div>
 
                         {/* Desktop: Vertical Sidebar */}
-                        <div className="hidden lg:block bg-white rounded-xl shadow-sm p-4 lg:sticky lg:top-8">
+                        <div className="hidden lg:block bg-white dark:bg-[#1a2235] rounded-xl shadow-sm p-4 lg:sticky lg:top-8 border border-transparent dark:border-white/10">
                             <nav className="space-y-1">
                                 <button
                                     onClick={() => setActiveTab('profile')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <UserIcon className="w-5 h-5" />
@@ -330,7 +330,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('security')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <Shield className="w-5 h-5" />
@@ -338,7 +338,7 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('billing')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'billing' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'billing' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <CreditCard className="w-5 h-5" />
@@ -346,13 +346,13 @@ const UserProfile: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('verification')}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'verification' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'verification' ? 'bg-brand-lime/10 text-brand-lime' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <ShieldCheck className="w-5 h-5" />
                                     <span>Verificación</span>
                                     {user.verificationStatus === 'verified' && (
-                                        <span className="ml-auto w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                        <span className="ml-auto w-2 h-2 bg-brand-lime rounded-full"></span>
                                     )}
                                     {user.verificationStatus === 'pending' && (
                                         <span className="ml-auto w-2 h-2 bg-yellow-500 rounded-full"></span>
@@ -364,7 +364,7 @@ const UserProfile: React.FC = () => {
 
                     {/* Content - Responsive Padding */}
                     <div className="flex-1 min-w-0">
-                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
+                        <div className="bg-white dark:bg-[#1a2235] rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 lg:p-8 border border-transparent dark:border-white/10">
                             {message && (
                                 <div className={`mb-6 p-4 rounded-lg flex items-center justify-center ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                                     }`}>
@@ -375,21 +375,21 @@ const UserProfile: React.FC = () => {
 
                             {activeTab === 'profile' && (
                                 <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-4 sm:space-y-6 animate-fadeIn">
-                                    <h2 className="text-base sm:text-lg font-medium text-gray-900">Información Personal</h2>
+                                    <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white">Información Personal</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 Nombre Completo <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
                                                 {...register('name')}
-                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.name ? 'border-red-500' : ''}`}
+                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime ${errors.name ? 'border-red-500' : ''}`}
                                             />
                                             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 Correo Electrónico
                                                 <span className="ml-2 text-xs text-blue-600 font-normal bg-blue-50 px-2 py-0.5 rounded">No editable</span>
                                             </label>
@@ -401,24 +401,24 @@ const UserProfile: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 Teléfono <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="tel"
                                                 {...register('phone')}
-                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.phone ? 'border-red-500' : ''}`}
+                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime ${errors.phone ? 'border-red-500' : ''}`}
                                             />
                                             {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                                                 WhatsApp <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="tel"
                                                 {...register('whatsapp')}
-                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.whatsapp ? 'border-red-500' : ''}`}
+                                                className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime ${errors.whatsapp ? 'border-red-500' : ''}`}
                                             />
                                             {errors.whatsapp && <p className="mt-1 text-sm text-red-600">{errors.whatsapp.message}</p>}
                                         </div>
@@ -426,19 +426,19 @@ const UserProfile: React.FC = () => {
 
                                     <div className="pt-4 sm:pt-6 border-t border-gray-100">
                                         <div className="mb-3 sm:mb-4">
-                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 inline-flex items-center">
+                                            <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white inline-flex items-center">
                                                 Documento de Identidad <span className="ml-2 text-gray-400 text-sm font-normal">(Opcional)</span>
                                             </h2>
-                                            <p className="text-sm text-gray-500 mt-1">
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                                 Completa este apartado si deseas ser verificado. Si llenas uno, debes llenar ambos campos.
                                             </p>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Tipo de Documento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Tipo de Documento</label>
                                                 <select
                                                     {...register('idType')}
-                                                    className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.idType ? 'border-red-500' : ''}`}
+                                                    className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime ${errors.idType ? 'border-red-500' : ''}`}
                                                 >
                                                     <option value="">Seleccionar</option>
                                                     <option value="CC">Cédula de Ciudadanía</option>
@@ -448,36 +448,36 @@ const UserProfile: React.FC = () => {
                                                 {errors.idType && <p className="mt-1 text-sm text-red-600">{errors.idType.message}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Número de Documento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Número de Documento</label>
                                                 <input
                                                     type="text"
                                                     {...register('idNumber')}
-                                                    className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.idNumber ? 'border-red-500' : ''}`}
+                                                    className={`w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime ${errors.idNumber ? 'border-red-500' : ''}`}
                                                 />
                                                 {errors.idNumber && <p className="mt-1 text-sm text-red-600">{errors.idNumber.message}</p>}
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
+                                    <div className="pt-4 sm:pt-6 border-t border-gray-100 dark:border-white/10">
+                                        <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
                                             Información Personal Adicional <span className="text-gray-400 text-sm font-normal ml-2">(Opcional)</span>
                                         </h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Fecha de Nacimiento</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Fecha de Nacimiento</label>
                                                 <input
                                                     type="date"
                                                     value={formData.profile?.birthDate ? new Date(formData.profile.birthDate).toISOString().split('T')[0] : ''}
                                                     onChange={(e) => handleProfileChange('birthDate', e.target.value)}
-                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Género</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Género</label>
                                                 <select
                                                     value={formData.profile?.gender || ''}
                                                     onChange={(e) => handleProfileChange('gender', e.target.value)}
-                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                 >
                                                     <option value="">Seleccionar</option>
                                                     <option value="male">Masculino</option>
@@ -487,7 +487,7 @@ const UserProfile: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Ciudad de Origen</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Ciudad de Origen</label>
                                                 <CityAutocomplete
                                                     hideLabel={true}
                                                     value={formData.profile?.originCity || null}
@@ -501,11 +501,11 @@ const UserProfile: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">¿Cómo nos conociste?</label>
+                                                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">¿Cómo nos conociste?</label>
                                                 <select
                                                     value={formData.profile?.referralSource || ''}
                                                     onChange={(e) => handleProfileChange('referralSource', e.target.value)}
-                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                 >
                                                     <option value="">Seleccionar</option>
                                                     <option value="google">Google</option>
@@ -522,12 +522,12 @@ const UserProfile: React.FC = () => {
 
                                     {user.userType === 'tenant' && (
                                         <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
+                                            <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 mb-3 sm:mb-4">
                                                 Información Académica <span className="text-gray-400 text-sm font-normal ml-2">(Opcional)</span>
                                             </h2>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                 <div className="sm:col-span-2">
-                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Ciudad donde estudias</label>
+                                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Ciudad donde estudias</label>
                                                     <CityAutocomplete
                                                         hideLabel={true}
                                                         value={formData.profile?.studyCity || null}
@@ -566,7 +566,7 @@ const UserProfile: React.FC = () => {
                                                         value={formData.profile?.academicProgram || ''}
                                                         onChange={(e) => handleProfileChange('academicProgram', e.target.value)}
                                                         placeholder="Ej: Ingeniería de Sistemas"
-                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                     />
                                                 </div>
                                                 <div>
@@ -577,7 +577,7 @@ const UserProfile: React.FC = () => {
                                                         onChange={(e) => handleProfileChange('currentSemester', Number(e.target.value))}
                                                         min="1"
                                                         max="12"
-                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                     />
                                                 </div>
                                                 <div>
@@ -585,7 +585,7 @@ const UserProfile: React.FC = () => {
                                                     <select
                                                         value={formData.profile?.livingPreference || ''}
                                                         onChange={(e) => handleProfileChange('livingPreference', e.target.value)}
-                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                     >
                                                         <option value="">Seleccionar</option>
                                                         <option value="solo">Vivir solo</option>
@@ -599,7 +599,7 @@ const UserProfile: React.FC = () => {
 
                                     {user.userType === 'owner' && (
                                         <div className="pt-4 sm:pt-6 border-t border-gray-100">
-                                            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
+                                            <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 mb-3 sm:mb-4">
                                                 Información del Arrendador <span className="text-gray-400 text-sm font-normal ml-2">(Opcional)</span>
                                             </h2>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -610,7 +610,7 @@ const UserProfile: React.FC = () => {
                                                         value={formData.profile?.totalPropertiesManaged || ''}
                                                         onChange={(e) => handleProfileChange('totalPropertiesManaged', Number(e.target.value))}
                                                         min="0"
-                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                     />
                                                 </div>
                                                 <div>
@@ -621,7 +621,7 @@ const UserProfile: React.FC = () => {
                                                         onChange={(e) => handleProfileChange('yearsAsLandlord', Number(e.target.value))}
                                                         min="0"
                                                         step="0.5"
-                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                                     />
                                                 </div>
                                                 <div className="sm:col-span-2">
@@ -630,7 +630,7 @@ const UserProfile: React.FC = () => {
                                                             type="checkbox"
                                                             checked={formData.profile?.managesPersonally || false}
                                                             onChange={(e) => handleProfileChange('managesPersonally', e.target.checked)}
-                                                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                                                            className="w-4 h-4 text-brand-blue border-gray-300 rounded focus:ring-brand-lime"
                                                         />
                                                         <span className="text-sm text-gray-700">Administro personalmente mis propiedades (sin inmobiliaria)</span>
                                                     </label>
@@ -643,7 +643,7 @@ const UserProfile: React.FC = () => {
                                         <button
                                             type="submit"
                                             disabled={saving}
-                                            className="flex items-center min-h-[48px] px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 transition-colors font-medium"
+                                            className="flex items-center min-h-[48px] px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 active:bg-brand-dark disabled:opacity-50 transition-colors font-medium"
                                         >
                                             {saving ? <Loader className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                                             Guardar Cambios
@@ -654,27 +654,27 @@ const UserProfile: React.FC = () => {
 
                             {activeTab === 'security' && (
                                 <div className="space-y-4 sm:space-y-6 animate-fadeIn">
-                                    <h2 className="text-base sm:text-lg font-medium text-gray-900">Cambiar Contraseña</h2>
+                                    <h2 className="text-base sm:text-lg font-jakarta font-bold text-gray-900 dark:text-white">Cambiar Contraseña</h2>
                                     <div className="max-w-md space-y-3 sm:space-y-4">
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Contraseña Actual</label>
                                             <input
                                                 type="password"
-                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                             />
                                         </div>
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Nueva Contraseña</label>
                                             <input
                                                 type="password"
-                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                             />
                                         </div>
                                         <div>
                                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Confirmar Nueva Contraseña</label>
                                             <input
                                                 type="password"
-                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                className="w-full min-h-[44px] px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-lime focus:border-brand-lime"
                                             />
                                         </div>
                                         <div className="pt-2">
@@ -691,11 +691,11 @@ const UserProfile: React.FC = () => {
                             {activeTab === 'billing' && (
                                 <div className="space-y-8 animate-fadeIn">
                                     {/* Current Plan Header */}
-                                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+                                    <div className="bg-gradient-to-r from-brand-lime to-brand-blue rounded-xl p-6 text-white shadow-lg">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="text-lg font-semibold mb-1">Tu Cuenta</h3>
-                                                <p className="text-emerald-100 text-2xl font-bold">
+                                                <h3 className="text-lg font-jakarta font-bold mb-1">Tu Cuenta</h3>
+                                                <p className="text-white/80 text-2xl font-jakarta font-bold">
                                                     {user.userType === 'tenant' ? 'Estudiante / Inquilino' : (user.plan === 'premium' ? 'Propietario Premium' : 'Propietario Gratuito')}
                                                 </p>
                                             </div>
@@ -711,18 +711,18 @@ const UserProfile: React.FC = () => {
                                         <div className="space-y-6">
                                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Tus Créditos</h3>
+                                                    <h3 className="text-lg font-jakarta font-bold text-gray-900 mb-1">Tus Créditos</h3>
                                                     {loadingCredits ? (
                                                         <div className="flex items-center text-gray-500"><Loader className="w-4 h-4 mr-2 animate-spin" /> Cargando...</div>
                                                     ) : creditBalance?.hasUnlimited && creditBalance.unlimitedUntil && new Date(creditBalance.unlimitedUntil) > new Date() ? (
-                                                        <p className="text-3xl font-bold text-emerald-600 flex items-center">
+                                                        <p className="text-3xl font-jakarta font-bold text-brand-blue flex items-center">
                                                             Ilimitados
                                                             <span className="text-sm font-normal text-gray-500 ml-3">
                                                                 Vence el {new Date(creditBalance.unlimitedUntil).toLocaleDateString()}
                                                             </span>
                                                         </p>
                                                     ) : (
-                                                        <p className="text-3xl font-bold text-emerald-600">
+                                                        <p className="text-3xl font-jakarta font-bold text-brand-blue">
                                                             {creditBalance?.availableCredits || 0}
                                                             <span className="text-sm font-normal text-gray-500 ml-2">disponibles</span>
                                                         </p>
@@ -731,9 +731,9 @@ const UserProfile: React.FC = () => {
                                                 <button
                                                     onClick={() => {
                                                         // Ensure we have a clean URL before navigating
-                                                        router.push('/planes', { replace: true });
+                                                        router.replace('/planes');
                                                     }}
-                                                    className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition"
+                                                    className="w-full sm:w-auto px-6 py-3 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-blue/90 transition"
                                                 >
                                                     Comprar Más Créditos
                                                 </button>
@@ -752,11 +752,11 @@ const UserProfile: React.FC = () => {
                                                 if (!selectedCreditPlan) return null;
 
                                                 return (
-                                                    <div className="bg-white rounded-xl border-2 border-emerald-500 shadow-lg overflow-hidden mt-8 animate-fadeIn">
-                                                        <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                                                    <div className="bg-white rounded-xl border-2 border-brand-lime shadow-lg overflow-hidden mt-8 animate-fadeIn">
+                                                        <div className="p-6 bg-brand-lime/10 border-b border-brand-lime/20 flex justify-between items-center">
                                                             <div>
-                                                                <h3 className="text-xl font-bold text-gray-900">Finalizar Compra</h3>
-                                                                <p className="text-emerald-700 font-medium">Estás a punto de adquirir: {selectedCreditPlan.name}</p>
+                                                                <h3 className="text-xl font-jakarta font-bold text-gray-900">Finalizar Compra</h3>
+                                                                <p className="text-brand-blue/90 font-medium">Estás a punto de adquirir: {selectedCreditPlan.name}</p>
                                                             </div>
                                                             <div className="text-right">
                                                                 <p className="text-sm font-medium text-gray-500">Total a pagar</p>
@@ -768,7 +768,7 @@ const UserProfile: React.FC = () => {
                                                             <div className="p-8">
                                                                 <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
                                                                     <Clock className="h-16 w-16 text-yellow-500 mb-4" />
-                                                                    <h4 className="text-xl font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
+                                                                    <h4 className="text-xl font-jakarta font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
                                                                     <p className="text-yellow-700 mb-4 max-w-md">
                                                                         Hemos recibido tu comprobante. Los créditos se asignarán en un máximo de 2 horas.
                                                                     </p>
@@ -779,11 +779,11 @@ const UserProfile: React.FC = () => {
                                                             </div>
                                                         ) : (
                                                             <div className="p-6 sm:p-8 space-y-6">
-                                                                <h4 className="text-lg font-semibold text-gray-900">Selecciona tu método de pago:</h4>
+                                                                <h4 className="text-lg font-jakarta font-bold text-gray-900">Selecciona tu método de pago:</h4>
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                     <button
                                                                         onClick={() => setPaymentMethod('mercadopago')}
-                                                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'mercadopago' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-gray-200 hover:border-emerald-400 hover:bg-gray-50'}`}
+                                                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'mercadopago' ? 'border-brand-lime bg-brand-lime/10 shadow-md' : 'border-gray-200 hover:border-brand-lime hover:bg-gray-50'}`}
                                                                     >
                                                                         <div className="text-center">
                                                                             <span className="block font-bold text-gray-900 mb-1">Mercado Pago</span>
@@ -792,7 +792,7 @@ const UserProfile: React.FC = () => {
                                                                     </button>
                                                                     <button
                                                                         onClick={() => setPaymentMethod('transfer')}
-                                                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'transfer' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-gray-200 hover:border-emerald-400 hover:bg-gray-50'}`}
+                                                                        className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${paymentMethod === 'transfer' ? 'border-brand-lime bg-brand-lime/10 shadow-md' : 'border-gray-200 hover:border-brand-lime hover:bg-gray-50'}`}
                                                                     >
                                                                         <div className="text-center">
                                                                             <span className="block font-bold text-gray-900 mb-1">Transferencia</span>
@@ -812,7 +812,7 @@ const UserProfile: React.FC = () => {
                                                                             <button
                                                                                 onClick={() => planParam && handleMPPayment(planParam)}
                                                                                 disabled={isGeneratingMPLink}
-                                                                                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
+                                                                                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-brand-blue rounded-xl hover:bg-brand-blue/90 hover:shadow-lg transform hover:-translate-y-0.5 transition-all w-full md:w-auto disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
                                                                             >
                                                                                 {isGeneratingMPLink ? (
                                                                                     <><Loader className="w-5 h-5 mr-2 animate-spin" /> Conectando con Mercado Pago...</>
@@ -853,7 +853,7 @@ const UserProfile: React.FC = () => {
                                             {creditTransactions.length > 0 && (
                                                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                                                     <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-                                                        <h3 className="text-lg font-semibold text-gray-900">Historial de Transacciones</h3>
+                                                        <h3 className="text-lg font-jakarta font-bold text-gray-900">Historial de Transacciones</h3>
                                                     </div>
                                                     <ul className="divide-y divide-gray-100">
                                                         {creditTransactions.map(tx => (
@@ -862,7 +862,7 @@ const UserProfile: React.FC = () => {
                                                                     <p className="text-sm font-medium text-gray-900">{tx.description}</p>
                                                                     <p className="text-xs text-gray-500 mt-1">{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : ''}</p>
                                                                 </div>
-                                                                <div className={`font-semibold text-sm ${tx.type === 'use' || tx.type === 'expire' ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                                <div className={`font-semibold text-sm ${tx.type === 'use' || tx.type === 'expire' ? 'text-red-600' : 'text-brand-blue'}`}>
                                                                     {tx.type === 'use' || tx.type === 'expire' ? '-' : '+'}{tx.amount}
                                                                 </div>
                                                             </li>
@@ -893,7 +893,7 @@ const UserProfile: React.FC = () => {
                                                         <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6">
                                                             <div className="flex items-center space-x-3 mb-2">
                                                                 <AlertCircle className="h-8 w-8 text-orange-600" />
-                                                                <h4 className="text-xl font-bold text-orange-800">Plan Premium Expirado</h4>
+                                                                <h4 className="text-xl font-jakarta font-bold text-orange-800">Plan Premium Expirado</h4>
                                                             </div>
                                                             <p className="text-orange-700 mb-2">
                                                                 Tu plan premium ha expirado el {new Date(user.planExpiresAt!).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}.
@@ -908,7 +908,7 @@ const UserProfile: React.FC = () => {
                                                     {paymentRequest && paymentRequest.status === 'pending' && (
                                                         <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
                                                             <Clock className="h-16 w-16 text-yellow-500 mb-4" />
-                                                            <h4 className="text-xl font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
+                                                            <h4 className="text-xl font-jakarta font-bold text-yellow-800 mb-2">Pago en Revisión</h4>
                                                             <p className="text-yellow-700 mb-4 max-w-md">
                                                                 Hemos recibido tu comprobante. El plan se activará en un máximo de 2 horas tras la verificación manual.
                                                             </p>
@@ -922,7 +922,7 @@ const UserProfile: React.FC = () => {
                                                         <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
                                                             <div className="flex items-center space-x-3 mb-3">
                                                                 <AlertCircle className="h-8 w-8 text-red-600" />
-                                                                <h4 className="text-xl font-bold text-red-800">Pago Rechazado</h4>
+                                                                <h4 className="text-xl font-jakarta font-bold text-red-800">Pago Rechazado</h4>
                                                             </div>
                                                             <p className="text-red-700">
                                                                 Tu último pago fue rechazado. Por favor intenta nuevamente o contacta a soporte.
@@ -946,9 +946,9 @@ const UserProfile: React.FC = () => {
                             {activeTab === 'verification' && (
                                 <div className="space-y-6 animate-fadeIn">
                                     <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-medium text-gray-900">Verificación de Identidad</h2>
+                                        <h2 className="text-lg font-jakarta font-bold text-gray-900 dark:text-white">Verificación de Identidad</h2>
                                         {user.verificationStatus === 'verified' && (
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-lime/20 text-brand-dark">
                                                 <CheckCircle className="w-4 h-4 mr-1" />
                                                 Verificado
                                             </span>
@@ -980,12 +980,12 @@ const UserProfile: React.FC = () => {
                                     </div>
 
                                     {/* Benefits of Verification */}
-                                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6">
-                                        <h3 className="text-sm font-semibold text-emerald-900 mb-3 flex items-center">
+                                    <div className="bg-gradient-to-r from-brand-lime/10 to-brand-blue/10 border border-brand-lime/30 rounded-xl p-6">
+                                        <h3 className="text-sm font-semibold text-brand-dark dark:text-white mb-3 flex items-center">
                                             <ShieldCheck className="w-5 h-5 mr-2" />
                                             Beneficios de la Verificación
                                         </h3>
-                                        <ul className="space-y-2 text-sm text-emerald-800">
+                                        <ul className="space-y-2 text-sm text-brand-dark dark:text-gray-200">
                                             {user.userType === 'owner' ? (
                                                 <>
                                                     <li className="flex items-start">
@@ -1030,12 +1030,12 @@ const UserProfile: React.FC = () => {
 
                                     {/* Verification Status Content */}
                                     {user.verificationStatus === 'verified' && (
-                                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 mb-6">
+                                        <div className="bg-brand-lime/10 border border-brand-lime/30 rounded-xl p-6 mb-6">
                                             <div className="flex items-center space-x-3 mb-2">
-                                                <CheckCircle className="w-6 h-6 text-emerald-600" />
-                                                <h3 className="text-lg font-semibold text-emerald-900">¡Identidad Verificada!</h3>
+                                                <CheckCircle className="w-6 h-6 text-brand-lime" />
+                                                <h3 className="text-lg font-jakarta font-bold text-brand-dark dark:text-white">¡Identidad Verificada!</h3>
                                             </div>
-                                            <p className="text-sm text-emerald-800">
+                                            <p className="text-sm text-brand-dark dark:text-gray-200">
                                                 {user.userType === 'owner' 
                                                     ? 'Tu identidad ha sido verificada exitosamente. Ahora tus propiedades mostrarán el badge de "Propietario Verificado".'
                                                     : 'Tu identidad ha sido verificada exitosamente. Ahora tu perfil mostrará el badge de "Estudiante Verificado".'
@@ -1047,7 +1047,7 @@ const UserProfile: React.FC = () => {
                                     {/* Always show the new VerificationForm for tracking single document updates (unless fully verified without needing form anymore, but we can show it so they see their docs!) */}
                                     {user.verificationStatus !== 'verified' && (
                                         <div>
-                                            <h3 className="text-md font-semibold text-gray-900 mb-4">Gestión de Documentos</h3>
+                                            <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Gestión de Documentos</h3>
                                             <VerificationForm userId={user.id} userRole={user.userType === 'tenant' ? 'student' : 'owner'} onSuccess={handleVerificationSuccess} />
                                         </div>
                                     )}

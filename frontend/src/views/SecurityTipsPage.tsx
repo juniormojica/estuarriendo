@@ -6,7 +6,7 @@ const SecurityTipsPage: React.FC = () => {
         <div className="bg-gray-50 min-h-screen py-16">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h2 className="text-base text-emerald-600 font-semibold tracking-wide uppercase">Tu seguridad es prioridad</h2>
+                    <h2 className="text-base text-brand-blue font-semibold tracking-wide uppercase">Tu seguridad es prioridad</h2>
                     <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                         Consejos de Seguridad
                     </p>
@@ -82,7 +82,7 @@ const SecurityTipsPage: React.FC = () => {
                             {/* Tip 5 */}
                             <div className="flex flex-col sm:flex-row gap-6">
                                 <div className="sm:w-16 flex-shrink-0">
-                                    <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                    <div className="h-12 w-12 rounded-full bg-brand-lime/20 flex items-center justify-center text-brand-blue">
                                         <ShieldCheck className="h-6 w-6" />
                                     </div>
                                 </div>

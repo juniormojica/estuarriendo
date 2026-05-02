@@ -119,23 +119,24 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ type: 'spring', duration: 0.5 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+                            className="relative bg-white dark:bg-brand-dark rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
                         >
                             {/* Close Button */}
                             <button
                                 onClick={handleClose}
-                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors z-10"
+                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-10"
                                 aria-label="Cerrar"
                             >
-                                <X className="h-5 w-5 text-gray-600" />
+                                <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                             </button>
 
                             {/* Header */}
-                            <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 px-6 py-8 text-white rounded-t-2xl">
+                            <div className="relative px-6 py-8 text-brand-dark dark:text-white rounded-t-2xl border-b border-gray-100 dark:border-white/10">
+                                <div className="absolute top-0 left-0 w-full h-1.5 bg-brand-lime rounded-t-2xl" />
                                 <h2 className="text-2xl font-bold mb-2">
                                     {activeTab === 'login' ? '¡Bienvenido de nuevo!' : '¡Únete a EstuArriendo!'}
                                 </h2>
-                                <p className="text-blue-50 text-sm">
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">
                                     {activeTab === 'login'
                                         ? 'Inicia sesión para guardar tus favoritos'
                                         : 'Crea una cuenta para guardar propiedades'}
@@ -143,12 +144,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                             </div>
 
                             {/* Tabs */}
-                            <div className="flex border-b border-gray-200 px-6">
+                            <div className="flex border-b border-gray-200 dark:border-white/10 px-6">
                                 <button
                                     onClick={() => setActiveTab('login')}
                                     className={`flex-1 py-4 text-sm font-medium transition-colors relative ${activeTab === 'login'
-                                            ? 'text-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
+                                            ? 'text-brand-dark dark:text-brand-lime'
+                                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                         }`}
                                 >
                                     <LogIn className="h-4 w-4 inline mr-2" />
@@ -156,15 +157,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                     {activeTab === 'login' && (
                                         <motion.div
                                             layoutId="activeTab"
-                                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-lime"
                                         />
                                     )}
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('register')}
                                     className={`flex-1 py-4 text-sm font-medium transition-colors relative ${activeTab === 'register'
-                                            ? 'text-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
+                                            ? 'text-brand-dark dark:text-brand-lime'
+                                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                         }`}
                                 >
                                     <UserPlus className="h-4 w-4 inline mr-2" />
@@ -172,7 +173,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                     {activeTab === 'register' && (
                                         <motion.div
                                             layoutId="activeTab"
-                                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-lime"
                                         />
                                     )}
                                 </button>
@@ -181,7 +182,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                             {/* Content */}
                             <div className="p-6">
                                 {error && (
-                                    <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start text-red-700 text-sm">
+                                    <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg p-3 flex items-start text-red-700 dark:text-red-400 text-sm">
                                         <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
                                         <span>{error}</span>
                                     </div>
@@ -190,7 +191,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                 {activeTab === 'login' ? (
                                     <form onSubmit={handleLoginSubmit} className="space-y-4">
                                         <div>
-                                            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Correo Electrónico
                                             </label>
                                             <input
@@ -199,13 +200,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                                 required
                                                 value={loginEmail}
                                                 onChange={(e) => setLoginEmail(e.target.value)}
-                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent"
                                                 placeholder="tu@email.com"
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Contraseña
                                             </label>
                                             <div className="relative">
@@ -215,13 +216,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                                     required
                                                     value={loginPassword}
                                                     onChange={(e) => setLoginPassword(e.target.value)}
-                                                    className="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    className="w-full px-3 py-2.5 pr-10 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent"
                                                     placeholder="••••••••"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                                 >
                                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                                 </button>
@@ -231,7 +232,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            className="w-full py-3 bg-brand-lime text-brand-dark rounded-lg font-bold hover:brightness-95 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                         >
                                             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                                         </button>
@@ -239,7 +240,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                 ) : (
                                     <form onSubmit={handleRegisterSubmit} className="space-y-4">
                                         <div>
-                                            <label htmlFor="register-name" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="register-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Nombre Completo
                                             </label>
                                             <input
@@ -248,13 +249,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                                 required
                                                 value={registerData.name}
                                                 onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent"
                                                 placeholder="Juan Pérez"
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Correo Electrónico
                                             </label>
                                             <input
@@ -263,13 +264,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                                 required
                                                 value={registerData.email}
                                                 onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent"
                                                 placeholder="tu@email.com"
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="register-phone" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="register-phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Teléfono (WhatsApp)
                                             </label>
                                             <input
@@ -278,13 +279,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                                 required
                                                 value={registerData.phone}
                                                 onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent"
                                                 placeholder="3001234567"
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Contraseña
                                             </label>
                                             <div className="relative">
@@ -294,13 +295,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                                     required
                                                     value={registerData.password}
                                                     onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                                                    className="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    className="w-full px-3 py-2.5 pr-10 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent"
                                                     placeholder="Mínimo 6 caracteres"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                                 >
                                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                                 </button>
@@ -308,7 +309,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                         </div>
 
                                         <div>
-                                            <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                 Confirmar Contraseña
                                             </label>
                                             <div className="relative">
@@ -318,26 +319,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, defau
                                                     required
                                                     value={registerData.confirmPassword}
                                                     onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                                                    className="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    className="w-full px-3 py-2.5 pr-10 border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-transparent"
                                                     placeholder="Repite tu contraseña"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                                 >
                                                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                                 </button>
                                             </div>
                                             {registerData.password && registerData.confirmPassword && registerData.password !== registerData.confirmPassword && (
-                                                <p className="mt-1 text-sm text-red-600">Las contraseñas no coinciden</p>
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">Las contraseñas no coinciden</p>
                                             )}
                                         </div>
 
                                         <button
                                             type="submit"
                                             disabled={loading || registerData.password !== registerData.confirmPassword}
-                                            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            className="w-full py-3 bg-brand-lime text-brand-dark rounded-lg font-bold hover:brightness-95 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                         >
                                             {loading ? 'Registrando...' : 'Crear Cuenta'}
                                         </button>

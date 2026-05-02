@@ -14,7 +14,7 @@ const UserStatsCard: React.FC<UserStatsCardProps> = ({ users }) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const newUsersThisWeek = users.filter(user => {
-        const joinedDate = new Date(user.joinedAt || user.createdAt || '');
+        const joinedDate = new Date(user.joinedAt || '');
         return joinedDate >= sevenDaysAgo;
     }).length;
 

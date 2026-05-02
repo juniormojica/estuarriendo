@@ -25,7 +25,7 @@ const InstitutionAutocomplete: React.FC<InstitutionAutocompleteProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<NodeJS.Timeout>();
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
     // Close dropdown when clicking outside
     useEffect(() => {

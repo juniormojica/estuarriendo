@@ -29,6 +29,34 @@ export interface ResetPasswordData {
     newPassword: string;
 }
 
+export interface GoogleAuthData {
+    credential: string;
+}
+
+export interface GooglePendingData {
+    googleId: string;
+    email: string;
+    name: string;
+    picture?: string;
+}
+
+export interface GoogleAuthResponse {
+    needsRegistration?: boolean;
+    googleData?: GooglePendingData;
+    user?: User;
+    token?: string;
+}
+
+export interface GoogleRegistrationData {
+    googleId: string;
+    email: string;
+    name: string;
+    picture?: string;
+    userType: 'owner' | 'tenant';
+    phone: string;
+    whatsapp: string;
+}
+
 /**
  * Transform user data from backend format (snake_case) to frontend format (camelCase)
  */
@@ -37,6 +65,7 @@ const transformUserData = (backendUser: any): User => {
         id: backendUser.id,
         name: backendUser.name,
         email: backendUser.email,
+        avatarUrl: backendUser.avatarUrl || backendUser.avatar_url || null,
         phone: backendUser.phone,
         whatsapp: backendUser.whatsapp,
         userType: backendUser.userType || backendUser.user_type, // Handle both formats
@@ -189,7 +218,43 @@ export const authService = {
             }
         }
         return null;
-    }
+    },
+
+    /**
+     * Step 1: Verify Google credential — returns login or needsRegistration
+     */
+    async googleAuth(data: GoogleAuthData): Promise<GoogleAuthResponse> {
+        const response = await apiClient.post<GoogleAuthResponse>('/auth/google', data);
+
+        if (!response.data.needsRegistration && response.data.token && response.data.user) {
+            const transformedUser = transformUserData(response.data.user);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('estuarriendo_token', response.data.token);
+                localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            }
+            response.data.user = transformedUser;
+        }
+
+        return response.data;
+    },
+
+    /**
+     * Step 2: Complete Google registration with phone and userType
+     */
+    async googleCompleteRegistration(data: GoogleRegistrationData): Promise<AuthResponse> {
+        const response = await apiClient.post<AuthResponse>('/auth/google/complete-registration', data);
+
+        if (response.data.token) {
+            const transformedUser = transformUserData(response.data.user);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('estuarriendo_token', response.data.token);
+                localStorage.setItem('estuarriendo_current_user', JSON.stringify(transformedUser));
+            }
+            response.data.user = transformedUser;
+        }
+
+        return response.data;
+    },
 };
 
 export default authService;

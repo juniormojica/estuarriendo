@@ -277,7 +277,7 @@ const DepartmentManager: React.FC = () => {
                     title="Eliminar Departamento"
                     message={`¿Estás seguro de que deseas eliminar el departamento "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
                     onConfirm={handleDelete}
-                    onCancel={() => setDeleteConfirm(null)}
+                    onClose={() => setDeleteConfirm(null)}
                     confirmText="Eliminar"
                     cancelText="Cancelar"
                 />

@@ -10,7 +10,7 @@ import { resetPasswordSchema, ResetPasswordFormValues } from '../lib/validations
 
 const ResetPasswordPage = () => {
     const router = useRouter();
-    const [searchParams] = useSearchParams();
+    const searchParams = useSearchParams();
     const token = searchParams.get('token') || '';
 
     const [showPassword, setShowPassword] = useState(false);
@@ -78,8 +78,8 @@ const ResetPasswordPage = () => {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Verificando token...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto"></div>
+                    <p className="mt-4 text-gray-600 font-lato">Verificando token...</p>
                 </div>
             </div>
         );
@@ -98,7 +98,7 @@ const ResetPasswordPage = () => {
                             </div>
                         </div>
                         <div className="mt-6 text-center">
-                            <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                            <Link href="/forgot-password" className="text-sm font-semibold text-brand-blue hover:text-brand-blue/80 transition-colors">
                                 Solicitar nuevo token
                             </Link>
                         </div>
@@ -112,22 +112,22 @@ const ResetPasswordPage = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Lock className="h-6 w-6 text-blue-600" />
+                    <div className="h-12 w-12 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                        <Lock className="h-6 w-6 text-brand-blue" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                <h2 className="mt-6 text-center text-3xl font-jakarta font-extrabold text-gray-900">
                     Resetear Contraseña
                 </h2>
                 {maskedEmail && (
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Para la cuenta: <span className="font-medium">{maskedEmail}</span>
+                    <p className="mt-2 text-center text-sm text-gray-600 font-lato">
+                        Para la cuenta: <span className="font-semibold text-gray-900">{maskedEmail}</span>
                     </p>
                 )}
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <div className="bg-white py-8 px-4 shadow-sm sm:rounded-xl sm:px-10 border border-gray-100">
                     {!success ? (
                         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                             {error && (
@@ -146,7 +146,7 @@ const ResetPasswordPage = () => {
                                         id="newPassword"
                                         type={showPassword ? 'text' : 'password'}
                                         {...register('password')}
-                                        className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.password ? 'border-red-500' : 'border-gray-300'
+                                        className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent sm:text-sm transition-all ${errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'
                                             }`}
                                         placeholder="Mínimo 6 caracteres"
                                     />
@@ -176,7 +176,7 @@ const ResetPasswordPage = () => {
                                         id="confirmPassword"
                                         type={showPassword ? 'text' : 'password'}
                                         {...register('confirmPassword')}
-                                        className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                                        className={`appearance-none block w-full px-4 py-3 pr-10 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent sm:text-sm transition-all ${errors.confirmPassword ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 hover:border-gray-400'
                                             }`}
                                         placeholder="Repite la contraseña"
                                     />
@@ -201,7 +201,7 @@ const ResetPasswordPage = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-jakarta font-bold text-white bg-brand-blue hover:bg-brand-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                                 >
                                     {loading ? 'Reseteando...' : 'Resetear Contraseña'}
                                 </button>
@@ -220,7 +220,7 @@ const ResetPasswordPage = () => {
                             </div>
 
                             <div className="text-center">
-                                <Link href="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                                <Link href="/login" className="text-sm font-semibold text-brand-blue hover:text-brand-blue/80 transition-colors">
                                     Ir al inicio de sesión ahora
                                 </Link>
                             </div>

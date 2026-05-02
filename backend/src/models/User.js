@@ -26,10 +26,23 @@ const User = sequelize.define('User', {
             isEmail: true
         }
     },
+    googleId: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+        field: 'google_id',
+        comment: 'Google OAuth user ID (sub)'
+    },
+    avatarUrl: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+        field: 'avatar_url',
+        comment: 'Profile picture URL (from Google or uploaded)'
+    },
     password: {
         type: DataTypes.STRING(255),
-        allowNull: false,
-        comment: 'Hashed password for authentication'
+        allowNull: true,
+        comment: 'Hashed password - null for Google-only accounts'
     },
     phone: {
         type: DataTypes.STRING(50),

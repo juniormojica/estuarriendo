@@ -32,8 +32,13 @@ export const useAdminSSE = (handlers: SSEEventHandlers) => {
         eventSourceRef.current.close();
       }
 
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const eventSource = new EventSource(`${baseURL}/sse/admin?token=${token}`);
+      // Connect DIRECTLY to the backend SSE endpoint.
+      // We bypass the Next.js proxy (/api rewrite) because Next.js rewrites buffer
+      // HTTP responses, which breaks SSE long-lived streaming connections.
+      // The backend SSE endpoint already sets Access-Control-Allow-Origin: * so
+      // CORS is not an issue from any origin (dev or production).
+      const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const eventSource = new EventSource(`${backendBase}/sse/admin?token=${token}`);
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {

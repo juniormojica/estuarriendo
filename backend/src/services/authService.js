@@ -298,11 +298,71 @@ export const resetPassword = async (token, newPassword) => {
     };
 };
 
+/**
+ * Find user by Google ID
+ * @param {string} googleId - Google OAuth user ID (sub)
+ * @returns {Promise<Object|null>} User object or null
+ */
+export const findByGoogleId = async (googleId) => {
+    const { findByGoogleId: repoFindByGoogleId } = await import('../repositories/userRepository.js');
+    return repoFindByGoogleId ? repoFindByGoogleId(googleId) : User.findOne({ where: { googleId } });
+};
+
+/**
+ * Create a new user authenticated via Google (no password)
+ * @param {Object} googleData - { googleId, email, name, picture }
+ * @param {string} userType - 'owner' | 'tenant'
+ * @param {string} phone - User phone number
+ * @param {string} whatsapp - User WhatsApp number
+ * @returns {Promise<Object>} Created user and JWT token
+ */
+export const createGoogleUser = async (googleData, userType, phone, whatsapp) => {
+    const { googleId, email, name, picture } = googleData;
+
+    // Check if email already exists (registered manually)
+    const existingByEmail = await User.findOne({ where: { email } });
+    if (existingByEmail && !existingByEmail.googleId) {
+        const error = new Error('Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.');
+        error.statusCode = 409;
+        throw error;
+    }
+
+    const userId = randomUUID();
+    const user = await User.create({
+        id: userId,
+        name,
+        email,
+        password: null,
+        googleId,
+        avatarUrl: picture || null,
+        phone,
+        whatsapp: whatsapp || phone,
+        userType,
+        isActive: true,
+        plan: 'premium',
+        joinedAt: new Date(),
+    });
+
+    // Log activity
+    const { ActivityLog } = await import('../models/index.js');
+    await ActivityLog.create({
+        type: 'user_registered',
+        message: `Nuevo usuario registrado con Google: ${user.name} (${user.userType})`,
+        userId: user.id,
+        timestamp: new Date()
+    });
+
+    const token = generateToken(user.id);
+    return { user: user.toJSON(), token };
+};
+
 export default {
     register,
     login,
     getUserById,
     requestPasswordReset,
     verifyResetToken,
-    resetPassword
+    resetPassword,
+    findByGoogleId,
+    createGoogleUser,
 };

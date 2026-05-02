@@ -44,7 +44,7 @@ const EditPropertyPage: React.FC = () => {
     };
 
     const handleCancel = () => {
-        router.push(-1);
+        router.back();
     };
 
     const handleSendToReview = async () => {

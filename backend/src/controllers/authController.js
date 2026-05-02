@@ -1,5 +1,7 @@
 import * as authService from '../services/authService.js';
+import { verifyGoogleToken } from '../services/googleAuthService.js';
 import { ActivityLog } from '../models/index.js';
+import User from '../models/User.js';
 
 /**
  * Authentication Controller
@@ -206,6 +208,104 @@ export const resetPassword = async (req, res) => {
     }
 };
 
+
+/**
+ * Google OAuth — Step 1: Verify token and check if user exists
+ * POST /api/auth/google
+ *
+ * Returns:
+ *   - { user, token }                            → existing Google user (direct login)
+ *   - Error 409                                  → email already registered manually
+ *   - { needsRegistration: true, googleData }    → new user, open modal
+ */
+export const googleAuth = async (req, res) => {
+    try {
+        const { credential } = req.body;
+
+        if (!credential) {
+            return res.status(400).json({ error: 'Token de Google es requerido' });
+        }
+
+        // 1. Verify Google token
+        const googleData = await verifyGoogleToken(credential);
+
+        // 2. Check if user already exists by googleId
+        const existingByGoogleId = await User.findOne({ where: { googleId: googleData.googleId } });
+        if (existingByGoogleId) {
+            // Direct login — generate JWT and return
+            const token = (await import('../utils/jwtUtils.js')).generateToken(existingByGoogleId.id);
+
+            // Set HTTP-only cookie
+            res.cookie('estuarriendo_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 30 * 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            return res.json({ user: existingByGoogleId.toJSON(), token });
+        }
+
+        // 3. Check if email is already registered manually (no googleId)
+        const existingByEmail = await User.findOne({ where: { email: googleData.email } });
+        if (existingByEmail && !existingByEmail.googleId) {
+            return res.status(409).json({
+                error: 'Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.'
+            });
+        }
+
+        // 4. New user — send back googleData so frontend shows the registration modal
+        return res.status(200).json({
+            needsRegistration: true,
+            googleData: {
+                googleId: googleData.googleId,
+                email: googleData.email,
+                name: googleData.name,
+                picture: googleData.picture,
+            }
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+/**
+ * Google OAuth — Step 2: Complete registration for new Google users
+ * POST /api/auth/google/complete-registration
+ */
+export const googleCompleteRegistration = async (req, res) => {
+    try {
+        const { googleId, email, name, picture, userType, phone, whatsapp } = req.body;
+
+        if (!googleId || !email || !userType || !phone) {
+            return res.status(400).json({
+                error: 'Faltan campos obligatorios: googleId, email, userType, phone'
+            });
+        }
+
+        const result = await authService.createGoogleUser(
+            { googleId, email, name, picture },
+            userType,
+            phone,
+            whatsapp
+        );
+
+        // Set HTTP-only cookie
+        res.cookie('estuarriendo_token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            path: '/'
+        });
+
+        res.status(201).json(result);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
 export default {
     register,
     login,
@@ -213,5 +313,7 @@ export default {
     getCurrentUser,
     forgotPassword,
     verifyResetToken,
-    resetPassword
+    resetPassword,
+    googleAuth,
+    googleCompleteRegistration,
 };

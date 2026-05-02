@@ -25,11 +25,11 @@ const SuccessPaymentPage: React.FC = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center animate-bounce-short">
-                    <div className="rounded-full bg-emerald-100 p-4">
-                        <CheckCircle className="w-16 h-16 text-emerald-600" />
+                    <div className="rounded-full bg-brand-lime/20 p-4">
+                        <CheckCircle className="w-16 h-16 text-brand-blue" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                <h2 className="mt-6 text-center text-3xl font-jakarta font-extrabold text-gray-900">
                     ¡Pago Exitoso!
                 </h2>
                 <p className="mt-2 text-center text-sm text-gray-600">
@@ -58,7 +58,7 @@ const SuccessPaymentPage: React.FC = () => {
                             {status && (
                                 <div className="flex justify-between items-center text-sm mt-2">
                                     <span className="text-gray-500">Estado:</span>
-                                    <span className="capitalize font-medium text-emerald-600 flex items-center">
+                                    <span className="capitalize font-medium text-brand-blue flex items-center">
                                         {status === 'approved' ? 'Aprobado' : status}
                                     </span>
                                 </div>
@@ -69,14 +69,14 @@ const SuccessPaymentPage: React.FC = () => {
                     <div className="space-y-4">
                         <Link
                             href="/perfil?tab=billing"
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-blue hover:bg-brand-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-lime transition-colors"
                         >
                             Ir a mi Perfil <ArrowRight className="ml-2 w-4 h-4" />
                         </Link>
 
                         <Link
                             href="/"
-                            className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                            className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-lime transition-colors"
                         >
                             Explorar Propiedades <ExternalLink className="ml-2 w-4 h-4 text-gray-400" />
                         </Link>

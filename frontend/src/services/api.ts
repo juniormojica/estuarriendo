@@ -1330,7 +1330,7 @@ export const api = {
     }
   },
 
-  async updateAmenity(id: number, data: Partial<{ name: string; icon?: string }>): Promise<any> {
+  async updateAmenity(id: number | string, data: Partial<{ name: string; icon?: string }>): Promise<any> {
     try {
       const response = await apiClient.put(`/amenities/${id}`, data);
       return response.data;
@@ -1340,7 +1340,7 @@ export const api = {
     }
   },
 
-  async deleteAmenity(id: number): Promise<void> {
+  async deleteAmenity(id: number | string): Promise<void> {
     try {
       await apiClient.delete(`/amenities/${id}`);
     } catch (error) {

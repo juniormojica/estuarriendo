@@ -397,7 +397,7 @@ const InstitutionManager: React.FC = () => {
                     title="Eliminar Institución"
                     message={`¿Estás seguro de que deseas eliminar la institución "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
                     onConfirm={handleDelete}
-                    onCancel={() => setDeleteConfirm(null)}
+                    onClose={() => setDeleteConfirm(null)}
                     confirmText="Eliminar"
                     cancelText="Cancelar"
                 />
