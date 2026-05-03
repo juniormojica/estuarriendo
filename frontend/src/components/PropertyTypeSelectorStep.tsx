@@ -64,12 +64,12 @@ const PropertyTypeSelectorStep: React.FC<PropertyTypeSelectorStepProps> = ({ onS
 
     return (
         <>
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-brand-dark dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto">
                     {/* Back Button */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                        className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         Volver al Dashboard
@@ -77,10 +77,10 @@ const PropertyTypeSelectorStep: React.FC<PropertyTypeSelectorStepProps> = ({ onS
 
                     {/* Header */}
                     <div className="text-center mb-12">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
                             ¿Qué deseas publicar?
                         </h1>
-                        <p className="text-lg text-gray-600">
+                        <p className="text-lg text-gray-600 dark:text-gray-300">
                             Selecciona el tipo de propiedad que quieres ofrecer
                         </p>
                     </div>
@@ -92,12 +92,12 @@ const PropertyTypeSelectorStep: React.FC<PropertyTypeSelectorStepProps> = ({ onS
                                 key={type.id}
                                 onClick={() => handleCardClick(type.id)}
                                 className={`
-                                    relative p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl
+                                    relative p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl
                                     transition-all duration-300 transform hover:-translate-y-2
                                     border-2 ${
                                         selectedType === type.id
-                                            ? 'border-blue-500 ring-4 ring-blue-200'
-                                            : 'border-transparent hover:border-blue-300'
+                                            ? 'border-blue-500 ring-4 ring-blue-200 dark:ring-blue-900'
+                                            : 'border-transparent hover:border-blue-300 dark:hover:border-blue-600'
                                     }
                                     text-left group
                                 `}
@@ -108,16 +108,16 @@ const PropertyTypeSelectorStep: React.FC<PropertyTypeSelectorStepProps> = ({ onS
                                 </div>
 
                                 {/* Content */}
-                                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                                     {type.title}
                                 </h3>
-                                <p className="text-gray-600 leading-relaxed">
+                                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                                     {type.description}
                                 </p>
 
                                 {/* Container Badge */}
                                 {type.isContainer && (
-                                    <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
                                         Requiere configuración de unidades
                                     </div>
                                 )}
@@ -143,11 +143,11 @@ const PropertyTypeSelectorStep: React.FC<PropertyTypeSelectorStepProps> = ({ onS
                     </div>
 
                     {/* Help Text */}
-                    <div className="mt-12 p-6 bg-white rounded-lg shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    <div className="mt-12 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-transparent dark:border-gray-700">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             ℹ️ ¿Cuál es la diferencia?
                         </h3>
-                        <ul className="space-y-2 text-sm text-gray-600">
+                        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                             <li>
                                 <strong>Habitación Independiente:</strong> Formulario simple, publicación inmediata
                             </li>

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import type { PropertyType } from '../types';
 
-// ─── Storage key for "don't show again" ───────────────────────────────────────
+// ─── localStorage helpers ────────────────────────────────────────────────────
 const STORAGE_KEY = 'prepublication_modal_dismissed';
 
 const getDismissedTypes = (): PropertyType[] => {
@@ -48,7 +48,6 @@ const dismissType = (type: PropertyType) => {
 interface CheckItem {
     id: string;
     icon: React.ReactNode;
-    category: string;
     title: string;
     description: string;
 }
@@ -66,7 +65,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'photos-room',
                 icon: <Camera className="w-4 h-4" />,
-                category: 'Fotografías',
                 title: 'Fotos del cuarto (mínimo 3 ángulos)',
                 description:
                     'Toma fotos con buena iluminación natural: desde la puerta, la ventana y un ángulo diagonal que muestre el espacio completo.',
@@ -74,7 +72,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'photos-bathroom',
                 icon: <Camera className="w-4 h-4" />,
-                category: 'Fotografías',
                 title: 'Foto del baño',
                 description:
                     'Muestra el baño limpio y ordenado. Si es compartido, menciona cuántas personas lo comparten.',
@@ -82,7 +79,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'photos-entrance',
                 icon: <Camera className="w-4 h-4" />,
-                category: 'Fotografías',
                 title: 'Foto de la entrada o fachada',
                 description:
                     'Ayuda al estudiante a identificar el lugar cuando llegue a visitarlo.',
@@ -95,7 +91,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'location-address',
                 icon: <MapPin className="w-4 h-4" />,
-                category: 'Ubicación',
                 title: 'Dirección exacta y barrio',
                 description:
                     'Ten a la mano la dirección completa y el nombre del barrio. Esto es obligatorio para la publicación.',
@@ -103,7 +98,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'location-transport',
                 icon: <MapPin className="w-4 h-4" />,
-                category: 'Ubicación',
                 title: 'Referencias de transporte cercano',
                 description:
                     'Estaciones de metro, paraderos de bus o ciclovía próximos. Los estudiantes valoran mucho la accesibilidad.',
@@ -116,7 +110,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'price-rent',
                 icon: <DollarSign className="w-4 h-4" />,
-                category: 'Precio',
                 title: 'Canon mensual y depósito',
                 description:
                     'Define el precio de arriendo mensual y si se requiere depósito o garantía. Ten claro si el precio incluye servicios.',
@@ -124,7 +117,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'price-contract',
                 icon: <DollarSign className="w-4 h-4" />,
-                category: 'Precio',
                 title: 'Tiempo mínimo de contrato',
                 description:
                     'Especifica cuántos meses es el mínimo (ej. 3 meses, 6 meses, sin mínimo).',
@@ -137,7 +129,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'info-area',
                 icon: <FileText className="w-4 h-4" />,
-                category: 'Descripción',
                 title: 'Área en m² y descripción del espacio',
                 description:
                     'Mide o estima los metros cuadrados. Describe qué mobiliario incluye (cama, escritorio, closet, etc.).',
@@ -145,7 +136,6 @@ const ROOM_CHECKS: CheckSection[] = [
             {
                 id: 'info-tenant',
                 icon: <Users className="w-4 h-4" />,
-                category: 'Descripción',
                 title: 'Perfil del arrendatario y reglas básicas',
                 description:
                     'Define si prefieres estudiantes, profesionales, o sin restricción. Menciona reglas importantes (no fumadores, no mascotas, etc.).',
@@ -161,7 +151,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
             {
                 id: 'photos-common',
                 icon: <Images className="w-4 h-4" />,
-                category: 'Fotografías comunes',
                 title: 'Fotos de zonas comunes',
                 description:
                     'Sala, cocina, comedor, patio, lavandería o áreas de estudio. Las zonas comunes son un factor decisivo para los estudiantes.',
@@ -169,7 +158,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
             {
                 id: 'photos-building',
                 icon: <Images className="w-4 h-4" />,
-                category: 'Fotografías comunes',
                 title: 'Fachada del edificio o casa',
                 description:
                     'Foto exterior clara del inmueble en horario diurno con buena iluminación.',
@@ -182,7 +170,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
             {
                 id: 'services-utilities',
                 icon: <Zap className="w-4 h-4" />,
-                category: 'Servicios',
                 title: 'Lista de servicios públicos incluidos',
                 description:
                     'Define cuáles están incluidos: agua, luz, gas, internet, TV por cable. Esto influye directamente en el precio.',
@@ -190,7 +177,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
             {
                 id: 'services-meals',
                 icon: <Zap className="w-4 h-4" />,
-                category: 'Servicios',
                 title: 'Alimentación (si aplica)',
                 description:
                     'Si ofreces desayuno, almuerzo o cena, especifícalo. Es una ventaja competitiva para pensiones.',
@@ -203,7 +189,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
             {
                 id: 'rules-main',
                 icon: <ClipboardList className="w-4 h-4" />,
-                category: 'Reglas',
                 title: 'Normas de convivencia y horarios',
                 description:
                     'Horario de ingreso/salida, política de visitas, uso de áreas comunes y ruido. Esto protege a propietario e inquilinos.',
@@ -216,7 +201,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
             {
                 id: 'units-count',
                 icon: <LayoutGrid className="w-4 h-4" />,
-                category: 'Unidades',
                 title: 'Número de habitaciones y precio por unidad',
                 description:
                     'El formulario te pedirá crear cada unidad individualmente: número de camas, precio y disponibilidad.',
@@ -229,7 +213,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
             {
                 id: 'condition-general',
                 icon: <Wrench className="w-4 h-4" />,
-                category: 'Estado',
                 title: 'Estado general y reformas recientes',
                 description:
                     'Menciona si el inmueble es nuevo, ha sido renovado recientemente o tiene detalles que aclarar. La transparencia genera confianza.',
@@ -238,7 +221,6 @@ const CONTAINER_EXTRA_CHECKS: CheckSection[] = [
     },
 ];
 
-// Build full checklist per type
 const getChecklistForType = (type: PropertyType): CheckSection[] => {
     if (type === 'habitacion') return ROOM_CHECKS;
     return [...ROOM_CHECKS, ...CONTAINER_EXTRA_CHECKS];
@@ -247,7 +229,7 @@ const getChecklistForType = (type: PropertyType): CheckSection[] => {
 const getAllItemIds = (sections: CheckSection[]): string[] =>
     sections.flatMap((s) => s.items.map((i) => i.id));
 
-// ─── Label helpers ────────────────────────────────────────────────────────────
+// ─── Labels ───────────────────────────────────────────────────────────────────
 const TYPE_LABELS: Record<PropertyType, string> = {
     habitacion: 'Habitación Independiente',
     pension: 'Pensión / Residencia',
@@ -282,39 +264,32 @@ const PrePublicationModal: React.FC<PrePublicationModalProps> = ({
     const [dontShowAgain, setDontShowAgain] = useState(false);
     const [visible, setVisible] = useState(false);
 
-    // Animate in on mount
+    // Animate in
     useEffect(() => {
-        const timer = setTimeout(() => setVisible(true), 10);
-        return () => clearTimeout(timer);
+        const t = setTimeout(() => setVisible(true), 10);
+        return () => clearTimeout(t);
     }, []);
 
-    // Close on Escape
-    const handleKeyDown = useCallback(
-        (e: KeyboardEvent) => {
-            if (e.key === 'Escape') handleCancel();
-        },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    );
+    // Lock body scroll & Escape key
+    const handleCancel = useCallback(() => {
+        setVisible(false);
+        setTimeout(onCancel, 300);
+    }, [onCancel]);
 
     useEffect(() => {
-        document.addEventListener('keydown', handleKeyDown);
-        // Prevent body scroll while modal is open
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleCancel(); };
+        document.addEventListener('keydown', onKey);
         document.body.style.overflow = 'hidden';
         return () => {
-            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keydown', onKey);
             document.body.style.overflow = '';
         };
-    }, [handleKeyDown]);
+    }, [handleCancel]);
 
     const toggleCheck = (id: string) => {
         setChecked((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
+            next.has(id) ? next.delete(id) : next.add(id);
             return next;
         });
     };
@@ -329,11 +304,6 @@ const PrePublicationModal: React.FC<PrePublicationModalProps> = ({
         onConfirm();
     };
 
-    const handleCancel = () => {
-        setVisible(false);
-        setTimeout(onCancel, 300);
-    };
-
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) handleCancel();
     };
@@ -341,173 +311,77 @@ const PrePublicationModal: React.FC<PrePublicationModalProps> = ({
     return (
         <div
             onClick={handleBackdropClick}
-            style={{
-                position: 'fixed',
-                inset: 0,
-                zIndex: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '1rem',
-                backgroundColor: `rgba(15, 23, 42, ${visible ? 0.6 : 0})`,
-                backdropFilter: visible ? 'blur(4px)' : 'blur(0px)',
-                transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease',
-            }}
+            className={`
+                fixed inset-0 z-[9999] flex items-center justify-center p-4
+                bg-black/60 backdrop-blur-sm
+                transition-opacity duration-300
+                ${visible ? 'opacity-100' : 'opacity-0'}
+            `}
         >
             {/* Modal card */}
             <div
-                style={{
-                    width: '100%',
-                    maxWidth: '680px',
-                    maxHeight: '90vh',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '20px',
-                    boxShadow: '0 25px 60px rgba(0,0,0,0.20)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    transform: visible ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.97)',
-                    opacity: visible ? 1 : 0,
-                    transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease',
-                }}
+                className={`
+                    relative w-full max-w-[680px] max-h-[90vh]
+                    bg-white dark:bg-gray-900
+                    rounded-2xl shadow-2xl
+                    flex flex-col overflow-hidden
+                    border border-gray-200 dark:border-gray-700
+                    transition-all duration-300
+                    ${visible
+                        ? 'translate-y-0 scale-100 opacity-100'
+                        : 'translate-y-6 scale-95 opacity-0'
+                    }
+                `}
+                style={{ transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease' }}
             >
                 {/* ── Header ── */}
-                <div
-                    style={{
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
-                        padding: '1.5rem 1.75rem 1.25rem',
-                        position: 'relative',
-                        flexShrink: 0,
-                    }}
-                >
-                    {/* Close btn */}
+                <div className="bg-brand-blue dark:bg-brand-blue/90 px-6 pt-5 pb-4 flex-shrink-0">
+                    {/* Close */}
                     <button
                         onClick={handleCancel}
                         aria-label="Cerrar"
-                        style={{
-                            position: 'absolute',
-                            top: '1rem',
-                            right: '1rem',
-                            background: 'rgba(255,255,255,0.2)',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '32px',
-                            height: '32px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#fff',
-                            transition: 'background 0.2s',
-                        }}
-                        onMouseEnter={(e) =>
-                            ((e.currentTarget as HTMLButtonElement).style.background =
-                                'rgba(255,255,255,0.35)')
-                        }
-                        onMouseLeave={(e) =>
-                            ((e.currentTarget as HTMLButtonElement).style.background =
-                                'rgba(255,255,255,0.2)')
-                        }
+                        className="absolute top-3 right-3 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
                     >
                         <X className="w-4 h-4" />
                     </button>
 
-                    {/* Tip badge */}
-                    <div
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            backgroundColor: 'rgba(255,255,255,0.2)',
-                            borderRadius: '999px',
-                            padding: '4px 12px',
-                            marginBottom: '12px',
-                        }}
-                    >
-                        <Lightbulb className="w-3.5 h-3.5 text-yellow-200" />
-                        <span style={{ fontSize: '12px', color: '#fef3c7', fontWeight: 600 }}>
+                    {/* Badge */}
+                    <div className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1 mb-3">
+                        <Lightbulb className="w-3.5 h-3.5 text-brand-lime" />
+                        <span className="text-xs font-semibold text-brand-lime">
                             Checklist de preparación
                         </span>
                     </div>
 
-                    <h2
-                        style={{
-                            fontSize: '1.375rem',
-                            fontWeight: 700,
-                            color: '#ffffff',
-                            margin: 0,
-                            lineHeight: 1.3,
-                        }}
-                    >
+                    <h2 className="text-xl font-bold text-white leading-snug mb-1">
                         Antes de publicar tu{' '}
-                        <span style={{ color: '#bfdbfe' }}>{TYPE_LABELS[propertyType]}</span>
+                        <span className="text-brand-lime">{TYPE_LABELS[propertyType]}</span>
                     </h2>
-                    <p
-                        style={{
-                            fontSize: '14px',
-                            color: 'rgba(255,255,255,0.8)',
-                            marginTop: '6px',
-                        }}
-                    >
+                    <p className="text-sm text-blue-200">
                         Confirma que tienes todo listo para completar el formulario sin pausas.
                     </p>
 
                     {/* Time estimate */}
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            marginTop: '10px',
-                        }}
-                    >
-                        <Clock className="w-3.5 h-3.5 text-blue-200" />
-                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)' }}>
-                            Tiempo estimado de publicación: {TYPE_ESTIMATED[propertyType]}
+                    <div className="flex items-center gap-1.5 mt-2">
+                        <Clock className="w-3.5 h-3.5 text-blue-300" />
+                        <span className="text-xs text-blue-300">
+                            Tiempo estimado: {TYPE_ESTIMATED[propertyType]}
                         </span>
                     </div>
 
                     {/* Progress bar */}
-                    <div
-                        style={{
-                            marginTop: '16px',
-                            backgroundColor: 'rgba(255,255,255,0.2)',
-                            borderRadius: '999px',
-                            height: '6px',
-                            overflow: 'hidden',
-                        }}
-                    >
+                    <div className="mt-4 bg-white/20 rounded-full h-1.5 overflow-hidden">
                         <div
-                            style={{
-                                height: '100%',
-                                width: `${progress}%`,
-                                backgroundColor: '#a5f3fc',
-                                borderRadius: '999px',
-                                transition: 'width 0.4s cubic-bezier(0.4,0,0.2,1)',
-                            }}
+                            className="h-full bg-brand-lime rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%` }}
                         />
                     </div>
-                    <div
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            marginTop: '6px',
-                        }}
-                    >
-                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+                    <div className="flex justify-between mt-1.5">
+                        <span className="text-xs text-blue-300">
                             {checkedCount} de {allIds.length} ítems confirmados
                         </span>
                         {allChecked && (
-                            <span
-                                style={{
-                                    fontSize: '11px',
-                                    color: '#a5f3fc',
-                                    fontWeight: 600,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                }}
-                            >
+                            <span className="text-xs text-brand-lime font-semibold flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3" />
                                 ¡Todo listo!
                             </span>
@@ -516,137 +390,53 @@ const PrePublicationModal: React.FC<PrePublicationModalProps> = ({
                 </div>
 
                 {/* ── Scrollable body ── */}
-                <div
-                    style={{
-                        overflowY: 'auto',
-                        padding: '1.25rem 1.75rem',
-                        flexGrow: 1,
-                    }}
-                >
+                <div className="overflow-y-auto flex-grow px-6 py-5 space-y-6">
                     {sections.map((section) => (
-                        <div key={section.label} style={{ marginBottom: '1.5rem' }}>
+                        <div key={section.label}>
                             {/* Section label */}
-                            <div
-                                style={{
-                                    fontSize: '11px',
-                                    fontWeight: 700,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.08em',
-                                    color: '#6366f1',
-                                    marginBottom: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        display: 'inline-block',
-                                        width: '20px',
-                                        height: '2px',
-                                        backgroundColor: '#6366f1',
-                                        borderRadius: '2px',
-                                    }}
-                                />
-                                {section.label}
+                            <div className="flex items-center gap-2 mb-2.5">
+                                <span className="inline-block w-5 h-0.5 bg-brand-blue dark:bg-blue-400 rounded" />
+                                <span className="text-xs font-bold uppercase tracking-widest text-brand-blue dark:text-blue-400">
+                                    {section.label}
+                                </span>
                             </div>
 
                             {/* Items */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div className="space-y-2">
                                 {section.items.map((item) => {
                                     const isChecked = checked.has(item.id);
                                     return (
                                         <button
                                             key={item.id}
                                             onClick={() => toggleCheck(item.id)}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: '12px',
-                                                padding: '12px 14px',
-                                                borderRadius: '12px',
-                                                border: `1.5px solid ${isChecked ? '#6366f1' : '#e5e7eb'}`,
-                                                backgroundColor: isChecked ? '#eef2ff' : '#f9fafb',
-                                                cursor: 'pointer',
-                                                textAlign: 'left',
-                                                transition:
-                                                    'border-color 0.2s, background-color 0.2s, transform 0.15s',
-                                                transform: 'scale(1)',
-                                                width: '100%',
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!isChecked)
-                                                    (e.currentTarget as HTMLButtonElement).style.borderColor =
-                                                        '#a5b4fc';
-                                                (e.currentTarget as HTMLButtonElement).style.transform =
-                                                    'scale(1.005)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!isChecked)
-                                                    (e.currentTarget as HTMLButtonElement).style.borderColor =
-                                                        '#e5e7eb';
-                                                (e.currentTarget as HTMLButtonElement).style.transform =
-                                                    'scale(1)';
-                                            }}
+                                            className={`
+                                                w-full flex items-start gap-3 p-3 rounded-xl text-left
+                                                border transition-all duration-200
+                                                ${isChecked
+                                                    ? 'border-brand-blue bg-blue-50 dark:bg-brand-blue/20 dark:border-blue-500'
+                                                    : 'border-gray-200 bg-gray-50 hover:border-blue-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-600'
+                                                }
+                                            `}
                                         >
                                             {/* Check icon */}
-                                            <div
-                                                style={{
-                                                    flexShrink: 0,
-                                                    marginTop: '2px',
-                                                    color: isChecked ? '#6366f1' : '#d1d5db',
-                                                    transition: 'color 0.2s, transform 0.2s',
-                                                    transform: isChecked ? 'scale(1.1)' : 'scale(1)',
-                                                }}
-                                            >
-                                                {isChecked ? (
-                                                    <CheckCircle2 className="w-5 h-5" />
-                                                ) : (
-                                                    <Circle className="w-5 h-5" />
-                                                )}
+                                            <div className={`flex-shrink-0 mt-0.5 transition-colors ${isChecked ? 'text-brand-blue dark:text-blue-400' : 'text-gray-300 dark:text-gray-600'}`}>
+                                                {isChecked
+                                                    ? <CheckCircle2 className="w-5 h-5" />
+                                                    : <Circle className="w-5 h-5" />
+                                                }
                                             </div>
 
                                             {/* Content */}
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        marginBottom: '3px',
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            color: isChecked ? '#6366f1' : '#6b7280',
-                                                            flexShrink: 0,
-                                                        }}
-                                                    >
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1.5 mb-0.5">
+                                                    <span className={`flex-shrink-0 transition-colors ${isChecked ? 'text-brand-blue dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                                         {item.icon}
                                                     </span>
-                                                    <span
-                                                        style={{
-                                                            fontSize: '14px',
-                                                            fontWeight: 600,
-                                                            color: isChecked ? '#3730a3' : '#111827',
-                                                            transition: 'color 0.2s',
-                                                            textDecoration: isChecked
-                                                                ? 'none'
-                                                                : 'none',
-                                                        }}
-                                                    >
+                                                    <span className={`text-sm font-semibold transition-colors ${isChecked ? 'text-brand-blue dark:text-blue-300' : 'text-gray-900 dark:text-gray-100'}`}>
                                                         {item.title}
                                                     </span>
                                                 </div>
-                                                <p
-                                                    style={{
-                                                        fontSize: '13px',
-                                                        color: isChecked ? '#6366f1' : '#6b7280',
-                                                        margin: 0,
-                                                        lineHeight: 1.5,
-                                                        transition: 'color 0.2s',
-                                                    }}
-                                                >
+                                                <p className={`text-xs leading-relaxed transition-colors ${isChecked ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                                     {item.description}
                                                 </p>
                                             </div>
@@ -659,62 +449,25 @@ const PrePublicationModal: React.FC<PrePublicationModalProps> = ({
                 </div>
 
                 {/* ── Footer ── */}
-                <div
-                    style={{
-                        padding: '1rem 1.75rem 1.25rem',
-                        borderTop: '1px solid #f1f5f9',
-                        flexShrink: 0,
-                        backgroundColor: '#fafafa',
-                    }}
-                >
+                <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                     {/* Don't show again */}
-                    <label
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            cursor: 'pointer',
-                            marginBottom: '14px',
-                            userSelect: 'none',
-                        }}
-                    >
+                    <label className="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
                         <input
                             type="checkbox"
                             checked={dontShowAgain}
                             onChange={(e) => setDontShowAgain(e.target.checked)}
-                            style={{ accentColor: '#6366f1', width: '15px', height: '15px' }}
+                            className="accent-brand-blue w-4 h-4 cursor-pointer"
                         />
-                        <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                             No mostrar esta guía la próxima vez que publique este tipo de propiedad
                         </span>
                     </label>
 
-                    {/* Action buttons */}
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    {/* Actions */}
+                    <div className="flex gap-2.5">
                         <button
                             onClick={handleCancel}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '10px 18px',
-                                borderRadius: '10px',
-                                border: '1.5px solid #e5e7eb',
-                                backgroundColor: '#ffffff',
-                                color: '#374151',
-                                fontSize: '14px',
-                                fontWeight: 500,
-                                cursor: 'pointer',
-                                transition: 'border-color 0.2s, background 0.2s',
-                            }}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLButtonElement).style.borderColor = '#6366f1';
-                                (e.currentTarget as HTMLButtonElement).style.color = '#6366f1';
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLButtonElement).style.borderColor = '#e5e7eb';
-                                (e.currentTarget as HTMLButtonElement).style.color = '#374151';
-                            }}
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium hover:border-brand-blue dark:hover:border-blue-500 hover:text-brand-blue dark:hover:text-blue-400 transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Volver
@@ -723,50 +476,27 @@ const PrePublicationModal: React.FC<PrePublicationModalProps> = ({
                         <button
                             onClick={handleConfirm}
                             disabled={!allChecked}
-                            style={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px',
-                                padding: '10px 18px',
-                                borderRadius: '10px',
-                                border: 'none',
-                                background: allChecked
-                                    ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)'
-                                    : '#e5e7eb',
-                                color: allChecked ? '#ffffff' : '#9ca3af',
-                                fontSize: '14px',
-                                fontWeight: 600,
-                                cursor: allChecked ? 'pointer' : 'not-allowed',
-                                transition: 'background 0.3s, color 0.3s, opacity 0.2s, transform 0.15s',
-                                boxShadow: allChecked
-                                    ? '0 4px 14px rgba(99,102,241,0.35)'
-                                    : 'none',
-                            }}
-                            onMouseEnter={(e) => {
-                                if (allChecked)
-                                    (e.currentTarget as HTMLButtonElement).style.transform =
-                                        'translateY(-1px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLButtonElement).style.transform =
-                                    'translateY(0)';
-                            }}
+                            className={`
+                                flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                                text-sm font-semibold transition-all duration-300
+                                ${allChecked
+                                    ? 'bg-brand-blue hover:bg-brand-blue/90 text-white shadow-lg shadow-brand-blue/30 hover:-translate-y-0.5'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                                }
+                            `}
                         >
                             {allChecked ? (
                                 <>
                                     <CheckCircle2 className="w-4 h-4" />
                                     ¡Tengo todo listo, empezar!
+                                    <ArrowRight className="w-4 h-4" />
                                 </>
                             ) : (
                                 <>
                                     <Circle className="w-4 h-4" />
-                                    Confirma todos los ítems para continuar (
-                                    {allIds.length - checkedCount} restantes)
+                                    Confirma todos los ítems ({allIds.length - checkedCount} restantes)
                                 </>
                             )}
-                            {allChecked && <ArrowRight className="w-4 h-4" />}
                         </button>
                     </div>
                 </div>
