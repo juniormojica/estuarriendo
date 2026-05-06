@@ -24,6 +24,7 @@ import { authService } from '../services/authService';
 import { useToast } from '../components/ToastProvider';
 import RoomCard from '../components/RoomCard';
 import RoomModal from '../components/RoomModal';
+import { safeParseDraft } from '../utils/draftStorage';
 
 const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -121,9 +122,10 @@ const PropertyDetail: React.FC = () => {
 
         // Get current user from localStorage
         const storedUser = localStorage.getItem('estuarriendo_current_user');
-        if (storedUser) {
+        const parsedUser = safeParseDraft<User>(storedUser, null);
+        if (parsedUser) {
           console.log('👤 Current user found in localStorage');
-          setCurrentUser(JSON.parse(storedUser));
+          setCurrentUser(parsedUser);
         } else {
           console.log('👤 No current user in localStorage');
         }
