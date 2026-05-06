@@ -22,6 +22,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import type { City, Institution, PropertyRule, Amenity, PropertyService } from '../types';
 import { adminCreateContainer } from '../services/containerService';
 import { getAmenityIcon } from '../lib/amenityIcons';
+import { safeParseDraft } from '../utils/draftStorage';
 
 
 
@@ -70,7 +71,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
     const { items: amenities } = useAppSelector((state) => state.amenities);
 
     const savedDraftStr = sessionStorage.getItem('roomFlowDraft');
-    const savedDraft = savedDraftStr ? JSON.parse(savedDraftStr) : null;
+    const savedDraft = safeParseDraft(savedDraftStr, null);
 
     const [currentStep, setCurrentStep] = useState(savedDraft?.step || 1);
     const [submitted, setSubmitted] = useState(false);
