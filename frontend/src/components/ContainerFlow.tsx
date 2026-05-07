@@ -16,6 +16,7 @@ import { createContainer, updateContainer, adminCreateContainer } from '../servi
 import { useAppDispatch } from '../store/hooks';
 import { fetchAmenities } from '../store/slices/amenitiesSlice';
 import { useScrollToTop } from '../hooks/useScrollToTop';
+import { safeParseDraft } from '../utils/draftStorage';
 interface ContainerFlowProps {
     propertyId?: string; // For editing
     initialPropertyType?: string; // Skip type selector if already selected
@@ -69,7 +70,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
     }, [dispatch]);
 
     const savedDraftStr = sessionStorage.getItem('containerFlowDraft');
-    const savedDraft = savedDraftStr ? JSON.parse(savedDraftStr) : null;
+    const savedDraft = safeParseDraft(savedDraftStr, null);
 
     // If initialPropertyType is provided, start at step 1 (skip type selector)
     const [currentStep, setCurrentStep] = useState(savedDraft?.step ?? (initialPropertyType ? 1 : 0));
