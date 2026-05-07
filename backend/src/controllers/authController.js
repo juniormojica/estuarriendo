@@ -1,5 +1,6 @@
 import * as authService from '../services/authService.js';
 import { verifyGoogleToken } from '../services/googleAuthService.js';
+import { conflict } from '../errors/AppError.js';
 import { ActivityLog } from '../models/index.js';
 import User from '../models/User.js';
 
@@ -9,31 +10,10 @@ import User from '../models/User.js';
  */
 
 /**
- * Handle errors and send appropriate HTTP response
- * @param {Object} res - Express response object
- * @param {Error} error - Error object
- */
-const handleError = (res, error) => {
-    console.error('Auth controller error:', error);
-
-    // Handle custom service errors
-    if (error.statusCode) {
-        return res.status(error.statusCode).json({
-            error: error.message
-        });
-    }
-
-    res.status(500).json({
-        error: 'Error interno del servidor',
-        message: error.message
-    });
-};
-
-/**
  * Register new user
  * POST /api/auth/register
  */
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
     try {
         const userData = req.body;
 
@@ -66,7 +46,7 @@ export const register = async (req, res) => {
 
         res.status(201).json(result);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -74,7 +54,7 @@ export const register = async (req, res) => {
  * Login user
  * POST /api/auth/login
  */
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -98,7 +78,7 @@ export const login = async (req, res) => {
 
         res.json(result);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -106,7 +86,7 @@ export const login = async (req, res) => {
  * Logout user
  * POST /api/auth/logout
  */
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
     try {
         res.clearCookie('estuarriendo_token', {
             httpOnly: true,
@@ -116,7 +96,7 @@ export const logout = async (req, res) => {
         });
         res.json({ message: 'Sesión cerrada exitosamente' });
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -124,7 +104,7 @@ export const logout = async (req, res) => {
  * Get current authenticated user
  * GET /api/auth/me
  */
-export const getCurrentUser = async (req, res) => {
+export const getCurrentUser = async (req, res, next) => {
     try {
         // User ID is attached to request by auth middleware
         const userId = req.userId;
@@ -132,7 +112,7 @@ export const getCurrentUser = async (req, res) => {
         const user = await authService.getUserById(userId);
         res.json(user);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -140,7 +120,7 @@ export const getCurrentUser = async (req, res) => {
  * Request password reset
  * POST /api/auth/forgot-password
  */
-export const forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
 
@@ -154,7 +134,7 @@ export const forgotPassword = async (req, res) => {
         const result = await authService.requestPasswordReset(email);
         res.json(result);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -162,7 +142,7 @@ export const forgotPassword = async (req, res) => {
  * Verify reset token
  * GET /api/auth/reset-password/:token
  */
-export const verifyResetToken = async (req, res) => {
+export const verifyResetToken = async (req, res, next) => {
     try {
         const { token } = req.params;
 
@@ -175,7 +155,7 @@ export const verifyResetToken = async (req, res) => {
         const result = await authService.verifyResetToken(token);
         res.json(result);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -183,7 +163,7 @@ export const verifyResetToken = async (req, res) => {
  * Reset password
  * POST /api/auth/reset-password
  */
-export const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res, next) => {
     try {
         const { token, newPassword } = req.body;
 
@@ -204,7 +184,7 @@ export const resetPassword = async (req, res) => {
         const result = await authService.resetPassword(token, newPassword);
         res.json(result);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -218,7 +198,7 @@ export const resetPassword = async (req, res) => {
  *   - Error 409                                  → email already registered manually
  *   - { needsRegistration: true, googleData }    → new user, open modal
  */
-export const googleAuth = async (req, res) => {
+export const googleAuth = async (req, res, next) => {
     try {
         const { credential } = req.body;
 
@@ -250,8 +230,8 @@ export const googleAuth = async (req, res) => {
         // 3. Check if email is already registered manually (no googleId)
         const existingByEmail = await User.findOne({ where: { email: googleData.email } });
         if (existingByEmail && !existingByEmail.googleId) {
-            return res.status(409).json({
-                error: 'Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.'
+            throw conflict('Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.', {
+                code: 'AUTH_GOOGLE_EMAIL_CONFLICT'
             });
         }
 
@@ -266,7 +246,7 @@ export const googleAuth = async (req, res) => {
             }
         });
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -274,7 +254,7 @@ export const googleAuth = async (req, res) => {
  * Google OAuth — Step 2: Complete registration for new Google users
  * POST /api/auth/google/complete-registration
  */
-export const googleCompleteRegistration = async (req, res) => {
+export const googleCompleteRegistration = async (req, res, next) => {
     try {
         const { googleId, email, name, picture, userType, phone, whatsapp } = req.body;
 
@@ -302,7 +282,7 @@ export const googleCompleteRegistration = async (req, res) => {
 
         res.status(201).json(result);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
