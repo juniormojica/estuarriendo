@@ -7,37 +7,15 @@ import * as userService from '../services/userService.js';
  */
 
 /**
- * Handle errors and send appropriate HTTP response
- * @param {Object} res - Express response object
- * @param {Error} error - Error object
- */
-const handleError = (res, error) => {
-    console.error('Controller error:', error);
-
-    // Handle custom service errors
-    if (error.statusCode) {
-        return res.status(error.statusCode).json({
-            error: error.message
-        });
-    }
-
-    // Handle unexpected errors
-    res.status(500).json({
-        error: 'Internal server error',
-        message: error.message
-    });
-};
-
-/**
  * Get all users
  * GET /api/users
  */
-export const getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res, next) => {
     try {
         const users = await userService.getAllUsers();
         res.json(users);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -45,13 +23,13 @@ export const getAllUsers = async (req, res) => {
  * Get user by ID
  * GET /api/users/:id
  */
-export const getUserById = async (req, res) => {
+export const getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const user = await userService.getUserById(id);
         res.json(user);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -59,13 +37,13 @@ export const getUserById = async (req, res) => {
  * Create new user
  * POST /api/users
  */
-export const createUser = async (req, res) => {
+export const createUser = async (req, res, next) => {
     try {
         const userData = req.body;
         const user = await userService.createUser(userData);
         res.status(201).json(user);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -73,7 +51,7 @@ export const createUser = async (req, res) => {
  * Update user
  * PUT /api/users/:id
  */
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
     try {
         const { id } = req.params;
         const updates = req.body;
@@ -134,7 +112,7 @@ export const updateUser = async (req, res) => {
         const user = await userService.updateUser(id, updates);
         res.json(user);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -142,13 +120,13 @@ export const updateUser = async (req, res) => {
  * Delete user
  * DELETE /api/users/:id
  */
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res, next) => {
     try {
         const { id } = req.params;
         const result = await userService.deleteUser(id);
         res.json(result);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -156,7 +134,7 @@ export const deleteUser = async (req, res) => {
  * Update user verification status
  * PATCH /api/users/:id/verification
  */
-export const updateVerificationStatus = async (req, res) => {
+export const updateVerificationStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { verificationStatus, verificationRejectionReason } = req.body;
@@ -176,7 +154,7 @@ export const updateVerificationStatus = async (req, res) => {
         res.json(user);
     } catch (error) {
         console.error('❌ Error in updateVerificationStatus:', error.message);
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -184,7 +162,7 @@ export const updateVerificationStatus = async (req, res) => {
  * Update user plan
  * PATCH /api/users/:id/plan
  */
-export const updateUserPlan = async (req, res) => {
+export const updateUserPlan = async (req, res, next) => {
     try {
         const { id } = req.params;
         const planData = req.body;
@@ -192,7 +170,7 @@ export const updateUserPlan = async (req, res) => {
         const user = await userService.updateUserPlan(id, planData);
         res.json(user);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 
@@ -200,13 +178,13 @@ export const updateUserPlan = async (req, res) => {
  * Get user statistics
  * GET /api/users/:id/statistics
  */
-export const getUserStatistics = async (req, res) => {
+export const getUserStatistics = async (req, res, next) => {
     try {
         const { id } = req.params;
         const stats = await userService.getUserStatistics(id);
         res.json(stats);
     } catch (error) {
-        handleError(res, error);
+        next(error);
     }
 };
 

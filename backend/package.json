@@ -15,7 +15,8 @@
         "seed:data:reset": "node scripts/seedData.js reset",
         "seed:institutions": "node scripts/seedInstitutions.js",
         "create:superadmin": "node scripts/createSuperAdmin.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "vitest run",
+        "test:unit": "vitest run"
     },
     "keywords": [
         "express",
@@ -47,6 +48,7 @@
     },
     "devDependencies": {
         "@faker-js/faker": "^10.1.0",
-        "nodemon": "^3.0.2"
+        "nodemon": "^3.0.2",
+        "vitest": "^3.2.4"
     }
 }

@@ -3,38 +3,12 @@ import { User } from '../models/index.js';
 import { VerificationStatus } from '../utils/enums.js';
 import { v4 as uuidv4 } from 'uuid';
 import { hashPassword } from '../utils/passwordUtils.js';
+import { badRequest, conflict, notFound } from '../errors/AppError.js';
 
 /**
  * User Service
  * Contains business logic for user operations
  */
-
-/**
- * Custom error classes for better error handling
- */
-export class ValidationError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'ValidationError';
-        this.statusCode = 400;
-    }
-}
-
-export class NotFoundError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'NotFoundError';
-        this.statusCode = 404;
-    }
-}
-
-export class ConflictError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'ConflictError';
-        this.statusCode = 409;
-    }
-}
 
 /**
  * Sanitize user object by removing sensitive data
@@ -59,7 +33,7 @@ const validateUserData = (userData) => {
     const missingFields = requiredFields.filter(field => !userData[field]);
 
     if (missingFields.length > 0) {
-        throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
+        throw badRequest(`Missing required fields: ${missingFields.join(', ')}`, { code: 'VALIDATION_ERROR' });
     }
 };
 
@@ -104,7 +78,7 @@ export const getUserById = async (id) => {
     const user = await userRepository.findById(id);
 
     if (!user) {
-        throw new NotFoundError('User not found');
+        throw notFound('User not found', { code: 'USER_NOT_FOUND' });
     }
 
     return sanitizeUser(user);
@@ -123,13 +97,13 @@ export const createUser = async (userData) => {
 
     // Validate password is provided
     if (!userData.password) {
-        throw new ValidationError('Password is required');
+        throw badRequest('Password is required', { code: 'VALIDATION_ERROR' });
     }
 
     // Check if user already exists by email
     const existingUser = await User.findOne({ where: { email: userData.email } });
     if (existingUser) {
-        throw new ConflictError('User with this email already exists');
+        throw conflict('User with this email already exists', { code: 'USER_CONFLICT' });
     }
 
     // Hash password before storing
@@ -180,7 +154,7 @@ export const updateUser = async (id, updates) => {
     const user = await userRepository.update(id, updatesWithTimestamp);
 
     if (!user) {
-        throw new NotFoundError('User not found');
+        throw notFound('User not found', { code: 'USER_NOT_FOUND' });
     }
 
     // Update or create identification details if provided
@@ -273,7 +247,7 @@ export const deleteUser = async (id) => {
     const deleted = await userRepository.deleteById(id);
 
     if (!deleted) {
-        throw new NotFoundError('User not found');
+        throw notFound('User not found', { code: 'USER_NOT_FOUND' });
     }
 
     return { message: 'User deleted successfully' };
@@ -304,7 +278,7 @@ export const updateVerificationStatus = async (id, verificationStatus, verificat
     const user = await userRepository.update(id, updates);
 
     if (!user) {
-        throw new NotFoundError('User not found');
+        throw notFound('User not found', { code: 'USER_NOT_FOUND' });
     }
 
     return sanitizeUser(user);
@@ -323,7 +297,7 @@ export const updateUserPlan = async (id, planData) => {
     // Get current user to check premium status
     const currentUser = await userRepository.findById(id);
     if (!currentUser) {
-        throw new NotFoundError('User not found');
+        throw notFound('User not found', { code: 'USER_NOT_FOUND' });
     }
 
     const now = new Date();
@@ -362,7 +336,7 @@ export const getUserStatistics = async (id) => {
     const stats = await userRepository.getStatistics(id);
 
     if (!stats) {
-        throw new NotFoundError('User not found');
+        throw notFound('User not found', { code: 'USER_NOT_FOUND' });
     }
 
     return stats;

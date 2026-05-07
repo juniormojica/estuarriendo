@@ -34,6 +34,7 @@ import mercadoPagoRoutes from './routes/mercadoPagoRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import sseRoutes from './routes/sseRoutes.js';
 import { startPlanScheduler, stopPlanScheduler } from './services/planScheduler.js';
+import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -157,19 +158,13 @@ app.use('/api/property-reports', propertyReportRoutes);
 app.use('/api/mercadopago', mercadoPagoRoutes);
 app.use('/api/webhooks', webhookRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        error: 'Something went wrong!',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
-});
-
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
+
+// Error handling middleware
+app.use(errorHandler);
 
 // Initialize database and start server
 const startServer = async () => {
