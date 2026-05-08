@@ -1,18 +1,17 @@
 import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
-dotenv.config();
+import { env } from './env.js';
 
 /**
  * Sequelize Database Configuration
  * Configures connection to PostgreSQL with snake_case naming for DB
  */
 const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
+    env.db.name,
+    env.db.user,
+    env.db.password,
     {
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT || 5432,
+        host: env.db.host,
+        port: env.db.port,
         dialect: 'postgres',
         logging: false, // Disabled SQL query logging
 

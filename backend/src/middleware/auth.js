@@ -3,25 +3,37 @@ import checkSubscription from './checkSubscription.js';
 
 /**
  * Authentication Middleware
- * Verifies JWT token and attaches user ID to request
+ * Verifies JWT token and attaches authenticated identity contract
  */
 const authMiddleware = async (req, res, next) => {
     try {
         // Extract token from Authorization header
         const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (!authHeader) {
             return res.status(401).json({
-                error: 'No se proporcionó token. El encabezado de autorización debe tener el formato: Bearer <token>'
+                error: 'Token de autorización requerido'
+            });
+        }
+
+        if (!authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                error: 'Formato de token inválido. Use: Bearer <token>'
             });
         }
 
         const token = authHeader.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({
+                error: 'Formato de token inválido. Use: Bearer <token>'
+            });
+        }
 
         // Verify token
         const decoded = verifyToken(token);
 
-        // Attach userId to request (controller expects req.userId)
+        // Attach explicit auth contract + temporary compatibility field
+        req.auth = { userId: decoded.userId };
         req.userId = decoded.userId;
 
         // Run lazy subscription expiration check
@@ -31,7 +43,7 @@ const authMiddleware = async (req, res, next) => {
         next();
     } catch (error) {
         return res.status(401).json({
-            error: error.message || 'Token inválido o expirado'
+            error: error.message || 'Token inválido'
         });
     }
 };
