@@ -1,16 +1,13 @@
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
 
 /**
  * JWT Utility Functions
  * Handles JWT token generation and verification
  */
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRATION = process.env.JWT_EXPIRES_IN || '7d';
-
-if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is not defined');
-}
+const JWT_SECRET = env.jwt.secret;
+const JWT_EXPIRATION = env.jwt.expiresIn;
 
 /**
  * Generate JWT token for a user
@@ -33,7 +30,13 @@ export const generateToken = (userId) => {
  */
 export const verifyToken = (token) => {
     try {
-        return jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        if (!decoded?.userId) {
+            throw new Error('Token inválido');
+        }
+
+        return decoded;
     } catch (error) {
         if (error.name === 'TokenExpiredError') {
             throw new Error('El token ha expirado');

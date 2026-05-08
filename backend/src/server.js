@@ -1,9 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-dotenv.config();
+import { env } from './config/env.js';
 
 import { sequelize, testConnection } from './config/database.js';
 import { seedEnums } from './config/seedEnums.js';
@@ -37,15 +36,13 @@ import { startPlanScheduler, stopPlanScheduler } from './services/planScheduler.
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = env.port;
 
 // CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
         // 1. Definimos los orígenes permitidos desde las variables de entorno o locales
-        const allowedOrigins = process.env.ALLOWED_ORIGINS
-            ? process.env.ALLOWED_ORIGINS.split(',')
-            : ['http://localhost:5173', 'https://localhost:5173', 'http://localhost:3000'];
+        const allowedOrigins = env.allowedOrigins;
 
         // 2. Permitimos la petición si:
         // - No hay origin (como peticiones de servidor a servidor o Postman)
@@ -177,7 +174,7 @@ const startServer = async () => {
         // Sync database
         // Note: We use sync() without alter to avoid ENUM recreation conflicts
         // ENUMs are managed separately via seedEnums()
-        if (process.env.NODE_ENV === 'development') {
+        if (env.nodeEnv === 'development') {
             // Only create tables if they don't exist, don't alter existing ones
             // This prevents Sequelize from trying to recreate ENUMs
             await sequelize.sync({ force: false, alter: false });
@@ -189,8 +186,8 @@ const startServer = async () => {
 
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on port ${PORT}`);
-            console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`🗄️  Database: ${process.env.DB_NAME}`);
+            console.log(`📍 Environment: ${env.nodeEnv}`);
+            console.log(`🗄️  Database: ${env.db.name}`);
             console.log(`\n📋 Available routes:`);
             console.log(`   - GET  /api/health`);
             console.log(`   - *    /api/auth`);

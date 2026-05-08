@@ -56,61 +56,55 @@ export const updateUser = async (req, res, next) => {
         const { id } = req.params;
         const updates = req.body;
 
-        // Security: Only allow users to update their own profile (unless admin/superAdmin)
-        if (req.user) {
-            const isOwnProfile = req.user.id === id;
-            const isAdmin = req.user.userType === 'admin' || req.user.userType === 'superAdmin';
-
-            if (!isOwnProfile && !isAdmin) {
-                return res.status(403).json({
-                    error: 'No tienes permiso para actualizar este perfil'
-                });
-            }
-
-            // For regular users updating their own profile, only allow specific fields
-            if (isOwnProfile && !isAdmin) {
-                const allowedFields = ['name', 'phone', 'whatsapp', 'idType', 'idNumber', 'profile'];
-                const filteredUpdates = {};
-
-                allowedFields.forEach(field => {
-                    if (updates[field] !== undefined) {
-                        filteredUpdates[field] = updates[field];
-                    }
-                });
-
-                const { name, phone } = filteredUpdates;
-
-                if (name !== undefined && (!name || name.trim().length < 3)) {
-                    return res.status(400).json({ error: 'El nombre debe tener al menos 3 caracteres.' });
-                }
-
-                if (phone !== undefined && (!phone || phone.replace(/\D/g, '').length < 10)) {
-                    return res.status(400).json({ error: 'El teléfono debe tener al menos 10 dígitos.' });
-                }
-
-                const { idType, idNumber } = filteredUpdates;
-                const hasIdType = idType !== undefined && idType !== '' && idType !== null;
-                const hasIdNumber = idNumber !== undefined && idNumber !== '' && idNumber !== null;
-                if (hasIdType !== hasIdNumber) {
-                    return res.status(400).json({ error: 'Debes completar tanto el tipo como el número de documento.' });
-                }
-
-                if ('name' in filteredUpdates && filteredUpdates.name === '') {
-                    return res.status(400).json({ error: 'El nombre no puede estar vacío.' });
-                }
-                if ('phone' in filteredUpdates && filteredUpdates.phone === '') {
-                    return res.status(400).json({ error: 'El teléfono no puede estar vacío.' });
-                }
-
-                // Use filtered updates instead of all updates
-                const user = await userService.updateUser(id, filteredUpdates);
-                return res.json(user);
-            }
+        const authUserId = req.auth?.userId;
+        if (!authUserId) {
+            return res.status(401).json({
+                error: 'No autenticado'
+            });
         }
 
-        // Admin can update any field
-        const user = await userService.updateUser(id, updates);
-        res.json(user);
+        const isOwnProfile = authUserId === id;
+        if (!isOwnProfile) {
+            return res.status(403).json({
+                error: 'No tienes permiso para actualizar este perfil'
+            });
+        }
+
+        const allowedFields = ['name', 'phone', 'whatsapp', 'idType', 'idNumber', 'profile'];
+        const filteredUpdates = {};
+
+        allowedFields.forEach(field => {
+            if (updates[field] !== undefined) {
+                filteredUpdates[field] = updates[field];
+            }
+        });
+
+        const { name, phone } = filteredUpdates;
+
+        if (name !== undefined && (!name || name.trim().length < 3)) {
+            return res.status(400).json({ error: 'El nombre debe tener al menos 3 caracteres.' });
+        }
+
+        if (phone !== undefined && (!phone || phone.replace(/\D/g, '').length < 10)) {
+            return res.status(400).json({ error: 'El teléfono debe tener al menos 10 dígitos.' });
+        }
+
+        const { idType, idNumber } = filteredUpdates;
+        const hasIdType = idType !== undefined && idType !== '' && idType !== null;
+        const hasIdNumber = idNumber !== undefined && idNumber !== '' && idNumber !== null;
+        if (hasIdType !== hasIdNumber) {
+            return res.status(400).json({ error: 'Debes completar tanto el tipo como el número de documento.' });
+        }
+
+        if ('name' in filteredUpdates && filteredUpdates.name === '') {
+            return res.status(400).json({ error: 'El nombre no puede estar vacío.' });
+        }
+        if ('phone' in filteredUpdates && filteredUpdates.phone === '') {
+            return res.status(400).json({ error: 'El teléfono no puede estar vacío.' });
+        }
+
+        const user = await userService.updateUser(id, filteredUpdates);
+        return res.json(user);
     } catch (error) {
         next(error);
     }
