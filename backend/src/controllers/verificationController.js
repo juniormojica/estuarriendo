@@ -1,6 +1,5 @@
-import { UserVerificationDocuments, User, UserVerification, Notification, UserIdentificationDetails, UserProfile } from '../models/index.js';
+import { UserVerificationDocuments, User, UserVerification, Notification, UserIdentificationDetails, UserProfile, ActivityLog } from '../models/index.js';
 import { VerificationStatus, DocumentVerificationStatus, NotificationType, UserType } from '../utils/enums.js';
-import { sseService } from '../services/sseService.js';
 
 import { Op } from 'sequelize';
 
@@ -96,11 +95,16 @@ export const submitVerificationDocuments = async (req, res) => {
             // Continue execution, notification failure shouldn't block submission
         }
 
-        // Broadcast SSE event
-        sseService.broadcast('verification_submitted', {
-            userId: user.id,
-            userName: user.name
-        });
+        try {
+            await ActivityLog.create({
+                type: 'verification_submitted',
+                message: `${user.name} envió sus documentos de verificación`,
+                userId: user.id,
+                timestamp: new Date()
+            });
+        } catch (activityError) {
+            console.error('Error creating activity log:', activityError);
+        }
 
         res.status(201).json({
             message: 'Verification documents submitted successfully',
@@ -416,12 +420,16 @@ export const submitSingleDocument = async (req, res) => {
             console.error('Error creating notification:', notificationError);
         }
 
-        // Broadcast SSE event
-        sseService.broadcast('verification_doc_submitted', {
-            userId: user.id,
-            userName: user.name,
-            documentType
-        });
+        try {
+            await ActivityLog.create({
+                type: 'verification_doc_submitted',
+                message: `${user.name} subió documento de verificación: ${documentType}`,
+                userId: user.id,
+                timestamp: new Date()
+            });
+        } catch (activityError) {
+            console.error('Error creating activity log:', activityError);
+        }
 
         res.json({
             message: 'Document submitted successfully',
