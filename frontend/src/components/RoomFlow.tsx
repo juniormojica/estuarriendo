@@ -61,6 +61,13 @@ interface RoomFlowProps {
     onAdminComplete?: () => void;
 }
 
+interface RoomFlowDraft {
+    step?: number;
+    selectedCity?: City | null;
+    institutionNames?: Record<number, string>;
+    data?: RoomFormData;
+}
+
 const RoomFlow: React.FC<RoomFlowProps> = ({
     adminMode = false,
     targetOwnerId,
@@ -71,7 +78,7 @@ const RoomFlow: React.FC<RoomFlowProps> = ({
     const { items: amenities } = useAppSelector((state) => state.amenities);
 
     const savedDraftStr = sessionStorage.getItem('roomFlowDraft');
-    const savedDraft = safeParseDraft(savedDraftStr, null);
+    const savedDraft = safeParseDraft<RoomFlowDraft>(savedDraftStr, null);
 
     const [currentStep, setCurrentStep] = useState(savedDraft?.step || 1);
     const [submitted, setSubmitted] = useState(false);
