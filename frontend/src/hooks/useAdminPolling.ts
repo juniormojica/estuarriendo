@@ -23,6 +23,7 @@ const POLL_INTERVAL = 15_000; // 15 seconds
 
 export type ActivityEventType =
   | 'property_submitted'
+  | 'property_updated'
   | 'container_submitted'
   | 'verification_submitted'
   | 'verification_doc_submitted'
