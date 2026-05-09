@@ -95,7 +95,7 @@ export const api = {
   async getProperties(filters?: SearchFilters): Promise<Property[]> {
     await delay(500);
 
-    let properties = getStoredProperties();
+    const properties = getStoredProperties();
     let filteredProperties = [...properties];
 
     // Default to showing only approved properties unless specified otherwise
@@ -1497,25 +1497,4 @@ export const api = {
 }
 
 // Helper for student requests
-
-
-
-
-// Helper for notifications
-const getStoredNotifications = (): Notification[] => {
-  const stored = localStorage.getItem('estuarriendo_notifications');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error parsing stored notifications:', e);
-      return [];
-    }
-  }
-  return [];
-};
-
-const saveNotifications = (notifications: Notification[]) => {
-  localStorage.setItem('estuarriendo_notifications', JSON.stringify(notifications));
-};
 
