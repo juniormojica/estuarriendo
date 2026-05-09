@@ -1,5 +1,5 @@
 import { PropertyType } from '../models/index.js';
-import { notFound } from '../errors/AppError.js';
+import { conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Property Type Controller
@@ -164,24 +164,11 @@ export const deletePropertyType = async (req, res, next) => {
         await propertyType.destroy();
         res.json({ message: 'Property type deleted successfully' });
     } catch (error) {
-        if (error?.code === 'PROPERTY_TYPE_NOT_FOUND') {
-            return next(error);
-        }
-
-        console.error('Error deleting property type:', error);
-
-        // Handle foreign key constraint errors
         if (error.name === 'SequelizeForeignKeyConstraintError') {
-            return res.status(409).json({
-                error: 'Cannot delete property type',
-                message: 'This property type is used by existing properties'
-            });
+            return next(conflict('Cannot delete property type', { code: 'PROPERTY_TYPE_IN_USE' }));
         }
 
-        res.status(500).json({
-            error: 'Failed to delete property type',
-            message: error.message
-        });
+        next(error);
     }
 };
 

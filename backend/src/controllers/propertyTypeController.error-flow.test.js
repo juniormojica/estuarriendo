@@ -123,4 +123,62 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
             code: 'INTERNAL_SERVER_ERROR'
         });
     });
+
+    it('delegates delete foreign-key constraint errors to centralized handler with 409 contract', async () => {
+        const destroy = vi.fn().mockRejectedValue({
+            name: 'SequelizeForeignKeyConstraintError'
+        });
+        vi.spyOn(PropertyType, 'findByPk').mockResolvedValue({ destroy });
+
+        const req = { params: { id: '12' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.deletePropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Cannot delete property type',
+            message: 'Cannot delete property type',
+            code: 'PROPERTY_TYPE_IN_USE'
+        });
+    });
+
+    it('sanitizes unexpected delete failures via centralized handler', async () => {
+        const destroy = vi.fn().mockRejectedValue(new Error('driver timeout with internals'));
+        vi.spyOn(PropertyType, 'findByPk').mockResolvedValue({ destroy });
+
+        const req = { params: { id: '55' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.deletePropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
 });
