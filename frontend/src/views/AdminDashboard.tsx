@@ -212,6 +212,9 @@ const AdminDashboard = () => {
         property_submitted: () => {
             toastLib.success('🏠 Nueva propiedad pendiente de revisión', { id: 'new-property', duration: 5000 });
         },
+        property_updated: () => {
+            toastLib.success('🔄 Propiedad actualizada y enviada a revisión', { id: 'property-updated', duration: 5000 });
+        },
         container_submitted: () => {
             toastLib.success('🏢 Nueva pensión pendiente de revisión', { id: 'new-container', duration: 5000 });
         },
