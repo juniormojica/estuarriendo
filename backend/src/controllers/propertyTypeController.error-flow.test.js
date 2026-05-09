@@ -42,4 +42,31 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
             code: 'PROPERTY_TYPE_NOT_FOUND'
         });
     });
+
+    it('delegates delete missing-resource flow to centralized handler', async () => {
+        vi.spyOn(PropertyType, 'findByPk').mockResolvedValue(null);
+
+        const req = { params: { id: '999' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.deletePropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Property type not found',
+            message: 'Property type not found',
+            code: 'PROPERTY_TYPE_NOT_FOUND'
+        });
+    });
 });

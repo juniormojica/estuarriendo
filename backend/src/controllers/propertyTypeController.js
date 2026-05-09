@@ -158,20 +158,22 @@ export const updatePropertyType = async (req, res) => {
  * Delete property type (admin only)
  * @route DELETE /api/property-types/:id
  */
-export const deletePropertyType = async (req, res) => {
+export const deletePropertyType = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const propertyType = await PropertyType.findByPk(id);
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Property type not found'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         await propertyType.destroy();
         res.json({ message: 'Property type deleted successfully' });
     } catch (error) {
+        if (error?.code === 'PROPERTY_TYPE_NOT_FOUND') {
+            return next(error);
+        }
+
         console.error('Error deleting property type:', error);
 
         // Handle foreign key constraint errors
