@@ -1,4 +1,5 @@
 import { PropertyType } from '../models/index.js';
+import { notFound } from '../errors/AppError.js';
 
 /**
  * Property Type Controller
@@ -30,24 +31,18 @@ export const getAllPropertyTypes = async (req, res) => {
  * Get property type by ID
  * @route GET /api/property-types/:id
  */
-export const getPropertyTypeById = async (req, res) => {
+export const getPropertyTypeById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const propertyType = await PropertyType.findByPk(id);
 
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Tipo de propiedad no encontrado'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         res.json(propertyType);
     } catch (error) {
-        console.error('Error fetching property type:', error);
-        res.status(500).json({
-            error: 'Error al obtener el tipo de propiedad',
-            message: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        next(error);
     }
 };
 
