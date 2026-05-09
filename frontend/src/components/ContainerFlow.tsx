@@ -54,6 +54,12 @@ interface ContainerData {
     images: string[];
 }
 
+interface ContainerFlowDraft {
+    step?: number;
+    selectedPropertyType?: string;
+    data?: Partial<ContainerData>;
+}
+
 const ContainerFlow: React.FC<ContainerFlowProps> = ({
     propertyId,
     initialPropertyType,
@@ -70,7 +76,7 @@ const ContainerFlow: React.FC<ContainerFlowProps> = ({
     }, [dispatch]);
 
     const savedDraftStr = sessionStorage.getItem('containerFlowDraft');
-    const savedDraft = safeParseDraft(savedDraftStr, null);
+    const savedDraft = safeParseDraft<ContainerFlowDraft>(savedDraftStr, null);
 
     // If initialPropertyType is provided, start at step 1 (skip type selector)
     const [currentStep, setCurrentStep] = useState(savedDraft?.step ?? (initialPropertyType ? 1 : 0));
