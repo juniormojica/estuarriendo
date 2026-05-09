@@ -50,7 +50,7 @@ export const getPropertyTypeById = async (req, res, next) => {
  * Get property type by name
  * @route GET /api/property-types/name/:name
  */
-export const getPropertyTypeByName = async (req, res) => {
+export const getPropertyTypeByName = async (req, res, next) => {
     try {
         const { name } = req.params;
         const propertyType = await PropertyType.findOne({
@@ -58,18 +58,12 @@ export const getPropertyTypeByName = async (req, res) => {
         });
 
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Tipo de propiedad no encontrado'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         res.json(propertyType);
     } catch (error) {
-        console.error('Error fetching property type by name:', error);
-        res.status(500).json({
-            error: 'Error al obtener el tipo de propiedad',
-            message: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        next(error);
     }
 };
 

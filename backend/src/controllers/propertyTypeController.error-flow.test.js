@@ -69,4 +69,58 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
             code: 'PROPERTY_TYPE_NOT_FOUND'
         });
     });
+
+    it('delegates get-by-name missing-resource flow to centralized handler', async () => {
+        vi.spyOn(PropertyType, 'findOne').mockResolvedValue(null);
+
+        const req = { params: { name: 'missing-type' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.getPropertyTypeByName(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Property type not found',
+            message: 'Property type not found',
+            code: 'PROPERTY_TYPE_NOT_FOUND'
+        });
+    });
+
+    it('sanitizes unexpected get-by-name failures via centralized handler', async () => {
+        vi.spyOn(PropertyType, 'findOne').mockRejectedValue(new Error('SequelizeConnectionRefusedError: db credentials leaked'));
+
+        const req = { params: { name: 'apartment' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.getPropertyTypeByName(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
 });
