@@ -1,4 +1,5 @@
 import { Amenity, Property } from '../models/index.js';
+import { notFound } from '../errors/AppError.js';
 
 /**
  * Amenity Controller
@@ -19,19 +20,18 @@ export const getAllAmenities = async (req, res) => {
 };
 
 // Get amenity by ID
-export const getAmenityById = async (req, res) => {
+export const getAmenityById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const amenity = await Amenity.findByPk(id);
 
         if (!amenity) {
-            return res.status(404).json({ error: 'Amenity not found' });
+            throw notFound('Amenity not found', { code: 'AMENITY_NOT_FOUND' });
         }
 
         res.json(amenity);
     } catch (error) {
-        console.error('Error fetching amenity:', error);
-        res.status(500).json({ error: 'Failed to fetch amenity', message: error.message });
+        next(error);
     }
 };
 
@@ -78,20 +78,19 @@ export const updateAmenity = async (req, res) => {
 };
 
 // Delete amenity
-export const deleteAmenity = async (req, res) => {
+export const deleteAmenity = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const amenity = await Amenity.findByPk(id);
         if (!amenity) {
-            return res.status(404).json({ error: 'Amenity not found' });
+            throw notFound('Amenity not found', { code: 'AMENITY_NOT_FOUND' });
         }
 
         await amenity.destroy();
         res.json({ message: 'Amenity deleted successfully' });
     } catch (error) {
-        console.error('Error deleting amenity:', error);
-        res.status(500).json({ error: 'Failed to delete amenity', message: error.message });
+        next(error);
     }
 };
 
