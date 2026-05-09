@@ -57,21 +57,20 @@ export const createAmenity = async (req, res, next) => {
 };
 
 // Update amenity
-export const updateAmenity = async (req, res) => {
+export const updateAmenity = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, icon } = req.body;
 
         const amenity = await Amenity.findByPk(id);
         if (!amenity) {
-            return res.status(404).json({ error: 'Amenity not found' });
+            throw notFound('Amenity not found', { code: 'AMENITY_NOT_FOUND' });
         }
 
         await amenity.update({ name, icon });
         res.json(amenity);
     } catch (error) {
-        console.error('Error updating amenity:', error);
-        res.status(500).json({ error: 'Failed to update amenity', message: error.message });
+        next(error);
     }
 };
 

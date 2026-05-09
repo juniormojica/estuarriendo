@@ -113,4 +113,47 @@ describe('amenityController incremental migration -> centralized errorHandler', 
             code: 'INTERNAL_SERVER_ERROR'
         });
     });
+
+    it('forwards updateAmenity unexpected errors to centralized errorHandler', async () => {
+        const amenity = {
+            update: vi.fn().mockRejectedValue(new Error('update exploded'))
+        };
+        vi.spyOn(Amenity, 'findByPk').mockResolvedValue(amenity);
+
+        const req = { params: { id: '1' }, body: { name: 'Updated', icon: 'updated' } };
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            amenityController.updateAmenity,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('returns standardized 404 contract when updating a missing amenity', async () => {
+        vi.spyOn(Amenity, 'findByPk').mockResolvedValue(null);
+
+        const req = { params: { id: '404' }, body: { name: 'Updated', icon: 'updated' } };
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            amenityController.updateAmenity,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Amenity not found',
+            message: 'Amenity not found',
+            code: 'AMENITY_NOT_FOUND'
+        });
+    });
 });
