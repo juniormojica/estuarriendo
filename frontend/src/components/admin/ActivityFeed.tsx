@@ -49,29 +49,45 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
     const displayedActivities = activities.slice(0, maxItems);
 
     const getActivityIcon = (type: ActivityLog['type']) => {
-        const icons = {
+        const icons: Record<ActivityLog['type'], string> = {
             property_submitted: '📝',
+            property_updated: '🔄',
+            container_submitted: '📦',
             property_approved: '✅',
             property_rejected: '❌',
             property_deleted: '🗑️',
             property_featured: '⭐',
             user_registered: '👤',
             config_updated: '⚙️',
-            payment_verified: '💳'
+            payment_verified: '💳',
+            verification_submitted: '📄',
+            verification_doc_submitted: '🪪',
+            payment_submitted: '💰',
+            payment_auto_verified: '🤖',
+            student_request_created: '🎓',
+            property_report_created: '⚠️'
         };
         return icons[type] || '📋';
     };
 
     const getActivityColor = (type: ActivityLog['type']) => {
-        const colors = {
+        const colors: Record<ActivityLog['type'], string> = {
             property_submitted: 'text-blue-600',
+            property_updated: 'text-indigo-600',
+            container_submitted: 'text-cyan-600',
             property_approved: 'text-green-600',
             property_rejected: 'text-red-600',
             property_deleted: 'text-gray-600',
             property_featured: 'text-yellow-600',
             user_registered: 'text-purple-600',
             config_updated: 'text-orange-600',
-            payment_verified: 'text-emerald-600'
+            payment_verified: 'text-emerald-600',
+            verification_submitted: 'text-sky-600',
+            verification_doc_submitted: 'text-blue-500',
+            payment_submitted: 'text-amber-600',
+            payment_auto_verified: 'text-green-500',
+            student_request_created: 'text-violet-600',
+            property_report_created: 'text-rose-600'
         };
         return colors[type] || 'text-gray-600';
     };
