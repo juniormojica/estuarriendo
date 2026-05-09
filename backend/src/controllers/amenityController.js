@@ -7,15 +7,14 @@ import { notFound } from '../errors/AppError.js';
  */
 
 // Get all amenities
-export const getAllAmenities = async (req, res) => {
+export const getAllAmenities = async (req, res, next) => {
     try {
         const amenities = await Amenity.findAll({
             order: [['name', 'ASC']]
         });
         res.json(amenities);
     } catch (error) {
-        console.error('Error fetching amenities:', error);
-        res.status(500).json({ error: 'Failed to fetch amenities', message: error.message });
+        next(error);
     }
 };
 
@@ -36,7 +35,7 @@ export const getAmenityById = async (req, res, next) => {
 };
 
 // Create new amenity
-export const createAmenity = async (req, res) => {
+export const createAmenity = async (req, res, next) => {
     try {
         const { name, icon } = req.body;
 
@@ -53,8 +52,7 @@ export const createAmenity = async (req, res) => {
         const amenity = await Amenity.create({ name, icon });
         res.status(201).json(amenity);
     } catch (error) {
-        console.error('Error creating amenity:', error);
-        res.status(500).json({ error: 'Failed to create amenity', message: error.message });
+        next(error);
     }
 };
 

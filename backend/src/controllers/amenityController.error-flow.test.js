@@ -19,8 +19,11 @@ const runThroughErrorHandler = async (controllerAction, { req }) => {
         capturedError = error;
     });
 
+    const statusCallsBeforeHandler = res.status.mock.calls.length;
+    const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
     errorHandler(capturedError, req, res, vi.fn());
-    return res;
+    return { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler };
 };
 
 describe('amenityController incremental migration -> centralized errorHandler', () => {
@@ -32,7 +35,7 @@ describe('amenityController incremental migration -> centralized errorHandler', 
         vi.spyOn(Amenity, 'findByPk').mockResolvedValue(null);
 
         const req = { params: { id: '404' } };
-        const res = await runThroughErrorHandler(amenityController.getAmenityById, { req });
+        const { res } = await runThroughErrorHandler(amenityController.getAmenityById, { req });
 
         expect(res.status).toHaveBeenCalledWith(404);
         expect(res.json).toHaveBeenCalledWith({
@@ -46,7 +49,7 @@ describe('amenityController incremental migration -> centralized errorHandler', 
         vi.spyOn(Amenity, 'findByPk').mockRejectedValue(new Error('database exploded'));
 
         const req = { params: { id: '1' } };
-        const res = await runThroughErrorHandler(amenityController.getAmenityById, { req });
+        const { res } = await runThroughErrorHandler(amenityController.getAmenityById, { req });
 
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith({
@@ -60,13 +63,54 @@ describe('amenityController incremental migration -> centralized errorHandler', 
         vi.spyOn(Amenity, 'findByPk').mockResolvedValue(null);
 
         const req = { params: { id: '404' } };
-        const res = await runThroughErrorHandler(amenityController.deleteAmenity, { req });
+        const { res } = await runThroughErrorHandler(amenityController.deleteAmenity, { req });
 
         expect(res.status).toHaveBeenCalledWith(404);
         expect(res.json).toHaveBeenCalledWith({
             error: 'Amenity not found',
             message: 'Amenity not found',
             code: 'AMENITY_NOT_FOUND'
+        });
+    });
+
+    it('forwards getAllAmenities unexpected errors to centralized errorHandler', async () => {
+        vi.spyOn(Amenity, 'findAll').mockRejectedValue(new Error('database exploded'));
+
+        const req = {};
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            amenityController.getAllAmenities,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('forwards createAmenity unexpected errors to centralized errorHandler', async () => {
+        vi.spyOn(Amenity, 'findOne').mockResolvedValue(null);
+        vi.spyOn(Amenity, 'create').mockRejectedValue(new Error('insert exploded'));
+
+        const req = { body: { name: 'Pool', icon: 'pool' } };
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            amenityController.createAmenity,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
         });
     });
 });
