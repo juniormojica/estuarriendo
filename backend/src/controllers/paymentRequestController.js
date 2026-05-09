@@ -1,7 +1,6 @@
-import { PaymentRequest, User } from '../models/index.js';
+import { PaymentRequest, User, ActivityLog } from '../models/index.js';
 import { PaymentRequestStatus, PlanType } from '../utils/enums.js';
 import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } from '../services/notificationService.js';
-import { sseService } from '../services/sseService.js';
 
 
 /**
@@ -156,13 +155,16 @@ export const createPaymentRequest = async (req, res) => {
             // Don't fail the request if notification fails
         }
 
-        // Broadcast SSE event
-        sseService.broadcast('payment_submitted', {
-            userId: user.id,
-            userName: user.name,
-            planType,
-            amount
-        });
+        try {
+            await ActivityLog.create({
+                type: 'payment_submitted',
+                message: `${user.name} envió comprobante de pago (${planType})`,
+                userId: user.id,
+                timestamp: new Date()
+            });
+        } catch (activityError) {
+            console.error('Error creating activity log:', activityError);
+        }
 
         res.status(201).json({
             message: 'Payment request submitted successfully',

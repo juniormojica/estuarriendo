@@ -1,6 +1,5 @@
-import { StudentRequest, User, City, Institution } from '../models/index.js';
+import { StudentRequest, User, City, Institution, ActivityLog } from '../models/index.js';
 import { StudentRequestStatus } from '../utils/enums.js';
-import { sseService } from '../services/sseService.js';
 import { Op } from 'sequelize';
 
 /**
@@ -148,10 +147,16 @@ export const createStudentRequest = async (req, res) => {
             updatedAt: new Date()
         });
 
-        // Broadcast SSE event
-        sseService.broadcast('student_request_created', {
-            studentId: requestData.studentId
-        });
+        try {
+            await ActivityLog.create({
+                type: 'student_request_created',
+                message: `Nueva solicitud estudiantil creada por ${requestData.studentId}`,
+                userId: requestData.studentId,
+                timestamp: new Date()
+            });
+        } catch (activityError) {
+            console.error('Error creating activity log:', activityError);
+        }
 
         res.status(201).json(request);
     } catch (error) {
