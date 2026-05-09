@@ -36,13 +36,21 @@ export type SubscriptionType = 'weekly' | 'monthly' | 'quarterly';
 // Tipos de Eventos en el Log de Actividad
 export type ActivityLogType =
   | 'property_submitted'
+  | 'property_updated'
+  | 'container_submitted'
   | 'property_approved'
   | 'property_rejected'
   | 'property_deleted'
   | 'property_featured'
   | 'user_registered'
   | 'config_updated'
-  | 'payment_verified';
+  | 'payment_verified'
+  | 'verification_submitted'
+  | 'verification_doc_submitted'
+  | 'payment_submitted'
+  | 'payment_auto_verified'
+  | 'student_request_created'
+  | 'property_report_created';
 
 // Secciones de Navegación del Panel de Administración
 export type AdminSection = 'dashboard' | 'pending' | 'all-properties' | 'users' | 'config' | 'activity' | 'payments' | 'verifications' | 'student-requests' | 'create-property' | 'property-reports';

@@ -31,7 +31,6 @@ import creditRoutes from './routes/creditRoutes.js';
 import propertyReportRoutes from './routes/propertyReportRoutes.js';
 import mercadoPagoRoutes from './routes/mercadoPagoRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
-import sseRoutes from './routes/sseRoutes.js';
 import { startPlanScheduler, stopPlanScheduler } from './services/planScheduler.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -77,9 +76,6 @@ const globalLimiter = rateLimit({
     message: { error: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.' }
 });
 
-// Mount SSE endpoints BEFORE rate limiter (they are long-lived connections)
-app.use('/api/sse', sseRoutes);
-
 // Apply global rate limiter to ALL API routes
 app.use('/api/', globalLimiter);
 
@@ -94,11 +90,6 @@ const authLimiter = rateLimit({
 
 // HTTP Request Logger Middleware
 app.use((req, res, next) => {
-    // Skip SSE endpoints - they use res.write() for streaming
-    if (req.path.startsWith('/api/sse')) {
-        return next();
-    }
-
     const start = Date.now();
 
     // Capture the original res.json to log after response

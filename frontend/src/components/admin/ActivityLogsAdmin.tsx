@@ -82,13 +82,21 @@ const ActivityLogsAdmin: React.FC = () => {
     const getActivityIcon = (type: ActivityLogType) => {
         const icons: Record<ActivityLogType, string> = {
             property_submitted: '📝',
+            property_updated: '🔄',
+            container_submitted: '🏢',
             property_approved: '✅',
             property_rejected: '❌',
             property_deleted: '🗑️',
             property_featured: '⭐',
             user_registered: '👤',
             config_updated: '⚙️',
-            payment_verified: '💳'
+            payment_verified: '💳',
+            verification_submitted: '🛡️',
+            verification_doc_submitted: '📄',
+            payment_submitted: '💰',
+            payment_auto_verified: '✅',
+            student_request_created: '🎓',
+            property_report_created: '⚠️'
         };
         return icons[type] || '📋';
     };
@@ -96,13 +104,21 @@ const ActivityLogsAdmin: React.FC = () => {
     const getActivityColor = (type: ActivityLogType) => {
         const colors: Record<ActivityLogType, string> = {
             property_submitted: 'bg-blue-100 text-blue-700',
+            property_updated: 'bg-indigo-100 text-indigo-700',
+            container_submitted: 'bg-sky-100 text-sky-700',
             property_approved: 'bg-green-100 text-green-700',
             property_rejected: 'bg-red-100 text-red-700',
             property_deleted: 'bg-gray-100 text-gray-700',
             property_featured: 'bg-yellow-100 text-yellow-700',
             user_registered: 'bg-purple-100 text-purple-700',
             config_updated: 'bg-orange-100 text-orange-700',
-            payment_verified: 'bg-emerald-100 text-emerald-700'
+            payment_verified: 'bg-emerald-100 text-emerald-700',
+            verification_submitted: 'bg-cyan-100 text-cyan-700',
+            verification_doc_submitted: 'bg-blue-100 text-blue-700',
+            payment_submitted: 'bg-lime-100 text-lime-700',
+            payment_auto_verified: 'bg-green-100 text-green-700',
+            student_request_created: 'bg-violet-100 text-violet-700',
+            property_report_created: 'bg-rose-100 text-rose-700'
         };
         return colors[type] || 'bg-gray-100 text-gray-700';
     };
@@ -121,13 +137,21 @@ const ActivityLogsAdmin: React.FC = () => {
     const formatTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
             property_submitted: 'Propiedad Enviada',
+            property_updated: 'Propiedad Actualizada',
+            container_submitted: 'Pensión Enviada',
             property_approved: 'Propiedad Aprobada',
             property_rejected: 'Propiedad Rechazada',
             property_deleted: 'Propiedad Eliminada',
             property_featured: 'Propiedad Destacada',
             user_registered: 'Usuario Registrado',
             config_updated: 'Configuración Actualizada',
-            payment_verified: 'Pago Verificado'
+            payment_verified: 'Pago Verificado',
+            verification_submitted: 'Verificación Enviada',
+            verification_doc_submitted: 'Documento de Verificación Enviado',
+            payment_submitted: 'Pago Enviado',
+            payment_auto_verified: 'Pago Verificado Automáticamente',
+            student_request_created: 'Solicitud de Estudiante Creada',
+            property_report_created: 'Propiedad Reportada'
         };
         return labels[type] || type;
     };
@@ -270,6 +294,8 @@ const ActivityLogsAdmin: React.FC = () => {
                     >
                         <option value="">Todos los tipos</option>
                         <option value="property_submitted">Propiedad Enviada</option>
+                        <option value="property_updated">Propiedad Actualizada</option>
+                        <option value="container_submitted">Pensión Enviada</option>
                         <option value="property_approved">Propiedad Aprobada</option>
                         <option value="property_rejected">Propiedad Rechazada</option>
                         <option value="property_deleted">Propiedad Eliminada</option>
@@ -277,6 +303,12 @@ const ActivityLogsAdmin: React.FC = () => {
                         <option value="user_registered">Usuario Registrado</option>
                         <option value="config_updated">Configuración Actualizada</option>
                         <option value="payment_verified">Pago Verificado</option>
+                        <option value="verification_submitted">Verificación Enviada</option>
+                        <option value="verification_doc_submitted">Documento de Verificación Enviado</option>
+                        <option value="payment_submitted">Pago Enviado</option>
+                        <option value="payment_auto_verified">Pago Verificado Automáticamente</option>
+                        <option value="student_request_created">Solicitud de Estudiante Creada</option>
+                        <option value="property_report_created">Propiedad Reportada</option>
                     </select>
 
                     {/* Date Range */}

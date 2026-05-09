@@ -2,7 +2,6 @@ import { Property, User, Amenity, Notification, ActivityLog } from '../models/in
 import { PropertyStatus, NotificationType, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';
-import { sseService } from '../services/sseService.js';
 
 /**
  * Property Controller
@@ -313,13 +312,6 @@ export const createProperty = async (req, res) => {
             timestamp: new Date()
         });
 
-        // Broadcast SSE event
-        sseService.broadcast('property_submitted', { 
-            propertyId: property.id, 
-            title: property.title, 
-            ownerName: owner.name 
-        });
-
         res.status(201).json(completeProperty);
     } catch (error) {
         console.error('Error creating property:', error);
@@ -353,9 +345,12 @@ export const updateProperty = async (req, res) => {
         const completeProperty = await propertyService.findPropertyWithAssociations(id);
 
         if (updates.status === PropertyStatus.PENDING) {
-            sseService.broadcast('property_updated', {
-                propertyId: id,
-                title: property.title
+            await ActivityLog.create({
+                type: 'property_updated',
+                message: `Propiedad actualizada y enviada a revisión: ${property.title}`,
+                userId: req.userId || property.ownerId,
+                propertyId: property.id,
+                timestamp: new Date()
             });
         }
 
