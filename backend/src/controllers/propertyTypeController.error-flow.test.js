@@ -242,4 +242,58 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
             code: 'INTERNAL_SERVER_ERROR'
         });
     });
+
+    it('delegates update missing-resource flow to centralized handler', async () => {
+        vi.spyOn(PropertyType, 'findByPk').mockResolvedValue(null);
+
+        const req = { params: { id: '404' }, body: { name: 'Updated' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.updatePropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Property type not found',
+            message: 'Property type not found',
+            code: 'PROPERTY_TYPE_NOT_FOUND'
+        });
+    });
+
+    it('sanitizes unexpected update failures via centralized handler', async () => {
+        vi.spyOn(PropertyType, 'findByPk').mockRejectedValue(new Error('driver timeout with internals'));
+
+        const req = { params: { id: '10' }, body: { name: 'Updated' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.updatePropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
 });

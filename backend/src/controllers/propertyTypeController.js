@@ -102,16 +102,14 @@ export const createPropertyType = async (req, res, next) => {
  * Update property type (admin only)
  * @route PUT /api/property-types/:id
  */
-export const updatePropertyType = async (req, res) => {
+export const updatePropertyType = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, description } = req.body;
 
         const propertyType = await PropertyType.findByPk(id);
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Property type not found'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         // Check if name is being changed and if new name already exists
@@ -132,11 +130,7 @@ export const updatePropertyType = async (req, res) => {
 
         res.json(propertyType);
     } catch (error) {
-        console.error('Error updating property type:', error);
-        res.status(500).json({
-            error: 'Failed to update property type',
-            message: error.message
-        });
+        next(error);
     }
 };
 
