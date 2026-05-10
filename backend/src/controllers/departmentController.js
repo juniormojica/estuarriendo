@@ -10,7 +10,7 @@ import { conflict, notFound } from '../errors/AppError.js';
  * Create new department (admin only)
  * POST /api/locations/departments
  */
-export const createDepartment = async (req, res) => {
+export const createDepartment = async (req, res, next) => {
     try {
         const { name, code, slug, isActive = true } = req.body;
 
@@ -24,17 +24,17 @@ export const createDepartment = async (req, res) => {
         // Check if department with same code already exists
         const existingCode = await Department.findOne({ where: { code } });
         if (existingCode) {
-            return res.status(409).json({
-                error: 'Department with this code already exists'
-            });
+            return next(conflict('Department with this code already exists', {
+                code: 'DEPARTMENT_CODE_EXISTS'
+            }));
         }
 
         // Check if department with same slug already exists
         const existingSlug = await Department.findOne({ where: { slug } });
         if (existingSlug) {
-            return res.status(409).json({
-                error: 'Department with this slug already exists'
-            });
+            return next(conflict('Department with this slug already exists', {
+                code: 'DEPARTMENT_SLUG_EXISTS'
+            }));
         }
 
         const department = await Department.create({
@@ -47,11 +47,7 @@ export const createDepartment = async (req, res) => {
 
         res.status(201).json(department);
     } catch (error) {
-        console.error('Error creating department:', error);
-        res.status(500).json({
-            error: 'Failed to create department',
-            message: error.message
-        });
+        next(error);
     }
 };
 

@@ -100,4 +100,108 @@ describe('departmentController incremental migration -> centralized errorHandler
             code: 'INTERNAL_SERVER_ERROR'
         });
     });
+
+    it('delegates create duplicate-code conflict to centralized handler', async () => {
+        vi.spyOn(Department, 'findOne').mockResolvedValueOnce({ id: '11', code: 'BOG' });
+
+        const req = {
+            body: {
+                name: 'Bogotá',
+                code: 'bog',
+                slug: 'bogota',
+                isActive: true
+            }
+        };
+        const res = createResponse();
+        let capturedError;
+
+        await departmentController.createDepartment(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Department with this code already exists',
+            message: 'Department with this code already exists',
+            code: 'DEPARTMENT_CODE_EXISTS'
+        });
+    });
+
+    it('delegates create duplicate-slug conflict to centralized handler', async () => {
+        vi.spyOn(Department, 'findOne')
+            .mockResolvedValueOnce(null)
+            .mockResolvedValueOnce({ id: '11', slug: 'bogota' });
+
+        const req = {
+            body: {
+                name: 'Bogotá',
+                code: 'bog',
+                slug: 'bogota',
+                isActive: true
+            }
+        };
+        const res = createResponse();
+        let capturedError;
+
+        await departmentController.createDepartment(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Department with this slug already exists',
+            message: 'Department with this slug already exists',
+            code: 'DEPARTMENT_SLUG_EXISTS'
+        });
+    });
+
+    it('delegates unexpected create errors to centralized handler internal-error contract', async () => {
+        vi.spyOn(Department, 'findOne').mockRejectedValue(new Error('db exploded'));
+
+        const req = {
+            body: {
+                name: 'Bogotá',
+                code: 'bog',
+                slug: 'bogota',
+                isActive: true
+            }
+        };
+        const res = createResponse();
+        let capturedError;
+
+        await departmentController.createDepartment(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
 });
