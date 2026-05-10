@@ -185,6 +185,38 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
         });
     });
 
+    it('delegates create duplicate-name conflicts to centralized handler with 409 contract', async () => {
+        vi.spyOn(PropertyType, 'findOne').mockResolvedValue({ id: 1, name: 'Casa' });
+
+        const req = {
+            body: {
+                name: 'Casa',
+                description: 'Tipo de propiedad'
+            }
+        };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.createPropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Property type with this name already exists',
+            message: 'Property type with this name already exists',
+            code: 'PROPERTY_TYPE_NAME_EXISTS'
+        });
+    });
+
     it('delegates delete foreign-key constraint errors to centralized handler with 409 contract', async () => {
         const destroy = vi.fn().mockRejectedValue({
             name: 'SequelizeForeignKeyConstraintError'

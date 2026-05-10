@@ -81,9 +81,9 @@ export const createPropertyType = async (req, res, next) => {
         // Check if property type already exists
         const existing = await PropertyType.findOne({ where: { name } });
         if (existing) {
-            return res.status(409).json({
-                error: 'Property type with this name already exists'
-            });
+            return next(conflict('Property type with this name already exists', {
+                code: 'PROPERTY_TYPE_NAME_EXISTS'
+            }));
         }
 
         const propertyType = await PropertyType.create({
