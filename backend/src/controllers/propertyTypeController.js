@@ -10,7 +10,7 @@ import { conflict, notFound } from '../errors/AppError.js';
  * Get all property types
  * @route GET /api/property-types
  */
-export const getAllPropertyTypes = async (req, res) => {
+export const getAllPropertyTypes = async (req, res, next) => {
     try {
         const propertyTypes = await PropertyType.findAll({
             attributes: ['id', 'name', 'description'],
@@ -19,11 +19,7 @@ export const getAllPropertyTypes = async (req, res) => {
 
         res.json(propertyTypes);
     } catch (error) {
-        console.error('Error fetching property types:', error);
-        res.status(500).json({
-            error: 'Error al obtener los tipos de propiedad',
-            message: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        next(error);
     }
 };
 
