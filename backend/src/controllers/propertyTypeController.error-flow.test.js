@@ -302,6 +302,40 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
         });
     });
 
+    it('delegates update duplicate-name conflicts to centralized handler with 409 contract', async () => {
+        const update = vi.fn();
+        vi.spyOn(PropertyType, 'findByPk').mockResolvedValue({
+            name: 'Casa',
+            description: 'desc',
+            update
+        });
+        vi.spyOn(PropertyType, 'findOne').mockResolvedValue({ id: 2, name: 'Departamento' });
+
+        const req = { params: { id: '10' }, body: { name: 'Departamento' } };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.updatePropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(update).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Property type with this name already exists',
+            message: 'Property type with this name already exists',
+            code: 'PROPERTY_TYPE_NAME_EXISTS'
+        });
+    });
+
     it('sanitizes unexpected update failures via centralized handler', async () => {
         vi.spyOn(PropertyType, 'findByPk').mockRejectedValue(new Error('driver timeout with internals'));
 

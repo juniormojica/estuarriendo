@@ -116,9 +116,9 @@ export const updatePropertyType = async (req, res, next) => {
         if (name && name !== propertyType.name) {
             const existing = await PropertyType.findOne({ where: { name } });
             if (existing) {
-                return res.status(409).json({
-                    error: 'Property type with this name already exists'
-                });
+                return next(conflict('Property type with this name already exists', {
+                    code: 'PROPERTY_TYPE_NAME_EXISTS'
+                }));
             }
         }
 
