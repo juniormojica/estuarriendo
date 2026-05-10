@@ -1,6 +1,6 @@
 import * as authService from '../services/authService.js';
 import { verifyGoogleToken } from '../services/googleAuthService.js';
-import { conflict } from '../errors/AppError.js';
+import { badRequest, conflict } from '../errors/AppError.js';
 import { ActivityLog } from '../models/index.js';
 import User from '../models/User.js';
 
@@ -20,8 +20,8 @@ export const register = async (req, res, next) => {
         // Validate required fields
         const { name, email, password, phone, userType } = userData;
         if (!name || !email || !password || !phone || !userType) {
-            return res.status(400).json({
-                error: 'Faltan campos obligatorios: name, email, password, phone, userType'
+            throw badRequest('Faltan campos obligatorios: name, email, password, phone, userType', {
+                code: 'AUTH_REGISTER_REQUIRED_FIELDS'
             });
         }
 
@@ -60,8 +60,8 @@ export const login = async (req, res, next) => {
 
         // Validate required fields
         if (!email || !password) {
-            return res.status(400).json({
-                error: 'Correo electrónico o contraseña son requeridos'
+            throw badRequest('Correo electrónico o contraseña son requeridos', {
+                code: 'AUTH_LOGIN_REQUIRED_FIELDS'
             });
         }
 
@@ -126,8 +126,8 @@ export const forgotPassword = async (req, res, next) => {
 
         // Validate email
         if (!email) {
-            return res.status(400).json({
-                error: 'Email es requerido'
+            throw badRequest('Email es requerido', {
+                code: 'AUTH_FORGOT_PASSWORD_EMAIL_REQUIRED'
             });
         }
 
@@ -147,8 +147,8 @@ export const verifyResetToken = async (req, res, next) => {
         const { token } = req.params;
 
         if (!token) {
-            return res.status(400).json({
-                error: 'Token es requerido'
+            throw badRequest('Token es requerido', {
+                code: 'AUTH_RESET_TOKEN_REQUIRED'
             });
         }
 
@@ -169,15 +169,15 @@ export const resetPassword = async (req, res, next) => {
 
         // Validate required fields
         if (!token || !newPassword) {
-            return res.status(400).json({
-                error: 'Token y nueva contraseña son requeridos'
+            throw badRequest('Token y nueva contraseña son requeridos', {
+                code: 'AUTH_RESET_PASSWORD_REQUIRED_FIELDS'
             });
         }
 
         // Validate password length
         if (newPassword.length < 6) {
-            return res.status(400).json({
-                error: 'La contraseña debe tener al menos 6 caracteres'
+            throw badRequest('La contraseña debe tener al menos 6 caracteres', {
+                code: 'AUTH_RESET_PASSWORD_TOO_SHORT'
             });
         }
 
@@ -203,7 +203,9 @@ export const googleAuth = async (req, res, next) => {
         const { credential } = req.body;
 
         if (!credential) {
-            return res.status(400).json({ error: 'Token de Google es requerido' });
+            throw badRequest('Token de Google es requerido', {
+                code: 'AUTH_GOOGLE_TOKEN_REQUIRED'
+            });
         }
 
         // 1. Verify Google token
@@ -259,8 +261,8 @@ export const googleCompleteRegistration = async (req, res, next) => {
         const { googleId, email, name, picture, userType, phone, whatsapp } = req.body;
 
         if (!googleId || !email || !userType || !phone) {
-            return res.status(400).json({
-                error: 'Faltan campos obligatorios: googleId, email, userType, phone'
+            throw badRequest('Faltan campos obligatorios: googleId, email, userType, phone', {
+                code: 'AUTH_GOOGLE_COMPLETE_REQUIRED_FIELDS'
             });
         }
 
