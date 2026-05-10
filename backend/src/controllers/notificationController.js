@@ -1,5 +1,6 @@
 import { Notification, User, Property } from '../models/index.js';
 import { NotificationType } from '../utils/enums.js';
+import { notFound } from '../errors/AppError.js';
 
 /**
  * Notification Controller
@@ -7,7 +8,7 @@ import { NotificationType } from '../utils/enums.js';
  */
 
 // Get all notifications for a user
-export const getUserNotifications = async (req, res) => {
+export const getUserNotifications = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { read, limit = 50, offset = 0 } = req.query;
@@ -26,13 +27,12 @@ export const getUserNotifications = async (req, res) => {
 
         res.json(notifications);
     } catch (error) {
-        console.error('Error fetching notifications:', error);
-        res.status(500).json({ error: 'Failed to fetch notifications', message: error.message });
+        next(error);
     }
 };
 
 // Get unread notification count
-export const getUnreadCount = async (req, res) => {
+export const getUnreadCount = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -45,13 +45,12 @@ export const getUnreadCount = async (req, res) => {
 
         res.json({ count });
     } catch (error) {
-        console.error('Error fetching unread count:', error);
-        res.status(500).json({ error: 'Failed to fetch unread count', message: error.message });
+        next(error);
     }
 };
 
 // Create notification
-export const createNotification = async (req, res) => {
+export const createNotification = async (req, res, next) => {
     try {
         const { userId, type, title, message, propertyId, propertyTitle, interestedUserId } = req.body;
 
@@ -63,7 +62,7 @@ export const createNotification = async (req, res) => {
         // Verify user exists
         const user = await User.findByPk(userId);
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            throw notFound('User not found', { code: 'NOTIFICATION_USER_NOT_FOUND' });
         }
 
         const notification = await Notification.create({
@@ -80,31 +79,29 @@ export const createNotification = async (req, res) => {
 
         res.status(201).json(notification);
     } catch (error) {
-        console.error('Error creating notification:', error);
-        res.status(500).json({ error: 'Failed to create notification', message: error.message });
+        next(error);
     }
 };
 
 // Mark notification as read
-export const markAsRead = async (req, res) => {
+export const markAsRead = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const notification = await Notification.findByPk(id);
         if (!notification) {
-            return res.status(404).json({ error: 'Notification not found' });
+            throw notFound('Notification not found', { code: 'NOTIFICATION_NOT_FOUND' });
         }
 
         await notification.update({ read: true });
         res.json(notification);
     } catch (error) {
-        console.error('Error marking notification as read:', error);
-        res.status(500).json({ error: 'Failed to mark notification as read', message: error.message });
+        next(error);
     }
 };
 
 // Mark all notifications as read for a user
-export const markAllAsRead = async (req, res) => {
+export const markAllAsRead = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -115,31 +112,29 @@ export const markAllAsRead = async (req, res) => {
 
         res.json({ message: 'All notifications marked as read' });
     } catch (error) {
-        console.error('Error marking all notifications as read:', error);
-        res.status(500).json({ error: 'Failed to mark all notifications as read', message: error.message });
+        next(error);
     }
 };
 
 // Delete notification
-export const deleteNotification = async (req, res) => {
+export const deleteNotification = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const notification = await Notification.findByPk(id);
         if (!notification) {
-            return res.status(404).json({ error: 'Notification not found' });
+            throw notFound('Notification not found', { code: 'NOTIFICATION_NOT_FOUND' });
         }
 
         await notification.destroy();
         res.json({ message: 'Notification deleted successfully' });
     } catch (error) {
-        console.error('Error deleting notification:', error);
-        res.status(500).json({ error: 'Failed to delete notification', message: error.message });
+        next(error);
     }
 };
 
 // Delete all read notifications for a user
-export const deleteAllRead = async (req, res) => {
+export const deleteAllRead = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -155,8 +150,7 @@ export const deleteAllRead = async (req, res) => {
             deletedCount
         });
     } catch (error) {
-        console.error('Error deleting read notifications:', error);
-        res.status(500).json({ error: 'Failed to delete read notifications', message: error.message });
+        next(error);
     }
 };
 
