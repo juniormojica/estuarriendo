@@ -1,5 +1,6 @@
 import { ActivityLog, User, Property, sequelize } from '../models/index.js';
 import { Op } from 'sequelize';
+import { badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * ActivityLog Controller
@@ -7,7 +8,7 @@ import { Op } from 'sequelize';
  */
 
 // Get all activity logs with filters
-export const getAllActivityLogs = async (req, res) => {
+export const getAllActivityLogs = async (req, res, next) => {
     try {
         const {
             type,
@@ -54,13 +55,12 @@ export const getAllActivityLogs = async (req, res) => {
 
         res.json(logs);
     } catch (error) {
-        console.error('Error fetching activity logs:', error);
-        res.status(500).json({ error: 'Failed to fetch activity logs', message: error.message });
+        next(error);
     }
 };
 
 // Get activity log by ID
-export const getActivityLogById = async (req, res) => {
+export const getActivityLogById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -82,24 +82,25 @@ export const getActivityLogById = async (req, res) => {
         });
 
         if (!log) {
-            return res.status(404).json({ error: 'Activity log not found' });
+            throw notFound('Activity log not found', { code: 'ACTIVITY_LOG_NOT_FOUND' });
         }
 
         res.json(log);
     } catch (error) {
-        console.error('Error fetching activity log:', error);
-        res.status(500).json({ error: 'Failed to fetch activity log', message: error.message });
+        next(error);
     }
 };
 
 // Create activity log
-export const createActivityLog = async (req, res) => {
+export const createActivityLog = async (req, res, next) => {
     try {
         const { type, message, userId, propertyId } = req.body;
 
         // Validate required fields
         if (!type || !message) {
-            return res.status(400).json({ error: 'type and message are required' });
+            throw badRequest('type and message are required', {
+                code: 'ACTIVITY_LOG_VALIDATION_ERROR'
+            });
         }
 
         const log = await ActivityLog.create({
@@ -112,13 +113,12 @@ export const createActivityLog = async (req, res) => {
 
         res.status(201).json(log);
     } catch (error) {
-        console.error('Error creating activity log:', error);
-        res.status(500).json({ error: 'Failed to create activity log', message: error.message });
+        next(error);
     }
 };
 
 // Get activity statistics
-export const getActivityStatistics = async (req, res) => {
+export const getActivityStatistics = async (req, res, next) => {
     try {
         const { startDate, endDate } = req.query;
 
@@ -158,13 +158,12 @@ export const getActivityStatistics = async (req, res) => {
             recentActivity
         });
     } catch (error) {
-        console.error('Error fetching activity statistics:', error);
-        res.status(500).json({ error: 'Failed to fetch activity statistics', message: error.message });
+        next(error);
     }
 };
 
 // Delete old activity logs (cleanup)
-export const deleteOldLogs = async (req, res) => {
+export const deleteOldLogs = async (req, res, next) => {
     try {
         const { daysOld = 90 } = req.body;
 
@@ -182,8 +181,7 @@ export const deleteOldLogs = async (req, res) => {
             deletedCount
         });
     } catch (error) {
-        console.error('Error deleting old logs:', error);
-        res.status(500).json({ error: 'Failed to delete old logs', message: error.message });
+        next(error);
     }
 };
 
