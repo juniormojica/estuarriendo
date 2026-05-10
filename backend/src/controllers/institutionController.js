@@ -1,5 +1,6 @@
 import { Institution, City, Department } from '../models/index.js';
 import { Op } from 'sequelize';
+import { badRequest, conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Institution Controller
@@ -10,7 +11,7 @@ import { Op } from 'sequelize';
  * Get all institutions
  * GET /api/institutions?cityId=1&type=universidad
  */
-export const getAllInstitutions = async (req, res) => {
+export const getAllInstitutions = async (req, res, next) => {
     try {
         const { cityId, type, limit = 50 } = req.query;
 
@@ -55,11 +56,7 @@ export const getAllInstitutions = async (req, res) => {
 
         res.json(institutionsWithCoords);
     } catch (error) {
-        console.error('Error fetching institutions:', error);
-        res.status(500).json({
-            error: 'Failed to fetch institutions',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -67,14 +64,14 @@ export const getAllInstitutions = async (req, res) => {
  * Search institutions by name (autocomplete)
  * GET /api/institutions/search?q=nacional&cityId=1&type=universidad
  */
-export const searchInstitutions = async (req, res) => {
+export const searchInstitutions = async (req, res, next) => {
     try {
         const { q, cityId, type, limit = 10 } = req.query;
 
         if (!q || q.length < 2) {
-            return res.status(400).json({
-                error: 'Query parameter "q" must be at least 2 characters'
-            });
+            return next(badRequest('Query parameter "q" must be at least 2 characters', {
+                code: 'INSTITUTION_SEARCH_QUERY_TOO_SHORT'
+            }));
         }
 
         const where = {
@@ -122,11 +119,7 @@ export const searchInstitutions = async (req, res) => {
 
         res.json(institutions);
     } catch (error) {
-        console.error('Error searching institutions:', error);
-        res.status(500).json({
-            error: 'Failed to search institutions',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -134,7 +127,7 @@ export const searchInstitutions = async (req, res) => {
  * Get institution by ID
  * GET /api/institutions/:id
  */
-export const getInstitutionById = async (req, res) => {
+export const getInstitutionById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -156,16 +149,12 @@ export const getInstitutionById = async (req, res) => {
         });
 
         if (!institution) {
-            return res.status(404).json({ error: 'Institution not found' });
+            return next(notFound('Institution not found', { code: 'INSTITUTION_NOT_FOUND' }));
         }
 
         res.json(institution);
     } catch (error) {
-        console.error('Error fetching institution:', error);
-        res.status(500).json({
-            error: 'Failed to fetch institution',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -173,21 +162,21 @@ export const getInstitutionById = async (req, res) => {
  * Create new institution (admin only)
  * POST /api/institutions
  */
-export const createInstitution = async (req, res) => {
+export const createInstitution = async (req, res, next) => {
     try {
         const { name, cityId, type, acronym, latitude, longitude } = req.body;
 
         // Validate required fields
         if (!name || !cityId || !type) {
-            return res.status(400).json({
-                error: 'Missing required fields: name, cityId, type'
-            });
+            return next(badRequest('Missing required fields: name, cityId, type', {
+                code: 'INSTITUTION_REQUIRED_FIELDS'
+            }));
         }
 
         // Check if city exists
         const city = await City.findByPk(cityId);
         if (!city) {
-            return res.status(404).json({ error: 'City not found' });
+            return next(notFound('City not found', { code: 'CITY_NOT_FOUND' }));
         }
 
         // Check if institution already exists
@@ -196,9 +185,9 @@ export const createInstitution = async (req, res) => {
         });
 
         if (existing) {
-            return res.status(400).json({
-                error: 'Institution with this name already exists in this city'
-            });
+            return next(conflict('Institution with this name already exists in this city', {
+                code: 'INSTITUTION_NAME_EXISTS'
+            }));
         }
 
         // Validate and convert coordinates if provided
@@ -208,9 +197,9 @@ export const createInstitution = async (req, res) => {
         if (latitude !== undefined && latitude !== null && latitude !== '') {
             const lat = parseFloat(latitude);
             if (isNaN(lat) || lat < -90 || lat > 90) {
-                return res.status(400).json({
-                    error: 'Invalid latitude. Must be between -90 and 90'
-                });
+                return next(badRequest('Invalid latitude. Must be between -90 and 90', {
+                    code: 'INSTITUTION_INVALID_LATITUDE'
+                }));
             }
             validLatitude = lat;
         }
@@ -218,9 +207,9 @@ export const createInstitution = async (req, res) => {
         if (longitude !== undefined && longitude !== null && longitude !== '') {
             const lng = parseFloat(longitude);
             if (isNaN(lng) || lng < -180 || lng > 180) {
-                return res.status(400).json({
-                    error: 'Invalid longitude. Must be between -180 and 180'
-                });
+                return next(badRequest('Invalid longitude. Must be between -180 and 180', {
+                    code: 'INSTITUTION_INVALID_LONGITUDE'
+                }));
             }
             validLongitude = lng;
         }
@@ -252,11 +241,7 @@ export const createInstitution = async (req, res) => {
 
         res.status(201).json(created);
     } catch (error) {
-        console.error('Error creating institution:', error);
-        res.status(500).json({
-            error: 'Failed to create institution',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -264,21 +249,21 @@ export const createInstitution = async (req, res) => {
  * Update institution (admin only)
  * PUT /api/institutions/:id
  */
-export const updateInstitution = async (req, res) => {
+export const updateInstitution = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, cityId, type, acronym, latitude, longitude } = req.body;
 
         const institution = await Institution.findByPk(id);
         if (!institution) {
-            return res.status(404).json({ error: 'Institution not found' });
+            return next(notFound('Institution not found', { code: 'INSTITUTION_NOT_FOUND' }));
         }
 
         // If city is being changed, verify it exists
         if (cityId && cityId !== institution.cityId) {
             const city = await City.findByPk(cityId);
             if (!city) {
-                return res.status(404).json({ error: 'City not found' });
+                return next(notFound('City not found', { code: 'CITY_NOT_FOUND' }));
             }
         }
 
@@ -289,9 +274,9 @@ export const updateInstitution = async (req, res) => {
                 where: { name, cityId: targetCityId }
             });
             if (existing && existing.id !== parseInt(id)) {
-                return res.status(409).json({
-                    error: 'Institution with this name already exists in this city'
-                });
+                return next(conflict('Institution with this name already exists in this city', {
+                    code: 'INSTITUTION_NAME_EXISTS'
+                }));
             }
         }
 
@@ -323,11 +308,7 @@ export const updateInstitution = async (req, res) => {
 
         res.json(updated);
     } catch (error) {
-        console.error('Error updating institution:', error);
-        res.status(500).json({
-            error: 'Failed to update institution',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -335,32 +316,26 @@ export const updateInstitution = async (req, res) => {
  * Delete institution (admin only)
  * DELETE /api/institutions/:id
  */
-export const deleteInstitution = async (req, res) => {
+export const deleteInstitution = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const institution = await Institution.findByPk(id);
         if (!institution) {
-            return res.status(404).json({ error: 'Institution not found' });
+            return next(notFound('Institution not found', { code: 'INSTITUTION_NOT_FOUND' }));
         }
 
         await institution.destroy();
         res.json({ message: 'Institution deleted successfully' });
     } catch (error) {
-        console.error('Error deleting institution:', error);
-
         // Handle foreign key constraint errors
         if (error.name === 'SequelizeForeignKeyConstraintError') {
-            return res.status(409).json({
-                error: 'Cannot delete institution',
-                message: 'This institution is referenced by properties or student requests'
-            });
+            return next(conflict('This institution is referenced by properties or student requests', {
+                code: 'INSTITUTION_IN_USE'
+            }));
         }
 
-        res.status(500).json({
-            error: 'Failed to delete institution',
-            message: error.message
-        });
+        next(error);
     }
 };
 
