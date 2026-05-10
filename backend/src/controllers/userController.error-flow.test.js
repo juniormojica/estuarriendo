@@ -76,6 +76,56 @@ describe('userController migrated flow -> errorHandler', () => {
             code: 'USER_CONFLICT'
         });
     });
+
+    it('delegates updateUser missing auth to standardized 401 contract', async () => {
+        const req = {
+            params: { id: 'u-1' },
+            body: { name: 'Ana Updated' }
+        };
+
+        const res = await runThroughErrorHandler(userController.updateUser, { req });
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No autenticado',
+            message: 'No autenticado',
+            code: 'USER_UPDATE_UNAUTHENTICATED'
+        });
+    });
+
+    it('delegates updateUser cross-user write to standardized 403 contract', async () => {
+        const req = {
+            params: { id: 'u-2' },
+            body: { name: 'Other User' },
+            auth: { userId: 'u-1' }
+        };
+
+        const res = await runThroughErrorHandler(userController.updateUser, { req });
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No tienes permiso para actualizar este perfil',
+            message: 'No tienes permiso para actualizar este perfil',
+            code: 'USER_UPDATE_FORBIDDEN'
+        });
+    });
+
+    it('delegates updateUser invalid document pair to standardized 400 contract', async () => {
+        const req = {
+            params: { id: 'u-1' },
+            body: { idType: 'CC' },
+            auth: { userId: 'u-1' }
+        };
+
+        const res = await runThroughErrorHandler(userController.updateUser, { req });
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Debes completar tanto el tipo como el número de documento.',
+            message: 'Debes completar tanto el tipo como el número de documento.',
+            code: 'USER_UPDATE_DOCUMENT_PAIR_REQUIRED'
+        });
+    });
 });
 
 describe('incremental adoption boundary', () => {
