@@ -2,11 +2,12 @@ import { User, Property, CreditBalance, CreditTransaction, ContactUnlock, Notifi
 import { CreditTransactionType, ContactUnlockStatus, UserType } from '../utils/enums.js';
 import notificationService from '../services/notificationService.js';
 import { sequelize } from '../config/database.js';
+import { AppError, badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * Get user's credit balance
  */
-export const getCreditBalance = async (req, res) => {
+export const getCreditBalance = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -22,15 +23,14 @@ export const getCreditBalance = async (req, res) => {
 
         res.json(balance);
     } catch (error) {
-        console.error('Error fetching credit balance:', error);
-        res.status(500).json({ error: 'Failed to fetch credit balance', message: error.message });
+        next(error);
     }
 };
 
 /**
  * Get user's credit transactions
  */
-export const getCreditTransactions = async (req, res) => {
+export const getCreditTransactions = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { limit = 20, offset = 0 } = req.query;
@@ -44,15 +44,14 @@ export const getCreditTransactions = async (req, res) => {
 
         res.json(transactions);
     } catch (error) {
-        console.error('Error fetching credit transactions:', error);
-        res.status(500).json({ error: 'Failed to fetch credit transactions', message: error.message });
+        next(error);
     }
 };
 
 /**
  * Check if a user has already unlocked a property
  */
-export const checkContactUnlocked = async (req, res) => {
+export const checkContactUnlocked = async (req, res, next) => {
     try {
         const { userId, propertyId } = req.params;
 
@@ -66,15 +65,14 @@ export const checkContactUnlocked = async (req, res) => {
 
         res.json({ unlocked: !!unlock, unlockData: unlock });
     } catch (error) {
-        console.error('Error checking contact unlock:', error);
-        res.status(500).json({ error: 'Failed to check contact unlock', message: error.message });
+        next(error);
     }
 };
 
 /**
  * Unlock property contact (deducts 1 credit or uses unlimited)
  */
-export const unlockContact = async (req, res) => {
+export const unlockContact = async (req, res, next) => {
     const t = await sequelize.transaction();
 
     try {
@@ -82,21 +80,23 @@ export const unlockContact = async (req, res) => {
 
         if (!tenantId || !propertyId) {
             await t.rollback();
-            return res.status(400).json({ error: 'tenantId and propertyId are required' });
+            return next(badRequest('tenantId and propertyId are required', {
+                code: 'CREDIT_UNLOCK_REQUIRED_FIELDS'
+            }));
         }
 
         // 1. Verify user is tenant
         const tenant = await User.findByPk(tenantId, { transaction: t });
         if (!tenant || tenant.userType !== UserType.TENANT) {
             await t.rollback();
-            return res.status(403).json({ error: 'Only tenants can unlock contacts' });
+            return next(new AppError('Only tenants can unlock contacts', 403, 'CREDIT_UNLOCK_ONLY_TENANTS'));
         }
 
         // 2. Verify property exists
         const property = await Property.findByPk(propertyId, { transaction: t });
         if (!property) {
             await t.rollback();
-            return res.status(404).json({ error: 'Property not found' });
+            return next(notFound('Property not found', { code: 'CREDIT_UNLOCK_PROPERTY_NOT_FOUND' }));
         }
 
         // 3. Verify not already unlocked
@@ -107,20 +107,28 @@ export const unlockContact = async (req, res) => {
 
         if (existingUnlock) {
             await t.rollback();
-            return res.status(400).json({ error: 'Contact already unlocked for this property' });
+            return next(badRequest('Contact already unlocked for this property', {
+                code: 'CREDIT_UNLOCK_ALREADY_UNLOCKED'
+            }));
         }
 
         // 4. Check credits (skip if owner is trying to view their own, though route shouldn't be called)
         if (tenantId === property.ownerId) {
             await t.rollback();
-            return res.status(400).json({ error: 'Owners do not need to unlock their own properties' });
+            return next(badRequest('Owners do not need to unlock their own properties', {
+                code: 'CREDIT_UNLOCK_OWNER_NOT_REQUIRED'
+            }));
         }
 
         const balance = await CreditBalance.findOne({ where: { userId: tenantId }, transaction: t });
 
         if (!balance) {
             await t.rollback();
-            return res.status(403).json({ error: 'No tienes suficientes créditos. Por favor adquiere un plan.' });
+            return next(new AppError(
+                'No tienes suficientes créditos. Por favor adquiere un plan.',
+                403,
+                'CREDIT_UNLOCK_INSUFFICIENT_CREDITS'
+            ));
         }
 
         // Check if has unlimited active
@@ -129,7 +137,11 @@ export const unlockContact = async (req, res) => {
 
         if (!hasUnlimited && !hasCredits) {
             await t.rollback();
-            return res.status(403).json({ error: 'No tienes suficientes créditos. Por favor adquiere un plan.' });
+            return next(new AppError(
+                'No tienes suficientes créditos. Por favor adquiere un plan.',
+                403,
+                'CREDIT_UNLOCK_INSUFFICIENT_CREDITS'
+            ));
         }
 
         let transactionId = null;
@@ -193,8 +205,7 @@ export const unlockContact = async (req, res) => {
         });
     } catch (error) {
         await t.rollback();
-        console.error('Error unlocking contact:', error);
-        res.status(500).json({ error: 'Failed to unlock contact', message: error.message });
+        next(error);
     }
 };
 
