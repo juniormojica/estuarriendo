@@ -1,4 +1,5 @@
 import { SystemConfig } from '../models/index.js';
+import { badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * SystemConfig Controller
@@ -6,7 +7,7 @@ import { SystemConfig } from '../models/index.js';
  */
 
 // Get system configuration
-export const getSystemConfig = async (req, res) => {
+export const getSystemConfig = async (req, res, next) => {
     try {
         let config = await SystemConfig.findOne({
             where: { id: true }
@@ -27,13 +28,12 @@ export const getSystemConfig = async (req, res) => {
 
         res.json(config);
     } catch (error) {
-        console.error('Error fetching system config:', error);
-        res.status(500).json({ error: 'Failed to fetch system config', message: error.message });
+        next(error);
     }
 };
 
 // Update system configuration (admin only)
-export const updateSystemConfig = async (req, res) => {
+export const updateSystemConfig = async (req, res, next) => {
     try {
         const updates = req.body;
 
@@ -54,13 +54,12 @@ export const updateSystemConfig = async (req, res) => {
 
         res.json(config);
     } catch (error) {
-        console.error('Error updating system config:', error);
-        res.status(500).json({ error: 'Failed to update system config', message: error.message });
+        next(error);
     }
 };
 
 // Get specific config value
-export const getConfigValue = async (req, res) => {
+export const getConfigValue = async (req, res, next) => {
     try {
         const { key } = req.params;
 
@@ -69,11 +68,11 @@ export const getConfigValue = async (req, res) => {
         });
 
         if (!config) {
-            return res.status(404).json({ error: 'System config not found' });
+            throw notFound('System config not found', { code: 'SYSTEM_CONFIG_NOT_FOUND' });
         }
 
         if (!(key in config.dataValues)) {
-            return res.status(404).json({ error: 'Config key not found' });
+            throw notFound('Config key not found', { code: 'SYSTEM_CONFIG_KEY_NOT_FOUND' });
         }
 
         res.json({
@@ -81,19 +80,18 @@ export const getConfigValue = async (req, res) => {
             value: config[key]
         });
     } catch (error) {
-        console.error('Error fetching config value:', error);
-        res.status(500).json({ error: 'Failed to fetch config value', message: error.message });
+        next(error);
     }
 };
 
 // Update specific config value (admin only)
-export const updateConfigValue = async (req, res) => {
+export const updateConfigValue = async (req, res, next) => {
     try {
         const { key } = req.params;
         const { value } = req.body;
 
         if (value === undefined) {
-            return res.status(400).json({ error: 'Value is required' });
+            throw badRequest('Value is required', { code: 'SYSTEM_CONFIG_VALUE_REQUIRED' });
         }
 
         let config = await SystemConfig.findOne({
@@ -101,11 +99,11 @@ export const updateConfigValue = async (req, res) => {
         });
 
         if (!config) {
-            return res.status(404).json({ error: 'System config not found' });
+            throw notFound('System config not found', { code: 'SYSTEM_CONFIG_NOT_FOUND' });
         }
 
         if (!(key in config.dataValues)) {
-            return res.status(404).json({ error: 'Config key not found' });
+            throw notFound('Config key not found', { code: 'SYSTEM_CONFIG_KEY_NOT_FOUND' });
         }
 
         await config.update({ [key]: value });
@@ -116,8 +114,7 @@ export const updateConfigValue = async (req, res) => {
             value: config[key]
         });
     } catch (error) {
-        console.error('Error updating config value:', error);
-        res.status(500).json({ error: 'Failed to update config value', message: error.message });
+        next(error);
     }
 };
 
