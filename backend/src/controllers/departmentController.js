@@ -1,5 +1,5 @@
 import { Department, City } from '../models/index.js';
-import { notFound } from '../errors/AppError.js';
+import { conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Department Controller
@@ -127,29 +127,22 @@ export const deleteDepartment = async (req, res, next) => {
         // Check if department has associated cities
         const cityCount = await City.count({ where: { departmentId: id } });
         if (cityCount > 0) {
-            return res.status(409).json({
-                error: 'Cannot delete department with associated cities',
-                message: `This department has ${cityCount} cities. Please delete or reassign them first.`
-            });
+            return next(conflict('Cannot delete department with associated cities', {
+                code: 'DEPARTMENT_HAS_CITIES',
+                details: {
+                    cityCount
+                }
+            }));
         }
 
         await department.destroy();
         res.json({ message: 'Department deleted successfully' });
     } catch (error) {
-        console.error('Error deleting department:', error);
-
-        // Handle foreign key constraint errors
         if (error.name === 'SequelizeForeignKeyConstraintError') {
-            return res.status(409).json({
-                error: 'Cannot delete department',
-                message: 'This department is referenced by other records'
-            });
+            return next(conflict('Cannot delete department', { code: 'DEPARTMENT_IN_USE' }));
         }
 
-        res.status(500).json({
-            error: 'Failed to delete department',
-            message: error.message
-        });
+        next(error);
     }
 };
 
