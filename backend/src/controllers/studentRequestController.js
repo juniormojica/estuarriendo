@@ -1,6 +1,7 @@
 import { StudentRequest, User, City, Institution, ActivityLog } from '../models/index.js';
 import { StudentRequestStatus } from '../utils/enums.js';
 import { Op } from 'sequelize';
+import { badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * StudentRequest Controller
@@ -8,7 +9,7 @@ import { Op } from 'sequelize';
  */
 
 // Get all student requests with filters
-export const getAllStudentRequests = async (req, res) => {
+export const getAllStudentRequests = async (req, res, next) => {
     try {
         const {
             status,
@@ -63,13 +64,12 @@ export const getAllStudentRequests = async (req, res) => {
 
         res.json(requests);
     } catch (error) {
-        console.error('Error fetching student requests:', error);
-        res.status(500).json({ error: 'Failed to fetch student requests', message: error.message });
+        next(error);
     }
 };
 
 // Get student request by ID
-export const getStudentRequestById = async (req, res) => {
+export const getStudentRequestById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -85,18 +85,17 @@ export const getStudentRequestById = async (req, res) => {
         });
 
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
 
         res.json(request);
     } catch (error) {
-        console.error('Error fetching student request:', error);
-        res.status(500).json({ error: 'Failed to fetch student request', message: error.message });
+        next(error);
     }
 };
 
 // Get requests by student ID
-export const getStudentRequestsByStudentId = async (req, res) => {
+export const getStudentRequestsByStudentId = async (req, res, next) => {
     try {
         const { studentId } = req.params;
 
@@ -107,13 +106,12 @@ export const getStudentRequestsByStudentId = async (req, res) => {
 
         res.json(requests);
     } catch (error) {
-        console.error('Error fetching student requests:', error);
-        res.status(500).json({ error: 'Failed to fetch student requests', message: error.message });
+        next(error);
     }
 };
 
 // Create student request
-export const createStudentRequest = async (req, res) => {
+export const createStudentRequest = async (req, res, next) => {
     try {
         const requestData = req.body;
 
@@ -128,7 +126,9 @@ export const createStudentRequest = async (req, res) => {
 
         for (const field of requiredFields) {
             if (!requestData[field]) {
-                return res.status(400).json({ error: `${field} is required` });
+                throw badRequest(`${field} is required`, {
+                    code: 'STUDENT_REQUEST_VALIDATION_ERROR'
+                });
             }
         }
 
@@ -136,7 +136,7 @@ export const createStudentRequest = async (req, res) => {
         if (requestData.studentId) {
             const student = await User.findByPk(requestData.studentId);
             if (!student) {
-                return res.status(404).json({ error: 'Student user not found' });
+                throw notFound('Student user not found', { code: 'STUDENT_USER_NOT_FOUND' });
             }
         }
 
@@ -160,20 +160,19 @@ export const createStudentRequest = async (req, res) => {
 
         res.status(201).json(request);
     } catch (error) {
-        console.error('Error creating student request:', error);
-        res.status(500).json({ error: 'Failed to create student request', message: error.message });
+        next(error);
     }
 };
 
 // Update student request
-export const updateStudentRequest = async (req, res) => {
+export const updateStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
         const updates = req.body;
 
         const request = await StudentRequest.findByPk(id);
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
 
         updates.updatedAt = new Date();
@@ -181,19 +180,18 @@ export const updateStudentRequest = async (req, res) => {
         await request.update(updates);
         res.json(request);
     } catch (error) {
-        console.error('Error updating student request:', error);
-        res.status(500).json({ error: 'Failed to update student request', message: error.message });
+        next(error);
     }
 };
 
 // Close student request
-export const closeStudentRequest = async (req, res) => {
+export const closeStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const request = await StudentRequest.findByPk(id);
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
 
         await request.update({
@@ -206,26 +204,24 @@ export const closeStudentRequest = async (req, res) => {
             request
         });
     } catch (error) {
-        console.error('Error closing student request:', error);
-        res.status(500).json({ error: 'Failed to close student request', message: error.message });
+        next(error);
     }
 };
 
 // Delete student request
-export const deleteStudentRequest = async (req, res) => {
+export const deleteStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const request = await StudentRequest.findByPk(id);
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
 
         await request.destroy();
         res.json({ message: 'Student request deleted successfully' });
     } catch (error) {
-        console.error('Error deleting student request:', error);
-        res.status(500).json({ error: 'Failed to delete student request', message: error.message });
+        next(error);
     }
 };
 
