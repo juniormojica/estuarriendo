@@ -55,37 +55,37 @@ export const createDepartment = async (req, res, next) => {
  * Update department (admin only)
  * PUT /api/locations/departments/:id
  */
-export const updateDepartment = async (req, res) => {
+export const updateDepartment = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, code, slug, isActive } = req.body;
 
         const department = await Department.findByPk(id);
         if (!department) {
-            return res.status(404).json({ error: 'Department not found' });
+            return next(notFound('Department not found', { code: 'DEPARTMENT_NOT_FOUND' }));
         }
 
         // Check if code is being changed and if new code already exists
-        if (code && code !== department.code) {
+        if (code && code.toUpperCase() !== department.code) {
             const existingCode = await Department.findOne({
                 where: { code: code.toUpperCase() }
             });
             if (existingCode) {
-                return res.status(409).json({
-                    error: 'Department with this code already exists'
-                });
+                return next(conflict('Department with this code already exists', {
+                    code: 'DEPARTMENT_CODE_EXISTS'
+                }));
             }
         }
 
         // Check if slug is being changed and if new slug already exists
-        if (slug && slug !== department.slug) {
+        if (slug && slug.toLowerCase() !== department.slug) {
             const existingSlug = await Department.findOne({
                 where: { slug: slug.toLowerCase() }
             });
             if (existingSlug) {
-                return res.status(409).json({
-                    error: 'Department with this slug already exists'
-                });
+                return next(conflict('Department with this slug already exists', {
+                    code: 'DEPARTMENT_SLUG_EXISTS'
+                }));
             }
         }
 
@@ -99,11 +99,7 @@ export const updateDepartment = async (req, res) => {
 
         res.json(department);
     } catch (error) {
-        console.error('Error updating department:', error);
-        res.status(500).json({
-            error: 'Failed to update department',
-            message: error.message
-        });
+        next(error);
     }
 };
 
