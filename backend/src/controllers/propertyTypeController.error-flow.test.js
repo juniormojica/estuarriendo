@@ -152,6 +152,39 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
         });
     });
 
+    it('delegates create unexpected failures to centralized handler', async () => {
+        vi.spyOn(PropertyType, 'findOne').mockResolvedValue(null);
+        vi.spyOn(PropertyType, 'create').mockRejectedValue(new Error('SequelizeConnectionRefusedError: leaked internals'));
+
+        const req = {
+            body: {
+                name: 'Casa',
+                description: 'Tipo de propiedad'
+            }
+        };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.createPropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
     it('delegates delete foreign-key constraint errors to centralized handler with 409 contract', async () => {
         const destroy = vi.fn().mockRejectedValue({
             name: 'SequelizeForeignKeyConstraintError'

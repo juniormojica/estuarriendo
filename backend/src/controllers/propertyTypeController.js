@@ -67,7 +67,7 @@ export const getPropertyTypeByName = async (req, res, next) => {
  * Create new property type (admin only)
  * @route POST /api/property-types
  */
-export const createPropertyType = async (req, res) => {
+export const createPropertyType = async (req, res, next) => {
     try {
         const { name, description } = req.body;
 
@@ -94,11 +94,7 @@ export const createPropertyType = async (req, res) => {
 
         res.status(201).json(propertyType);
     } catch (error) {
-        console.error('Error creating property type:', error);
-        res.status(500).json({
-            error: 'Failed to create property type',
-            message: error.message
-        });
+        next(error);
     }
 };
 
