@@ -1,4 +1,5 @@
 import { Department, City } from '../models/index.js';
+import { notFound } from '../errors/AppError.js';
 
 /**
  * Department Controller
@@ -114,13 +115,13 @@ export const updateDepartment = async (req, res) => {
  * Delete department (admin only)
  * DELETE /api/locations/departments/:id
  */
-export const deleteDepartment = async (req, res) => {
+export const deleteDepartment = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const department = await Department.findByPk(id);
         if (!department) {
-            return res.status(404).json({ error: 'Department not found' });
+            return next(notFound('Department not found', { code: 'DEPARTMENT_NOT_FOUND' }));
         }
 
         // Check if department has associated cities
