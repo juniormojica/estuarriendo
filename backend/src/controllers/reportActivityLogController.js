@@ -1,18 +1,21 @@
 import { ReportActivityLog, User, PropertyReport } from '../models/index.js';
 import { PropertyReportStatus } from '../utils/enums.js';
+import { badRequest, notFound } from '../errors/AppError.js';
 
-export const addReportActivity = async (req, res) => {
+export const addReportActivity = async (req, res, next) => {
     try {
         const { id } = req.params; // reportId
         const { adminId, action, notes } = req.body;
 
         if (!adminId || !action || !notes) {
-            return res.status(400).json({ error: 'adminId, action, and notes are required' });
+            throw badRequest('adminId, action, and notes are required', {
+                code: 'REPORT_ACTIVITY_VALIDATION_ERROR'
+            });
         }
 
         const report = await PropertyReport.findByPk(id);
         if (!report) {
-            return res.status(404).json({ error: 'Reporte no encontrado' });
+            throw notFound('Reporte no encontrado', { code: 'REPORT_NOT_FOUND' });
         }
 
         // Add the log
@@ -36,12 +39,11 @@ export const addReportActivity = async (req, res) => {
 
         res.status(201).json(populatedLog);
     } catch (error) {
-        console.error('Error adding report activity:', error);
-        res.status(500).json({ error: 'Error al registrar la actividad', message: error.message });
+        next(error);
     }
 };
 
-export const getReportActivity = async (req, res) => {
+export const getReportActivity = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -53,8 +55,7 @@ export const getReportActivity = async (req, res) => {
 
         res.json(logs);
     } catch (error) {
-        console.error('Error fetching report activity:', error);
-        res.status(500).json({ error: 'Error al obtener el historial de actividades', message: error.message });
+        next(error);
     }
 };
 
