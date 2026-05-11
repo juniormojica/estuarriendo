@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as containerController from './containerController.js';
 import containerService from '../services/containerService.js';
-import { Property, Notification, ActivityLog, sequelize } from '../models/index.js';
+import * as propertyService from '../services/propertyService.js';
+import { Property, Notification, ActivityLog, sequelize, User } from '../models/index.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 
 const createResponse = ({ headersSent = false } = {}) => {
@@ -1340,6 +1341,233 @@ describe('containerController approveUnit migrated flow -> errorHandler', () => 
             success: true,
             message: 'Habitación aprobada exitosamente',
             data: { unit: mockUnit, containerApproved: false }
+        });
+    });
+});
+
+describe('containerController createContainer migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('renders 201 success on successful container creation', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(propertyService, 'createPropertyWithAssociations').mockResolvedValue({ id: 'c-1', locationId: 1, ownerId: 'u-1' });
+        vi.spyOn(containerService, 'findContainerWithUnits').mockResolvedValue({ id: 'c-1', title: 'Test Container' });
+        vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
+
+        const req = {
+            userId: 'u-1',
+            user: { name: 'Test Owner' },
+            body: { title: 'Test Container', rentalMode: 'by_unit' }
+        };
+        const res = createResponse();
+        const next = vi.fn();
+
+        await containerController.createContainer(req, res, next);
+
+        expect(commit).toHaveBeenCalledTimes(1);
+        expect(rollback).not.toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Pensión/apartamento creado exitosamente',
+            data: { id: 'c-1', title: 'Test Container' }
+        });
+    });
+
+    it('rolls back before forwarding unexpected failure to standardized 500 contract', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(propertyService, 'createPropertyWithAssociations').mockRejectedValue(new Error('db write failed'));
+
+        const req = {
+            userId: 'u-1',
+            user: { name: 'Test Owner' },
+            body: { title: 'Test Container' }
+        };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.createContainer(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('does not double-rollback when transaction is already finished', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(propertyService, 'createPropertyWithAssociations').mockRejectedValue(new Error('db write failed'));
+
+        const req = {
+            userId: 'u-1',
+            user: { name: 'Test Owner' },
+            body: { title: 'Test Container' }
+        };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.createContainer(req, res, next);
+
+        expect(rollback).not.toHaveBeenCalled();
+        expect(commit).not.toHaveBeenCalled();
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+});
+
+describe('containerController adminCreateContainer migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('returns 403 forbidden when user is not admin', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1', userType: 'owner' });
+
+        const req = { userId: 'u-1', body: { targetOwnerId: 'owner-1' } };
+        const res = await runThroughErrorHandler(containerController.adminCreateContainer, { req });
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No tienes permisos para realizar esta acción',
+            message: 'No tienes permisos para realizar esta acción',
+            code: 'FORBIDDEN'
+        });
+    });
+
+    it('returns 400 when targetOwnerId is missing', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'admin-1', userType: 'admin' });
+
+        const req = { userId: 'admin-1', body: {} };
+        const res = await runThroughErrorHandler(containerController.adminCreateContainer, { req });
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Se requiere el ID del propietario (targetOwnerId)',
+            message: 'Se requiere el ID del propietario (targetOwnerId)',
+            code: 'BAD_REQUEST'
+        });
+    });
+
+    it('returns 404 when target owner does not exist', async () => {
+        const findByPkSpy = vi.spyOn(User, 'findByPk');
+        findByPkSpy.mockResolvedValueOnce({ id: 'admin-1', userType: 'admin' });
+        findByPkSpy.mockResolvedValueOnce(null);
+
+        const req = { userId: 'admin-1', body: { targetOwnerId: 'nonexistent' } };
+        const res = await runThroughErrorHandler(containerController.adminCreateContainer, { req });
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Propietario no encontrado',
+            message: 'Propietario no encontrado',
+            code: 'NOT_FOUND'
+        });
+    });
+
+    it('returns 400 when target user is not an owner', async () => {
+        const findByPkSpy = vi.spyOn(User, 'findByPk');
+        findByPkSpy.mockResolvedValueOnce({ id: 'admin-1', userType: 'admin' });
+        findByPkSpy.mockResolvedValueOnce({ id: 'student-1', userType: 'student' });
+
+        const req = { userId: 'admin-1', body: { targetOwnerId: 'student-1' } };
+        const res = await runThroughErrorHandler(containerController.adminCreateContainer, { req });
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'El usuario seleccionado no tiene rol de propietario',
+            message: 'El usuario seleccionado no tiene rol de propietario',
+            code: 'BAD_REQUEST'
+        });
+    });
+
+    it('delegates to createContainer with modified req and renders 201 success', async () => {
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ commit: vi.fn(), rollback: vi.fn() });
+        vi.spyOn(propertyService, 'createPropertyWithAssociations').mockResolvedValue({ id: 'c-1', locationId: 1, ownerId: 'target-1' });
+        vi.spyOn(containerService, 'findContainerWithUnits').mockResolvedValue({ id: 'c-1', title: 'Admin Created Container' });
+        vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
+
+        const findByPkSpy = vi.spyOn(User, 'findByPk');
+        findByPkSpy.mockResolvedValueOnce({ id: 'admin-1', userType: 'admin' });
+        findByPkSpy.mockResolvedValueOnce({ id: 'target-1', userType: 'owner' });
+
+        const req = {
+            userId: 'admin-1',
+            user: { name: 'Admin' },
+            body: {
+                targetOwnerId: 'target-1',
+                title: 'Admin Created Container',
+                rentalMode: 'by_unit'
+            }
+        };
+        const res = createResponse();
+        const next = vi.fn();
+
+        await containerController.adminCreateContainer(req, res, next);
+
+        expect(req.userId).toBe('target-1');
+        expect(req.body.targetOwnerId).toBeUndefined();
+
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Pensión/apartamento creado exitosamente',
+            data: { id: 'c-1', title: 'Admin Created Container' }
+        });
+    });
+
+    it('forwards unexpected errors to standardized 500 contract', async () => {
+        vi.spyOn(User, 'findByPk').mockRejectedValue(new Error('db read failed'));
+
+        const req = { userId: 'admin-1', body: { targetOwnerId: 'target-1' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.adminCreateContainer(req, res, next);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
         });
     });
 });
