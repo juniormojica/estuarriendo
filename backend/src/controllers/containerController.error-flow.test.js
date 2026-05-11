@@ -127,3 +127,104 @@ describe('containerController updateUnit migrated flow -> errorHandler', () => {
         });
     });
 });
+
+describe('containerController deleteUnit migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('rolls back before forwarding service errors to standardized 500 contract', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(containerService, 'deleteUnit').mockRejectedValue(new Error('service error'));
+
+        const req = { params: { id: 'u-500' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.deleteUnit(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+});
+
+describe('containerController updateUnitRentalStatus migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('rolls back before forwarding service errors to standardized 500 contract', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(containerService, 'updateUnitRentalStatus').mockRejectedValue(new Error('service error'));
+
+        const req = { params: { id: 'u-500' }, body: { isRented: true } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.updateUnitRentalStatus(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('does not double-rollback when transaction is already finished', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(containerService, 'updateUnitRentalStatus').mockRejectedValue(new Error('service error'));
+
+        const req = { params: { id: 'u-500' }, body: { isRented: true } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.updateUnitRentalStatus(req, res, next);
+
+        expect(rollback).not.toHaveBeenCalled();
+        expect(commit).not.toHaveBeenCalled();
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+});

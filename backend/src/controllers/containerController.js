@@ -604,7 +604,7 @@ export const updateUnit = async (req, res, next) => {
  * Delete unit
  * DELETE /api/units/:id
  */
-export const deleteUnit = async (req, res) => {
+export const deleteUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -619,13 +619,10 @@ export const deleteUnit = async (req, res) => {
             message: 'Habitación eliminada exitosamente'
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error deleting unit:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al eliminar habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -633,7 +630,7 @@ export const deleteUnit = async (req, res) => {
  * Update unit rental status
  * PATCH /api/units/:id/rental-status
  */
-export const updateUnitRentalStatus = async (req, res) => {
+export const updateUnitRentalStatus = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -650,13 +647,10 @@ export const updateUnitRentalStatus = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error updating unit rental status:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al actualizar estado de alquiler de habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
