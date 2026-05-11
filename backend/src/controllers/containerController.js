@@ -1,6 +1,7 @@
 import containerService from '../services/containerService.js';
 import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
+import { badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * Container Controller
@@ -15,7 +16,7 @@ import { sequelize } from '../models/index.js';
  * Get containers that are pending or have pending units
  * GET /api/containers/pending
  */
-export const getPendingContainers = async (req, res) => {
+export const getPendingContainers = async (req, res, next) => {
     try {
         const { Property } = await import('../models/index.js');
 
@@ -57,12 +58,7 @@ export const getPendingContainers = async (req, res) => {
 
         res.json({ success: true, data: result });
     } catch (error) {
-        console.error('Error getting pending containers:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener pensiones u apartamentos pendientes',
-            error: error.message
-        });
+        next(error);
     }
 };
 
@@ -237,17 +233,14 @@ export const createContainer = async (req, res) => {
  * Get container with all units and associations
  * GET /api/containers/:id
  */
-export const getContainer = async (req, res) => {
+export const getContainer = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const container = await containerService.findContainerWithUnits(id);
 
         if (!container) {
-            return res.status(404).json({
-                success: false,
-                message: 'Pensión/apartamento no encontrado'
-            });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         res.status(200).json({
@@ -255,12 +248,7 @@ export const getContainer = async (req, res) => {
             data: container
         });
     } catch (error) {
-        console.error('Error getting container:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener pensión/apartamento',
-            error: error.message
-        });
+        next(error);
     }
 };
 
@@ -533,7 +521,7 @@ export const createUnit = async (req, res) => {
  * Get all units of a container
  * GET /api/containers/:containerId/units
  */
-export const getContainerUnits = async (req, res) => {
+export const getContainerUnits = async (req, res, next) => {
     try {
         const { containerId } = req.params;
 
@@ -552,12 +540,7 @@ export const getContainerUnits = async (req, res) => {
             data: units
         });
     } catch (error) {
-        console.error('Error getting container units:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener habitaciones de la pensión/apartamento',
-            error: error.message
-        });
+        next(error);
     }
 };
 
@@ -565,7 +548,7 @@ export const getContainerUnits = async (req, res) => {
  * Update unit
  * PUT /api/units/:id
  */
-export const updateUnit = async (req, res) => {
+export const updateUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -578,18 +561,12 @@ export const updateUnit = async (req, res) => {
 
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({
-                success: false,
-                message: 'Habitación no encontrada'
-            });
+            return next(notFound('Habitación no encontrada', { code: 'UNIT_NOT_FOUND' }));
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({
-                success: false,
-                message: 'La propiedad no es una habitación'
-            });
+            return next(badRequest('La propiedad no es una habitación', { code: 'PROPERTY_NOT_UNIT' }));
         }
 
         await unit.update(updateData, { transaction });
@@ -616,13 +593,10 @@ export const updateUnit = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error updating unit:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al actualizar habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
