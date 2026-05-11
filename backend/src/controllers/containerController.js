@@ -256,7 +256,7 @@ export const getContainer = async (req, res, next) => {
  * Update container
  * PUT /api/containers/:id
  */
-export const updateContainer = async (req, res) => {
+export const updateContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -275,19 +275,13 @@ export const updateContainer = async (req, res) => {
 
         if (!container) {
             await transaction.rollback();
-            return res.status(404).json({
-                success: false,
-                message: 'Pensión/apartamento no encontrado'
-            });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         // Verify ownership (simplified - only owner can update)
         if (container.ownerId !== req.userId) {
             await transaction.rollback();
-            return res.status(403).json({
-                success: false,
-                message: 'No autorizado para actualizar esta pensión/apartamento'
-            });
+            return next(forbidden('No autorizado para actualizar esta pensión/apartamento'));
         }
 
         // Ensure only valid property fields are updated 
@@ -350,12 +344,7 @@ export const updateContainer = async (req, res) => {
         if (!transaction.finished) {
             await transaction.rollback();
         }
-        console.error('Error updating container:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al actualizar pensión/apartamento',
-            error: error.message
-        });
+        next(error);
     }
 };
 
