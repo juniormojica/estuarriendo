@@ -1,6 +1,6 @@
 import { Notification, User, Property } from '../models/index.js';
 import { NotificationType } from '../utils/enums.js';
-import { notFound } from '../errors/AppError.js';
+import { badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * Notification Controller
@@ -56,7 +56,9 @@ export const createNotification = async (req, res, next) => {
 
         // Validate required fields
         if (!userId || !type || !title || !message) {
-            return res.status(400).json({ error: 'userId, type, title, and message are required' });
+            throw badRequest('userId, type, title, and message are required', {
+                code: 'NOTIFICATION_REQUIRED_FIELDS_MISSING'
+            });
         }
 
         // Verify user exists
