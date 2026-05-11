@@ -36,6 +36,11 @@ export const notFound = (message = 'Resource not found', options = {}) => {
     return new AppError(message, 404, resolved.code, resolved.options);
 };
 
+export const forbidden = (message = 'Forbidden', options = {}) => {
+    const resolved = resolveCodeAndOptions('FORBIDDEN', options);
+    return new AppError(message, 403, resolved.code, resolved.options);
+};
+
 export const conflict = (message = 'Conflict', options = {}) => {
     const resolved = resolveCodeAndOptions('CONFLICT', options);
     return new AppError(message, 409, resolved.code, resolved.options);

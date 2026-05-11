@@ -1,7 +1,7 @@
 import containerService from '../services/containerService.js';
 import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
-import { badRequest, notFound } from '../errors/AppError.js';
+import { badRequest, forbidden, notFound } from '../errors/AppError.js';
 
 /**
  * Container Controller
@@ -363,7 +363,7 @@ export const updateContainer = async (req, res) => {
  * Delete container
  * DELETE /api/containers/:id
  */
-export const deleteContainer = async (req, res) => {
+export const deleteContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -375,19 +375,13 @@ export const deleteContainer = async (req, res) => {
 
         if (!container) {
             await transaction.rollback();
-            return res.status(404).json({
-                success: false,
-                message: 'Pensión/apartamento no encontrado'
-            });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         // Verify ownership (simplified - only owner can delete)
         if (container.ownerId !== req.userId) {
             await transaction.rollback();
-            return res.status(403).json({
-                success: false,
-                message: 'No autorizado para eliminar esta pensión/apartamento'
-            });
+            return next(forbidden('No autorizado para eliminar esta pensión/apartamento'));
         }
 
         await container.destroy({ transaction });
@@ -399,13 +393,10 @@ export const deleteContainer = async (req, res) => {
             message: 'Pensión/apartamento eliminado exitosamente'
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error deleting container:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al eliminar pensión/apartamento',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
