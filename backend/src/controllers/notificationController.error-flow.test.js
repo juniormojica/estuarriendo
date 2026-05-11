@@ -59,6 +59,31 @@ describe('notificationController incremental migration -> centralized errorHandl
         });
     });
 
+    it('delegates create required-fields validation to centralized handler', async () => {
+        const req = {
+            body: {
+                userId: 999,
+                type: 'MESSAGE',
+                title: 'Title'
+            }
+        };
+
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            notificationController.createNotification,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'userId, type, title, and message are required',
+            message: 'userId, type, title, and message are required',
+            code: 'NOTIFICATION_REQUIRED_FIELDS_MISSING'
+        });
+    });
+
     it('delegates create unexpected errors to centralized internal-error contract', async () => {
         vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 1 });
         vi.spyOn(Notification, 'create').mockRejectedValue(new Error('insert exploded'));
