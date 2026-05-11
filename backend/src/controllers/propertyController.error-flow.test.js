@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import * as propertyController from './propertyController.js';
 import * as propertyService from '../services/propertyService.js';
-import { Property, ActivityLog } from '../models/index.js';
+import { Property, ActivityLog, User } from '../models/index.js';
 import { notFound } from '../errors/AppError.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 
@@ -265,6 +265,69 @@ describe('propertyController update slice migrated flow -> errorHandler', () => 
 
         const req = { params: { id: 'p-1' }, body: {} };
         const res = await runThroughErrorHandler(propertyController.updateProperty, { req });
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+});
+
+describe('propertyController create slice migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('returns standard 404 JSON when createProperty forwards owner notFound AppError', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue(null);
+
+        const req = { body: { ownerId: 'u-404', images: ['img-1'] } };
+        const res = await runThroughErrorHandler(propertyController.createProperty, { req });
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Propietario no encontrado',
+            message: 'Propietario no encontrado',
+            code: 'OWNER_NOT_FOUND'
+        });
+    });
+
+    it('returns standard 400 JSON when createProperty forwards missing-images AppError', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1' });
+
+        const req = { body: { ownerId: 'u-1', images: [] } };
+        const res = await runThroughErrorHandler(propertyController.createProperty, { req });
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Debes agregar al menos una imagen de la propiedad',
+            message: 'Debes agregar al menos una imagen de la propiedad',
+            code: 'PROPERTY_IMAGES_REQUIRED'
+        });
+    });
+
+    it('returns standard 400 JSON when createProperty forwards image-limit AppError', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1' });
+
+        const req = { body: { ownerId: 'u-1', images: new Array(11).fill('img') } };
+        const res = await runThroughErrorHandler(propertyController.createProperty, { req });
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'El máximo de imágenes permitidas es 10',
+            message: 'El máximo de imágenes permitidas es 10',
+            code: 'PROPERTY_IMAGES_LIMIT_EXCEEDED'
+        });
+    });
+
+    it('maps unexpected create failure from createProperty to standardized 500 contract', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1' });
+        vi.spyOn(propertyService, 'createPropertyWithAssociations').mockRejectedValue(new Error('db down'));
+
+        const req = { body: { ownerId: 'u-1', images: ['img-1'], title: 'Depto Centro' } };
+        const res = await runThroughErrorHandler(propertyController.createProperty, { req });
 
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith({

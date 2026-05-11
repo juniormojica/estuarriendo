@@ -179,31 +179,25 @@ export const getUserProperties = async (req, res, next) => {
 };
 
 // Create new property
-export const createProperty = async (req, res) => {
+export const createProperty = async (req, res, next) => {
     try {
         const { ownerId, amenityIds, services, rules, nearbyInstitutions, ...propertyData } = req.body;
 
         // Validate owner exists
         const owner = await User.findByPk(ownerId);
         if (!owner) {
-            return res.status(404).json({ error: 'Propietario no encontrado' });
+            return next(notFound('Propietario no encontrado', { code: 'OWNER_NOT_FOUND' }));
         }
 
         // Validate images
         const images = propertyData.images;
         if (!images || !Array.isArray(images) || images.length === 0) {
-            return res.status(400).json({
-                error: 'Al menos una imagen es requerida',
-                message: 'Debes agregar al menos una imagen de la propiedad'
-            });
+            return next(badRequest('Debes agregar al menos una imagen de la propiedad', { code: 'PROPERTY_IMAGES_REQUIRED' }));
         }
 
         // Validate maximum images limit
         if (images.length > 10) {
-            return res.status(400).json({
-                error: 'Demasiadas imágenes',
-                message: 'El máximo de imágenes permitidas es 10'
-            });
+            return next(badRequest('El máximo de imágenes permitidas es 10', { code: 'PROPERTY_IMAGES_LIMIT_EXCEEDED' }));
         }
 
         // Create property with all associations
@@ -308,8 +302,7 @@ export const createProperty = async (req, res) => {
 
         res.status(201).json(completeProperty);
     } catch (error) {
-        console.error('Error creating property:', error);
-        res.status(500).json({ error: 'Error al crear propiedad', message: error.message });
+        next(error);
     }
 };
 
