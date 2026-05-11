@@ -474,7 +474,7 @@ export const changeRentalMode = async (req, res, next) => {
  * Create unit in container
  * POST /api/containers/:containerId/units
  */
-export const createUnit = async (req, res) => {
+export const createUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -503,13 +503,10 @@ export const createUnit = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error creating unit:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al crear habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
