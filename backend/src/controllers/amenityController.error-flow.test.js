@@ -114,6 +114,44 @@ describe('amenityController incremental migration -> centralized errorHandler', 
         });
     });
 
+    it('delegates createAmenity missing-name validation to centralized handler', async () => {
+        const req = { body: { icon: 'pool' } };
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            amenityController.createAmenity,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Amenity name is required',
+            message: 'Amenity name is required',
+            code: 'AMENITY_NAME_REQUIRED'
+        });
+    });
+
+    it('delegates createAmenity duplicate-name conflicts to centralized handler', async () => {
+        vi.spyOn(Amenity, 'findOne').mockResolvedValue({ id: 10, name: 'Pool' });
+
+        const req = { body: { name: 'Pool', icon: 'pool' } };
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            amenityController.createAmenity,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Amenity already exists',
+            message: 'Amenity already exists',
+            code: 'AMENITY_ALREADY_EXISTS'
+        });
+    });
+
     it('forwards updateAmenity unexpected errors to centralized errorHandler', async () => {
         const amenity = {
             update: vi.fn().mockRejectedValue(new Error('update exploded'))

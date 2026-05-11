@@ -1,5 +1,5 @@
 import { Amenity, Property } from '../models/index.js';
-import { notFound } from '../errors/AppError.js';
+import { badRequest, conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Amenity Controller
@@ -40,13 +40,13 @@ export const createAmenity = async (req, res, next) => {
         const { name, icon } = req.body;
 
         if (!name) {
-            return res.status(400).json({ error: 'Amenity name is required' });
+            throw badRequest('Amenity name is required', { code: 'AMENITY_NAME_REQUIRED' });
         }
 
         // Check if amenity already exists
         const existing = await Amenity.findOne({ where: { name } });
         if (existing) {
-            return res.status(409).json({ error: 'Amenity already exists' });
+            throw conflict('Amenity already exists', { code: 'AMENITY_ALREADY_EXISTS' });
         }
 
         const amenity = await Amenity.create({ name, icon });
