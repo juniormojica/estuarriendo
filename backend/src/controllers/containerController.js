@@ -631,7 +631,7 @@ export const updateUnitRentalStatus = async (req, res, next) => {
  * Approve unit and check if container should be auto-approved
  * PUT /api/units/:id/approve
  */
-export const approveUnit = async (req, res) => {
+export const approveUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
     try {
         const { id } = req.params;
@@ -640,12 +640,12 @@ export const approveUnit = async (req, res) => {
         const unit = await Property.findByPk(id, { transaction });
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Habitación no encontrada' });
+            return next(notFound('Habitación no encontrada', { code: 'UNIT_NOT_FOUND' }));
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'La propiedad no es una habitación' });
+            return next(badRequest('La propiedad no es una habitación', { code: 'PROPERTY_NOT_UNIT' }));
         }
 
         const oldStatus = unit.status;
@@ -706,9 +706,10 @@ export const approveUnit = async (req, res) => {
             data: { unit, containerApproved }
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error approving unit:', error);
-        res.status(500).json({ success: false, message: error.message });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
