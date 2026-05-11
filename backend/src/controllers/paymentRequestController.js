@@ -1,6 +1,7 @@
 import { PaymentRequest, User, ActivityLog } from '../models/index.js';
 import { PaymentRequestStatus, PlanType } from '../utils/enums.js';
 import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } from '../services/notificationService.js';
+import { badRequest, notFound } from '../errors/AppError.js';
 
 
 /**
@@ -9,7 +10,7 @@ import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } 
  */
 
 // Get all payment requests (admin)
-export const getAllPaymentRequests = async (req, res) => {
+export const getAllPaymentRequests = async (req, res, next) => {
     try {
         const { status, limit = 50, offset = 0 } = req.query;
 
@@ -32,13 +33,12 @@ export const getAllPaymentRequests = async (req, res) => {
 
         res.json(requests);
     } catch (error) {
-        console.error('Error fetching payment requests:', error);
-        res.status(500).json({ error: 'Failed to fetch payment requests', message: error.message });
+        next(error);
     }
 };
 
 // Get payment request by ID
-export const getPaymentRequestById = async (req, res) => {
+export const getPaymentRequestById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -53,18 +53,17 @@ export const getPaymentRequestById = async (req, res) => {
         });
 
         if (!request) {
-            return res.status(404).json({ error: 'Payment request not found' });
+            return next(notFound('Payment request not found', { code: 'PAYMENT_REQUEST_NOT_FOUND' }));
         }
 
         res.json(request);
     } catch (error) {
-        console.error('Error fetching payment request:', error);
-        res.status(500).json({ error: 'Failed to fetch payment request', message: error.message });
+        next(error);
     }
 };
 
 // Get user's payment requests
-export const getUserPaymentRequests = async (req, res) => {
+export const getUserPaymentRequests = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -75,30 +74,29 @@ export const getUserPaymentRequests = async (req, res) => {
 
         res.json(requests);
     } catch (error) {
-        console.error('Error fetching user payment requests:', error);
-        res.status(500).json({ error: 'Failed to fetch user payment requests', message: error.message });
+        next(error);
     }
 };
 
 // Create payment request
-export const createPaymentRequest = async (req, res) => {
+export const createPaymentRequest = async (req, res, next) => {
     try {
         const { userId, amount, planType, planDuration, referenceCode, proofImageUrl, proofImagePublicId, paymentMethod, mercadoPagoPaymentId } = req.body;
 
         // Validate required fields
         if (!userId || !amount || !planType || planDuration === undefined || planDuration === null || !referenceCode) {
-            return res.status(400).json({ error: 'Faltan campos requeridos' });
+            return next(badRequest('Faltan campos requeridos', { code: 'PAYMENT_REQUEST_REQUIRED_FIELDS_MISSING' }));
         }
 
         // If it's a bank transfer, proofImageUrl is required
         if (paymentMethod !== 'mercado_pago' && !proofImageUrl) {
-            return res.status(400).json({ error: 'El comprobante de pago es requerido para transferencias' });
+            return next(badRequest('El comprobante de pago es requerido para transferencias', { code: 'PAYMENT_PROOF_REQUIRED' }));
         }
 
         // Verify user exists
         const user = await User.findByPk(userId);
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return next(notFound('User not found', { code: 'USER_NOT_FOUND' }));
         }
 
         // Check if user already has a pending payment request
@@ -110,9 +108,10 @@ export const createPaymentRequest = async (req, res) => {
         });
 
         if (existingPending) {
-            return res.status(400).json({
-                error: 'Ya tienes una solicitud de pago pendiente. Por favor espera a que sea revisada antes de enviar otra.'
-            });
+            return next(badRequest(
+                'Ya tienes una solicitud de pago pendiente. Por favor espera a que sea revisada antes de enviar otra.',
+                { code: 'PAYMENT_REQUEST_ALREADY_PENDING' }
+            ));
         }
 
         // Create payment request
@@ -176,13 +175,12 @@ export const createPaymentRequest = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error creating payment request:', error);
-        res.status(500).json({ error: 'Failed to create payment request', message: error.message });
+        next(error);
     }
 };
 
 // Verify/Approve payment request (admin)
-export const verifyPaymentRequest = async (req, res) => {
+export const verifyPaymentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -196,11 +194,11 @@ export const verifyPaymentRequest = async (req, res) => {
         });
 
         if (!request) {
-            return res.status(404).json({ error: 'Payment request not found' });
+            return next(notFound('Payment request not found', { code: 'PAYMENT_REQUEST_NOT_FOUND' }));
         }
 
         if (request.status !== PaymentRequestStatus.PENDING) {
-            return res.status(400).json({ error: 'Payment request already processed' });
+            return next(badRequest('Payment request already processed', { code: 'PAYMENT_REQUEST_ALREADY_PROCESSED' }));
         }
 
         const user = request.user;
@@ -351,13 +349,12 @@ export const verifyPaymentRequest = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error verifying payment request:', error);
-        res.status(500).json({ error: 'Failed to verify payment request', message: error.message });
+        next(error);
     }
 };
 
 // Reject payment request (admin)
-export const rejectPaymentRequest = async (req, res) => {
+export const rejectPaymentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { reason } = req.body;
@@ -372,11 +369,11 @@ export const rejectPaymentRequest = async (req, res) => {
         });
 
         if (!request) {
-            return res.status(404).json({ error: 'Payment request not found' });
+            return next(notFound('Payment request not found', { code: 'PAYMENT_REQUEST_NOT_FOUND' }));
         }
 
         if (request.status !== PaymentRequestStatus.PENDING) {
-            return res.status(400).json({ error: 'Payment request already processed' });
+            return next(badRequest('Payment request already processed', { code: 'PAYMENT_REQUEST_ALREADY_PROCESSED' }));
         }
 
         const now = new Date();
@@ -415,8 +412,7 @@ export const rejectPaymentRequest = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error rejecting payment request:', error);
-        res.status(500).json({ error: 'Failed to reject payment request', message: error.message });
+        next(error);
     }
 };
 
