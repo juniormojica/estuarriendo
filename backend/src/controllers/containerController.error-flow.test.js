@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as containerController from './containerController.js';
 import containerService from '../services/containerService.js';
-import { Property, sequelize } from '../models/index.js';
+import { Property, Notification, sequelize } from '../models/index.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 
 const createResponse = ({ headersSent = false } = {}) => {
@@ -720,6 +720,163 @@ describe('containerController createUnit migrated flow -> errorHandler', () => {
         });
 
         await containerController.createUnit(req, res, next);
+
+        expect(rollback).not.toHaveBeenCalled();
+        expect(commit).not.toHaveBeenCalled();
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+});
+
+describe('containerController rejectUnit migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('returns 400 when reason is missing without creating a transaction', async () => {
+        const transactionSpy = vi.spyOn(sequelize, 'transaction');
+
+        const req = { params: { id: 'u-1' }, body: {} };
+        const res = await runThroughErrorHandler(containerController.rejectUnit, { req });
+
+        expect(transactionSpy).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'El motivo de rechazo es requerido',
+            message: 'El motivo de rechazo es requerido',
+            code: 'BAD_REQUEST'
+        });
+    });
+
+    it('rolls back and forwards notFound AppError when unit does not exist', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue(null);
+
+        const req = { params: { id: 'u-404' }, body: { reason: 'Incomplete' } };
+        const res = await runThroughErrorHandler(containerController.rejectUnit, { req });
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Habitación no encontrada',
+            message: 'Habitación no encontrada',
+            code: 'UNIT_NOT_FOUND'
+        });
+    });
+
+    it('rolls back and forwards badRequest when property is not a unit', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'u-1', parentId: null });
+
+        const req = { params: { id: 'u-400' }, body: { reason: 'bad' } };
+        const res = await runThroughErrorHandler(containerController.rejectUnit, { req });
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'La propiedad no es una habitación',
+            message: 'La propiedad no es una habitación',
+            code: 'PROPERTY_NOT_UNIT'
+        });
+    });
+
+    it('renders success on successful unit rejection', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+
+        const mockUnit = {
+            id: 'u-1',
+            title: 'Test Unit',
+            parentId: 'c-1',
+            status: 'pending',
+            update: vi.fn().mockResolvedValue(undefined)
+        };
+        const mockContainer = { id: 'c-1', title: 'Test Container', ownerId: 'owner-1' };
+
+        const findByPkSpy = vi.spyOn(Property, 'findByPk');
+        findByPkSpy.mockResolvedValueOnce(mockUnit);
+        findByPkSpy.mockResolvedValueOnce(mockContainer);
+
+        vi.spyOn(Notification, 'create').mockResolvedValue(undefined);
+
+        const req = { params: { id: 'u-1' }, body: { reason: 'Incomplete documentation' } };
+        const res = createResponse();
+        const next = vi.fn();
+
+        await containerController.rejectUnit(req, res, next);
+
+        expect(commit).toHaveBeenCalledTimes(1);
+        expect(rollback).not.toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Habitación rechazada',
+            data: mockUnit
+        });
+    });
+
+    it('rolls back before forwarding unexpected failure to standardized 500 contract', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockRejectedValue(new Error('db write failed'));
+
+        const req = { params: { id: 'u-500' }, body: { reason: 'test' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.rejectUnit(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('does not double-rollback when transaction is already finished', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(Property, 'findByPk').mockRejectedValue(new Error('db write failed'));
+
+        const req = { params: { id: 'u-500' }, body: { reason: 'test' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.rejectUnit(req, res, next);
 
         expect(rollback).not.toHaveBeenCalled();
         expect(commit).not.toHaveBeenCalled();

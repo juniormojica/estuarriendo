@@ -716,27 +716,28 @@ export const approveUnit = async (req, res) => {
  * Reject unit
  * PUT /api/units/:id/reject
  */
-export const rejectUnit = async (req, res) => {
+export const rejectUnit = async (req, res, next) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+        return next(badRequest('El motivo de rechazo es requerido'));
+    }
+
     const transaction = await sequelize.transaction();
+
     try {
-        const { id } = req.params;
-        const { reason } = req.body;
-
-        if (!reason) {
-            return res.status(400).json({ success: false, message: 'El motivo de rechazo es requerido' });
-        }
-
         const { Property, Notification } = await import('../models/index.js');
 
         const unit = await Property.findByPk(id, { transaction });
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Habitación no encontrada' });
+            return next(notFound('Habitación no encontrada', { code: 'UNIT_NOT_FOUND' }));
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'La propiedad no es una habitación' });
+            return next(badRequest('La propiedad no es una habitación', { code: 'PROPERTY_NOT_UNIT' }));
         }
 
         await unit.update({
@@ -767,9 +768,10 @@ export const rejectUnit = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error rejecting unit:', error);
-        res.status(500).json({ success: false, message: error.message });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
