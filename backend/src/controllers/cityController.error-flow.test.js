@@ -123,6 +123,29 @@ describe('cityController deleteCity incremental migration -> centralized errorHa
         });
     });
 
+    it('delegates create missing-required-fields flow to centralized handler', async () => {
+        const req = {
+            body: {
+                name: 'Medellín'
+            }
+        };
+
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            cityController.createCity,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Missing required fields: name, departmentId, slug',
+            message: 'Missing required fields: name, departmentId, slug',
+            code: 'CITY_REQUIRED_FIELDS_MISSING'
+        });
+    });
+
     it('delegates create duplicate-slug conflict flow to centralized handler', async () => {
         vi.spyOn(Department, 'findByPk').mockResolvedValue({ id: 1 });
         vi.spyOn(City, 'findOne').mockResolvedValue({ id: 44, slug: 'medellin', departmentId: 1 });

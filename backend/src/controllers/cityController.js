@@ -1,5 +1,5 @@
 import { City, Department, Location } from '../models/index.js';
-import { conflict, notFound } from '../errors/AppError.js';
+import { badRequest, conflict, notFound } from '../errors/AppError.js';
 
 /**
  * City Controller
@@ -16,9 +16,9 @@ export const createCity = async (req, res, next) => {
 
         // Validate required fields
         if (!name || !departmentId || !slug) {
-            return res.status(400).json({
-                error: 'Missing required fields: name, departmentId, slug'
-            });
+            return next(badRequest('Missing required fields: name, departmentId, slug', {
+                code: 'CITY_REQUIRED_FIELDS_MISSING'
+            }));
         }
 
         // Check if department exists
