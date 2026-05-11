@@ -185,6 +185,35 @@ describe('propertyTypeController incremental migration -> centralized errorHandl
         });
     });
 
+    it('delegates create missing-name validation to centralized handler with 400 contract', async () => {
+        const req = {
+            body: {
+                description: 'Tipo de propiedad'
+            }
+        };
+        const res = createResponse();
+        let capturedError;
+
+        await propertyTypeController.createPropertyType(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Property type name is required',
+            message: 'Property type name is required',
+            code: 'PROPERTY_TYPE_NAME_REQUIRED'
+        });
+    });
+
     it('delegates create duplicate-name conflicts to centralized handler with 409 contract', async () => {
         vi.spyOn(PropertyType, 'findOne').mockResolvedValue({ id: 1, name: 'Casa' });
 

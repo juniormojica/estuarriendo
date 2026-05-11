@@ -1,5 +1,5 @@
 import { PropertyType } from '../models/index.js';
-import { conflict, notFound } from '../errors/AppError.js';
+import { badRequest, conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Property Type Controller
@@ -73,9 +73,9 @@ export const createPropertyType = async (req, res, next) => {
 
         // Validate required fields
         if (!name) {
-            return res.status(400).json({
-                error: 'Property type name is required'
-            });
+            return next(badRequest('Property type name is required', {
+                code: 'PROPERTY_TYPE_NAME_REQUIRED'
+            }));
         }
 
         // Check if property type already exists
