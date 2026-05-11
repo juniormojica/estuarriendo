@@ -413,7 +413,7 @@ export const deleteContainer = async (req, res) => {
  * Rent complete container
  * POST /api/containers/:id/rent-complete
  */
-export const rentCompleteContainer = async (req, res) => {
+export const rentCompleteContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -429,12 +429,10 @@ export const rentCompleteContainer = async (req, res) => {
             data: container
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error renting complete container:', error);
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(badRequest(error.message, { code: 'RENT_COMPLETE_FAILED' }));
     }
 };
 
@@ -442,7 +440,7 @@ export const rentCompleteContainer = async (req, res) => {
  * Change rental mode
  * POST /api/containers/:id/change-mode
  */
-export const changeRentalMode = async (req, res) => {
+export const changeRentalMode = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -465,12 +463,10 @@ export const changeRentalMode = async (req, res) => {
             data: container
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error changing rental mode:', error);
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(badRequest(error.message, { code: 'RENTAL_MODE_CHANGE_FAILED' }));
     }
 };
 

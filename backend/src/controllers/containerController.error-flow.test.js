@@ -228,3 +228,210 @@ describe('containerController updateUnitRentalStatus migrated flow -> errorHandl
         });
     });
 });
+
+describe('containerController rentCompleteContainer migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('renders 200 success on successful rent complete', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        const mockContainer = { id: 'c-1', title: 'Test Container', rentalMode: 'complete' };
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(containerService, 'rentCompleteContainer').mockResolvedValue(mockContainer);
+
+        const req = { params: { id: 'c-1' } };
+        const res = createResponse();
+        const next = vi.fn();
+
+        await containerController.rentCompleteContainer(req, res, next);
+
+        expect(commit).toHaveBeenCalledTimes(1);
+        expect(rollback).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Pensión/apartamento alquilado por completo',
+            data: mockContainer
+        });
+    });
+
+    it('rolls back before forwarding service errors to 400 via badRequest', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(containerService, 'rentCompleteContainer').mockRejectedValue(new Error('service error'));
+
+        const req = { params: { id: 'c-1' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.rentCompleteContainer(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'service error',
+            message: 'service error',
+            code: 'RENT_COMPLETE_FAILED'
+        });
+    });
+
+    it('does not double-rollback when transaction is already finished', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(containerService, 'rentCompleteContainer').mockRejectedValue(new Error('service error'));
+
+        const req = { params: { id: 'c-1' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.rentCompleteContainer(req, res, next);
+
+        expect(rollback).not.toHaveBeenCalled();
+        expect(commit).not.toHaveBeenCalled();
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'service error',
+            message: 'service error',
+            code: 'RENT_COMPLETE_FAILED'
+        });
+    });
+});
+
+describe('containerController changeRentalMode migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('renders 200 success on successful mode change to by_unit', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        const mockContainer = { id: 'c-1', title: 'Test Container', rentalMode: 'by_unit' };
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(containerService, 'changeToByUnitMode').mockResolvedValue(mockContainer);
+
+        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' } };
+        const res = createResponse();
+        const next = vi.fn();
+
+        await containerController.changeRentalMode(req, res, next);
+
+        expect(commit).toHaveBeenCalledTimes(1);
+        expect(rollback).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Modo de alquiler cambiado a by_unit',
+            data: mockContainer
+        });
+    });
+
+    it('rolls back before forwarding service errors to 400 via badRequest', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(containerService, 'changeToByUnitMode').mockRejectedValue(new Error('service error'));
+
+        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.changeRentalMode(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'service error',
+            message: 'service error',
+            code: 'RENTAL_MODE_CHANGE_FAILED'
+        });
+    });
+
+    it('rolls back and forwards invalid mode (controller-thrown) error to 400 via badRequest', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+
+        const req = { params: { id: 'c-1' }, body: { mode: 'complete' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.changeRentalMode(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Modo de alquiler inválido',
+            message: 'Modo de alquiler inválido',
+            code: 'RENTAL_MODE_CHANGE_FAILED'
+        });
+    });
+
+    it('does not double-rollback when transaction is already finished', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(containerService, 'changeToByUnitMode').mockRejectedValue(new Error('service error'));
+
+        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.changeRentalMode(req, res, next);
+
+        expect(rollback).not.toHaveBeenCalled();
+        expect(commit).not.toHaveBeenCalled();
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'service error',
+            message: 'service error',
+            code: 'RENTAL_MODE_CHANGE_FAILED'
+        });
+    });
+});
