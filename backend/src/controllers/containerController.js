@@ -779,7 +779,7 @@ export const rejectUnit = async (req, res, next) => {
  * Approve container and all its pending units
  * PUT /api/containers/:id/approve
  */
-export const approveContainer = async (req, res) => {
+export const approveContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
     try {
         const { id } = req.params;
@@ -793,12 +793,12 @@ export const approveContainer = async (req, res) => {
 
         if (!container) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Pensión/apartamento no encontrado' });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         if (!container.isContainer) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'La propiedad no es una pensión/apartamento' });
+            return next(badRequest('La propiedad no es una pensión/apartamento', { code: 'PROPERTY_NOT_CONTAINER' }));
         }
 
         // Approve all pending units
@@ -850,9 +850,10 @@ export const approveContainer = async (req, res) => {
             }
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error approving container:', error);
-        res.status(500).json({ success: false, message: error.message });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 

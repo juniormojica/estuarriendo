@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as containerController from './containerController.js';
 import containerService from '../services/containerService.js';
-import { Property, Notification, sequelize } from '../models/index.js';
+import { Property, Notification, ActivityLog, sequelize } from '../models/index.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 
 const createResponse = ({ headersSent = false } = {}) => {
@@ -888,6 +888,190 @@ describe('containerController rejectUnit migrated flow -> errorHandler', () => {
             error: 'Error interno del servidor',
             message: 'Error interno del servidor',
             code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+});
+
+describe('containerController approveContainer migrated flow -> errorHandler', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('rolls back and forwards notFound AppError when container does not exist', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue(null);
+
+        const req = { params: { id: 'c-404' } };
+        const res = await runThroughErrorHandler(containerController.approveContainer, { req });
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Pensión/apartamento no encontrado',
+            message: 'Pensión/apartamento no encontrado',
+            code: 'CONTAINER_NOT_FOUND'
+        });
+    });
+
+    it('rolls back and forwards badRequest when property is not a container', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', isContainer: false });
+
+        const req = { params: { id: 'c-400' } };
+        const res = await runThroughErrorHandler(containerController.approveContainer, { req });
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'La propiedad no es una pensión/apartamento',
+            message: 'La propiedad no es una pensión/apartamento',
+            code: 'PROPERTY_NOT_CONTAINER'
+        });
+    });
+
+    it('rolls back before forwarding unexpected failure to standardized 500 contract', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockRejectedValue(new Error('db write failed'));
+
+        const req = { params: { id: 'c-500' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.approveContainer(req, res, next);
+
+        expect(rollback).toHaveBeenCalledTimes(1);
+        expect(commit).not.toHaveBeenCalled();
+        expect(rollback.mock.invocationCallOrder[0]).toBeLessThan(next.mock.invocationCallOrder[0]);
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('does not double-rollback when transaction is already finished', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(Property, 'findByPk').mockRejectedValue(new Error('db write failed'));
+
+        const req = { params: { id: 'c-500' } };
+        const res = createResponse();
+        let capturedError;
+        const next = vi.fn((error) => {
+            capturedError = error;
+        });
+
+        await containerController.approveContainer(req, res, next);
+
+        expect(rollback).not.toHaveBeenCalled();
+        expect(commit).not.toHaveBeenCalled();
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Error interno del servidor',
+            message: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('renders success on approving a container with pending units', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+
+        const mockUnit = {
+            id: 'u-1',
+            title: 'Habitación 1',
+            status: 'pending',
+            update: vi.fn().mockResolvedValue(undefined)
+        };
+        const mockContainer = {
+            id: 'c-1',
+            title: 'Test Container',
+            isContainer: true,
+            status: 'pending',
+            ownerId: 'owner-1',
+            units: [mockUnit],
+            update: vi.fn().mockResolvedValue(undefined)
+        };
+
+        vi.spyOn(Property, 'findByPk').mockResolvedValue(mockContainer);
+        vi.spyOn(ActivityLog, 'create').mockResolvedValue(undefined);
+        vi.spyOn(Notification, 'create').mockResolvedValue(undefined);
+
+        const req = { params: { id: 'c-1' }, userId: 'admin-1' };
+        const res = createResponse();
+        const next = vi.fn();
+
+        await containerController.approveContainer(req, res, next);
+
+        expect(mockUnit.update).toHaveBeenCalledWith({
+            status: 'approved',
+            isVerified: true,
+            reviewedAt: expect.any(Date),
+            rejectionReason: null
+        }, { transaction: expect.anything() });
+
+        expect(mockContainer.update).toHaveBeenCalledWith({
+            status: 'approved',
+            isVerified: true,
+            reviewedAt: expect.any(Date),
+            rejectionReason: null
+        }, { transaction: expect.anything() });
+
+        expect(ActivityLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'property_approved',
+                message: 'Container aprobado: Test Container',
+                userId: 'admin-1',
+                propertyId: 'c-1'
+            }),
+            expect.objectContaining({ transaction: expect.anything() })
+        );
+
+        expect(Notification.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: 'owner-1',
+                type: 'property_approved',
+                title: '¡Pensión aprobada!',
+                propertyId: 'c-1'
+            }),
+            expect.objectContaining({ transaction: expect.anything() })
+        );
+
+        expect(commit).toHaveBeenCalledTimes(1);
+        expect(rollback).not.toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Pensión/apartamento y todas sus habitaciones aprobadas exitosamente',
+            data: {
+                container: mockContainer,
+                approvedUnitsCount: 1
+            }
         });
     });
 });
