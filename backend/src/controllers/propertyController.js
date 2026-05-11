@@ -1,5 +1,6 @@
 import { Property, User, Amenity, Notification, ActivityLog } from '../models/index.js';
 import { PropertyStatus, NotificationType, UserType } from '../utils/enums.js';
+import { badRequest, notFound } from '../errors/AppError.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';
 
@@ -9,7 +10,7 @@ import * as propertyService from '../services/propertyService.js';
  */
 
 // Get all properties with filters
-export const getAllProperties = async (req, res) => {
+export const getAllProperties = async (req, res, next) => {
     try {
         const {
             status,
@@ -113,13 +114,12 @@ export const getAllProperties = async (req, res) => {
             offset: parseInt(offset)
         });
     } catch (error) {
-        console.error('Error fetching properties:', error);
-        res.status(500).json({ error: 'Error al obtener propiedades', message: error.message });
+        next(error);
     }
 };
 
 // Get property by ID
-export const getPropertyById = async (req, res) => {
+export const getPropertyById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { lightweight } = req.query;
@@ -129,7 +129,7 @@ export const getPropertyById = async (req, res) => {
             : await propertyService.findPropertyWithAssociations(id);
 
         if (!property) {
-            return res.status(404).json({ error: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         // Increment views count
@@ -148,13 +148,12 @@ export const getPropertyById = async (req, res) => {
 
         res.json(property);
     } catch (error) {
-        console.error('Error fetching property:', error);
-        res.status(500).json({ error: 'Error al obtener propiedad', message: error.message });
+        next(error);
     }
 };
 
 // Get properties by owner ID
-export const getUserProperties = async (req, res) => {
+export const getUserProperties = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -175,41 +174,30 @@ export const getUserProperties = async (req, res) => {
             data: result.rows
         });
     } catch (error) {
-        console.error('Error fetching user properties:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener propiedades del usuario',
-            error: error.message
-        });
+        next(error);
     }
 };
 
 // Create new property
-export const createProperty = async (req, res) => {
+export const createProperty = async (req, res, next) => {
     try {
         const { ownerId, amenityIds, services, rules, nearbyInstitutions, ...propertyData } = req.body;
 
         // Validate owner exists
         const owner = await User.findByPk(ownerId);
         if (!owner) {
-            return res.status(404).json({ error: 'Propietario no encontrado' });
+            return next(notFound('Propietario no encontrado', { code: 'OWNER_NOT_FOUND' }));
         }
 
         // Validate images
         const images = propertyData.images;
         if (!images || !Array.isArray(images) || images.length === 0) {
-            return res.status(400).json({
-                error: 'Al menos una imagen es requerida',
-                message: 'Debes agregar al menos una imagen de la propiedad'
-            });
+            return next(badRequest('Debes agregar al menos una imagen de la propiedad', { code: 'PROPERTY_IMAGES_REQUIRED' }));
         }
 
         // Validate maximum images limit
         if (images.length > 10) {
-            return res.status(400).json({
-                error: 'Demasiadas imágenes',
-                message: 'El máximo de imágenes permitidas es 10'
-            });
+            return next(badRequest('El máximo de imágenes permitidas es 10', { code: 'PROPERTY_IMAGES_LIMIT_EXCEEDED' }));
         }
 
         // Create property with all associations
@@ -314,20 +302,19 @@ export const createProperty = async (req, res) => {
 
         res.status(201).json(completeProperty);
     } catch (error) {
-        console.error('Error creating property:', error);
-        res.status(500).json({ error: 'Error al crear propiedad', message: error.message });
+        next(error);
     }
 };
 
 // Update property
-export const updateProperty = async (req, res) => {
+export const updateProperty = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { amenityIds, ...updates } = req.body;
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         // Update property with all associations
@@ -356,19 +343,18 @@ export const updateProperty = async (req, res) => {
 
         res.json(completeProperty);
     } catch (error) {
-        console.error('Error updating property:', error);
-        res.status(500).json({ error: 'Error al actualizar propiedad', message: error.message });
+        next(error);
     }
 };
 
 // Delete property
-export const deleteProperty = async (req, res) => {
+export const deleteProperty = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         const ownerId = property.ownerId;
@@ -407,19 +393,18 @@ export const deleteProperty = async (req, res) => {
 
         res.json({ message: 'Propiedad eliminada exitosamente' });
     } catch (error) {
-        console.error('Error deleting property:', error);
-        res.status(500).json({ error: 'Error al eliminar propiedad', message: error.message });
+        next(error);
     }
 };
 
 // Approve property (admin)
-export const approveProperty = async (req, res) => {
+export const approveProperty = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         const oldStatus = property.status;
@@ -482,28 +467,23 @@ export const approveProperty = async (req, res) => {
             data: completeProperty
         });
     } catch (error) {
-        console.error('Error approving property:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error al aprobar propiedad',
-            message: error.message
-        });
+        next(error);
     }
 };
 
 // Reject property (admin)
-export const rejectProperty = async (req, res) => {
+export const rejectProperty = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { reason } = req.body;
 
         if (!reason) {
-            return res.status(400).json({ error: 'El motivo de rechazo es requerido' });
+            return next(badRequest('El motivo de rechazo es requerido', { code: 'REJECTION_REASON_REQUIRED' }));
         }
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         const oldStatus = property.status;
@@ -561,23 +541,18 @@ export const rejectProperty = async (req, res) => {
             data: completeProperty
         });
     } catch (error) {
-        console.error('Error rejecting property:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error al rechazar propiedad',
-            message: error.message
-        });
+        next(error);
     }
 };
 
 // Toggle featured status
-export const toggleFeatured = async (req, res) => {
+export const toggleFeatured = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         await property.update({
@@ -604,23 +579,18 @@ export const toggleFeatured = async (req, res) => {
             data: completeProperty
         });
     } catch (error) {
-        console.error('Error toggling featured status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error al cambiar estado destacado',
-            message: error.message
-        });
+        next(error);
     }
 };
 
 // Mark property as rented/available
-export const toggleRentedStatus = async (req, res) => {
+export const toggleRentedStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const property = await Property.findByPk(id);
         if (!property) {
-            return res.status(404).json({ error: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         await property.update({
@@ -636,12 +606,7 @@ export const toggleRentedStatus = async (req, res) => {
             data: completeProperty
         });
     } catch (error) {
-        console.error('Error toggling rented status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error al cambiar estado de alquiler',
-            message: error.message
-        });
+        next(error);
     }
 };
 
