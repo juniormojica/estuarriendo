@@ -135,6 +135,35 @@ describe('departmentController incremental migration -> centralized errorHandler
         });
     });
 
+    it('delegates create missing-required-fields flow to centralized handler', async () => {
+        const req = {
+            body: {
+                name: 'Bogotá'
+            }
+        };
+        const res = createResponse();
+        let capturedError;
+
+        await departmentController.createDepartment(req, res, (error) => {
+            capturedError = error;
+        });
+
+        const statusCallsBeforeHandler = res.status.mock.calls.length;
+        const jsonCallsBeforeHandler = res.json.mock.calls.length;
+
+        errorHandler(capturedError, req, res, vi.fn());
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Missing required fields: name, code, slug',
+            message: 'Missing required fields: name, code, slug',
+            code: 'DEPARTMENT_REQUIRED_FIELDS'
+        });
+    });
+
     it('delegates create duplicate-slug conflict to centralized handler', async () => {
         vi.spyOn(Department, 'findOne')
             .mockResolvedValueOnce(null)
