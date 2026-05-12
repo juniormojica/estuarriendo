@@ -15,11 +15,33 @@ import {
     sequelize
 } from '../models/index.js';
 import { Op } from 'sequelize';
+import { AppError, badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * Property Service
  * Handles complex property operations with nested associations
  */
+
+const rethrowIfAppError = (error) => {
+    if (error instanceof AppError) {
+        throw error;
+    }
+};
+
+const invalidPropertyTypeName = (typeName) => badRequest(
+    `Tipo de propiedad no válido: ${typeName}. Los tipos válidos son: pension, habitacion, apartamento, aparta-estudio`,
+    { code: 'PROPERTY_TYPE_INVALID_NAME' }
+);
+
+const missingPropertyType = () => badRequest(
+    'Se requiere typeId o typeName para crear una propiedad',
+    { code: 'PROPERTY_TYPE_REQUIRED' }
+);
+
+const propertyTypeNotFound = (typeId) => notFound(
+    `El tipo de propiedad con ID ${typeId} no existe en la base de datos`,
+    { code: 'PROPERTY_TYPE_NOT_FOUND' }
+);
 
 /**
  * Find or create a location
@@ -117,7 +139,7 @@ export const createPropertyWithAssociations = async (propertyData) => {
             });
 
             if (!propertyType) {
-                throw new Error(`Tipo de propiedad no válido: ${typeName}. Los tipos válidos son: pension, habitacion, apartamento, aparta-estudio`);
+                throw invalidPropertyTypeName(typeName);
             }
 
             resolvedTypeId = propertyType.id;
@@ -125,13 +147,13 @@ export const createPropertyWithAssociations = async (propertyData) => {
 
         // Validate that we have a type ID
         if (!resolvedTypeId) {
-            throw new Error('Se requiere typeId o typeName para crear una propiedad');
+            throw missingPropertyType();
         }
 
         // Verify the type ID exists
         const typeExists = await PropertyType.findByPk(resolvedTypeId);
         if (!typeExists) {
-            throw new Error(`El tipo de propiedad con ID ${resolvedTypeId} no existe en la base de datos`);
+            throw propertyTypeNotFound(resolvedTypeId);
         }
 
         // 1. Find or create location (N:1 - reuse if exists)
@@ -193,6 +215,7 @@ export const createPropertyWithAssociations = async (propertyData) => {
 
     } catch (error) {
         await transaction.rollback();
+        rethrowIfAppError(error);
         throw error;
     }
 };
