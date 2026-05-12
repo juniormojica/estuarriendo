@@ -9,6 +9,7 @@ import {
     isTokenExpired
 } from '../utils/tokenUtils.js';
 import { sendPasswordResetEmail } from './emailService.js';
+import { forbidden, unauthorized } from '../errors/AppError.js';
 
 /**
  * Authentication Service
@@ -82,33 +83,33 @@ export const login = async (email, password) => {
     let user = await findByEmail(email);
 
     if (!user) {
-        const error = new Error('Correo electrónico o contraseña inválidos');
-        error.statusCode = 401;
-        throw error;
+        throw unauthorized('Correo electrónico o contraseña inválidos', {
+            code: 'AUTH_INVALID_CREDENTIALS'
+        });
     }
 
     // Since findByEmail excludes password, we need to fetch it explicitly for validation
     const userWithPassword = await User.scope('withPassword').findOne({ where: { email } });
 
-    if (!user) {
-        const error = new Error('Correo electrónico o contraseña inválidos');
-        error.statusCode = 401;
-        throw error;
+    if (!userWithPassword) {
+        throw unauthorized('Correo electrónico o contraseña inválidos', {
+            code: 'AUTH_INVALID_CREDENTIALS'
+        });
     }
 
     // Check if user is active
     if (!user.isActive) {
-        const error = new Error('La cuenta está desactivada');
-        error.statusCode = 403;
-        throw error;
+        throw forbidden('La cuenta está desactivada', {
+            code: 'AUTH_ACCOUNT_DISABLED'
+        });
     }
 
     // Verify password using the userWithPassword object
     const isPasswordValid = await comparePassword(password, userWithPassword.password);
     if (!isPasswordValid) {
-        const error = new Error('Correo electrónico o contraseña inválidos');
-        error.statusCode = 401;
-        throw error;
+        throw unauthorized('Correo electrónico o contraseña inválidos', {
+            code: 'AUTH_INVALID_CREDENTIALS'
+        });
     }
 
     // Generate JWT token
