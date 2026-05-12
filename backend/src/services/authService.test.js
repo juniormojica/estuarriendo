@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import User from '../models/User.js';
 import * as userRepository from '../repositories/userRepository.js';
 import * as passwordUtils from '../utils/passwordUtils.js';
-import { login } from './authService.js';
+import { getUserById, login } from './authService.js';
 
 describe('authService semantic errors - login slice', () => {
     afterEach(() => {
@@ -72,6 +72,23 @@ describe('authService semantic errors - login slice', () => {
             statusCode: 401,
             code: 'AUTH_INVALID_CREDENTIALS',
             message: 'Correo electrónico o contraseña inválidos'
+        });
+    });
+});
+
+describe('authService semantic errors - getUserById slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_USER_NOT_FOUND when user does not exist', async () => {
+        vi.spyOn(userRepository, 'findById').mockResolvedValue(null);
+
+        await expect(getUserById('missing-user')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 404,
+            code: 'AUTH_USER_NOT_FOUND',
+            message: 'Usuario no encontrado'
         });
     });
 });

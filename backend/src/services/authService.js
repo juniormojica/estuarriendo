@@ -9,7 +9,7 @@ import {
     isTokenExpired
 } from '../utils/tokenUtils.js';
 import { sendPasswordResetEmail } from './emailService.js';
-import { forbidden, unauthorized } from '../errors/AppError.js';
+import { forbidden, notFound, unauthorized } from '../errors/AppError.js';
 
 /**
  * Authentication Service
@@ -135,9 +135,9 @@ export const getUserById = async (userId) => {
     const user = await findById(userId);
 
     if (!user) {
-        const error = new Error('Usuario no encontrado');
-        error.statusCode = 404;
-        throw error;
+        throw notFound('Usuario no encontrado', {
+            code: 'AUTH_USER_NOT_FOUND'
+        });
     }
 
     return user;
