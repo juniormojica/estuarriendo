@@ -9,7 +9,7 @@ import {
     isTokenExpired
 } from '../utils/tokenUtils.js';
 import { sendPasswordResetEmail } from './emailService.js';
-import { forbidden, notFound, unauthorized } from '../errors/AppError.js';
+import { badRequest, forbidden, notFound, unauthorized } from '../errors/AppError.js';
 
 /**
  * Authentication Service
@@ -27,9 +27,9 @@ export const register = async (userData) => {
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-        const error = new Error('El usuario con este correo electrónico ya existe');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('El usuario con este correo electrónico ya existe', {
+            code: 'AUTH_EMAIL_ALREADY_EXISTS'
+        });
     }
 
     // Hash password

@@ -2,7 +2,28 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import User from '../models/User.js';
 import * as userRepository from '../repositories/userRepository.js';
 import * as passwordUtils from '../utils/passwordUtils.js';
-import { getUserById, login } from './authService.js';
+import { getUserById, login, register } from './authService.js';
+
+describe('authService semantic errors - register slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_EMAIL_ALREADY_EXISTS when email is already registered', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue({ id: 'existing-user' });
+
+        await expect(register({
+            email: 'ana@mail.com',
+            password: '123456',
+            name: 'Ana'
+        })).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_EMAIL_ALREADY_EXISTS',
+            message: 'El usuario con este correo electrónico ya existe'
+        });
+    });
+});
 
 describe('authService semantic errors - login slice', () => {
     afterEach(() => {
