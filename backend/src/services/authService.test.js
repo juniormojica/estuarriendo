@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import User from '../models/User.js';
+import * as models from '../models/index.js';
 import * as userRepository from '../repositories/userRepository.js';
 import * as passwordUtils from '../utils/passwordUtils.js';
-import { getUserById, login, register, requestPasswordReset } from './authService.js';
+import { getUserById, login, register, requestPasswordReset, resetPassword, verifyResetToken } from './authService.js';
 
 describe('authService semantic errors - register slice', () => {
     afterEach(() => {
@@ -127,6 +128,54 @@ describe('authService semantic errors - requestPasswordReset slice', () => {
             statusCode: 404,
             code: 'AUTH_PASSWORD_RESET_EMAIL_NOT_FOUND',
             message: 'El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.'
+        });
+    });
+});
+
+describe('authService semantic errors - verify/reset token slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('verifyResetToken throws AUTH_RESET_TOKEN_INVALID_OR_EXPIRED when token record does not exist', async () => {
+        vi.spyOn(models.UserPasswordReset, 'findOne').mockResolvedValue(null);
+
+        await expect(verifyResetToken('missing-token')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_RESET_TOKEN_INVALID_OR_EXPIRED',
+            message: 'Token inválido o expirado'
+        });
+    });
+
+    it('verifyResetToken throws AUTH_RESET_TOKEN_EXPIRED when token is expired', async () => {
+        vi.spyOn(models.UserPasswordReset, 'findOne').mockResolvedValue({
+            resetPasswordExpires: new Date(Date.now() - 60_000),
+            user: { id: 'u-1', email: 'ana@mail.com' }
+        });
+
+        await expect(verifyResetToken('expired-token')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_RESET_TOKEN_EXPIRED',
+            message: 'El token ha expirado. Por favor solicita uno nuevo'
+        });
+    });
+
+    it('resetPassword throws AUTH_PASSWORD_RESET_USER_NOT_FOUND when target user no longer exists', async () => {
+        vi.spyOn(models.UserPasswordReset, 'findOne').mockResolvedValue({
+            resetPasswordExpires: new Date(Date.now() + 60_000),
+            user: { id: 'missing-user' }
+        });
+        vi.spyOn(User, 'scope').mockReturnValue({
+            findByPk: vi.fn().mockResolvedValue(null)
+        });
+
+        await expect(resetPassword('valid-token', 'new-password-123')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 404,
+            code: 'AUTH_PASSWORD_RESET_USER_NOT_FOUND',
+            message: 'Usuario no encontrado'
         });
     });
 });

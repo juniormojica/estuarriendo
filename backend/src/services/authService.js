@@ -213,16 +213,16 @@ export const verifyResetToken = async (token) => {
     });
 
     if (!resetRecord || !resetRecord.user) {
-        const error = new Error('Token inválido o expirado');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('Token inválido o expirado', {
+            code: 'AUTH_RESET_TOKEN_INVALID_OR_EXPIRED'
+        });
     }
 
     // Check if token has expired
     if (isTokenExpired(resetRecord.resetPasswordExpires)) {
-        const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('El token ha expirado. Por favor solicita uno nuevo', {
+            code: 'AUTH_RESET_TOKEN_EXPIRED'
+        });
     }
 
     // Return masked email for security
@@ -262,25 +262,25 @@ export const resetPassword = async (token, newPassword) => {
     });
 
     if (!resetRecord || !resetRecord.user) {
-        const error = new Error('Token inválido o expirado');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('Token inválido o expirado', {
+            code: 'AUTH_RESET_TOKEN_INVALID_OR_EXPIRED'
+        });
     }
 
     // Check if token has expired
     if (isTokenExpired(resetRecord.resetPasswordExpires)) {
-        const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('El token ha expirado. Por favor solicita uno nuevo', {
+            code: 'AUTH_RESET_TOKEN_EXPIRED'
+        });
     }
 
     // Get the user with password scope to update it
     const user = await User.scope('withPassword').findByPk(resetRecord.user.id);
 
     if (!user) {
-        const error = new Error('Usuario no encontrado');
-        error.statusCode = 404;
-        throw error;
+        throw notFound('Usuario no encontrado', {
+            code: 'AUTH_PASSWORD_RESET_USER_NOT_FOUND'
+        });
     }
 
     // Hash new password
