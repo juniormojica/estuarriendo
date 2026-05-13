@@ -157,9 +157,9 @@ export const requestPasswordReset = async (email) => {
 
     // Throw error if user doesn't exist to improve UX
     if (!user) {
-        const error = new Error('El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.');
-        error.statusCode = 404;
-        throw error;
+        throw notFound('El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.', {
+            code: 'AUTH_PASSWORD_RESET_EMAIL_NOT_FOUND'
+        });
     }
 
     // Extract userId for password reset

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import User from '../models/User.js';
 import * as userRepository from '../repositories/userRepository.js';
 import * as passwordUtils from '../utils/passwordUtils.js';
-import { getUserById, login, register } from './authService.js';
+import { getUserById, login, register, requestPasswordReset } from './authService.js';
 
 describe('authService semantic errors - register slice', () => {
     afterEach(() => {
@@ -110,6 +110,23 @@ describe('authService semantic errors - getUserById slice', () => {
             statusCode: 404,
             code: 'AUTH_USER_NOT_FOUND',
             message: 'Usuario no encontrado'
+        });
+    });
+});
+
+describe('authService semantic errors - requestPasswordReset slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_PASSWORD_RESET_EMAIL_NOT_FOUND when email is not registered', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue(null);
+
+        await expect(requestPasswordReset('missing@mail.com')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 404,
+            code: 'AUTH_PASSWORD_RESET_EMAIL_NOT_FOUND',
+            message: 'El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.'
         });
     });
 });
