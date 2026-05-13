@@ -1,4 +1,5 @@
 import { OAuth2Client } from 'google-auth-library';
+import { AppError, unauthorized } from '../errors/AppError.js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -23,15 +24,15 @@ export const verifyGoogleToken = async (credential) => {
         const payload = ticket.getPayload();
 
         if (!payload) {
-            const error = new Error('Token de Google inválido');
-            error.statusCode = 401;
-            throw error;
+            throw unauthorized('Token de Google inválido', {
+                code: 'AUTH_GOOGLE_TOKEN_INVALID'
+            });
         }
 
         if (!payload.email_verified) {
-            const error = new Error('El correo de Google no está verificado');
-            error.statusCode = 401;
-            throw error;
+            throw unauthorized('El correo de Google no está verificado', {
+                code: 'AUTH_GOOGLE_EMAIL_NOT_VERIFIED'
+            });
         }
 
         return {
@@ -42,10 +43,11 @@ export const verifyGoogleToken = async (credential) => {
             emailVerified: payload.email_verified,
         };
     } catch (error) {
-        if (error.statusCode) throw error;
-        const err = new Error('No se pudo verificar el token de Google');
-        err.statusCode = 401;
-        throw err;
+        if (error instanceof AppError) throw error;
+        throw unauthorized('No se pudo verificar el token de Google', {
+            code: 'AUTH_GOOGLE_TOKEN_VERIFICATION_FAILED',
+            cause: error
+        });
     }
 };
 

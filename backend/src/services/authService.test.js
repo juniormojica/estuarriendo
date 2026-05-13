@@ -1,0 +1,206 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import User from '../models/User.js';
+import * as models from '../models/index.js';
+import * as userRepository from '../repositories/userRepository.js';
+import * as passwordUtils from '../utils/passwordUtils.js';
+import { createGoogleUser, getUserById, login, register, requestPasswordReset, resetPassword, verifyResetToken } from './authService.js';
+
+describe('authService semantic errors - register slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_EMAIL_ALREADY_EXISTS when email is already registered', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue({ id: 'existing-user' });
+
+        await expect(register({
+            email: 'ana@mail.com',
+            password: '123456',
+            name: 'Ana'
+        })).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_EMAIL_ALREADY_EXISTS',
+            message: 'El usuario con este correo electrónico ya existe'
+        });
+    });
+});
+
+describe('authService semantic errors - login slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_INVALID_CREDENTIALS when email does not exist', async () => {
+        vi.spyOn(userRepository, 'findByEmail').mockResolvedValue(null);
+
+        await expect(login('ana@mail.com', '123456')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 401,
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'Correo electrónico o contraseña inválidos'
+        });
+    });
+
+    it('throws AUTH_INVALID_CREDENTIALS when password-scope user cannot be loaded', async () => {
+        vi.spyOn(userRepository, 'findByEmail').mockResolvedValue({
+            id: 'u-1',
+            isActive: true,
+            toJSON: () => ({ id: 'u-1' })
+        });
+        vi.spyOn(User, 'scope').mockReturnValue({
+            findOne: vi.fn().mockResolvedValue(null)
+        });
+
+        await expect(login('ana@mail.com', '123456')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 401,
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'Correo electrónico o contraseña inválidos'
+        });
+    });
+
+    it('throws AUTH_ACCOUNT_DISABLED when account is inactive', async () => {
+        vi.spyOn(userRepository, 'findByEmail').mockResolvedValue({
+            id: 'u-1',
+            isActive: false,
+            toJSON: () => ({ id: 'u-1' })
+        });
+        vi.spyOn(User, 'scope').mockReturnValue({
+            findOne: vi.fn().mockResolvedValue({ id: 'u-1', password: 'hash' })
+        });
+
+        await expect(login('ana@mail.com', '123456')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 403,
+            code: 'AUTH_ACCOUNT_DISABLED',
+            message: 'La cuenta está desactivada'
+        });
+    });
+
+    it('throws AUTH_INVALID_CREDENTIALS when password is invalid', async () => {
+        vi.spyOn(userRepository, 'findByEmail').mockResolvedValue({
+            id: 'u-1',
+            isActive: true,
+            toJSON: () => ({ id: 'u-1' })
+        });
+        vi.spyOn(User, 'scope').mockReturnValue({
+            findOne: vi.fn().mockResolvedValue({ id: 'u-1', password: 'hash' })
+        });
+        vi.spyOn(passwordUtils, 'comparePassword').mockResolvedValue(false);
+
+        await expect(login('ana@mail.com', 'wrong-password')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 401,
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'Correo electrónico o contraseña inválidos'
+        });
+    });
+});
+
+describe('authService semantic errors - getUserById slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_USER_NOT_FOUND when user does not exist', async () => {
+        vi.spyOn(userRepository, 'findById').mockResolvedValue(null);
+
+        await expect(getUserById('missing-user')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 404,
+            code: 'AUTH_USER_NOT_FOUND',
+            message: 'Usuario no encontrado'
+        });
+    });
+});
+
+describe('authService semantic errors - requestPasswordReset slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_PASSWORD_RESET_EMAIL_NOT_FOUND when email is not registered', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue(null);
+
+        await expect(requestPasswordReset('missing@mail.com')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 404,
+            code: 'AUTH_PASSWORD_RESET_EMAIL_NOT_FOUND',
+            message: 'El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.'
+        });
+    });
+});
+
+describe('authService semantic errors - verify/reset token slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('verifyResetToken throws AUTH_RESET_TOKEN_INVALID_OR_EXPIRED when token record does not exist', async () => {
+        vi.spyOn(models.UserPasswordReset, 'findOne').mockResolvedValue(null);
+
+        await expect(verifyResetToken('missing-token')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_RESET_TOKEN_INVALID_OR_EXPIRED',
+            message: 'Token inválido o expirado'
+        });
+    });
+
+    it('verifyResetToken throws AUTH_RESET_TOKEN_EXPIRED when token is expired', async () => {
+        vi.spyOn(models.UserPasswordReset, 'findOne').mockResolvedValue({
+            resetPasswordExpires: new Date(Date.now() - 60_000),
+            user: { id: 'u-1', email: 'ana@mail.com' }
+        });
+
+        await expect(verifyResetToken('expired-token')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_RESET_TOKEN_EXPIRED',
+            message: 'El token ha expirado. Por favor solicita uno nuevo'
+        });
+    });
+
+    it('resetPassword throws AUTH_PASSWORD_RESET_USER_NOT_FOUND when target user no longer exists', async () => {
+        vi.spyOn(models.UserPasswordReset, 'findOne').mockResolvedValue({
+            resetPasswordExpires: new Date(Date.now() + 60_000),
+            user: { id: 'missing-user' }
+        });
+        vi.spyOn(User, 'scope').mockReturnValue({
+            findByPk: vi.fn().mockResolvedValue(null)
+        });
+
+        await expect(resetPassword('valid-token', 'new-password-123')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 404,
+            code: 'AUTH_PASSWORD_RESET_USER_NOT_FOUND',
+            message: 'Usuario no encontrado'
+        });
+    });
+});
+
+describe('authService semantic errors - createGoogleUser slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_GOOGLE_EMAIL_ALREADY_REGISTERED when email exists without googleId', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue({
+            id: 'existing-user',
+            googleId: null
+        });
+
+        await expect(createGoogleUser({
+            googleId: 'g-1',
+            email: 'ana@mail.com',
+            name: 'Ana',
+            picture: null
+        }, 'tenant', '+5491111111111', '+5491111111111')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 409,
+            code: 'AUTH_GOOGLE_EMAIL_ALREADY_REGISTERED',
+            message: 'Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.'
+        });
+    });
+});

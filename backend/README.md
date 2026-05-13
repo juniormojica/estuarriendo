@@ -44,6 +44,10 @@ backend/
 
 - `GET /api/health` - Health check endpoint
 
+## Documentation
+
+- `docs/API_ERROR_CONTRACT.md` - Contrato de errores API para consumidores frontend.
+
 ## Technologies
 
 - **Runtime**: Node.js
