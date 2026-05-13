@@ -9,7 +9,7 @@ import {
     isTokenExpired
 } from '../utils/tokenUtils.js';
 import { sendPasswordResetEmail } from './emailService.js';
-import { badRequest, forbidden, notFound, unauthorized } from '../errors/AppError.js';
+import { badRequest, conflict, forbidden, notFound, unauthorized } from '../errors/AppError.js';
 
 /**
  * Authentication Service
@@ -323,9 +323,9 @@ export const createGoogleUser = async (googleData, userType, phone, whatsapp) =>
     // Check if email already exists (registered manually)
     const existingByEmail = await User.findOne({ where: { email } });
     if (existingByEmail && !existingByEmail.googleId) {
-        const error = new Error('Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.');
-        error.statusCode = 409;
-        throw error;
+        throw conflict('Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.', {
+            code: 'AUTH_GOOGLE_EMAIL_ALREADY_REGISTERED'
+        });
     }
 
     const userId = randomUUID();

@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import * as models from '../models/index.js';
 import * as userRepository from '../repositories/userRepository.js';
 import * as passwordUtils from '../utils/passwordUtils.js';
-import { getUserById, login, register, requestPasswordReset, resetPassword, verifyResetToken } from './authService.js';
+import { createGoogleUser, getUserById, login, register, requestPasswordReset, resetPassword, verifyResetToken } from './authService.js';
 
 describe('authService semantic errors - register slice', () => {
     afterEach(() => {
@@ -176,6 +176,31 @@ describe('authService semantic errors - verify/reset token slice', () => {
             statusCode: 404,
             code: 'AUTH_PASSWORD_RESET_USER_NOT_FOUND',
             message: 'Usuario no encontrado'
+        });
+    });
+});
+
+describe('authService semantic errors - createGoogleUser slice', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws AUTH_GOOGLE_EMAIL_ALREADY_REGISTERED when email exists without googleId', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue({
+            id: 'existing-user',
+            googleId: null
+        });
+
+        await expect(createGoogleUser({
+            googleId: 'g-1',
+            email: 'ana@mail.com',
+            name: 'Ana',
+            picture: null
+        }, 'tenant', '+5491111111111', '+5491111111111')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 409,
+            code: 'AUTH_GOOGLE_EMAIL_ALREADY_REGISTERED',
+            message: 'Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.'
         });
     });
 });
