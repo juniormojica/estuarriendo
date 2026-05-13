@@ -91,9 +91,11 @@ export const sendPasswordResetEmail = async (email, userName, resetToken) => {
         return data;
     } catch (error) {
         console.error('Error sending email with Brevo SDK:', error.message || error);
-        const err = new Error('Error al enviar el correo de recuperación. Por favor, inténtalo más tarde.');
-        err.statusCode = 500;
-        throw err;
+        throw new AppError(
+            'Error al enviar el correo de recuperación. Por favor, inténtalo más tarde.',
+            500,
+            'EMAIL_SEND_FAILED'
+        );
     }
 };
 

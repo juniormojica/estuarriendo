@@ -36,12 +36,14 @@ describe('emailService semantic errors', () => {
         });
     });
 
-    it('keeps operational send failures with generic user-facing message', async () => {
+    it('throws EMAIL_SEND_FAILED with generic user-facing message on provider failure', async () => {
         process.env.BREVO_API_KEY = 'brevo-key';
         sendTransacEmail.mockRejectedValueOnce(new Error('Brevo down'));
 
         await expect(sendPasswordResetEmail('test@example.com', 'Test User', 'token-123')).rejects.toMatchObject({
+            name: 'AppError',
             statusCode: 500,
+            code: 'EMAIL_SEND_FAILED',
             message: 'Error al enviar el correo de recuperación. Por favor, inténtalo más tarde.'
         });
     });
