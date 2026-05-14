@@ -21,7 +21,7 @@ const UserStatsCard: React.FC<UserStatsCardProps> = ({ users }) => {
     // User type breakdown
     const owners = users.filter(u => u.userType === 'owner').length;
     const tenants = users.filter(u => u.userType === 'tenant').length;
-    const admins = users.filter(u => u.userType === 'admin' || u.userType === 'superAdmin').length;
+    const admins = users.filter(u => u.userType === 'admin' || u.userType === 'super_admin').length;
 
     // Verified users
     const verifiedUsers = users.filter(u => u.verificationStatus === 'verified' || u.isVerified).length;

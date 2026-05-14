@@ -22,12 +22,12 @@ const SuperAdminDashboard: React.FC = () => {
 
     // Redirect if not super admin
     React.useEffect(() => {
-        if (!user || user.userType !== 'superAdmin') {
+        if (!user || user.userType !== 'super_admin') {
             router.push('/');
         }
     }, [user, router]);
 
-    if (!user || user.userType !== 'superAdmin') {
+    if (!user || user.userType !== 'super_admin') {
         return null;
     }
 

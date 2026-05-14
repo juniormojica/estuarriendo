@@ -2,6 +2,7 @@ import containerService from '../services/containerService.js';
 import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
 import { badRequest, forbidden, notFound } from '../errors/AppError.js';
+import { UserType } from '../utils/enums.js';
 
 /**
  * Container Controller
@@ -862,7 +863,7 @@ export const adminCreateContainer = async (req, res, next) => {
         const { User } = await import('../models/index.js');
 
         const adminUser = await User.findByPk(req.userId);
-        if (!adminUser || !['admin', 'superAdmin'].includes(adminUser.userType)) {
+        if (!adminUser || ![UserType.ADMIN, UserType.SUPER_ADMIN].includes(adminUser.userType)) {
             return next(forbidden('No tienes permisos para realizar esta acción'));
         }
 
@@ -877,7 +878,7 @@ export const adminCreateContainer = async (req, res, next) => {
             return next(notFound('Propietario no encontrado'));
         }
 
-        if (owner.userType !== 'owner' && owner.userType !== 'admin' && owner.userType !== 'superAdmin') {
+        if (owner.userType !== UserType.OWNER && owner.userType !== UserType.ADMIN && owner.userType !== UserType.SUPER_ADMIN) {
             return next(badRequest('El usuario seleccionado no tiene rol de propietario'));
         }
 

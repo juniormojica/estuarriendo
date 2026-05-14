@@ -23,7 +23,7 @@ export const seedEnums = async () => {
             },
             {
                 name: 'enum_users_user_type',
-                values: ['owner', 'tenant', 'admin', 'superAdmin'],
+                values: ['owner', 'tenant', 'admin', 'super_admin'],
                 comment: 'User roles in the system'
             },
             {

@@ -1,5 +1,5 @@
 import { User, Property, ContactUnlock, PropertyReport, CreditBalance, CreditTransaction, ReportActivityLog, ActivityLog } from '../models/index.js';
-import { PropertyReportStatus, CreditTransactionType, ContactUnlockStatus, NotificationType, ReportActivityAction } from '../utils/enums.js';
+import { PropertyReportStatus, CreditTransactionType, ContactUnlockStatus, NotificationType, ReportActivityAction, UserType } from '../utils/enums.js';
 import { Notification } from '../models/index.js';
 import { sequelize } from '../config/database.js';
 import { AppError, badRequest, conflict, notFound } from '../errors/AppError.js';
@@ -57,7 +57,7 @@ export const createPropertyReport = async (req, res, next) => {
 
         // Notify admins about the new report (non-blocking)
         try {
-            const admins = await User.findAll({ where: { userType: 'superAdmin' } });
+            const admins = await User.findAll({ where: { userType: UserType.SUPER_ADMIN } });
             const property = await Property.findByPk(propertyId);
 
             const adminNotifications = admins.map(admin => ({

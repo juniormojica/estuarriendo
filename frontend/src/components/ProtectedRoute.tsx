@@ -7,7 +7,7 @@ import authService from '../services/authService';
 interface ProtectedRouteProps {
     children: React.ReactNode;
     requireAuth?: boolean;
-    allowedUserTypes?: ('owner' | 'tenant' | 'admin' | 'superAdmin')[];
+    allowedUserTypes?: ('owner' | 'tenant' | 'admin' | 'super_admin')[];
 }
 
 /**

@@ -11,8 +11,8 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`
 export default function WhatsAppButton() {
   const userType = useAppSelector((state) => state.auth.user?.userType);
 
-  // Hide for admin and superAdmin roles
-  if (userType === 'admin' || userType === 'superAdmin') {
+  // Hide for admin and super_admin roles
+  if (userType === 'admin' || userType === 'super_admin') {
     return null;
   }
 

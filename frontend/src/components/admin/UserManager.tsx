@@ -190,13 +190,13 @@ const UserManager: React.FC = () => {
             owner: 'bg-blue-100 text-blue-800',
             tenant: 'bg-green-100 text-green-800',
             admin: 'bg-purple-100 text-purple-800',
-            superAdmin: 'bg-red-100 text-red-800'
+            super_admin: 'bg-red-100 text-red-800'
         };
         const labels = {
             owner: 'Propietario',
             tenant: 'Estudiante',
             admin: 'Admin',
-            superAdmin: 'Super Admin'
+            super_admin: 'Super Admin'
         };
         return (
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${badges[type as keyof typeof badges] || 'bg-gray-100 text-gray-800'}`}>
@@ -301,7 +301,7 @@ const UserManager: React.FC = () => {
                         <option value="owner">Propietarios</option>
                         <option value="tenant">Estudiantes</option>
                         <option value="admin">Admins</option>
-                        <option value="superAdmin">Super Admins</option>
+                        <option value="super_admin">Super Admins</option>
                     </select>
 
                     <select
@@ -502,7 +502,7 @@ const UserManager: React.FC = () => {
                                         <option value="owner">Propietario</option>
                                         <option value="tenant">Estudiante</option>
                                         <option value="admin">Admin</option>
-                                        <option value="superAdmin">Super Admin</option>
+                                        <option value="super_admin">Super Admin</option>
                                     </select>
                                 </div>
 

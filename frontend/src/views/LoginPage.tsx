@@ -44,7 +44,7 @@ const LoginPage = () => {
         if (user) {
             if (user.userType === 'owner') {
                 router.push('/dashboard');
-            } else if (user.userType === 'admin' || user.userType === 'superAdmin') {
+            } else if (user.userType === 'admin' || user.userType === 'super_admin') {
                 router.push('/admin');
             } else {
                 router.push('/');

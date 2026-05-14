@@ -1,5 +1,5 @@
 import { PaymentRequest, User, ActivityLog } from '../models/index.js';
-import { PaymentRequestStatus, PlanType } from '../utils/enums.js';
+import { PaymentRequestStatus, PlanType, UserType } from '../utils/enums.js';
 import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } from '../services/notificationService.js';
 import { badRequest, notFound } from '../errors/AppError.js';
 
@@ -134,7 +134,7 @@ export const createPaymentRequest = async (req, res, next) => {
             // Get all admin users
             const admins = await User.findAll({
                 where: {
-                    userType: ['admin', 'superAdmin']
+                    userType: [UserType.ADMIN, UserType.SUPER_ADMIN]
                 },
                 attributes: ['id']
             });
