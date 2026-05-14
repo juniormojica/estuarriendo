@@ -173,3 +173,163 @@ describe('notificationController incremental migration -> centralized errorHandl
         });
     });
 });
+
+describe('notificationController owner authorization', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    const ownUserId = 'user-own-123';
+    const otherUserId = 'user-other-456';
+    const authedReq = (overrides = {}) => ({
+        auth: { userId: ownUserId },
+        params: {},
+        query: {},
+        body: {},
+        ...overrides
+    });
+
+    // --- User-scoped routes (params.userId mismatch) ---
+
+    it('getUserNotifications rejects cross-user access', async () => {
+        const req = authedReq({ params: { userId: otherUserId } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.getUserNotifications(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        const err = next.mock.calls[0][0];
+        expect(err.statusCode).toBe(403);
+        expect(err.code).toBe('NOTIFICATION_ACCESS_DENIED');
+    });
+
+    it('getUserNotifications allows own-user access', async () => {
+        vi.spyOn(Notification, 'findAll').mockResolvedValue([]);
+        const req = authedReq({ params: { userId: ownUserId } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.getUserNotifications(req, res, next);
+
+        expect(res.json).toHaveBeenCalledWith([]);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('getUnreadCount rejects cross-user access', async () => {
+        const req = authedReq({ params: { userId: otherUserId } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.getUnreadCount(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        const err = next.mock.calls[0][0];
+        expect(err.statusCode).toBe(403);
+        expect(err.code).toBe('NOTIFICATION_ACCESS_DENIED');
+    });
+
+    it('markAllAsRead rejects cross-user access', async () => {
+        const req = authedReq({ params: { userId: otherUserId } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.markAllAsRead(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        const err = next.mock.calls[0][0];
+        expect(err.statusCode).toBe(403);
+        expect(err.code).toBe('NOTIFICATION_ACCESS_DENIED');
+    });
+
+    it('deleteAllRead rejects cross-user access', async () => {
+        const req = authedReq({ params: { userId: otherUserId } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.deleteAllRead(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        const err = next.mock.calls[0][0];
+        expect(err.statusCode).toBe(403);
+        expect(err.code).toBe('NOTIFICATION_ACCESS_DENIED');
+    });
+
+    // --- Single-notification routes (ownership mismatch) ---
+
+    it('markAsRead rejects notification owned by another user', async () => {
+        vi.spyOn(Notification, 'findByPk').mockResolvedValue({
+            id: 42,
+            userId: otherUserId,
+            update: vi.fn()
+        });
+
+        const req = authedReq({ params: { id: '42' } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.markAsRead(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        const err = next.mock.calls[0][0];
+        expect(err.statusCode).toBe(403);
+        expect(err.code).toBe('NOTIFICATION_ACCESS_DENIED');
+    });
+
+    it('markAsRead succeeds for own notification', async () => {
+        const update = vi.fn();
+        vi.spyOn(Notification, 'findByPk').mockResolvedValue({
+            id: 42,
+            userId: ownUserId,
+            update
+        });
+
+        const req = authedReq({ params: { id: '42' } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.markAsRead(req, res, next);
+
+        expect(update).toHaveBeenCalledWith({ read: true });
+        expect(res.json).toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('deleteNotification rejects notification owned by another user', async () => {
+        vi.spyOn(Notification, 'findByPk').mockResolvedValue({
+            id: 42,
+            userId: otherUserId,
+            destroy: vi.fn()
+        });
+
+        const req = authedReq({ params: { id: '42' } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.deleteNotification(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        const err = next.mock.calls[0][0];
+        expect(err.statusCode).toBe(403);
+        expect(err.code).toBe('NOTIFICATION_ACCESS_DENIED');
+    });
+
+    it('deleteNotification succeeds for own notification', async () => {
+        const destroy = vi.fn();
+        vi.spyOn(Notification, 'findByPk').mockResolvedValue({
+            id: 42,
+            userId: ownUserId,
+            destroy
+        });
+
+        const req = authedReq({ params: { id: '42' } });
+        const res = createResponse();
+        const next = vi.fn();
+
+        await notificationController.deleteNotification(req, res, next);
+
+        expect(destroy).toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+    });
+});

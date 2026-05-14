@@ -1,6 +1,17 @@
 import { Notification, User, Property } from '../models/index.js';
 import { NotificationType } from '../utils/enums.js';
-import { badRequest, notFound } from '../errors/AppError.js';
+import { badRequest, notFound, forbidden, unauthorized } from '../errors/AppError.js';
+
+const getAuthenticatedUserId = (req) => {
+    const authenticatedUserId = req.auth?.userId;
+    if (!authenticatedUserId) {
+        throw unauthorized('Autenticación requerida', {
+            code: 'NOTIFICATION_AUTH_REQUIRED'
+        });
+    }
+
+    return authenticatedUserId;
+};
 
 /**
  * Notification Controller
@@ -11,6 +22,12 @@ import { badRequest, notFound } from '../errors/AppError.js';
 export const getUserNotifications = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        const authenticatedUserId = getAuthenticatedUserId(req);
+        if (userId !== authenticatedUserId) {
+            throw forbidden('No tienes permiso para ver estas notificaciones', {
+                code: 'NOTIFICATION_ACCESS_DENIED'
+            });
+        }
         const { read, limit = 50, offset = 0 } = req.query;
 
         const where = { userId };
@@ -35,6 +52,12 @@ export const getUserNotifications = async (req, res, next) => {
 export const getUnreadCount = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        const authenticatedUserId = getAuthenticatedUserId(req);
+        if (userId !== authenticatedUserId) {
+            throw forbidden('No tienes permiso para ver estas notificaciones', {
+                code: 'NOTIFICATION_ACCESS_DENIED'
+            });
+        }
 
         const count = await Notification.count({
             where: {
@@ -89,10 +112,17 @@ export const createNotification = async (req, res, next) => {
 export const markAsRead = async (req, res, next) => {
     try {
         const { id } = req.params;
+        const authenticatedUserId = getAuthenticatedUserId(req);
 
         const notification = await Notification.findByPk(id);
         if (!notification) {
             throw notFound('Notification not found', { code: 'NOTIFICATION_NOT_FOUND' });
+        }
+
+        if (notification.userId !== authenticatedUserId) {
+            throw forbidden('No tienes permiso para modificar esta notificación', {
+                code: 'NOTIFICATION_ACCESS_DENIED'
+            });
         }
 
         await notification.update({ read: true });
@@ -106,6 +136,12 @@ export const markAsRead = async (req, res, next) => {
 export const markAllAsRead = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        const authenticatedUserId = getAuthenticatedUserId(req);
+        if (userId !== authenticatedUserId) {
+            throw forbidden('No tienes permiso para modificar estas notificaciones', {
+                code: 'NOTIFICATION_ACCESS_DENIED'
+            });
+        }
 
         await Notification.update(
             { read: true },
@@ -122,10 +158,17 @@ export const markAllAsRead = async (req, res, next) => {
 export const deleteNotification = async (req, res, next) => {
     try {
         const { id } = req.params;
+        const authenticatedUserId = getAuthenticatedUserId(req);
 
         const notification = await Notification.findByPk(id);
         if (!notification) {
             throw notFound('Notification not found', { code: 'NOTIFICATION_NOT_FOUND' });
+        }
+
+        if (notification.userId !== authenticatedUserId) {
+            throw forbidden('No tienes permiso para eliminar esta notificación', {
+                code: 'NOTIFICATION_ACCESS_DENIED'
+            });
         }
 
         await notification.destroy();
@@ -139,6 +182,12 @@ export const deleteNotification = async (req, res, next) => {
 export const deleteAllRead = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        const authenticatedUserId = getAuthenticatedUserId(req);
+        if (userId !== authenticatedUserId) {
+            throw forbidden('No tienes permiso para eliminar estas notificaciones', {
+                code: 'NOTIFICATION_ACCESS_DENIED'
+            });
+        }
 
         const deletedCount = await Notification.destroy({
             where: {
