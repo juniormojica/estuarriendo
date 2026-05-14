@@ -97,6 +97,37 @@ export const createPropertyReport = async (req, res, next) => {
 };
 
 /**
+ * Get authenticated user's own reports
+ * Does NOT accept reporterId from query — always uses req.auth.userId
+ */
+export const getMyPropertyReports = async (req, res, next) => {
+    try {
+        const userId = req.auth.userId;
+
+        const reports = await PropertyReport.findAll({
+            where: { reporterId: userId },
+            include: [
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title']
+                },
+                {
+                    model: ReportActivityLog,
+                    as: 'activityLogs',
+                    include: [{ model: User, as: 'admin', attributes: ['id', 'name'] }]
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json(reports);
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
  * Get reports (Admin)
  */
 export const getPropertyReports = async (req, res, next) => {
@@ -319,6 +350,7 @@ export const rejectPropertyReport = async (req, res, next) => {
 export default {
     createPropertyReport,
     getPropertyReports,
+    getMyPropertyReports,
     confirmPropertyReport,
     rejectPropertyReport
 };

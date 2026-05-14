@@ -9,8 +9,12 @@ const router = express.Router();
 // User-facing: create report (authenticated)
 router.post('/', authMiddleware, propertyReportController.createPropertyReport);
 
-// Admin: list/confirm/reject reports
+// Admin: list all reports
 router.get('/', authMiddleware, requireAdmin, propertyReportController.getPropertyReports);
+
+// User-facing: list own reports (authenticated, no client-supplied reporterId)
+router.get('/my', authMiddleware, propertyReportController.getMyPropertyReports);
+
 router.put('/:id/confirm', authMiddleware, requireAdmin, propertyReportController.confirmPropertyReport);
 router.put('/:id/reject', authMiddleware, requireAdmin, propertyReportController.rejectPropertyReport);
 
