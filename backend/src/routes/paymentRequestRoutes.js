@@ -15,10 +15,10 @@ const router = express.Router();
 // Payment request listing (admin)
 router.get('/', authMiddleware, requireAdmin, getAllPaymentRequests);
 
-// User-facing routes
-router.get('/:id', getPaymentRequestById);
-router.get('/user/:userId', getUserPaymentRequests);
-router.post('/', createPaymentRequest);
+// User-facing routes (authenticated)
+router.get('/:id', authMiddleware, getPaymentRequestById);
+router.get('/user/:userId', authMiddleware, getUserPaymentRequests);
+router.post('/', authMiddleware, createPaymentRequest);
 
 // Payment verification (admin)
 router.put('/:id/verify', authMiddleware, requireAdmin, verifyPaymentRequest);

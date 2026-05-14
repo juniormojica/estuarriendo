@@ -1,6 +1,6 @@
 import { UserVerificationDocuments, User, UserVerification, Notification, UserIdentificationDetails, UserProfile, ActivityLog } from '../models/index.js';
 import { VerificationStatus, DocumentVerificationStatus, NotificationType, UserType } from '../utils/enums.js';
-import { badRequest, notFound } from '../errors/AppError.js';
+import { badRequest, forbidden, notFound } from '../errors/AppError.js';
 
 import { Op } from 'sequelize';
 
@@ -12,10 +12,11 @@ import { Op } from 'sequelize';
 // Submit verification documents
 export const submitVerificationDocuments = async (req, res, next) => {
     try {
-        const { userId, idFront, idBack, selfie, utilityBill } = req.body;
+        const { idFront, idBack, selfie, utilityBill } = req.body;
+        const userId = req.auth.userId;
 
         // Validate required fields
-        if (!userId || !idFront || !idBack || !selfie) {
+        if (!idFront || !idBack || !selfie) {
             return next(badRequest('ID Front, ID Back and Selfie are required', {
                 code: 'VERIFICATION_REQUIRED_DOCUMENTS_MISSING'
             }));
@@ -358,9 +359,10 @@ export const rejectVerification = async (req, res, next) => {
 
 export const submitSingleDocument = async (req, res, next) => {
     try {
-        const { userId, documentType, documentUrl, idNumber } = req.body;
+        const userId = req.auth.userId;
+        const { documentType, documentUrl, idNumber } = req.body;
 
-        if (!userId || !documentType || !documentUrl) {
+        if (!documentType || !documentUrl) {
             return next(badRequest('Missing required fields', {
                 code: 'VERIFICATION_REQUIRED_FIELDS_MISSING'
             }));
@@ -455,6 +457,11 @@ export const submitSingleDocument = async (req, res, next) => {
 export const getVerificationProgress = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        if (req.auth.userId !== userId) {
+            return next(forbidden('No tienes permiso para ver el progreso de verificación de este usuario', {
+                code: 'VERIFICATION_PROGRESS_FORBIDDEN'
+            }));
+        }
 
         const docs = await UserVerificationDocuments.findByPk(userId);
         const user = await User.findByPk(userId, { 

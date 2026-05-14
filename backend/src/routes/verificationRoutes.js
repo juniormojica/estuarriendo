@@ -20,15 +20,15 @@ router.get('/pending/all', authMiddleware, requireAdmin, getPendingVerifications
 // ----------------------------------------
 // INDIVIDUAL DOCUMENT REVIEW
 // ----------------------------------------
-router.get('/progress/:userId', getVerificationProgress);
-router.post('/document/submit', submitSingleDocument);
+router.get('/progress/:userId', authMiddleware, getVerificationProgress);
+router.post('/document/submit', authMiddleware, submitSingleDocument);
 router.patch('/document/:userId/review', authMiddleware, requireAdmin, reviewSingleDocument);
 
 // ----------------------------------------
 // LEGACY BATCH REVIEW (Fallback)
 // ----------------------------------------
 // Submit verification documents
-router.post('/submit', submitVerificationDocuments);
+router.post('/submit', authMiddleware, submitVerificationDocuments);
 
 // Admin: document retrieval and approval
 router.get('/:userId', authMiddleware, requireAdmin, getVerificationDocuments);

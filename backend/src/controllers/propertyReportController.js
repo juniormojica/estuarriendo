@@ -9,10 +9,11 @@ import { AppError, badRequest, conflict, notFound } from '../errors/AppError.js'
  */
 export const createPropertyReport = async (req, res, next) => {
     try {
-        const { reporterId, propertyId, reason, description } = req.body;
+        const reporterId = req.auth.userId;
+        const { propertyId, reason, description } = req.body;
 
-        if (!reporterId || !propertyId || !reason) {
-            return next(badRequest('Se requiere reporterId, propertyId y reason', {
+        if (!propertyId || !reason) {
+            return next(badRequest('Se requiere propertyId y reason', {
                 code: 'PROPERTY_REPORT_REQUIRED_FIELDS'
             }));
         }

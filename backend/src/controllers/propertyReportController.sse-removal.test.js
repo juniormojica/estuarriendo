@@ -21,10 +21,10 @@ describe('propertyReportController ActivityLog parity', () => {
         vi.spyOn(Notification, 'bulkCreate').mockResolvedValue([]);
         const activitySpy = vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
 
-        const req = { body: { reporterId: 'u-10', propertyId: 'p-1', reason: 'scam' } };
+        const req = { auth: { userId: 'u-10' }, body: { propertyId: 'p-1', reason: 'scam' } };
         const res = createRes();
 
-        await propertyReportController.createPropertyReport(req, res);
+        await propertyReportController.createPropertyReport(req, res, vi.fn());
 
         expect(activitySpy).toHaveBeenCalledWith(expect.objectContaining({
             type: 'property_report_created',
