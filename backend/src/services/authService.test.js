@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import * as models from '../models/index.js';
 import * as userRepository from '../repositories/userRepository.js';
 import * as passwordUtils from '../utils/passwordUtils.js';
+import { UserType } from '../utils/enums.js';
 import { createGoogleUser, getUserById, login, register, requestPasswordReset, resetPassword, verifyResetToken } from './authService.js';
 
 describe('authService semantic errors - register slice', () => {
@@ -16,7 +17,8 @@ describe('authService semantic errors - register slice', () => {
         await expect(register({
             email: 'ana@mail.com',
             password: '123456',
-            name: 'Ana'
+            name: 'Ana',
+            userType: UserType.OWNER
         })).rejects.toMatchObject({
             name: 'AppError',
             statusCode: 400,
@@ -202,5 +204,116 @@ describe('authService semantic errors - createGoogleUser slice', () => {
             code: 'AUTH_GOOGLE_EMAIL_ALREADY_REGISTERED',
             message: 'Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.'
         });
+    });
+});
+
+describe('authService privileged role blocking — register', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it.each([
+        ['admin', UserType.ADMIN],
+        ['super_admin', UserType.SUPER_ADMIN],
+    ])('register throws AUTH_REGISTER_PRIVILEGED_ROLE for %s', async (_, role) => {
+        await expect(register({
+            email: 'test@mail.com',
+            password: '123456',
+            name: 'Test',
+            phone: '111111111',
+            userType: role
+        })).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE',
+            message: 'Tipo de usuario no válido para registro público'
+        });
+    });
+
+    it('register passes for owner role', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue(null);
+        vi.spyOn(User, 'create').mockResolvedValue({
+            id: 'u-owner-1',
+            toJSON: () => ({ id: 'u-owner-1', userType: 'owner' })
+        });
+
+        await expect(register({
+            email: 'owner@mail.com',
+            password: '123456',
+            name: 'Owner',
+            phone: '111111111',
+            userType: UserType.OWNER
+        })).resolves.toBeDefined();
+    });
+
+    it('register passes for tenant role', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue(null);
+        vi.spyOn(User, 'create').mockResolvedValue({
+            id: 'u-tenant-1',
+            toJSON: () => ({ id: 'u-tenant-1', userType: 'tenant' })
+        });
+
+        await expect(register({
+            email: 'tenant@mail.com',
+            password: '123456',
+            name: 'Tenant',
+            phone: '111111111',
+            userType: UserType.TENANT
+        })).resolves.toBeDefined();
+    });
+});
+
+describe('authService privileged role blocking — createGoogleUser', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it.each([
+        ['admin', UserType.ADMIN],
+        ['super_admin', UserType.SUPER_ADMIN],
+    ])('createGoogleUser throws AUTH_REGISTER_PRIVILEGED_ROLE for %s', async (_, role) => {
+        await expect(createGoogleUser({
+            googleId: 'g-1',
+            email: 'test@mail.com',
+            name: 'Test',
+            picture: null
+        }, role, '+5491111111111')).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 400,
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE',
+            message: 'Tipo de usuario no válido para registro público'
+        });
+    });
+
+    it('createGoogleUser passes for owner role', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue(null);
+        vi.spyOn(models.ActivityLog, 'create').mockResolvedValue({});
+        vi.spyOn(User, 'create').mockResolvedValue({
+            id: 'u-owner-g',
+            toJSON: () => ({ id: 'u-owner-g', userType: 'owner' })
+        });
+
+        await expect(createGoogleUser({
+            googleId: 'g-owner',
+            email: 'owner@mail.com',
+            name: 'Owner',
+            picture: null
+        }, UserType.OWNER, '+5491111111111')).resolves.toBeDefined();
+    });
+
+    it('createGoogleUser passes for tenant role', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue(null);
+        vi.spyOn(models.ActivityLog, 'create').mockResolvedValue({});
+        vi.spyOn(User, 'create').mockResolvedValue({
+            id: 'u-tenant-g',
+            toJSON: () => ({ id: 'u-tenant-g', userType: 'tenant' })
+        });
+
+        await expect(createGoogleUser({
+            googleId: 'g-tenant',
+            email: 'tenant@mail.com',
+            name: 'Tenant',
+            picture: null
+        }, UserType.TENANT, '+5491111111111')).resolves.toBeDefined();
     });
 });

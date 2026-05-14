@@ -9,7 +9,10 @@ import {
     isTokenExpired
 } from '../utils/tokenUtils.js';
 import { sendPasswordResetEmail } from './emailService.js';
+import { UserType } from '../utils/enums.js';
 import { badRequest, conflict, forbidden, notFound, unauthorized } from '../errors/AppError.js';
+
+const PUBLIC_REGISTRATION_ROLES = [UserType.OWNER, UserType.TENANT];
 
 /**
  * Authentication Service
@@ -23,6 +26,12 @@ import { badRequest, conflict, forbidden, notFound, unauthorized } from '../erro
  */
 export const register = async (userData) => {
     const { email, password, ...otherData } = userData;
+
+    if (!PUBLIC_REGISTRATION_ROLES.includes(userData.userType)) {
+        throw badRequest('Tipo de usuario no válido para registro público', {
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE'
+        });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
@@ -319,6 +328,12 @@ export const findByGoogleId = async (googleId) => {
  */
 export const createGoogleUser = async (googleData, userType, phone, whatsapp) => {
     const { googleId, email, name, picture } = googleData;
+
+    if (!PUBLIC_REGISTRATION_ROLES.includes(userType)) {
+        throw badRequest('Tipo de usuario no válido para registro público', {
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE'
+        });
+    }
 
     // Check if email already exists (registered manually)
     const existingByEmail = await User.findOne({ where: { email } });
