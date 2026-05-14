@@ -1,7 +1,7 @@
 import { PaymentRequest, User, ActivityLog } from '../models/index.js';
 import { PaymentRequestStatus, PlanType, UserType } from '../utils/enums.js';
 import { notifyPaymentVerified, notifyPaymentRejected, notifyPaymentSubmitted } from '../services/notificationService.js';
-import { badRequest, notFound } from '../errors/AppError.js';
+import { badRequest, forbidden, notFound } from '../errors/AppError.js';
 
 
 /**
@@ -56,6 +56,12 @@ export const getPaymentRequestById = async (req, res, next) => {
             return next(notFound('Payment request not found', { code: 'PAYMENT_REQUEST_NOT_FOUND' }));
         }
 
+        if (request.userId !== req.auth.userId) {
+            return next(forbidden('No tienes permiso para ver esta solicitud de pago', {
+                code: 'PAYMENT_REQUEST_VIEW_FORBIDDEN'
+            }));
+        }
+
         res.json(request);
     } catch (error) {
         next(error);
@@ -66,6 +72,12 @@ export const getPaymentRequestById = async (req, res, next) => {
 export const getUserPaymentRequests = async (req, res, next) => {
     try {
         const { userId } = req.params;
+
+        if (req.auth.userId !== userId) {
+            return next(forbidden('No tienes permiso para ver las solicitudes de pago de este usuario', {
+                code: 'PAYMENT_REQUEST_USER_LIST_FORBIDDEN'
+            }));
+        }
 
         const requests = await PaymentRequest.findAll({
             where: { userId },
@@ -81,10 +93,11 @@ export const getUserPaymentRequests = async (req, res, next) => {
 // Create payment request
 export const createPaymentRequest = async (req, res, next) => {
     try {
-        const { userId, amount, planType, planDuration, referenceCode, proofImageUrl, proofImagePublicId, paymentMethod, mercadoPagoPaymentId } = req.body;
+        const userId = req.auth.userId;
+        const { amount, planType, planDuration, referenceCode, proofImageUrl, proofImagePublicId, paymentMethod, mercadoPagoPaymentId } = req.body;
 
         // Validate required fields
-        if (!userId || !amount || !planType || planDuration === undefined || planDuration === null || !referenceCode) {
+        if (!amount || !planType || planDuration === undefined || planDuration === null || !referenceCode) {
             return next(badRequest('Faltan campos requeridos', { code: 'PAYMENT_REQUEST_REQUIRED_FIELDS_MISSING' }));
         }
 

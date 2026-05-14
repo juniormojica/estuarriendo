@@ -5,10 +5,11 @@ import { badRequest, notFound } from '../errors/AppError.js';
 export const addReportActivity = async (req, res, next) => {
     try {
         const { id } = req.params; // reportId
-        const { adminId, action, notes } = req.body;
+        const adminId = req.auth.userId;
+        const { action, notes } = req.body;
 
-        if (!adminId || !action || !notes) {
-            throw badRequest('adminId, action, and notes are required', {
+        if (!action || !notes) {
+            throw badRequest('action and notes are required', {
                 code: 'REPORT_ACTIVITY_VALIDATION_ERROR'
             });
         }

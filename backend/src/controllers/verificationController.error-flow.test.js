@@ -56,7 +56,7 @@ describe('verificationController incremental migration -> centralized errorHandl
         vi.spyOn(UserVerificationDocuments, 'findByPk').mockResolvedValue(null);
         vi.spyOn(User, 'findByPk').mockResolvedValue(null);
 
-        const req = { params: { userId: '404' } };
+        const req = { auth: { userId: '404' }, params: { userId: '404' } };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             verificationController.getVerificationProgress,
             { req }
@@ -234,8 +234,8 @@ describe('verificationController incremental migration -> centralized errorHandl
 
     it('delegates submitVerificationDocuments missing-required-documents flow to centralized handler', async () => {
         const req = {
+            auth: { userId: '1' },
             body: {
-                userId: '1',
                 idFront: 'front-url',
                 // idBack missing on purpose
                 selfie: 'selfie-url'
@@ -262,8 +262,8 @@ describe('verificationController incremental migration -> centralized errorHandl
         vi.spyOn(User, 'findByPk').mockResolvedValue(null);
 
         const req = {
+            auth: { userId: '404' },
             body: {
-                userId: '404',
                 idFront: 'front-url',
                 idBack: 'back-url',
                 selfie: 'selfie-url'
@@ -290,8 +290,8 @@ describe('verificationController incremental migration -> centralized errorHandl
         vi.spyOn(User, 'findByPk').mockRejectedValue(new Error('db exploded with internals'));
 
         const req = {
+            auth: { userId: '10' },
             body: {
-                userId: '10',
                 idFront: 'front-url',
                 idBack: 'back-url',
                 selfie: 'selfie-url'
@@ -316,8 +316,8 @@ describe('verificationController incremental migration -> centralized errorHandl
 
     it('delegates submitSingleDocument missing-required-fields flow to centralized handler', async () => {
         const req = {
+            auth: { userId: '1' },
             body: {
-                userId: '1',
                 documentType: 'idFront'
                 // documentUrl missing on purpose
             }
@@ -341,8 +341,8 @@ describe('verificationController incremental migration -> centralized errorHandl
 
     it('delegates submitSingleDocument invalid-document-type flow to centralized handler', async () => {
         const req = {
+            auth: { userId: '1' },
             body: {
-                userId: '1',
                 documentType: 'passport',
                 documentUrl: 'passport-url'
             }
@@ -378,8 +378,8 @@ describe('verificationController incremental migration -> centralized errorHandl
         ]);
 
         const req = {
+            auth: { userId: '1' },
             body: {
-                userId: '1',
                 documentType: 'idFront',
                 documentUrl: 'front-url'
             }
@@ -405,8 +405,8 @@ describe('verificationController incremental migration -> centralized errorHandl
         vi.spyOn(User, 'findByPk').mockRejectedValue(new Error('db exploded with internals'));
 
         const req = {
+            auth: { userId: '10' },
             body: {
-                userId: '10',
                 documentType: 'idFront',
                 documentUrl: 'front-url'
             }
@@ -425,6 +425,15 @@ describe('verificationController incremental migration -> centralized errorHandl
             error: 'Error interno del servidor',
             message: 'Error interno del servidor',
             code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('rejects getVerificationProgress cross-user access with 403 forbidden error', async () => {
+        const req = { auth: { userId: 'self' }, params: { userId: 'other' } };
+
+        await verificationController.getVerificationProgress(req, createResponse(), (error) => {
+            expect(error.statusCode).toBe(403);
+            expect(error.code).toBe('VERIFICATION_PROGRESS_FORBIDDEN');
         });
     });
 

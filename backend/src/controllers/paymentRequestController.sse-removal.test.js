@@ -25,8 +25,8 @@ describe('paymentRequestController ActivityLog parity', () => {
         const activitySpy = vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
 
         const req = {
+            auth: { userId: 'u-1' },
             body: {
-                userId: 'u-1',
                 amount: 10000,
                 planType: 'monthly',
                 planDuration: 30,
@@ -36,7 +36,7 @@ describe('paymentRequestController ActivityLog parity', () => {
         };
         const res = createRes();
 
-        await paymentRequestController.createPaymentRequest(req, res);
+        await paymentRequestController.createPaymentRequest(req, res, vi.fn());
 
         expect(activitySpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'payment_submitted', userId: 'u-1' }));
         expect(res.status).toHaveBeenCalledWith(201);

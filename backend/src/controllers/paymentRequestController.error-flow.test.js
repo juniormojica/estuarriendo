@@ -36,7 +36,7 @@ describe('paymentRequestController incremental migration -> centralized errorHan
     it('delegates get by id not-found flow to standardized 404 contract', async () => {
         vi.spyOn(PaymentRequest, 'findByPk').mockResolvedValue(null);
 
-        const req = { params: { id: 'missing-id' } };
+        const req = { auth: { userId: 'u-1' }, params: { id: 'missing-id' } };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             paymentRequestController.getPaymentRequestById,
             { req }
@@ -76,7 +76,7 @@ describe('paymentRequestController incremental migration -> centralized errorHan
     it('delegates user list unexpected errors to internal-error contract', async () => {
         vi.spyOn(PaymentRequest, 'findAll').mockRejectedValue(new Error('db exploded'));
 
-        const req = { params: { userId: 'u-1' } };
+        const req = { auth: { userId: 'u-1' }, params: { userId: 'u-1' } };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             paymentRequestController.getUserPaymentRequests,
             { req }
@@ -95,8 +95,8 @@ describe('paymentRequestController incremental migration -> centralized errorHan
 
     it('delegates create required-field validation to standardized 400 contract', async () => {
         const req = {
+            auth: { userId: 'u-1' },
             body: {
-                userId: 'u-1',
                 amount: 1000,
                 planType: 'monthly',
                 referenceCode: 'ref-1'
@@ -123,8 +123,8 @@ describe('paymentRequestController incremental migration -> centralized errorHan
         vi.spyOn(User, 'findByPk').mockResolvedValue(null);
 
         const req = {
+            auth: { userId: 'missing-user' },
             body: {
-                userId: 'missing-user',
                 amount: 1000,
                 planType: 'monthly',
                 planDuration: 30,
@@ -153,8 +153,8 @@ describe('paymentRequestController incremental migration -> centralized errorHan
         vi.spyOn(User, 'findByPk').mockRejectedValue(new Error('db unavailable'));
 
         const req = {
+            auth: { userId: 'u-1' },
             body: {
-                userId: 'u-1',
                 amount: 1000,
                 planType: 'monthly',
                 planDuration: 30,
@@ -300,6 +300,32 @@ describe('paymentRequestController incremental migration -> centralized errorHan
             error: 'Error interno del servidor',
             message: 'Error interno del servidor',
             code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('rejects getPaymentRequestById cross-user access with 403', async () => {
+        vi.spyOn(PaymentRequest, 'findByPk').mockResolvedValue({
+            id: 1,
+            userId: 'owner-user',
+            amount: 1000,
+            planType: 'monthly',
+            status: PaymentRequestStatus.PENDING
+        });
+
+        const req = { auth: { userId: 'other-user' }, params: { id: '1' } };
+
+        await paymentRequestController.getPaymentRequestById(req, createResponse(), (error) => {
+            expect(error.statusCode).toBe(403);
+            expect(error.code).toBe('PAYMENT_REQUEST_VIEW_FORBIDDEN');
+        });
+    });
+
+    it('rejects getUserPaymentRequests cross-user access with 403', async () => {
+        const req = { auth: { userId: 'self' }, params: { userId: 'other-user' } };
+
+        await paymentRequestController.getUserPaymentRequests(req, createResponse(), (error) => {
+            expect(error.statusCode).toBe(403);
+            expect(error.code).toBe('PAYMENT_REQUEST_USER_LIST_FORBIDDEN');
         });
     });
 });

@@ -33,7 +33,7 @@ describe('propertyReportController incremental migration -> centralized errorHan
     });
 
     it('delegates createPropertyReport required-fields validation to standardized 400 contract', async () => {
-        const req = { body: { reporterId: 3, propertyId: 10 } };
+        const req = { auth: { userId: 3 }, body: { propertyId: 10 } };
 
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             propertyReportController.createPropertyReport,
@@ -45,8 +45,8 @@ describe('propertyReportController incremental migration -> centralized errorHan
         expect(jsonCallsBeforeHandler).toBe(0);
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'Se requiere reporterId, propertyId y reason',
-            message: 'Se requiere reporterId, propertyId y reason',
+            error: 'Se requiere propertyId y reason',
+            message: 'Se requiere propertyId y reason',
             code: 'PROPERTY_REPORT_REQUIRED_FIELDS'
         });
     });
@@ -54,7 +54,7 @@ describe('propertyReportController incremental migration -> centralized errorHan
     it('delegates createPropertyReport unlock-required flow to standardized 403 contract', async () => {
         vi.spyOn(ContactUnlock, 'findOne').mockResolvedValue(null);
 
-        const req = { body: { reporterId: 3, propertyId: 10, reason: 'already_rented' } };
+        const req = { auth: { userId: 3 }, body: { propertyId: 10, reason: 'already_rented' } };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             propertyReportController.createPropertyReport,
             { req }

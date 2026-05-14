@@ -33,8 +33,9 @@ describe('reportActivityLogController incremental migration -> centralized error
 
     it('delegates addReportActivity validation failures to standardized 400 contract', async () => {
         const req = {
+            auth: { userId: 1 },
             params: { id: '1' },
-            body: { adminId: null, action: null, notes: null }
+            body: { action: null, notes: null }
         };
 
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
@@ -47,8 +48,8 @@ describe('reportActivityLogController incremental migration -> centralized error
         expect(jsonCallsBeforeHandler).toBe(0);
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'adminId, action, and notes are required',
-            message: 'adminId, action, and notes are required',
+            error: 'action and notes are required',
+            message: 'action and notes are required',
             code: 'REPORT_ACTIVITY_VALIDATION_ERROR'
         });
     });
@@ -57,8 +58,9 @@ describe('reportActivityLogController incremental migration -> centralized error
         vi.spyOn(PropertyReport, 'findByPk').mockResolvedValue(null);
 
         const req = {
+            auth: { userId: 1 },
             params: { id: '404' },
-            body: { adminId: 1, action: 'review', notes: 'start review' }
+            body: { action: 'review', notes: 'start review' }
         };
 
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
