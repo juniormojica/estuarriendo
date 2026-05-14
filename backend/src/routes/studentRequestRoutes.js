@@ -1,4 +1,6 @@
 import express from 'express';
+import authMiddleware from '../middleware/auth.js';
+import { requireOwnerOrAdmin } from '../middleware/role.js';
 import {
     getAllStudentRequests,
     getStudentRequestById,
@@ -11,25 +13,19 @@ import {
 
 const router = express.Router();
 
-// Get all student requests with filters
-router.get('/', getAllStudentRequests);
+// Protected — listing exposes sensitive student contact data (email, phone, whatsapp)
+router.get('/', authMiddleware, requireOwnerOrAdmin, getAllStudentRequests);
 
-// Get student request by ID
-router.get('/:id', getStudentRequestById);
+// Protected — individual detail requires auth
+router.get('/student/:studentId', authMiddleware, getStudentRequestsByStudentId);
+router.get('/:id', authMiddleware, getStudentRequestById);
 
-// Get requests by student ID
-router.get('/student/:studentId', getStudentRequestsByStudentId);
+// Protected — create derives student identity from token
+router.post('/', authMiddleware, createStudentRequest);
 
-// Create student request
-router.post('/', createStudentRequest);
-
-// Update student request
-router.put('/:id', updateStudentRequest);
-
-// Close student request
-router.put('/:id/close', closeStudentRequest);
-
-// Delete student request
-router.delete('/:id', deleteStudentRequest);
+// Protected — mutations require auth + ownership
+router.put('/:id/close', authMiddleware, closeStudentRequest);
+router.put('/:id', authMiddleware, updateStudentRequest);
+router.delete('/:id', authMiddleware, deleteStudentRequest);
 
 export default router;

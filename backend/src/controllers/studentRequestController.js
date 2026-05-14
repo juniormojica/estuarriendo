@@ -1,7 +1,7 @@
 import { StudentRequest, User, City, Institution, ActivityLog } from '../models/index.js';
-import { StudentRequestStatus } from '../utils/enums.js';
+import { StudentRequestStatus, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
-import { badRequest, notFound } from '../errors/AppError.js';
+import { badRequest, notFound, forbidden } from '../errors/AppError.js';
 
 /**
  * StudentRequest Controller
@@ -94,10 +94,17 @@ export const getStudentRequestById = async (req, res, next) => {
     }
 };
 
-// Get requests by student ID
+// Get requests by student ID — authenticated user must be the student or admin
 export const getStudentRequestsByStudentId = async (req, res, next) => {
     try {
         const { studentId } = req.params;
+
+        if (req.auth.userId !== studentId) {
+            const user = await User.findByPk(req.auth.userId, { attributes: ['userType'] });
+            if (user?.userType !== UserType.ADMIN && user?.userType !== UserType.SUPER_ADMIN) {
+                throw forbidden('Solo puedes ver tus propias solicitudes', { code: 'STUDENT_REQUEST_FORBIDDEN' });
+            }
+        }
 
         const requests = await StudentRequest.findAll({
             where: { studentId },
@@ -110,15 +117,15 @@ export const getStudentRequestsByStudentId = async (req, res, next) => {
     }
 };
 
-// Create student request
+// Create student request — studentId is DERIVED from token, NEVER trust client-provided value
 export const createStudentRequest = async (req, res, next) => {
     try {
         const requestData = req.body;
+        const studentId = req.auth.userId;
 
-        // Validate required fields (normalized schema)
+        // Validate required fields (studentId is derived from auth, not body)
         const requiredFields = [
-            'studentId',        // Required - references User table
-            'cityId',           // Required - references City table
+            'cityId',
             'budgetMax',
             'propertyTypeDesired',
             'moveInDate'
@@ -132,16 +139,14 @@ export const createStudentRequest = async (req, res, next) => {
             }
         }
 
-        // If studentId is provided, verify user exists
-        if (requestData.studentId) {
-            const student = await User.findByPk(requestData.studentId);
-            if (!student) {
-                throw notFound('Student user not found', { code: 'STUDENT_USER_NOT_FOUND' });
-            }
+        const student = await User.findByPk(studentId);
+        if (!student) {
+            throw notFound('Usuario no encontrado', { code: 'STUDENT_USER_NOT_FOUND' });
         }
 
         const request = await StudentRequest.create({
             ...requestData,
+            studentId,
             status: StudentRequestStatus.OPEN,
             createdAt: new Date(),
             updatedAt: new Date()
@@ -150,8 +155,8 @@ export const createStudentRequest = async (req, res, next) => {
         try {
             await ActivityLog.create({
                 type: 'student_request_created',
-                message: `Nueva solicitud estudiantil creada por ${requestData.studentId}`,
-                userId: requestData.studentId,
+                message: `Nueva solicitud estudiantil creada por ${studentId}`,
+                userId: studentId,
                 timestamp: new Date()
             });
         } catch (activityError) {
@@ -164,7 +169,7 @@ export const createStudentRequest = async (req, res, next) => {
     }
 };
 
-// Update student request
+// Update student request — ownership or admin required
 export const updateStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -175,6 +180,8 @@ export const updateStudentRequest = async (req, res, next) => {
             throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
 
+        await assertOwnershipOrAdmin(req, request);
+
         updates.updatedAt = new Date();
 
         await request.update(updates);
@@ -184,7 +191,7 @@ export const updateStudentRequest = async (req, res, next) => {
     }
 };
 
-// Close student request
+// Close student request — ownership or admin required
 export const closeStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -193,6 +200,8 @@ export const closeStudentRequest = async (req, res, next) => {
         if (!request) {
             throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
+
+        await assertOwnershipOrAdmin(req, request);
 
         await request.update({
             status: StudentRequestStatus.CLOSED,
@@ -208,7 +217,7 @@ export const closeStudentRequest = async (req, res, next) => {
     }
 };
 
-// Delete student request
+// Delete student request — ownership or admin required (admin panel uses this)
 export const deleteStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -218,10 +227,20 @@ export const deleteStudentRequest = async (req, res, next) => {
             throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
 
+        await assertOwnershipOrAdmin(req, request);
+
         await request.destroy();
         res.json({ message: 'Student request deleted successfully' });
     } catch (error) {
         next(error);
+    }
+};
+
+const assertOwnershipOrAdmin = async (req, request) => {
+    if (request.studentId === req.auth.userId) return;
+    const user = await User.findByPk(req.auth.userId, { attributes: ['userType'] });
+    if (user?.userType !== UserType.ADMIN && user?.userType !== UserType.SUPER_ADMIN) {
+        throw forbidden('Solo puedes modificar tus propias solicitudes', { code: 'STUDENT_REQUEST_FORBIDDEN' });
     }
 };
 

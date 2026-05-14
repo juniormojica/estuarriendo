@@ -18,8 +18,8 @@ describe('studentRequestController ActivityLog parity', () => {
         const activitySpy = vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
 
         const req = {
+            auth: { userId: 'u-10' },
             body: {
-                studentId: 'u-10',
                 cityId: 1,
                 budgetMax: 1000,
                 propertyTypeDesired: 'room',

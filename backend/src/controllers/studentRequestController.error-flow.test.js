@@ -32,7 +32,7 @@ describe('studentRequestController incremental migration -> centralized errorHan
     });
 
     it('delegates createStudentRequest required-field validation to standardized 400 contract', async () => {
-        const req = { body: { studentId: 12 } };
+        const req = { body: { studentId: 12 }, auth: { userId: 'u-10' } };
 
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             studentRequestController.createStudentRequest,
