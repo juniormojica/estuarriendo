@@ -8,25 +8,18 @@ import {
     deleteInstitution
 } from '../controllers/institutionController.js';
 import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Get all institutions (filtered by city/type)
+// Public read routes (catalog)
 router.get('/', getAllInstitutions);
-
-// Search institutions (autocomplete)
 router.get('/search', searchInstitutions);
-
-// Get institution by ID
 router.get('/:id', getInstitutionById);
 
-// Create new institution (admin only)
-router.post('/', authMiddleware, createInstitution);
-
-// Update institution (admin only)
-router.put('/:id', authMiddleware, updateInstitution);
-
-// Delete institution (admin only)
-router.delete('/:id', authMiddleware, deleteInstitution);
+// Admin CRUD
+router.post('/', authMiddleware, requireAdmin, createInstitution);
+router.put('/:id', authMiddleware, requireAdmin, updateInstitution);
+router.delete('/:id', authMiddleware, requireAdmin, deleteInstitution);
 
 export default router;

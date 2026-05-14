@@ -7,25 +7,21 @@ import {
     verifyPaymentRequest,
     rejectPaymentRequest
 } from '../controllers/paymentRequestController.js';
+import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Get all payment requests (admin)
-router.get('/', getAllPaymentRequests);
+// Payment request listing (admin)
+router.get('/', authMiddleware, requireAdmin, getAllPaymentRequests);
 
-// Get payment request by ID
+// User-facing routes
 router.get('/:id', getPaymentRequestById);
-
-// Get user's payment requests
 router.get('/user/:userId', getUserPaymentRequests);
-
-// Create payment request
 router.post('/', createPaymentRequest);
 
-// Verify payment request (admin)
-router.put('/:id/verify', verifyPaymentRequest);
-
-// Reject payment request (admin)
-router.put('/:id/reject', rejectPaymentRequest);
+// Payment verification (admin)
+router.put('/:id/verify', authMiddleware, requireAdmin, verifyPaymentRequest);
+router.put('/:id/reject', authMiddleware, requireAdmin, rejectPaymentRequest);
 
 export default router;

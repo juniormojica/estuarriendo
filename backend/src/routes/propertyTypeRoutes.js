@@ -8,21 +8,18 @@ import {
     deletePropertyType
 } from '../controllers/propertyTypeController.js';
 import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Property type routes
+// Public read routes (catalog)
 router.get('/', getAllPropertyTypes);
 router.get('/:id', getPropertyTypeById);
 router.get('/name/:name', getPropertyTypeByName);
 
-// Create property type (admin only)
-router.post('/', authMiddleware, createPropertyType);
-
-// Update property type (admin only)
-router.put('/:id', authMiddleware, updatePropertyType);
-
-// Delete property type (admin only)
-router.delete('/:id', authMiddleware, deletePropertyType);
+// Admin CRUD
+router.post('/', authMiddleware, requireAdmin, createPropertyType);
+router.put('/:id', authMiddleware, requireAdmin, updatePropertyType);
+router.delete('/:id', authMiddleware, requireAdmin, deletePropertyType);
 
 export default router;

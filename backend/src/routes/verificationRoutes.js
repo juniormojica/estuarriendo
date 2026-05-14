@@ -9,18 +9,20 @@ import {
     getVerificationProgress,
     reviewSingleDocument
 } from '../controllers/verificationController.js';
+import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Get all pending verifications (admin)
-router.get('/pending/all', getPendingVerifications);
+// Admin: pending verifications list
+router.get('/pending/all', authMiddleware, requireAdmin, getPendingVerifications);
 
 // ----------------------------------------
 // INDIVIDUAL DOCUMENT REVIEW
 // ----------------------------------------
 router.get('/progress/:userId', getVerificationProgress);
 router.post('/document/submit', submitSingleDocument);
-router.patch('/document/:userId/review', reviewSingleDocument);
+router.patch('/document/:userId/review', authMiddleware, requireAdmin, reviewSingleDocument);
 
 // ----------------------------------------
 // LEGACY BATCH REVIEW (Fallback)
@@ -28,13 +30,9 @@ router.patch('/document/:userId/review', reviewSingleDocument);
 // Submit verification documents
 router.post('/submit', submitVerificationDocuments);
 
-// Get verification documents (admin)
-router.get('/:userId', getVerificationDocuments);
-
-// Approve verification (admin)
-router.put('/:userId/approve', approveVerification);
-
-// Reject verification (admin)
-router.put('/:userId/reject', rejectVerification);
+// Admin: document retrieval and approval
+router.get('/:userId', authMiddleware, requireAdmin, getVerificationDocuments);
+router.put('/:userId/approve', authMiddleware, requireAdmin, approveVerification);
+router.put('/:userId/reject', authMiddleware, requireAdmin, rejectVerification);
 
 export default router;

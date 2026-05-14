@@ -7,22 +7,15 @@ import {
     deleteOldLogs
 } from '../controllers/activityLogController.js';
 import authenticateToken from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Get all activity logs with filters
-router.get('/', authenticateToken, getAllActivityLogs);
-
-// Get activity log by ID
-router.get('/:id', authenticateToken, getActivityLogById);
-
-// Create activity log
-router.post('/', authenticateToken, createActivityLog);
-
-// Get activity statistics
-router.get('/statistics/summary', authenticateToken, getActivityStatistics);
-
-// Delete old logs (cleanup)
-router.delete('/cleanup', authenticateToken, deleteOldLogs);
+// Activity logs (admin only)
+router.get('/', authenticateToken, requireAdmin, getAllActivityLogs);
+router.get('/:id', authenticateToken, requireAdmin, getActivityLogById);
+router.post('/', authenticateToken, requireAdmin, createActivityLog);
+router.get('/statistics/summary', authenticateToken, requireAdmin, getActivityStatistics);
+router.delete('/cleanup', authenticateToken, requireAdmin, deleteOldLogs);
 
 export default router;
