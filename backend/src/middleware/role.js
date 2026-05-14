@@ -38,4 +38,6 @@ export const requireAdmin = requireRole(UserType.ADMIN, UserType.SUPER_ADMIN);
 
 export const requireSuperAdmin = requireRole(UserType.SUPER_ADMIN);
 
-export default { requireAdmin, requireSuperAdmin };
+export const requireOwnerOrAdmin = requireRole(UserType.OWNER, UserType.ADMIN, UserType.SUPER_ADMIN);
+
+export default { requireAdmin, requireSuperAdmin, requireOwnerOrAdmin };
