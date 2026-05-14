@@ -4,7 +4,7 @@ import * as models from '../models/index.js';
 import * as userRepository from '../repositories/userRepository.js';
 import * as passwordUtils from '../utils/passwordUtils.js';
 import { UserType } from '../utils/enums.js';
-import { createGoogleUser, getUserById, login, register, requestPasswordReset, resetPassword, verifyResetToken } from './authService.js';
+import { bootstrapFirstSuperAdmin, createGoogleUser, getUserById, login, register, requestPasswordReset, resetPassword, verifyResetToken } from './authService.js';
 
 describe('authService semantic errors - register slice', () => {
     afterEach(() => {
@@ -315,5 +315,73 @@ describe('authService privileged role blocking — createGoogleUser', () => {
             name: 'Tenant',
             picture: null
         }, UserType.TENANT, '+5491111111111')).resolves.toBeDefined();
+    });
+});
+
+describe('authService bootstrapFirstSuperAdmin', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws BOOTSTRAP_INVALID_SECRET when provided secret does not match configured', async () => {
+        await expect(bootstrapFirstSuperAdmin(
+            { name: 'Admin', email: 'admin@test.com', password: 'secure123', phone: '3000000000' },
+            'wrong-secret',
+            'correct-secret'
+        )).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 403,
+            code: 'BOOTSTRAP_INVALID_SECRET',
+            message: 'Secreto de bootstrap inválido'
+        });
+    });
+
+    it('throws BOOTSTRAP_SUPERADMIN_EXISTS when a superadmin already exists', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue({ id: 'existing-super-admin', userType: 'super_admin' });
+
+        await expect(bootstrapFirstSuperAdmin(
+            { name: 'Admin', email: 'admin@test.com', password: 'secure123', phone: '3000000000' },
+            'correct-secret',
+            'correct-secret'
+        )).rejects.toMatchObject({
+            name: 'AppError',
+            statusCode: 409,
+            code: 'BOOTSTRAP_SUPERADMIN_EXISTS',
+            message: 'Ya existe un superadministrador'
+        });
+    });
+
+    it('creates superadmin with hashed password and returns user+token', async () => {
+        vi.spyOn(User, 'findOne').mockResolvedValue(null);
+        const hashSpy = vi.spyOn(passwordUtils, 'hashPassword').mockResolvedValue('hashed-super-secure');
+        vi.spyOn(User, 'create').mockResolvedValue({
+            id: 'u-bootstrap-1',
+            toJSON: () => ({
+                id: 'u-bootstrap-1',
+                name: 'Admin',
+                email: 'admin@test.com',
+                userType: 'super_admin',
+                phone: '3000000000',
+            })
+        });
+
+        const result = await bootstrapFirstSuperAdmin(
+            { name: 'Admin', email: 'admin@test.com', password: 'secure123', phone: '3000000000' },
+            'correct-secret',
+            'correct-secret'
+        );
+
+        expect(hashSpy).toHaveBeenCalledWith('secure123');
+        expect(User.create).toHaveBeenCalledWith(expect.objectContaining({
+            userType: 'super_admin',
+            name: 'Admin',
+            email: 'admin@test.com',
+            password: 'hashed-super-secure',
+            isActive: true,
+            verificationStatus: 'verified',
+        }));
+        expect(result.user).toBeDefined();
+        expect(result.token).toBeDefined();
+        expect(result.user.password).toBeUndefined();
     });
 });

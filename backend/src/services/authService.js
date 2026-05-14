@@ -372,6 +372,49 @@ export const createGoogleUser = async (googleData, userType, phone, whatsapp) =>
     return { user: user.toJSON(), token };
 };
 
+/**
+ * Bootstrap — Create the first superadmin (deploy-time, one-shot)
+ * @param {Object} userData - { name, email, password, phone, whatsapp }
+ * @param {string} providedSecret - Bootstrap secret from request header
+ * @param {string} configuredSecret - Bootstrap secret from env config
+ * @returns {Promise<Object>} Created user and JWT token
+ * @throws {AppError} 403 — invalid secret | 409 — superadmin already exists
+ */
+export const bootstrapFirstSuperAdmin = async (userData, providedSecret, configuredSecret) => {
+    if (providedSecret !== configuredSecret) {
+        throw forbidden('Secreto de bootstrap inválido', {
+            code: 'BOOTSTRAP_INVALID_SECRET'
+        });
+    }
+
+    const existingSuperAdmin = await User.findOne({ where: { userType: UserType.SUPER_ADMIN } });
+    if (existingSuperAdmin) {
+        throw conflict('Ya existe un superadministrador', {
+            code: 'BOOTSTRAP_SUPERADMIN_EXISTS'
+        });
+    }
+
+    const hashedPassword = await hashPassword(userData.password);
+
+    const userId = randomUUID();
+    const user = await User.create({
+        id: userId,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        whatsapp: userData.whatsapp || userData.phone,
+        password: hashedPassword,
+        userType: UserType.SUPER_ADMIN,
+        plan: 'premium',
+        isActive: true,
+        verificationStatus: 'verified',
+        joinedAt: new Date(),
+    });
+
+    const token = generateToken(user.id);
+    return { user: user.toJSON(), token };
+};
+
 export default {
     register,
     login,
@@ -381,4 +424,5 @@ export default {
     resetPassword,
     findByGoogleId,
     createGoogleUser,
+    bootstrapFirstSuperAdmin,
 };
