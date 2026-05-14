@@ -1,33 +1,23 @@
 import express from 'express';
+import {
+    getAllCommonAreas,
+    getCommonAreaById,
+    createCommonArea,
+    updateCommonArea,
+    deleteCommonArea
+} from '../controllers/commonAreaController.js';
+import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-/**
- * Common Areas Routes
- * Public endpoint to get all available common areas
- */
+// Public read routes (catalog)
+router.get('/', getAllCommonAreas);
+router.get('/:id', getCommonAreaById);
 
-// Get all common areas
-router.get('/', async (req, res) => {
-    try {
-        const { CommonArea } = await import('../models/index.js');
-
-        const commonAreas = await CommonArea.findAll({
-            order: [['name', 'ASC']]
-        });
-
-        res.status(200).json({
-            success: true,
-            data: commonAreas
-        });
-    } catch (error) {
-        console.error('Error getting common areas:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error getting common areas',
-            error: error.message
-        });
-    }
-});
+// Admin CRUD
+router.post('/', authMiddleware, requireAdmin, createCommonArea);
+router.put('/:id', authMiddleware, requireAdmin, updateCommonArea);
+router.delete('/:id', authMiddleware, requireAdmin, deleteCommonArea);
 
 export default router;
