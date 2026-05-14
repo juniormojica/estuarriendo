@@ -23,6 +23,9 @@ router.post('/reset-password', authController.resetPassword);
 router.post('/google', authController.googleAuth);
 router.post('/google/complete-registration', authController.googleCompleteRegistration);
 
+// Bootstrap — first superadmin creation (deploy-time, one-shot)
+router.post('/bootstrap/first-superadmin', authController.bootstrapFirstSuperAdmin);
+
 // Protected routes (authentication required)
 router.get('/me', authMiddleware, authController.getCurrentUser);
 

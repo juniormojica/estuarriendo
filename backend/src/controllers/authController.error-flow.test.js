@@ -1,4 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../config/env.js', () => ({
+    env: Object.freeze({
+        nodeEnv: 'test',
+        port: 3001,
+        allowedOrigins: ['http://localhost:5173'],
+        jwt: Object.freeze({ secret: 'this-is-a-long-test-jwt-secret-32-chars-min', expiresIn: '7d' }),
+        db: Object.freeze({ host: 'localhost', port: 5432, name: 'test', user: 'test', password: 'test' }),
+        bootstrap: Object.freeze({ secret: 'test-configured-secret' }),
+    }),
+}));
+
 import * as authController from './authController.js';
 import * as authService from '../services/authService.js';
 import * as googleAuthService from '../services/googleAuthService.js';
@@ -225,5 +237,70 @@ describe('authController google auth conflict error', () => {
             message: 'Token de Google es requerido',
             code: 'AUTH_GOOGLE_TOKEN_REQUIRED'
         });
+    });
+});
+
+describe('authController bootstrap error flow', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('returns 403 when x-bootstrap-secret header is missing', async () => {
+        const req = {
+            body: { name: 'Admin', email: 'admin@test.com', password: 'secure123', phone: '3000000000' }
+        };
+        const { res } = await runThroughErrorHandler(authController.bootstrapFirstSuperAdmin, { req });
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'BOOTSTRAP_SECRET_REQUIRED',
+        }));
+    });
+
+    it('returns 400 when required fields are missing', async () => {
+        const req = {
+            body: { name: 'Admin' },
+            headers: { 'x-bootstrap-secret': 'some-secret' }
+        };
+        const { res } = await runThroughErrorHandler(authController.bootstrapFirstSuperAdmin, { req });
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'BOOTSTRAP_REQUIRED_FIELDS',
+        }));
+    });
+
+    it('returns 403 when bootstrap secret header does not match configured secret', async () => {
+        vi.spyOn(authService, 'bootstrapFirstSuperAdmin').mockRejectedValue(
+            Object.assign(new Error('Secreto de bootstrap inválido'), { statusCode: 403, code: 'BOOTSTRAP_INVALID_SECRET' })
+        );
+
+        const req = {
+            body: { name: 'Admin', email: 'admin@test.com', password: 'secure123', phone: '3000000000' },
+            headers: { 'x-bootstrap-secret': 'wrong-secret' }
+        };
+        const { res } = await runThroughErrorHandler(authController.bootstrapFirstSuperAdmin, { req });
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'BOOTSTRAP_INVALID_SECRET',
+        }));
+    });
+
+    it('returns 409 when superadmin already exists', async () => {
+        vi.spyOn(authService, 'bootstrapFirstSuperAdmin').mockRejectedValue(
+            Object.assign(new Error('Ya existe un superadministrador'), { statusCode: 409, code: 'BOOTSTRAP_SUPERADMIN_EXISTS' })
+        );
+
+        const req = {
+            body: { name: 'Admin', email: 'admin@test.com', password: 'secure123', phone: '3000000000' },
+            headers: { 'x-bootstrap-secret': 'valid-secret' }
+        };
+        const { res } = await runThroughErrorHandler(authController.bootstrapFirstSuperAdmin, { req });
+
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'BOOTSTRAP_SUPERADMIN_EXISTS',
+        }));
     });
 });

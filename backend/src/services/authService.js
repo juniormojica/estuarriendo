@@ -9,7 +9,10 @@ import {
     isTokenExpired
 } from '../utils/tokenUtils.js';
 import { sendPasswordResetEmail } from './emailService.js';
+import { UserType } from '../utils/enums.js';
 import { badRequest, conflict, forbidden, notFound, unauthorized } from '../errors/AppError.js';
+
+const PUBLIC_REGISTRATION_ROLES = [UserType.OWNER, UserType.TENANT];
 
 /**
  * Authentication Service
@@ -23,6 +26,12 @@ import { badRequest, conflict, forbidden, notFound, unauthorized } from '../erro
  */
 export const register = async (userData) => {
     const { email, password, ...otherData } = userData;
+
+    if (!PUBLIC_REGISTRATION_ROLES.includes(userData.userType)) {
+        throw badRequest('Tipo de usuario no válido para registro público', {
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE'
+        });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
@@ -320,6 +329,12 @@ export const findByGoogleId = async (googleId) => {
 export const createGoogleUser = async (googleData, userType, phone, whatsapp) => {
     const { googleId, email, name, picture } = googleData;
 
+    if (!PUBLIC_REGISTRATION_ROLES.includes(userType)) {
+        throw badRequest('Tipo de usuario no válido para registro público', {
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE'
+        });
+    }
+
     // Check if email already exists (registered manually)
     const existingByEmail = await User.findOne({ where: { email } });
     if (existingByEmail && !existingByEmail.googleId) {
@@ -357,6 +372,49 @@ export const createGoogleUser = async (googleData, userType, phone, whatsapp) =>
     return { user: user.toJSON(), token };
 };
 
+/**
+ * Bootstrap — Create the first superadmin (deploy-time, one-shot)
+ * @param {Object} userData - { name, email, password, phone, whatsapp }
+ * @param {string} providedSecret - Bootstrap secret from request header
+ * @param {string} configuredSecret - Bootstrap secret from env config
+ * @returns {Promise<Object>} Created user and JWT token
+ * @throws {AppError} 403 — invalid secret | 409 — superadmin already exists
+ */
+export const bootstrapFirstSuperAdmin = async (userData, providedSecret, configuredSecret) => {
+    if (providedSecret !== configuredSecret) {
+        throw forbidden('Secreto de bootstrap inválido', {
+            code: 'BOOTSTRAP_INVALID_SECRET'
+        });
+    }
+
+    const existingSuperAdmin = await User.findOne({ where: { userType: UserType.SUPER_ADMIN } });
+    if (existingSuperAdmin) {
+        throw conflict('Ya existe un superadministrador', {
+            code: 'BOOTSTRAP_SUPERADMIN_EXISTS'
+        });
+    }
+
+    const hashedPassword = await hashPassword(userData.password);
+
+    const userId = randomUUID();
+    const user = await User.create({
+        id: userId,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        whatsapp: userData.whatsapp || userData.phone,
+        password: hashedPassword,
+        userType: UserType.SUPER_ADMIN,
+        plan: 'premium',
+        isActive: true,
+        verificationStatus: 'verified',
+        joinedAt: new Date(),
+    });
+
+    const token = generateToken(user.id);
+    return { user: user.toJSON(), token };
+};
+
 export default {
     register,
     login,
@@ -366,4 +424,5 @@ export default {
     resetPassword,
     findByGoogleId,
     createGoogleUser,
+    bootstrapFirstSuperAdmin,
 };

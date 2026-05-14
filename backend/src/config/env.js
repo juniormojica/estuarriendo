@@ -28,6 +28,14 @@ const readRequired = (name) => {
     return value.trim();
 };
 
+const readOptional = (name) => {
+    const value = process.env[name];
+    if (typeof value !== 'string' || value.trim() === '') {
+        return undefined;
+    }
+    return value.trim();
+};
+
 const validateJwtSecret = (secret) => {
     const normalized = secret.trim().toLowerCase();
     if (PLACEHOLDER_VALUES.has(normalized) || secret.trim().length < 32) {
@@ -79,6 +87,9 @@ const env = Object.freeze({
         name: readRequired('DB_NAME'),
         user: readRequired('DB_USER'),
         password: readRequired('DB_PASSWORD'),
+    }),
+    bootstrap: Object.freeze({
+        secret: readOptional('BOOTSTRAP_SECRET'),
     }),
 });
 

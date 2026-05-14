@@ -5,19 +5,15 @@ import {
     getConfigValue,
     updateConfigValue
 } from '../controllers/systemConfigController.js';
+import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Get full system configuration
-router.get('/', getSystemConfig);
-
-// Update system configuration (admin)
-router.put('/', updateSystemConfig);
-
-// Get specific config value
-router.get('/:key', getConfigValue);
-
-// Update specific config value (admin)
-router.put('/:key', updateConfigValue);
+// System configuration (admin only)
+router.get('/', authMiddleware, requireAdmin, getSystemConfig);
+router.put('/', authMiddleware, requireAdmin, updateSystemConfig);
+router.get('/:key', authMiddleware, requireAdmin, getConfigValue);
+router.put('/:key', authMiddleware, requireAdmin, updateConfigValue);
 
 export default router;

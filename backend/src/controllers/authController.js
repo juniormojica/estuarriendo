@@ -1,6 +1,7 @@
 import * as authService from '../services/authService.js';
 import { verifyGoogleToken } from '../services/googleAuthService.js';
-import { badRequest, conflict } from '../errors/AppError.js';
+import { badRequest, conflict, forbidden } from '../errors/AppError.js';
+import { env } from '../config/env.js';
 import { ActivityLog } from '../models/index.js';
 import User from '../models/User.js';
 
@@ -288,6 +289,62 @@ export const googleCompleteRegistration = async (req, res, next) => {
     }
 };
 
+/**
+ * Bootstrap — Create first superadmin (deploy-time, one-shot)
+ * POST /api/auth/bootstrap/first-superadmin
+ * Header: x-bootstrap-secret
+ * Body: { name, email, password, phone, whatsapp? }
+ */
+export const bootstrapFirstSuperAdmin = async (req, res, next) => {
+    try {
+        const configuredSecret = env.bootstrap?.secret;
+        if (!configuredSecret) {
+            throw forbidden('Bootstrap no está habilitado', {
+                code: 'BOOTSTRAP_NOT_CONFIGURED'
+            });
+        }
+
+        const bootstrapSecret = req.headers?.['x-bootstrap-secret'];
+        if (!bootstrapSecret) {
+            throw forbidden('Secreto de bootstrap requerido', {
+                code: 'BOOTSTRAP_SECRET_REQUIRED'
+            });
+        }
+
+        const { name, email, password, phone, whatsapp } = req.body;
+        if (!name || !email || !password || !phone) {
+            throw badRequest('Faltan campos obligatorios: name, email, password, phone', {
+                code: 'BOOTSTRAP_REQUIRED_FIELDS'
+            });
+        }
+
+        const result = await authService.bootstrapFirstSuperAdmin(
+            { name, email, password, phone, whatsapp },
+            bootstrapSecret,
+            configuredSecret
+        );
+
+        await ActivityLog.create({
+            type: 'user_registered',
+            message: `Superadmin bootstrap: ${result.user.name}`,
+            userId: result.user.id,
+            timestamp: new Date()
+        });
+
+        res.cookie('estuarriendo_token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            path: '/'
+        });
+
+        res.status(201).json(result);
+    } catch (error) {
+        next(error);
+    }
+};
+
 export default {
     register,
     login,
@@ -298,4 +355,5 @@ export default {
     resetPassword,
     googleAuth,
     googleCompleteRegistration,
+    bootstrapFirstSuperAdmin,
 };

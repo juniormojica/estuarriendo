@@ -4,16 +4,16 @@ import {
     getUserSubscriptionHistory,
     expireOldSubscriptions
 } from '../controllers/subscriptionController.js';
+import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Get user's active subscription
+// User-facing subscription routes
 router.get('/user/:userId/active', getUserActiveSubscription);
-
-// Get user's subscription history
 router.get('/user/:userId/history', getUserSubscriptionHistory);
 
-// Expire old subscriptions (admin/cron)
-router.post('/expire-old', expireOldSubscriptions);
+// Admin: expire old subscriptions
+router.post('/expire-old', authMiddleware, requireAdmin, expireOldSubscriptions);
 
 export default router;

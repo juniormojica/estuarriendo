@@ -1,4 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../config/env.js', () => ({
+    env: Object.freeze({
+        nodeEnv: 'test',
+        port: 3001,
+        allowedOrigins: ['http://localhost:5173'],
+        jwt: Object.freeze({ secret: 'this-is-a-long-test-jwt-secret-32-chars-min', expiresIn: '7d' }),
+        db: Object.freeze({ host: 'localhost', port: 5432, name: 'test', user: 'test', password: 'test' }),
+        bootstrap: Object.freeze({ secret: 'test-configured-secret' }),
+    }),
+}));
+
 import * as authController from './authController.js';
 import * as authService from '../services/authService.js';
 import * as googleAuthService from '../services/googleAuthService.js';
@@ -239,6 +251,43 @@ describe('authController success flow', () => {
         );
         expect(res.cookie).toHaveBeenCalledWith('estuarriendo_token', 'google-register-token', expectedCookieOptions);
         expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith(serviceResult);
+    });
+
+    it('bootstrapFirstSuperAdmin creates superadmin, logs activity, sets cookie, returns 201 with no password leakage', async () => {
+        const serviceResult = {
+            user: { id: 'u-bootstrap-1', name: 'Admin', email: 'admin@test.com', userType: 'super_admin' },
+            token: 'bootstrap-jwt-token'
+        };
+        const bootstrapSpy = vi.spyOn(authService, 'bootstrapFirstSuperAdmin').mockResolvedValue(serviceResult);
+        const activityCreateSpy = vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
+
+        const req = {
+            body: { name: 'Admin', email: 'admin@test.com', password: 'secure123', phone: '3000000000' },
+            headers: { 'x-bootstrap-secret': 'super-secret-bootstrap' }
+        };
+        const res = createResponse();
+
+        await authController.bootstrapFirstSuperAdmin(req, res, vi.fn());
+
+        expect(bootstrapSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'Admin',
+                email: 'admin@test.com',
+                password: 'secure123',
+                phone: '3000000000'
+            }),
+            'super-secret-bootstrap',
+            'test-configured-secret'
+        );
+        expect(activityCreateSpy).toHaveBeenCalledTimes(1);
+        expect(activityCreateSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'user_registered',
+            message: 'Superadmin bootstrap: Admin',
+            userId: 'u-bootstrap-1'
+        }));
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.cookie).toHaveBeenCalledWith('estuarriendo_token', 'bootstrap-jwt-token', expectedCookieOptions);
         expect(res.json).toHaveBeenCalledWith(serviceResult);
     });
 });

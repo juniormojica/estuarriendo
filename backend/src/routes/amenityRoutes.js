@@ -7,20 +7,17 @@ import {
     deleteAmenity
 } from '../controllers/amenityController.js';
 import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Amenity CRUD routes
+// Public read routes (catalog)
 router.get('/', getAllAmenities);
 router.get('/:id', getAmenityById);
 
-// Create amenity (admin only)
-router.post('/', authMiddleware, createAmenity);
-
-// Update amenity (admin only)
-router.put('/:id', authMiddleware, updateAmenity);
-
-// Delete amenity (admin only)
-router.delete('/:id', authMiddleware, deleteAmenity);
+// Admin CRUD
+router.post('/', authMiddleware, requireAdmin, createAmenity);
+router.put('/:id', authMiddleware, requireAdmin, updateAmenity);
+router.delete('/:id', authMiddleware, requireAdmin, deleteAmenity);
 
 export default router;
