@@ -1,6 +1,7 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { User, ActivityLog, CreditBalance, CreditTransaction, Subscription } from '../models/index.js';
 import { notifyPaymentVerified, notifyCreditPurchased } from '../services/notificationService.js';
+import { verifyMercadoPagoWebhookSignature } from '../services/mercadoPagoWebhookSignatureService.js';
 import { Op } from 'sequelize';
 
 const getMpClient = () => {
@@ -9,8 +10,13 @@ const getMpClient = () => {
 
 export const handleMercadoPagoWebhook = async (req, res) => {
     try {
-        // Important: Always reply 200 OK immediately to MP webhooks so they don't retry unnecessarily
-        res.status(200).send('OK');
+        const signatureCheck = verifyMercadoPagoWebhookSignature(req);
+        if (!signatureCheck.ok) {
+            return res.status(signatureCheck.status).json({
+                error: signatureCheck.error,
+                code: signatureCheck.code
+            });
+        }
 
         const { type, action, data } = req.body;
 
@@ -30,8 +36,14 @@ export const handleMercadoPagoWebhook = async (req, res) => {
                 console.log(`[MercadoPago Webhook] Payment ${payment.id} approved but no external_reference found.`);
             }
         }
+
+        return res.status(200).send('OK');
     } catch (error) {
         console.error('[MercadoPago Webhook] Error processing:', error);
+        return res.status(500).json({
+            error: 'Error interno del servidor',
+            code: 'INTERNAL_SERVER_ERROR'
+        });
     }
 };
 
@@ -50,15 +62,23 @@ async function processPaymentSuccess(externalReference, paymentId) {
         const planType = planTypePart.split(':')[1];
 
         // 1. Prevent duplicate processing
+        const existingCreditPurchase = await CreditTransaction.findOne({
+            where: {
+                referenceType: 'mercadopago',
+                referenceId: paymentId
+            }
+        });
+
         const existingLog = await ActivityLog.findOne({
             where: {
+                type: 'payment_auto_verified',
                 message: {
                     [Op.like]: `%MP_ID:${paymentId}%`
                 }
             }
         });
 
-        if (existingLog) {
+        if (existingCreditPurchase || existingLog) {
             console.log(`[MercadoPago Webhook] Payment ${paymentId} already processed.`);
             return;
         }
