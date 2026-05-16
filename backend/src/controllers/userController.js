@@ -1,4 +1,5 @@
 import * as userService from '../services/userService.js';
+import { AppError, badRequest, unauthorized } from '../errors/AppError.js';
 
 /**
  * User Controller
@@ -58,16 +59,12 @@ export const updateUser = async (req, res, next) => {
 
         const authUserId = req.auth?.userId;
         if (!authUserId) {
-            return res.status(401).json({
-                error: 'No autenticado'
-            });
+            return next(unauthorized('No autenticado', { code: 'USER_UPDATE_UNAUTHENTICATED' }));
         }
 
         const isOwnProfile = authUserId === id;
         if (!isOwnProfile) {
-            return res.status(403).json({
-                error: 'No tienes permiso para actualizar este perfil'
-            });
+            return next(new AppError('No tienes permiso para actualizar este perfil', 403, 'USER_UPDATE_FORBIDDEN'));
         }
 
         const allowedFields = ['name', 'phone', 'whatsapp', 'idType', 'idNumber', 'profile'];
@@ -82,25 +79,35 @@ export const updateUser = async (req, res, next) => {
         const { name, phone } = filteredUpdates;
 
         if (name !== undefined && (!name || name.trim().length < 3)) {
-            return res.status(400).json({ error: 'El nombre debe tener al menos 3 caracteres.' });
+            return next(badRequest('El nombre debe tener al menos 3 caracteres.', {
+                code: 'USER_UPDATE_NAME_TOO_SHORT'
+            }));
         }
 
         if (phone !== undefined && (!phone || phone.replace(/\D/g, '').length < 10)) {
-            return res.status(400).json({ error: 'El teléfono debe tener al menos 10 dígitos.' });
+            return next(badRequest('El teléfono debe tener al menos 10 dígitos.', {
+                code: 'USER_UPDATE_PHONE_TOO_SHORT'
+            }));
         }
 
         const { idType, idNumber } = filteredUpdates;
         const hasIdType = idType !== undefined && idType !== '' && idType !== null;
         const hasIdNumber = idNumber !== undefined && idNumber !== '' && idNumber !== null;
         if (hasIdType !== hasIdNumber) {
-            return res.status(400).json({ error: 'Debes completar tanto el tipo como el número de documento.' });
+            return next(badRequest('Debes completar tanto el tipo como el número de documento.', {
+                code: 'USER_UPDATE_DOCUMENT_PAIR_REQUIRED'
+            }));
         }
 
         if ('name' in filteredUpdates && filteredUpdates.name === '') {
-            return res.status(400).json({ error: 'El nombre no puede estar vacío.' });
+            return next(badRequest('El nombre no puede estar vacío.', {
+                code: 'USER_UPDATE_NAME_EMPTY'
+            }));
         }
         if ('phone' in filteredUpdates && filteredUpdates.phone === '') {
-            return res.status(400).json({ error: 'El teléfono no puede estar vacío.' });
+            return next(badRequest('El teléfono no puede estar vacío.', {
+                code: 'USER_UPDATE_PHONE_EMPTY'
+            }));
         }
 
         const user = await userService.updateUser(id, filteredUpdates);

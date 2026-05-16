@@ -9,9 +9,11 @@ const router = express.Router();
  * All routes require authentication
  */
 
+import { requireAdmin } from '../middleware/role.js';
+
 // Container CRUD
-router.get('/pending', authMiddleware, containerController.getPendingContainers);
-router.post('/admin-create', authMiddleware, containerController.adminCreateContainer); // New admin route
+router.get('/pending', authMiddleware, requireAdmin, containerController.getPendingContainers);
+router.post('/admin-create', authMiddleware, requireAdmin, containerController.adminCreateContainer);
 router.post('/', authMiddleware, containerController.createContainer);
 router.get('/:id', containerController.getContainer);
 router.put('/:id', authMiddleware, containerController.updateContainer);
@@ -22,7 +24,7 @@ router.post('/:id/rent-complete', authMiddleware, containerController.rentComple
 router.post('/:id/change-mode', authMiddleware, containerController.changeRentalMode);
 
 // Container approval (admin)
-router.put('/:id/approve', authMiddleware, containerController.approveContainer);
+router.put('/:id/approve', authMiddleware, requireAdmin, containerController.approveContainer);
 
 // Unit management within container
 router.post('/:containerId/units', authMiddleware, containerController.createUnit);

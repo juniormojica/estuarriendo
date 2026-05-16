@@ -9,6 +9,10 @@ import {
     isTokenExpired
 } from '../utils/tokenUtils.js';
 import { sendPasswordResetEmail } from './emailService.js';
+import { UserType } from '../utils/enums.js';
+import { badRequest, conflict, forbidden, notFound, unauthorized } from '../errors/AppError.js';
+
+const PUBLIC_REGISTRATION_ROLES = [UserType.OWNER, UserType.TENANT];
 
 /**
  * Authentication Service
@@ -23,12 +27,18 @@ import { sendPasswordResetEmail } from './emailService.js';
 export const register = async (userData) => {
     const { email, password, ...otherData } = userData;
 
+    if (!PUBLIC_REGISTRATION_ROLES.includes(userData.userType)) {
+        throw badRequest('Tipo de usuario no válido para registro público', {
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE'
+        });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-        const error = new Error('El usuario con este correo electrónico ya existe');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('El usuario con este correo electrónico ya existe', {
+            code: 'AUTH_EMAIL_ALREADY_EXISTS'
+        });
     }
 
     // Hash password
@@ -82,33 +92,33 @@ export const login = async (email, password) => {
     let user = await findByEmail(email);
 
     if (!user) {
-        const error = new Error('Correo electrónico o contraseña inválidos');
-        error.statusCode = 401;
-        throw error;
+        throw unauthorized('Correo electrónico o contraseña inválidos', {
+            code: 'AUTH_INVALID_CREDENTIALS'
+        });
     }
 
     // Since findByEmail excludes password, we need to fetch it explicitly for validation
     const userWithPassword = await User.scope('withPassword').findOne({ where: { email } });
 
-    if (!user) {
-        const error = new Error('Correo electrónico o contraseña inválidos');
-        error.statusCode = 401;
-        throw error;
+    if (!userWithPassword) {
+        throw unauthorized('Correo electrónico o contraseña inválidos', {
+            code: 'AUTH_INVALID_CREDENTIALS'
+        });
     }
 
     // Check if user is active
     if (!user.isActive) {
-        const error = new Error('La cuenta está desactivada');
-        error.statusCode = 403;
-        throw error;
+        throw forbidden('La cuenta está desactivada', {
+            code: 'AUTH_ACCOUNT_DISABLED'
+        });
     }
 
     // Verify password using the userWithPassword object
     const isPasswordValid = await comparePassword(password, userWithPassword.password);
     if (!isPasswordValid) {
-        const error = new Error('Correo electrónico o contraseña inválidos');
-        error.statusCode = 401;
-        throw error;
+        throw unauthorized('Correo electrónico o contraseña inválidos', {
+            code: 'AUTH_INVALID_CREDENTIALS'
+        });
     }
 
     // Generate JWT token
@@ -134,9 +144,9 @@ export const getUserById = async (userId) => {
     const user = await findById(userId);
 
     if (!user) {
-        const error = new Error('Usuario no encontrado');
-        error.statusCode = 404;
-        throw error;
+        throw notFound('Usuario no encontrado', {
+            code: 'AUTH_USER_NOT_FOUND'
+        });
     }
 
     return user;
@@ -156,9 +166,9 @@ export const requestPasswordReset = async (email) => {
 
     // Throw error if user doesn't exist to improve UX
     if (!user) {
-        const error = new Error('El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.');
-        error.statusCode = 404;
-        throw error;
+        throw notFound('El correo electrónico no está registrado en la aplicación. Escribe un correo registrado o procede a registrarte.', {
+            code: 'AUTH_PASSWORD_RESET_EMAIL_NOT_FOUND'
+        });
     }
 
     // Extract userId for password reset
@@ -212,16 +222,16 @@ export const verifyResetToken = async (token) => {
     });
 
     if (!resetRecord || !resetRecord.user) {
-        const error = new Error('Token inválido o expirado');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('Token inválido o expirado', {
+            code: 'AUTH_RESET_TOKEN_INVALID_OR_EXPIRED'
+        });
     }
 
     // Check if token has expired
     if (isTokenExpired(resetRecord.resetPasswordExpires)) {
-        const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('El token ha expirado. Por favor solicita uno nuevo', {
+            code: 'AUTH_RESET_TOKEN_EXPIRED'
+        });
     }
 
     // Return masked email for security
@@ -261,25 +271,25 @@ export const resetPassword = async (token, newPassword) => {
     });
 
     if (!resetRecord || !resetRecord.user) {
-        const error = new Error('Token inválido o expirado');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('Token inválido o expirado', {
+            code: 'AUTH_RESET_TOKEN_INVALID_OR_EXPIRED'
+        });
     }
 
     // Check if token has expired
     if (isTokenExpired(resetRecord.resetPasswordExpires)) {
-        const error = new Error('El token ha expirado. Por favor solicita uno nuevo');
-        error.statusCode = 400;
-        throw error;
+        throw badRequest('El token ha expirado. Por favor solicita uno nuevo', {
+            code: 'AUTH_RESET_TOKEN_EXPIRED'
+        });
     }
 
     // Get the user with password scope to update it
     const user = await User.scope('withPassword').findByPk(resetRecord.user.id);
 
     if (!user) {
-        const error = new Error('Usuario no encontrado');
-        error.statusCode = 404;
-        throw error;
+        throw notFound('Usuario no encontrado', {
+            code: 'AUTH_PASSWORD_RESET_USER_NOT_FOUND'
+        });
     }
 
     // Hash new password
@@ -319,12 +329,18 @@ export const findByGoogleId = async (googleId) => {
 export const createGoogleUser = async (googleData, userType, phone, whatsapp) => {
     const { googleId, email, name, picture } = googleData;
 
+    if (!PUBLIC_REGISTRATION_ROLES.includes(userType)) {
+        throw badRequest('Tipo de usuario no válido para registro público', {
+            code: 'AUTH_REGISTER_PRIVILEGED_ROLE'
+        });
+    }
+
     // Check if email already exists (registered manually)
     const existingByEmail = await User.findOne({ where: { email } });
     if (existingByEmail && !existingByEmail.googleId) {
-        const error = new Error('Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.');
-        error.statusCode = 409;
-        throw error;
+        throw conflict('Ya tienes una cuenta registrada con este correo. Por favor inicia sesión con tu contraseña.', {
+            code: 'AUTH_GOOGLE_EMAIL_ALREADY_REGISTERED'
+        });
     }
 
     const userId = randomUUID();
@@ -356,6 +372,49 @@ export const createGoogleUser = async (googleData, userType, phone, whatsapp) =>
     return { user: user.toJSON(), token };
 };
 
+/**
+ * Bootstrap — Create the first superadmin (deploy-time, one-shot)
+ * @param {Object} userData - { name, email, password, phone, whatsapp }
+ * @param {string} providedSecret - Bootstrap secret from request header
+ * @param {string} configuredSecret - Bootstrap secret from env config
+ * @returns {Promise<Object>} Created user and JWT token
+ * @throws {AppError} 403 — invalid secret | 409 — superadmin already exists
+ */
+export const bootstrapFirstSuperAdmin = async (userData, providedSecret, configuredSecret) => {
+    if (providedSecret !== configuredSecret) {
+        throw forbidden('Secreto de bootstrap inválido', {
+            code: 'BOOTSTRAP_INVALID_SECRET'
+        });
+    }
+
+    const existingSuperAdmin = await User.findOne({ where: { userType: UserType.SUPER_ADMIN } });
+    if (existingSuperAdmin) {
+        throw conflict('Ya existe un superadministrador', {
+            code: 'BOOTSTRAP_SUPERADMIN_EXISTS'
+        });
+    }
+
+    const hashedPassword = await hashPassword(userData.password);
+
+    const userId = randomUUID();
+    const user = await User.create({
+        id: userId,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        whatsapp: userData.whatsapp || userData.phone,
+        password: hashedPassword,
+        userType: UserType.SUPER_ADMIN,
+        plan: 'premium',
+        isActive: true,
+        verificationStatus: 'verified',
+        joinedAt: new Date(),
+    });
+
+    const token = generateToken(user.id);
+    return { user: user.toJSON(), token };
+};
+
 export default {
     register,
     login,
@@ -365,4 +424,5 @@ export default {
     resetPassword,
     findByGoogleId,
     createGoogleUser,
+    bootstrapFirstSuperAdmin,
 };

@@ -1,4 +1,5 @@
 import { MercadoPagoConfig, Preference, PreApproval, Payment } from 'mercadopago';
+import { badRequest } from '../errors/AppError.js';
 
 // Get base URL for callbacks depending on environment
 const getFrontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -24,12 +25,14 @@ const CREDIT_CONFIGS = {
     '20_credits': { title: '20 Créditos de Contacto', price: 19999 },
 };
 
-export const createCheckoutLink = async (req, res) => {
+export const createCheckoutLink = async (req, res, next) => {
     try {
         const { userId, planType, userEmail } = req.body;
 
         if (!userId || !planType) {
-            return res.status(400).json({ error: 'Faltan campos requeridos (userId, planType)' });
+            throw badRequest('Faltan campos requeridos (userId, planType)', {
+                code: 'MP_CHECKOUT_VALIDATION_ERROR'
+            });
         }
 
         const client = getMpClient();
@@ -101,19 +104,20 @@ export const createCheckoutLink = async (req, res) => {
             return res.json({ init_point: pref.init_point });
         }
 
-        return res.status(400).json({ error: 'Plan no reconocido' });
+        throw badRequest('Plan no reconocido', { code: 'MP_PLAN_NOT_RECOGNIZED' });
 
     } catch (error) {
-        console.error('Error creating MP checkout link:', error);
-        res.status(500).json({ error: 'Error al generar link de pago', message: error.message });
+        next(error);
     }
 };
 
 // Manual verification: fetch a payment by ID from MP API and process it
-export const verifyPaymentManually = async (req, res) => {
+export const verifyPaymentManually = async (req, res, next) => {
     try {
         const { paymentId } = req.params;
-        if (!paymentId) return res.status(400).json({ error: 'paymentId es requerido' });
+        if (!paymentId) {
+            throw badRequest('paymentId es requerido', { code: 'MP_PAYMENT_ID_REQUIRED' });
+        }
 
         const client = getMpClient();
         const paymentClient = new Payment(client);
@@ -136,8 +140,7 @@ export const verifyPaymentManually = async (req, res) => {
             date_approved: payment.date_approved,
         });
     } catch (error) {
-        console.error('Error verifying payment:', error);
-        res.status(500).json({ error: 'Error al verificar pago', message: error.message });
+        next(error);
     }
 };
 

@@ -16,39 +16,24 @@ import {
     deleteCity
 } from '../controllers/cityController.js';
 import authMiddleware from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// Department routes
-// Get all departments
+// Public read routes (catalog)
 router.get('/departments', getAllDepartments);
-
-// Create department (admin only)
-router.post('/departments', authMiddleware, createDepartment);
-
-// Update department (admin only)
-router.put('/departments/:id', authMiddleware, updateDepartment);
-
-// Delete department (admin only)
-router.delete('/departments/:id', authMiddleware, deleteDepartment);
-
-// City routes
-// Get cities (optionally filtered by department)
 router.get('/cities', getCitiesByDepartment);
-
-// Search cities (autocomplete)
 router.get('/cities/search', searchCities);
-
-// Get city by ID
 router.get('/cities/:id', getCityById);
 
-// Create city (admin only)
-router.post('/cities', authMiddleware, createCity);
+// Admin CRUD: departments
+router.post('/departments', authMiddleware, requireAdmin, createDepartment);
+router.put('/departments/:id', authMiddleware, requireAdmin, updateDepartment);
+router.delete('/departments/:id', authMiddleware, requireAdmin, deleteDepartment);
 
-// Update city (admin only)
-router.put('/cities/:id', authMiddleware, updateCity);
-
-// Delete city (admin only)
-router.delete('/cities/:id', authMiddleware, deleteCity);
+// Admin CRUD: cities
+router.post('/cities', authMiddleware, requireAdmin, createCity);
+router.put('/cities/:id', authMiddleware, requireAdmin, updateCity);
+router.delete('/cities/:id', authMiddleware, requireAdmin, deleteCity);
 
 export default router;

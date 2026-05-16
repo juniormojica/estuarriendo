@@ -116,7 +116,7 @@ export const useAdminPolling = (handlers: EventHandlers, onRefresh?: () => Promi
   }, [token]);
 
   useEffect(() => {
-    if (!user || !token || (user.userType !== 'admin' && user.userType !== 'superAdmin')) {
+    if (!user || !token || (user.userType !== 'admin' && user.userType !== 'super_admin')) {
       return;
     }
 

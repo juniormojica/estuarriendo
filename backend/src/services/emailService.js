@@ -1,4 +1,5 @@
 import { BrevoClient } from '@getbrevo/brevo';
+import { AppError } from '../errors/AppError.js';
 
 /**
  * Email Service using Brevo SDK (@getbrevo/brevo v2+)
@@ -14,7 +15,11 @@ import { BrevoClient } from '@getbrevo/brevo';
  */
 const getBrevoClient = () => {
     if (!process.env.BREVO_API_KEY) {
-        throw new Error('BREVO_API_KEY must be configured to send emails');
+        throw new AppError(
+            'La configuración de correo no está disponible. Inténtalo más tarde.',
+            500,
+            'EMAIL_PROVIDER_NOT_CONFIGURED'
+        );
     }
 
     return new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
@@ -86,9 +91,11 @@ export const sendPasswordResetEmail = async (email, userName, resetToken) => {
         return data;
     } catch (error) {
         console.error('Error sending email with Brevo SDK:', error.message || error);
-        const err = new Error('Error al enviar el correo de recuperación. Por favor, inténtalo más tarde.');
-        err.statusCode = 500;
-        throw err;
+        throw new AppError(
+            'Error al enviar el correo de recuperación. Por favor, inténtalo más tarde.',
+            500,
+            'EMAIL_SEND_FAILED'
+        );
     }
 };
 

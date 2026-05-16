@@ -1,8 +1,6 @@
 'use client';
 import React, { useState } from 'react';
 import { User } from '../../types';
-import { api } from '../../services/api';
-import { useToast } from '../../components/ToastProvider';
 import { FileText, Calendar, User as UserIcon, ChevronRight } from 'lucide-react';
 import { VerificationReviewModal } from './VerificationReviewModal';
 
@@ -12,7 +10,6 @@ interface VerificationsAdminProps {
 }
 
 const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifications, onRefresh }) => {
-    const toast = useToast();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [isReviewOpen, setIsReviewOpen] = useState(false);
 
@@ -34,7 +31,10 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {pendingVerifications.map((user) => (
+                    {pendingVerifications.map((user) => {
+                        const identification = (user as User & { identification?: { idType?: string; idNumber?: string } }).identification;
+
+                        return (
                         <div key={user.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow duration-200">
                             <div className="flex items-start justify-between mb-4">
                                 <div>
@@ -70,12 +70,10 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
                                     <span className="text-gray-500 text-xs uppercase tracking-wide">Rol</span>
                                     <span className="font-medium capitalize text-gray-800">{user.userType === 'owner' ? 'Propietario' : 'Estudiante/Inquilino'}</span>
                                 </p>
-                                {/* @ts-ignore */}
-                                {user.identification?.idNumber && (
+                                {identification?.idNumber && (
                                     <p className="flex justify-between items-center">
                                         <span className="text-gray-500 text-xs uppercase tracking-wide">Cédula</span>
-                                        {/* @ts-ignore */}
-                                        <span className="font-medium text-gray-800">{user.identification.idType} {user.identification.idNumber}</span>
+                                        <span className="font-medium text-gray-800">{identification.idType} {identification.idNumber}</span>
                                     </p>
                                 )}
                             </div>
@@ -105,7 +103,7 @@ const VerificationsAdmin: React.FC<VerificationsAdminProps> = ({ pendingVerifica
                                 </button>
                             </div>
                         </div>
-                    ))}
+                    )})}
                 </div>
             )}
 

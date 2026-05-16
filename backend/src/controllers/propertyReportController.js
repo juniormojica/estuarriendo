@@ -1,17 +1,21 @@
 import { User, Property, ContactUnlock, PropertyReport, CreditBalance, CreditTransaction, ReportActivityLog, ActivityLog } from '../models/index.js';
-import { PropertyReportStatus, CreditTransactionType, ContactUnlockStatus, NotificationType, ReportActivityAction } from '../utils/enums.js';
+import { PropertyReportStatus, CreditTransactionType, ContactUnlockStatus, NotificationType, ReportActivityAction, UserType } from '../utils/enums.js';
 import { Notification } from '../models/index.js';
 import { sequelize } from '../config/database.js';
+import { AppError, badRequest, conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Tenants report a property as already rented or scam to get their credit refunded
  */
-export const createPropertyReport = async (req, res) => {
+export const createPropertyReport = async (req, res, next) => {
     try {
-        const { reporterId, propertyId, reason, description } = req.body;
+        const reporterId = req.auth.userId;
+        const { propertyId, reason, description } = req.body;
 
-        if (!reporterId || !propertyId || !reason) {
-            return res.status(400).json({ error: 'Se requiere reporterId, propertyId y reason' });
+        if (!propertyId || !reason) {
+            return next(badRequest('Se requiere propertyId y reason', {
+                code: 'PROPERTY_REPORT_REQUIRED_FIELDS'
+            }));
         }
 
         // Ensure user actually unlocked this property
@@ -20,7 +24,11 @@ export const createPropertyReport = async (req, res) => {
         });
 
         if (!unlock) {
-            return res.status(403).json({ error: 'Debes desbloquear el contacto antes de reportar la propiedad' });
+            return next(new AppError(
+                'Debes desbloquear el contacto antes de reportar la propiedad',
+                403,
+                'PROPERTY_REPORT_UNLOCK_REQUIRED'
+            ));
         }
 
         // Ensure no existing pending/investigating report
@@ -33,7 +41,9 @@ export const createPropertyReport = async (req, res) => {
         });
 
         if (existingReport) {
-            return res.status(400).json({ error: 'Ya tienes una solicitud de devolución pendiente para esta propiedad' });
+            return next(conflict('Ya tienes una solicitud de devolución pendiente para esta propiedad', {
+                code: 'PROPERTY_REPORT_ALREADY_PENDING'
+            }));
         }
 
         const report = await PropertyReport.create({
@@ -48,7 +58,7 @@ export const createPropertyReport = async (req, res) => {
 
         // Notify admins about the new report (non-blocking)
         try {
-            const admins = await User.findAll({ where: { userType: 'superAdmin' } });
+            const admins = await User.findAll({ where: { userType: UserType.SUPER_ADMIN } });
             const property = await Property.findByPk(propertyId);
 
             const adminNotifications = admins.map(admin => ({
@@ -82,15 +92,45 @@ export const createPropertyReport = async (req, res) => {
 
         res.status(201).json(report);
     } catch (error) {
-        console.error('Error creating property report:', error);
-        res.status(500).json({ error: 'Error al crear el reporte', message: error.message });
+        next(error);
+    }
+};
+
+/**
+ * Get authenticated user's own reports
+ * Does NOT accept reporterId from query — always uses req.auth.userId
+ */
+export const getMyPropertyReports = async (req, res, next) => {
+    try {
+        const userId = req.auth.userId;
+
+        const reports = await PropertyReport.findAll({
+            where: { reporterId: userId },
+            include: [
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title']
+                },
+                {
+                    model: ReportActivityLog,
+                    as: 'activityLogs',
+                    include: [{ model: User, as: 'admin', attributes: ['id', 'name'] }]
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json(reports);
+    } catch (error) {
+        next(error);
     }
 };
 
 /**
  * Get reports (Admin)
  */
-export const getPropertyReports = async (req, res) => {
+export const getPropertyReports = async (req, res, next) => {
     try {
         const { status, limit = 50, offset = 0 } = req.query;
         const where = {};
@@ -122,15 +162,14 @@ export const getPropertyReports = async (req, res) => {
 
         res.json(reports);
     } catch (error) {
-        console.error('Error fetching property reports:', error);
-        res.status(500).json({ error: 'Error al obtener los reportes', message: error.message });
+        next(error);
     }
 };
 
 /**
  * Confirm report and refund credit
  */
-export const confirmPropertyReport = async (req, res) => {
+export const confirmPropertyReport = async (req, res, next) => {
     const t = await sequelize.transaction();
 
     try {
@@ -144,12 +183,16 @@ export const confirmPropertyReport = async (req, res) => {
 
         if (!report) {
             await t.rollback();
-            return res.status(404).json({ error: 'Reporte no encontrado' });
+            return next(notFound('Reporte no encontrado', {
+                code: 'PROPERTY_REPORT_NOT_FOUND'
+            }));
         }
 
         if (report.status !== PropertyReportStatus.PENDING && report.status !== PropertyReportStatus.INVESTIGATING) {
             await t.rollback();
-            return res.status(400).json({ error: 'El reporte ya fue procesado' });
+            return next(badRequest('El reporte ya fue procesado', {
+                code: 'PROPERTY_REPORT_ALREADY_PROCESSED'
+            }));
         }
 
         // 1. Mark report as confirmed
@@ -232,15 +275,14 @@ export const confirmPropertyReport = async (req, res) => {
         res.json(report);
     } catch (error) {
         await t.rollback();
-        console.error('Error confirming report:', error);
-        res.status(500).json({ error: 'Error al confirmar el reporte', message: error.message });
+        next(error);
     }
 };
 
 /**
  * Reject report
  */
-export const rejectPropertyReport = async (req, res) => {
+export const rejectPropertyReport = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { adminId, adminNotes } = req.body;
@@ -248,11 +290,15 @@ export const rejectPropertyReport = async (req, res) => {
         const report = await PropertyReport.findByPk(id);
 
         if (!report) {
-            return res.status(404).json({ error: 'Reporte no encontrado' });
+            return next(notFound('Reporte no encontrado', {
+                code: 'PROPERTY_REPORT_NOT_FOUND'
+            }));
         }
 
         if (report.status !== PropertyReportStatus.PENDING && report.status !== PropertyReportStatus.INVESTIGATING) {
-            return res.status(400).json({ error: 'El reporte ya fue procesado' });
+            return next(badRequest('El reporte ya fue procesado', {
+                code: 'PROPERTY_REPORT_ALREADY_PROCESSED'
+            }));
         }
 
         report.status = PropertyReportStatus.REJECTED;
@@ -297,14 +343,14 @@ export const rejectPropertyReport = async (req, res) => {
 
         res.json(report);
     } catch (error) {
-        console.error('Error rejecting report:', error);
-        res.status(500).json({ error: 'Error al rechazar el reporte', message: error.message });
+        next(error);
     }
 };
 
 export default {
     createPropertyReport,
     getPropertyReports,
+    getMyPropertyReports,
     confirmPropertyReport,
     rejectPropertyReport
 };

@@ -1,9 +1,10 @@
 import { Favorite, Property, PropertyImage, PropertyType, Location, User } from '../models/index.js';
+import { conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Get all favorite properties for the authenticated user
  */
-export const getUserFavorites = async (req, res) => {
+export const getUserFavorites = async (req, res, next) => {
     try {
         const userId = req.userId;
 
@@ -42,18 +43,14 @@ export const getUserFavorites = async (req, res) => {
 
         res.json(properties);
     } catch (error) {
-        console.error('Error fetching user favorites:', error);
-        res.status(500).json({
-            message: 'Error al obtener favoritos',
-            error: error.message
-        });
+        next(error);
     }
 };
 
 /**
  * Add a property to user's favorites
  */
-export const addFavorite = async (req, res) => {
+export const addFavorite = async (req, res, next) => {
     try {
         const userId = req.userId;
         const { propertyId } = req.params;
@@ -62,7 +59,7 @@ export const addFavorite = async (req, res) => {
         const property = await Property.findByPk(propertyId);
 
         if (!property) {
-            return res.status(404).json({ message: 'Propiedad no encontrada' });
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
         // Check if already favorited
@@ -71,7 +68,7 @@ export const addFavorite = async (req, res) => {
         });
 
         if (existingFavorite) {
-            return res.status(400).json({ message: 'Esta propiedad ya está en tus favoritos' });
+            return next(conflict('Esta propiedad ya está en tus favoritos', { code: 'FAVORITE_ALREADY_EXISTS' }));
         }
 
         // Create favorite
@@ -86,18 +83,14 @@ export const addFavorite = async (req, res) => {
             propertyId
         });
     } catch (error) {
-        console.error('❌ Error adding favorite:', error);
-        res.status(500).json({
-            message: 'Error al agregar a favoritos',
-            error: error.message
-        });
+        next(error);
     }
 };
 
 /**
  * Remove a property from user's favorites
  */
-export const removeFavorite = async (req, res) => {
+export const removeFavorite = async (req, res, next) => {
     try {
         const userId = req.userId;
         const { propertyId } = req.params;
@@ -107,7 +100,7 @@ export const removeFavorite = async (req, res) => {
         });
 
         if (deleted === 0) {
-            return res.status(404).json({ message: 'Favorito no encontrado' });
+            return next(notFound('Favorito no encontrado', { code: 'FAVORITE_NOT_FOUND' }));
         }
 
         res.json({
@@ -115,18 +108,14 @@ export const removeFavorite = async (req, res) => {
             propertyId
         });
     } catch (error) {
-        console.error('Error removing favorite:', error);
-        res.status(500).json({
-            message: 'Error al eliminar de favoritos',
-            error: error.message
-        });
+        next(error);
     }
 };
 
 /**
  * Check if a property is favorited by the user
  */
-export const checkFavorite = async (req, res) => {
+export const checkFavorite = async (req, res, next) => {
     try {
         const userId = req.userId;
         const { propertyId } = req.params;
@@ -140,10 +129,6 @@ export const checkFavorite = async (req, res) => {
             propertyId
         });
     } catch (error) {
-        console.error('Error checking favorite:', error);
-        res.status(500).json({
-            message: 'Error al verificar favorito',
-            error: error.message
-        });
+        next(error);
     }
 };

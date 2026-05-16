@@ -10,23 +10,24 @@ import {
     getUserStatistics
 } from '../controllers/userController.js';
 import authenticateToken from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/role.js';
 
 const router = express.Router();
 
-// User CRUD routes
-router.get('/', getAllUsers);
-router.get('/:id', getUserById);
-router.post('/', createUser);
-router.put('/:id', authenticateToken, updateUser);  // Protected route
-router.delete('/:id', deleteUser);
+// User routes
+router.get('/', authenticateToken, requireAdmin, getAllUsers);
+router.get('/:id', authenticateToken, requireAdmin, getUserById);
+router.post('/', authenticateToken, requireAdmin, createUser);
+router.put('/:id', authenticateToken, requireAdmin, updateUser);
+router.delete('/:id', authenticateToken, requireAdmin, deleteUser);
 
-// User verification routes
-router.put('/:id/verification-status', updateVerificationStatus);
+// User verification (admin)
+router.put('/:id/verification-status', authenticateToken, requireAdmin, updateVerificationStatus);
 
-// User plan routes
-router.put('/:id/plan', updateUserPlan);
+// User plan (admin)
+router.put('/:id/plan', authenticateToken, requireAdmin, updateUserPlan);
 
-// User statistics
-router.get('/:id/statistics', getUserStatistics);
+// User statistics (admin)
+router.get('/:id/statistics', authenticateToken, requireAdmin, getUserStatistics);
 
 export default router;

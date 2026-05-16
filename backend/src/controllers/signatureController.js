@@ -5,7 +5,7 @@ import cloudinary from '../config/cloudinary.js';
  * GET /api/upload/signature
  * Query: { folder: "optional_folder_name" }
  */
-export const generateSignature = async (req, res) => {
+export const generateSignature = async (req, res, next) => {
     try {
         const { folder } = req.query;
 
@@ -34,10 +34,6 @@ export const generateSignature = async (req, res) => {
             folder
         });
     } catch (error) {
-        console.error('Error generating Cloudinary signature:', error);
-        res.status(500).json({
-            error: 'Failed to generate signature',
-            message: error.message
-        });
+        next(error);
     }
 };

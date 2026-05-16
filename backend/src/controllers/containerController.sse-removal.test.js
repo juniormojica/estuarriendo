@@ -27,7 +27,7 @@ describe('containerController ActivityLog parity', () => {
         };
         const res = createRes();
 
-        await containerController.createContainer(req, res);
+        await containerController.createContainer(req, res, vi.fn());
 
         expect(activitySpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'container_submitted', userId: 'u-1' }));
         expect(res.status).toHaveBeenCalledWith(201);

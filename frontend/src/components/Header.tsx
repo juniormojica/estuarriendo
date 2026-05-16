@@ -178,8 +178,8 @@ const Header: React.FC = () => {
             {/* Auth-dependent links — only rendered after client mount to avoid hydration mismatch */}
             {mounted && (
               <>
-                {/* Hide Favoritos and Planes for admin/superAdmin users */}
-                {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'superAdmin')) && (
+                {/* Hide Favoritos and Planes for admin/super_admin users */}
+                {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'super_admin')) && (
                   <>
                     <NavLink to="/favoritos" pathname={pathname}>Favoritos</NavLink>
                     <NavLink to="/planes" pathname={pathname}>Planes</NavLink>
@@ -189,12 +189,12 @@ const Header: React.FC = () => {
                 {currentUser && (
                   <>
                     {/* Admin Panel Link */}
-                    {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
+                    {(currentUser.userType === 'admin' || currentUser.userType === 'super_admin') && (
                       <NavLink to="/admin" pathname={pathname}>Admin Panel</NavLink>
                     )}
 
                     {/* Super Admin Dashboard Link */}
-                    {currentUser.userType === 'superAdmin' && (
+                    {currentUser.userType === 'super_admin' && (
                       <NavLink to="/super-admin" pathname={pathname}>Super Admin</NavLink>
                     )}
 
@@ -373,7 +373,7 @@ const Header: React.FC = () => {
 
               {mounted && (
                 <>
-                  {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'superAdmin')) && (
+                  {(!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'super_admin')) && (
                     <>
                       <NavLink to="/favoritos" mobile pathname={pathname}>Favoritos</NavLink>
                       <NavLink to="/planes" mobile pathname={pathname}>Planes</NavLink>
@@ -383,18 +383,18 @@ const Header: React.FC = () => {
                   {currentUser && (
                     <>
                       {/* Divider for user-specific sections */}
-                      {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin' ||
+                      {(currentUser.userType === 'admin' || currentUser.userType === 'super_admin' ||
                         currentUser.userType === 'tenant' || currentUser.userType === 'owner') && (
                           <div className="py-2">
                             <div className="h-px bg-gray-200"></div>
                           </div>
                         )}
 
-                      {(currentUser.userType === 'admin' || currentUser.userType === 'superAdmin') && (
+                      {(currentUser.userType === 'admin' || currentUser.userType === 'super_admin') && (
                         <NavLink to="/admin" mobile pathname={pathname}>Admin Panel</NavLink>
                       )}
 
-                      {currentUser.userType === 'superAdmin' && (
+                      {currentUser.userType === 'super_admin' && (
                         <NavLink to="/super-admin" mobile pathname={pathname}>Super Admin</NavLink>
                       )}
 

@@ -1,4 +1,5 @@
 import { PropertyType } from '../models/index.js';
+import { badRequest, conflict, notFound } from '../errors/AppError.js';
 
 /**
  * Property Type Controller
@@ -9,7 +10,7 @@ import { PropertyType } from '../models/index.js';
  * Get all property types
  * @route GET /api/property-types
  */
-export const getAllPropertyTypes = async (req, res) => {
+export const getAllPropertyTypes = async (req, res, next) => {
     try {
         const propertyTypes = await PropertyType.findAll({
             attributes: ['id', 'name', 'description'],
@@ -18,11 +19,7 @@ export const getAllPropertyTypes = async (req, res) => {
 
         res.json(propertyTypes);
     } catch (error) {
-        console.error('Error fetching property types:', error);
-        res.status(500).json({
-            error: 'Error al obtener los tipos de propiedad',
-            message: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        next(error);
     }
 };
 
@@ -30,24 +27,18 @@ export const getAllPropertyTypes = async (req, res) => {
  * Get property type by ID
  * @route GET /api/property-types/:id
  */
-export const getPropertyTypeById = async (req, res) => {
+export const getPropertyTypeById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const propertyType = await PropertyType.findByPk(id);
 
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Tipo de propiedad no encontrado'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         res.json(propertyType);
     } catch (error) {
-        console.error('Error fetching property type:', error);
-        res.status(500).json({
-            error: 'Error al obtener el tipo de propiedad',
-            message: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        next(error);
     }
 };
 
@@ -55,7 +46,7 @@ export const getPropertyTypeById = async (req, res) => {
  * Get property type by name
  * @route GET /api/property-types/name/:name
  */
-export const getPropertyTypeByName = async (req, res) => {
+export const getPropertyTypeByName = async (req, res, next) => {
     try {
         const { name } = req.params;
         const propertyType = await PropertyType.findOne({
@@ -63,18 +54,12 @@ export const getPropertyTypeByName = async (req, res) => {
         });
 
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Tipo de propiedad no encontrado'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         res.json(propertyType);
     } catch (error) {
-        console.error('Error fetching property type by name:', error);
-        res.status(500).json({
-            error: 'Error al obtener el tipo de propiedad',
-            message: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        next(error);
     }
 };
 
@@ -82,23 +67,23 @@ export const getPropertyTypeByName = async (req, res) => {
  * Create new property type (admin only)
  * @route POST /api/property-types
  */
-export const createPropertyType = async (req, res) => {
+export const createPropertyType = async (req, res, next) => {
     try {
         const { name, description } = req.body;
 
         // Validate required fields
         if (!name) {
-            return res.status(400).json({
-                error: 'Property type name is required'
-            });
+            return next(badRequest('Property type name is required', {
+                code: 'PROPERTY_TYPE_NAME_REQUIRED'
+            }));
         }
 
         // Check if property type already exists
         const existing = await PropertyType.findOne({ where: { name } });
         if (existing) {
-            return res.status(409).json({
-                error: 'Property type with this name already exists'
-            });
+            return next(conflict('Property type with this name already exists', {
+                code: 'PROPERTY_TYPE_NAME_EXISTS'
+            }));
         }
 
         const propertyType = await PropertyType.create({
@@ -109,11 +94,7 @@ export const createPropertyType = async (req, res) => {
 
         res.status(201).json(propertyType);
     } catch (error) {
-        console.error('Error creating property type:', error);
-        res.status(500).json({
-            error: 'Failed to create property type',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -121,25 +102,23 @@ export const createPropertyType = async (req, res) => {
  * Update property type (admin only)
  * @route PUT /api/property-types/:id
  */
-export const updatePropertyType = async (req, res) => {
+export const updatePropertyType = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, description } = req.body;
 
         const propertyType = await PropertyType.findByPk(id);
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Property type not found'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         // Check if name is being changed and if new name already exists
         if (name && name !== propertyType.name) {
             const existing = await PropertyType.findOne({ where: { name } });
             if (existing) {
-                return res.status(409).json({
-                    error: 'Property type with this name already exists'
-                });
+                return next(conflict('Property type with this name already exists', {
+                    code: 'PROPERTY_TYPE_NAME_EXISTS'
+                }));
             }
         }
 
@@ -151,11 +130,7 @@ export const updatePropertyType = async (req, res) => {
 
         res.json(propertyType);
     } catch (error) {
-        console.error('Error updating property type:', error);
-        res.status(500).json({
-            error: 'Failed to update property type',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -163,34 +138,23 @@ export const updatePropertyType = async (req, res) => {
  * Delete property type (admin only)
  * @route DELETE /api/property-types/:id
  */
-export const deletePropertyType = async (req, res) => {
+export const deletePropertyType = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const propertyType = await PropertyType.findByPk(id);
         if (!propertyType) {
-            return res.status(404).json({
-                error: 'Property type not found'
-            });
+            throw notFound('Property type not found', { code: 'PROPERTY_TYPE_NOT_FOUND' });
         }
 
         await propertyType.destroy();
         res.json({ message: 'Property type deleted successfully' });
     } catch (error) {
-        console.error('Error deleting property type:', error);
-
-        // Handle foreign key constraint errors
         if (error.name === 'SequelizeForeignKeyConstraintError') {
-            return res.status(409).json({
-                error: 'Cannot delete property type',
-                message: 'This property type is used by existing properties'
-            });
+            return next(conflict('Cannot delete property type', { code: 'PROPERTY_TYPE_IN_USE' }));
         }
 
-        res.status(500).json({
-            error: 'Failed to delete property type',
-            message: error.message
-        });
+        next(error);
     }
 };
 

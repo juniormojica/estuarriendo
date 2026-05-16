@@ -46,10 +46,15 @@ describe('userController updateUser auth contract', () => {
 
         await userController.updateUser(req, res, next);
 
-        expect(res.status).toHaveBeenCalledWith(403);
-        expect(res.json).toHaveBeenCalledWith({ error: 'No tienes permiso para actualizar este perfil' });
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
         expect(updateSpy).not.toHaveBeenCalled();
-        expect(next).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(next.mock.calls[0][0]).toMatchObject({
+            statusCode: 403,
+            code: 'USER_UPDATE_FORBIDDEN',
+            message: 'No tienes permiso para actualizar este perfil'
+        });
     });
 
     it('rejects update when req.auth is missing', async () => {
@@ -64,9 +69,14 @@ describe('userController updateUser auth contract', () => {
 
         await userController.updateUser(req, res, next);
 
-        expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.json).toHaveBeenCalledWith({ error: 'No autenticado' });
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
         expect(updateSpy).not.toHaveBeenCalled();
-        expect(next).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(next.mock.calls[0][0]).toMatchObject({
+            statusCode: 401,
+            code: 'USER_UPDATE_UNAUTHENTICATED',
+            message: 'No autenticado'
+        });
     });
 });

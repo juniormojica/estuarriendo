@@ -1,6 +1,7 @@
 import { StudentRequest, User, City, Institution, ActivityLog } from '../models/index.js';
-import { StudentRequestStatus } from '../utils/enums.js';
+import { StudentRequestStatus, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
+import { badRequest, notFound, forbidden } from '../errors/AppError.js';
 
 /**
  * StudentRequest Controller
@@ -8,7 +9,7 @@ import { Op } from 'sequelize';
  */
 
 // Get all student requests with filters
-export const getAllStudentRequests = async (req, res) => {
+export const getAllStudentRequests = async (req, res, next) => {
     try {
         const {
             status,
@@ -63,13 +64,12 @@ export const getAllStudentRequests = async (req, res) => {
 
         res.json(requests);
     } catch (error) {
-        console.error('Error fetching student requests:', error);
-        res.status(500).json({ error: 'Failed to fetch student requests', message: error.message });
+        next(error);
     }
 };
 
 // Get student request by ID
-export const getStudentRequestById = async (req, res) => {
+export const getStudentRequestById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -85,20 +85,26 @@ export const getStudentRequestById = async (req, res) => {
         });
 
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
 
         res.json(request);
     } catch (error) {
-        console.error('Error fetching student request:', error);
-        res.status(500).json({ error: 'Failed to fetch student request', message: error.message });
+        next(error);
     }
 };
 
-// Get requests by student ID
-export const getStudentRequestsByStudentId = async (req, res) => {
+// Get requests by student ID — authenticated user must be the student or admin
+export const getStudentRequestsByStudentId = async (req, res, next) => {
     try {
         const { studentId } = req.params;
+
+        if (req.auth.userId !== studentId) {
+            const user = await User.findByPk(req.auth.userId, { attributes: ['userType'] });
+            if (user?.userType !== UserType.ADMIN && user?.userType !== UserType.SUPER_ADMIN) {
+                throw forbidden('Solo puedes ver tus propias solicitudes', { code: 'STUDENT_REQUEST_FORBIDDEN' });
+            }
+        }
 
         const requests = await StudentRequest.findAll({
             where: { studentId },
@@ -107,20 +113,19 @@ export const getStudentRequestsByStudentId = async (req, res) => {
 
         res.json(requests);
     } catch (error) {
-        console.error('Error fetching student requests:', error);
-        res.status(500).json({ error: 'Failed to fetch student requests', message: error.message });
+        next(error);
     }
 };
 
-// Create student request
-export const createStudentRequest = async (req, res) => {
+// Create student request — studentId is DERIVED from token, NEVER trust client-provided value
+export const createStudentRequest = async (req, res, next) => {
     try {
         const requestData = req.body;
+        const studentId = req.auth.userId;
 
-        // Validate required fields (normalized schema)
+        // Validate required fields (studentId is derived from auth, not body)
         const requiredFields = [
-            'studentId',        // Required - references User table
-            'cityId',           // Required - references City table
+            'cityId',
             'budgetMax',
             'propertyTypeDesired',
             'moveInDate'
@@ -128,20 +133,20 @@ export const createStudentRequest = async (req, res) => {
 
         for (const field of requiredFields) {
             if (!requestData[field]) {
-                return res.status(400).json({ error: `${field} is required` });
+                throw badRequest(`${field} is required`, {
+                    code: 'STUDENT_REQUEST_VALIDATION_ERROR'
+                });
             }
         }
 
-        // If studentId is provided, verify user exists
-        if (requestData.studentId) {
-            const student = await User.findByPk(requestData.studentId);
-            if (!student) {
-                return res.status(404).json({ error: 'Student user not found' });
-            }
+        const student = await User.findByPk(studentId);
+        if (!student) {
+            throw notFound('Usuario no encontrado', { code: 'STUDENT_USER_NOT_FOUND' });
         }
 
         const request = await StudentRequest.create({
             ...requestData,
+            studentId,
             status: StudentRequestStatus.OPEN,
             createdAt: new Date(),
             updatedAt: new Date()
@@ -150,8 +155,8 @@ export const createStudentRequest = async (req, res) => {
         try {
             await ActivityLog.create({
                 type: 'student_request_created',
-                message: `Nueva solicitud estudiantil creada por ${requestData.studentId}`,
-                userId: requestData.studentId,
+                message: `Nueva solicitud estudiantil creada por ${studentId}`,
+                userId: studentId,
                 timestamp: new Date()
             });
         } catch (activityError) {
@@ -160,41 +165,43 @@ export const createStudentRequest = async (req, res) => {
 
         res.status(201).json(request);
     } catch (error) {
-        console.error('Error creating student request:', error);
-        res.status(500).json({ error: 'Failed to create student request', message: error.message });
+        next(error);
     }
 };
 
-// Update student request
-export const updateStudentRequest = async (req, res) => {
+// Update student request — ownership or admin required
+export const updateStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
         const updates = req.body;
 
         const request = await StudentRequest.findByPk(id);
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
+
+        await assertOwnershipOrAdmin(req, request);
 
         updates.updatedAt = new Date();
 
         await request.update(updates);
         res.json(request);
     } catch (error) {
-        console.error('Error updating student request:', error);
-        res.status(500).json({ error: 'Failed to update student request', message: error.message });
+        next(error);
     }
 };
 
-// Close student request
-export const closeStudentRequest = async (req, res) => {
+// Close student request — ownership or admin required
+export const closeStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const request = await StudentRequest.findByPk(id);
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
+
+        await assertOwnershipOrAdmin(req, request);
 
         await request.update({
             status: StudentRequestStatus.CLOSED,
@@ -206,26 +213,34 @@ export const closeStudentRequest = async (req, res) => {
             request
         });
     } catch (error) {
-        console.error('Error closing student request:', error);
-        res.status(500).json({ error: 'Failed to close student request', message: error.message });
+        next(error);
     }
 };
 
-// Delete student request
-export const deleteStudentRequest = async (req, res) => {
+// Delete student request — ownership or admin required (admin panel uses this)
+export const deleteStudentRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const request = await StudentRequest.findByPk(id);
         if (!request) {
-            return res.status(404).json({ error: 'Student request not found' });
+            throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
+
+        await assertOwnershipOrAdmin(req, request);
 
         await request.destroy();
         res.json({ message: 'Student request deleted successfully' });
     } catch (error) {
-        console.error('Error deleting student request:', error);
-        res.status(500).json({ error: 'Failed to delete student request', message: error.message });
+        next(error);
+    }
+};
+
+const assertOwnershipOrAdmin = async (req, request) => {
+    if (request.studentId === req.auth.userId) return;
+    const user = await User.findByPk(req.auth.userId, { attributes: ['userType'] });
+    if (user?.userType !== UserType.ADMIN && user?.userType !== UserType.SUPER_ADMIN) {
+        throw forbidden('Solo puedes modificar tus propias solicitudes', { code: 'STUDENT_REQUEST_FORBIDDEN' });
     }
 };
 

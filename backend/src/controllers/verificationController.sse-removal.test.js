@@ -21,10 +21,10 @@ describe('verificationController ActivityLog parity', () => {
         vi.spyOn(Notification, 'create').mockResolvedValue({});
         const activitySpy = vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
 
-        const req = { body: { userId: 'u-1', idFront: 'a', idBack: 'b', selfie: 'c' } };
+        const req = { auth: { userId: 'u-1' }, body: { idFront: 'a', idBack: 'b', selfie: 'c' } };
         const res = createRes();
 
-        await verificationController.submitVerificationDocuments(req, res);
+        await verificationController.submitVerificationDocuments(req, res, vi.fn());
 
         expect(activitySpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'verification_submitted', userId: 'u-1' }));
         expect(res.status).toHaveBeenCalledWith(201);
@@ -46,15 +46,15 @@ describe('verificationController ActivityLog parity', () => {
         const activitySpy = vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-2' });
 
         const req = {
+            auth: { userId: 'u-1' },
             body: {
-                userId: 'u-1',
                 documentType: 'idFront',
                 documentUrl: 'https://cdn/doc.png'
             }
         };
         const res = createRes();
 
-        await verificationController.submitSingleDocument(req, res);
+        await verificationController.submitSingleDocument(req, res, vi.fn());
 
         expect(activitySpy).toHaveBeenCalledWith(expect.objectContaining({
             type: 'verification_doc_submitted',

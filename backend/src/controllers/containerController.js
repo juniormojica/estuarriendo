@@ -1,6 +1,8 @@
 import containerService from '../services/containerService.js';
 import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
+import { badRequest, forbidden, notFound } from '../errors/AppError.js';
+import { UserType } from '../utils/enums.js';
 
 /**
  * Container Controller
@@ -15,7 +17,7 @@ import { sequelize } from '../models/index.js';
  * Get containers that are pending or have pending units
  * GET /api/containers/pending
  */
-export const getPendingContainers = async (req, res) => {
+export const getPendingContainers = async (req, res, next) => {
     try {
         const { Property } = await import('../models/index.js');
 
@@ -57,19 +59,12 @@ export const getPendingContainers = async (req, res) => {
 
         res.json({ success: true, data: result });
     } catch (error) {
-        console.error('Error getting pending containers:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener pensiones u apartamentos pendientes',
-            error: error.message
-        });
+        next(error);
     }
 };
 
-export const createContainer = async (req, res) => {
+export const createContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
-
-
 
     try {
         const {
@@ -223,13 +218,10 @@ export const createContainer = async (req, res) => {
             data: completeContainer
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error creating container:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al crear pensión/apartamento',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -237,17 +229,14 @@ export const createContainer = async (req, res) => {
  * Get container with all units and associations
  * GET /api/containers/:id
  */
-export const getContainer = async (req, res) => {
+export const getContainer = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const container = await containerService.findContainerWithUnits(id);
 
         if (!container) {
-            return res.status(404).json({
-                success: false,
-                message: 'Pensión/apartamento no encontrado'
-            });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         res.status(200).json({
@@ -255,12 +244,7 @@ export const getContainer = async (req, res) => {
             data: container
         });
     } catch (error) {
-        console.error('Error getting container:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener pensión/apartamento',
-            error: error.message
-        });
+        next(error);
     }
 };
 
@@ -268,7 +252,7 @@ export const getContainer = async (req, res) => {
  * Update container
  * PUT /api/containers/:id
  */
-export const updateContainer = async (req, res) => {
+export const updateContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -287,19 +271,13 @@ export const updateContainer = async (req, res) => {
 
         if (!container) {
             await transaction.rollback();
-            return res.status(404).json({
-                success: false,
-                message: 'Pensión/apartamento no encontrado'
-            });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         // Verify ownership (simplified - only owner can update)
         if (container.ownerId !== req.userId) {
             await transaction.rollback();
-            return res.status(403).json({
-                success: false,
-                message: 'No autorizado para actualizar esta pensión/apartamento'
-            });
+            return next(forbidden('No autorizado para actualizar esta pensión/apartamento'));
         }
 
         // Ensure only valid property fields are updated 
@@ -362,12 +340,7 @@ export const updateContainer = async (req, res) => {
         if (!transaction.finished) {
             await transaction.rollback();
         }
-        console.error('Error updating container:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al actualizar pensión/apartamento',
-            error: error.message
-        });
+        next(error);
     }
 };
 
@@ -375,7 +348,7 @@ export const updateContainer = async (req, res) => {
  * Delete container
  * DELETE /api/containers/:id
  */
-export const deleteContainer = async (req, res) => {
+export const deleteContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -387,19 +360,13 @@ export const deleteContainer = async (req, res) => {
 
         if (!container) {
             await transaction.rollback();
-            return res.status(404).json({
-                success: false,
-                message: 'Pensión/apartamento no encontrado'
-            });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         // Verify ownership (simplified - only owner can delete)
         if (container.ownerId !== req.userId) {
             await transaction.rollback();
-            return res.status(403).json({
-                success: false,
-                message: 'No autorizado para eliminar esta pensión/apartamento'
-            });
+            return next(forbidden('No autorizado para eliminar esta pensión/apartamento'));
         }
 
         await container.destroy({ transaction });
@@ -411,13 +378,10 @@ export const deleteContainer = async (req, res) => {
             message: 'Pensión/apartamento eliminado exitosamente'
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error deleting container:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al eliminar pensión/apartamento',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -425,7 +389,7 @@ export const deleteContainer = async (req, res) => {
  * Rent complete container
  * POST /api/containers/:id/rent-complete
  */
-export const rentCompleteContainer = async (req, res) => {
+export const rentCompleteContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -441,12 +405,10 @@ export const rentCompleteContainer = async (req, res) => {
             data: container
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error renting complete container:', error);
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(badRequest(error.message, { code: 'RENT_COMPLETE_FAILED' }));
     }
 };
 
@@ -454,7 +416,7 @@ export const rentCompleteContainer = async (req, res) => {
  * Change rental mode
  * POST /api/containers/:id/change-mode
  */
-export const changeRentalMode = async (req, res) => {
+export const changeRentalMode = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -477,12 +439,10 @@ export const changeRentalMode = async (req, res) => {
             data: container
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error changing rental mode:', error);
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(badRequest(error.message, { code: 'RENTAL_MODE_CHANGE_FAILED' }));
     }
 };
 
@@ -490,7 +450,7 @@ export const changeRentalMode = async (req, res) => {
  * Create unit in container
  * POST /api/containers/:containerId/units
  */
-export const createUnit = async (req, res) => {
+export const createUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -519,13 +479,10 @@ export const createUnit = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error creating unit:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al crear habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -533,7 +490,7 @@ export const createUnit = async (req, res) => {
  * Get all units of a container
  * GET /api/containers/:containerId/units
  */
-export const getContainerUnits = async (req, res) => {
+export const getContainerUnits = async (req, res, next) => {
     try {
         const { containerId } = req.params;
 
@@ -552,12 +509,7 @@ export const getContainerUnits = async (req, res) => {
             data: units
         });
     } catch (error) {
-        console.error('Error getting container units:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener habitaciones de la pensión/apartamento',
-            error: error.message
-        });
+        next(error);
     }
 };
 
@@ -565,7 +517,7 @@ export const getContainerUnits = async (req, res) => {
  * Update unit
  * PUT /api/units/:id
  */
-export const updateUnit = async (req, res) => {
+export const updateUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -578,18 +530,12 @@ export const updateUnit = async (req, res) => {
 
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({
-                success: false,
-                message: 'Habitación no encontrada'
-            });
+            return next(notFound('Habitación no encontrada', { code: 'UNIT_NOT_FOUND' }));
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({
-                success: false,
-                message: 'La propiedad no es una habitación'
-            });
+            return next(badRequest('La propiedad no es una habitación', { code: 'PROPERTY_NOT_UNIT' }));
         }
 
         await unit.update(updateData, { transaction });
@@ -616,13 +562,10 @@ export const updateUnit = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error updating unit:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al actualizar habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -630,7 +573,7 @@ export const updateUnit = async (req, res) => {
  * Delete unit
  * DELETE /api/units/:id
  */
-export const deleteUnit = async (req, res) => {
+export const deleteUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -645,13 +588,10 @@ export const deleteUnit = async (req, res) => {
             message: 'Habitación eliminada exitosamente'
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error deleting unit:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al eliminar habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -659,7 +599,7 @@ export const deleteUnit = async (req, res) => {
  * Update unit rental status
  * PATCH /api/units/:id/rental-status
  */
-export const updateUnitRentalStatus = async (req, res) => {
+export const updateUnitRentalStatus = async (req, res, next) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -676,13 +616,10 @@ export const updateUnitRentalStatus = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error updating unit rental status:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al actualizar estado de alquiler de habitación',
-            error: error.message
-        });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -690,7 +627,7 @@ export const updateUnitRentalStatus = async (req, res) => {
  * Approve unit and check if container should be auto-approved
  * PUT /api/units/:id/approve
  */
-export const approveUnit = async (req, res) => {
+export const approveUnit = async (req, res, next) => {
     const transaction = await sequelize.transaction();
     try {
         const { id } = req.params;
@@ -699,12 +636,12 @@ export const approveUnit = async (req, res) => {
         const unit = await Property.findByPk(id, { transaction });
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Habitación no encontrada' });
+            return next(notFound('Habitación no encontrada', { code: 'UNIT_NOT_FOUND' }));
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'La propiedad no es una habitación' });
+            return next(badRequest('La propiedad no es una habitación', { code: 'PROPERTY_NOT_UNIT' }));
         }
 
         const oldStatus = unit.status;
@@ -765,9 +702,10 @@ export const approveUnit = async (req, res) => {
             data: { unit, containerApproved }
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error approving unit:', error);
-        res.status(500).json({ success: false, message: error.message });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -775,27 +713,28 @@ export const approveUnit = async (req, res) => {
  * Reject unit
  * PUT /api/units/:id/reject
  */
-export const rejectUnit = async (req, res) => {
+export const rejectUnit = async (req, res, next) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+        return next(badRequest('El motivo de rechazo es requerido'));
+    }
+
     const transaction = await sequelize.transaction();
+
     try {
-        const { id } = req.params;
-        const { reason } = req.body;
-
-        if (!reason) {
-            return res.status(400).json({ success: false, message: 'El motivo de rechazo es requerido' });
-        }
-
         const { Property, Notification } = await import('../models/index.js');
 
         const unit = await Property.findByPk(id, { transaction });
         if (!unit) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Habitación no encontrada' });
+            return next(notFound('Habitación no encontrada', { code: 'UNIT_NOT_FOUND' }));
         }
 
         if (!unit.parentId) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'La propiedad no es una habitación' });
+            return next(badRequest('La propiedad no es una habitación', { code: 'PROPERTY_NOT_UNIT' }));
         }
 
         await unit.update({
@@ -826,9 +765,10 @@ export const rejectUnit = async (req, res) => {
             data: unit
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error rejecting unit:', error);
-        res.status(500).json({ success: false, message: error.message });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -836,7 +776,7 @@ export const rejectUnit = async (req, res) => {
  * Approve container and all its pending units
  * PUT /api/containers/:id/approve
  */
-export const approveContainer = async (req, res) => {
+export const approveContainer = async (req, res, next) => {
     const transaction = await sequelize.transaction();
     try {
         const { id } = req.params;
@@ -850,12 +790,12 @@ export const approveContainer = async (req, res) => {
 
         if (!container) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, message: 'Pensión/apartamento no encontrado' });
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
         if (!container.isContainer) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, message: 'La propiedad no es una pensión/apartamento' });
+            return next(badRequest('La propiedad no es una pensión/apartamento', { code: 'PROPERTY_NOT_CONTAINER' }));
         }
 
         // Approve all pending units
@@ -907,9 +847,10 @@ export const approveContainer = async (req, res) => {
             }
         });
     } catch (error) {
-        await transaction.rollback();
-        console.error('Error approving container:', error);
-        res.status(500).json({ success: false, message: error.message });
+        if (!transaction.finished) {
+            await transaction.rollback();
+        }
+        next(error);
     }
 };
 
@@ -917,71 +858,37 @@ export const approveContainer = async (req, res) => {
  * Admin: Create a container on behalf of an owner
  * POST /api/containers/admin-create
  */
-const adminCreateContainer = async (req, res) => {
+export const adminCreateContainer = async (req, res, next) => {
     try {
-        // 1. Check admin role
-        // We need to import User model dynamically or use the one from models/index.js if available in scope
-        // The controller imports { sequelize } from '../models/index.js' at top, but not User directly in top scope usually. 
-        // Let's check imports. original file imported containerService, propertyService, sequelize.
-        // I will import User locally to be safe.
         const { User } = await import('../models/index.js');
 
         const adminUser = await User.findByPk(req.userId);
-        if (!adminUser || !['admin', 'superAdmin'].includes(adminUser.userType)) {
-            return res.status(403).json({
-                success: false,
-                error: 'No tienes permisos para realizar esta acción'
-            });
+        if (!adminUser || ![UserType.ADMIN, UserType.SUPER_ADMIN].includes(adminUser.userType)) {
+            return next(forbidden('No tienes permisos para realizar esta acción'));
         }
 
-        // 2. Validate target owner
         const { targetOwnerId, ...containerData } = req.body;
 
         if (!targetOwnerId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Se requiere el ID del propietario (targetOwnerId)'
-            });
+            return next(badRequest('Se requiere el ID del propietario (targetOwnerId)'));
         }
 
         const owner = await User.findByPk(targetOwnerId);
         if (!owner) {
-            return res.status(404).json({
-                success: false,
-                error: 'Propietario no encontrado'
-            });
+            return next(notFound('Propietario no encontrado'));
         }
 
-        // Check if user is actually a user who can own properties (owner, admin, etc)
-        // Ideally 'owner' userType.
-        if (owner.userType !== 'owner' && owner.userType !== 'admin' && owner.userType !== 'superAdmin') {
-            return res.status(400).json({
-                success: false,
-                error: 'El usuario seleccionado no tiene rol de propietario'
-            });
+        if (owner.userType !== UserType.OWNER && owner.userType !== UserType.ADMIN && owner.userType !== UserType.SUPER_ADMIN) {
+            return next(badRequest('El usuario seleccionado no tiene rol de propietario'));
         }
-
-        // 3. Override userId in request to impersonate the owner for the creation logic
-        // We utilize the existing createContainer logic but we need to trick it or reuse the service directly.
-        // The existing createContainer extracts ownerId = req.userId.
-        // So modifying req.userId is the cleanest way to reuse that controller logic 
-        // WITHOUT duplicating the extensive validation and service calls in createContainer.
 
         req.userId = targetOwnerId;
-
-        // Also ensure the body doesn't contain targetOwnerId anymore if createContainer works strictly with body
         req.body = containerData;
 
-        // 4. Call createContainer
-        return createContainer(req, res);
+        return createContainer(req, res, next);
 
     } catch (error) {
-        console.error('Error in adminCreateContainer:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Error interno al crear propiedad por administrador',
-            details: error.message
-        });
+        next(error);
     }
 };
 

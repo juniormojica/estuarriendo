@@ -8,12 +8,14 @@ export const errorHandler = (error, req, res, next) => {
     }
 
     const isAppError = error instanceof AppError;
-    const isLegacyOperational = !isAppError && Number.isInteger(error?.statusCode) && error.statusCode >= 400 && error.statusCode < 500;
+    const legacyStatusCandidate = error?.statusCode ?? error?.status;
+    const legacyStatusCode = Number.parseInt(legacyStatusCandidate, 10);
+    const isLegacyOperational = !isAppError && Number.isInteger(legacyStatusCode) && legacyStatusCode >= 400 && legacyStatusCode < 500;
 
     const statusCode = isAppError
         ? error.statusCode
         : isLegacyOperational
-            ? error.statusCode
+            ? legacyStatusCode
             : 500;
 
     const message = isAppError || isLegacyOperational

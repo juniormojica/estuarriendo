@@ -1,5 +1,13 @@
 import { Subscription, User, PaymentRequest } from '../models/index.js';
 import { Op } from 'sequelize';
+import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
+
+const ensureSubscriptionOwnerOrAdmin = (req, targetUserId, forbiddenCode) => ensureOwnUserOrAdmin(req, targetUserId, {
+    authRequiredCode: 'SUBSCRIPTION_AUTH_REQUIRED',
+    authUserNotFoundCode: 'SUBSCRIPTION_AUTH_USER_NOT_FOUND',
+    forbiddenCode,
+    forbiddenMessage: 'No tienes permiso para ver la información de suscripciones de este usuario'
+});
 
 /**
  * Subscription Controller
@@ -7,9 +15,10 @@ import { Op } from 'sequelize';
  */
 
 // Get user's active subscription
-export const getUserActiveSubscription = async (req, res) => {
+export const getUserActiveSubscription = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        await ensureSubscriptionOwnerOrAdmin(req, userId, 'SUBSCRIPTION_ACTIVE_FORBIDDEN');
 
         const subscription = await Subscription.findOne({
             where: {
@@ -31,15 +40,15 @@ export const getUserActiveSubscription = async (req, res) => {
 
         res.json(subscription);
     } catch (error) {
-        console.error('Error fetching active subscription:', error);
-        res.status(500).json({ error: 'Failed to fetch subscription', message: error.message });
+        next(error);
     }
 };
 
 // Get user's subscription history
-export const getUserSubscriptionHistory = async (req, res) => {
+export const getUserSubscriptionHistory = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        await ensureSubscriptionOwnerOrAdmin(req, userId, 'SUBSCRIPTION_HISTORY_FORBIDDEN');
 
         const subscriptions = await Subscription.findAll({
             where: { userId },
@@ -53,13 +62,12 @@ export const getUserSubscriptionHistory = async (req, res) => {
 
         res.json(subscriptions);
     } catch (error) {
-        console.error('Error fetching subscription history:', error);
-        res.status(500).json({ error: 'Failed to fetch subscription history', message: error.message });
+        next(error);
     }
 };
 
 // Check and expire old subscriptions (cron job / admin endpoint)
-export const expireOldSubscriptions = async (req, res) => {
+export const expireOldSubscriptions = async (req, res, next) => {
     try {
         const now = new Date();
         const { CreditBalance } = await import('../models/index.js');
@@ -126,8 +134,7 @@ export const expireOldSubscriptions = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Error expiring subscriptions:', error);
-        res.status(500).json({ error: 'Failed to expire subscriptions', message: error.message });
+        next(error);
     }
 };
 

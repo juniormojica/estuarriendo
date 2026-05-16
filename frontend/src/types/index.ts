@@ -11,7 +11,7 @@ export type IdType = 'CC' | 'NIT' | 'CE' | 'Pasaporte';
 export type OwnerRole = 'individual' | 'agency';
 
 // Tipos de Usuario Principal
-export type UserType = 'owner' | 'tenant' | 'admin' | 'superAdmin';
+export type UserType = 'owner' | 'tenant' | 'admin' | 'super_admin';
 
 // Métodos de Pago
 export type PaymentMethod = 'PSE' | 'CreditCard' | 'Nequi' | 'Daviplata' | 'BankTransfer';

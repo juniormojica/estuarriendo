@@ -1,5 +1,6 @@
 import { Department, City } from '../models/index.js';
 import { Op } from 'sequelize';
+import { badRequest, notFound } from '../errors/AppError.js';
 
 /**
  * Location Controller
@@ -10,7 +11,7 @@ import { Op } from 'sequelize';
  * Get all departments
  * GET /api/locations/departments
  */
-export const getAllDepartments = async (req, res) => {
+export const getAllDepartments = async (req, res, next) => {
     try {
         const { isActive } = req.query;
 
@@ -27,11 +28,7 @@ export const getAllDepartments = async (req, res) => {
 
         res.json(departments);
     } catch (error) {
-        console.error('Error fetching departments:', error);
-        res.status(500).json({
-            error: 'Failed to fetch departments',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -39,7 +36,7 @@ export const getAllDepartments = async (req, res) => {
  * Get cities by department
  * GET /api/locations/cities?departmentId=1
  */
-export const getCitiesByDepartment = async (req, res) => {
+export const getCitiesByDepartment = async (req, res, next) => {
     try {
         const { departmentId, isActive } = req.query;
 
@@ -66,11 +63,7 @@ export const getCitiesByDepartment = async (req, res) => {
 
         res.json(cities);
     } catch (error) {
-        console.error('Error fetching cities:', error);
-        res.status(500).json({
-            error: 'Failed to fetch cities',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -78,14 +71,14 @@ export const getCitiesByDepartment = async (req, res) => {
  * Search cities by name (autocomplete)
  * GET /api/locations/cities/search?q=bog&departmentId=1
  */
-export const searchCities = async (req, res) => {
+export const searchCities = async (req, res, next) => {
     try {
         const { q, departmentId, limit = 10 } = req.query;
 
         if (!q || q.length < 2) {
-            return res.status(400).json({
-                error: 'Query parameter "q" must be at least 2 characters'
-            });
+            return next(badRequest('Query parameter "q" must be at least 2 characters', {
+                code: 'CITY_SEARCH_QUERY_TOO_SHORT'
+            }));
         }
 
         const where = {
@@ -115,11 +108,7 @@ export const searchCities = async (req, res) => {
 
         res.json(cities);
     } catch (error) {
-        console.error('Error searching cities:', error);
-        res.status(500).json({
-            error: 'Failed to search cities',
-            message: error.message
-        });
+        next(error);
     }
 };
 
@@ -127,7 +116,7 @@ export const searchCities = async (req, res) => {
  * Get city by ID
  * GET /api/locations/cities/:id
  */
-export const getCityById = async (req, res) => {
+export const getCityById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -142,16 +131,12 @@ export const getCityById = async (req, res) => {
         });
 
         if (!city) {
-            return res.status(404).json({ error: 'City not found' });
+            return next(notFound('City not found', { code: 'CITY_NOT_FOUND' }));
         }
 
         res.json(city);
     } catch (error) {
-        console.error('Error fetching city:', error);
-        res.status(500).json({
-            error: 'Failed to fetch city',
-            message: error.message
-        });
+        next(error);
     }
 };
 

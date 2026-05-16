@@ -47,6 +47,23 @@ describe('errorHandler', () => {
         });
     });
 
+    it('bridges legacy 4xx errors when status is provided as string in status property', () => {
+        const req = {};
+        const res = createResponse();
+        const next = vi.fn();
+        const legacyError = new Error('Invalid token');
+        legacyError.status = '401';
+
+        errorHandler(legacyError, req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Invalid token',
+            message: 'Invalid token',
+            code: 'OPERATIONAL_ERROR'
+        });
+    });
+
     it('sanitizes unexpected errors as generic 500 response', () => {
         const req = {};
         const res = createResponse();

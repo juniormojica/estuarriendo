@@ -1,5 +1,6 @@
 import { UserVerificationDocuments, User, UserVerification, Notification, UserIdentificationDetails, UserProfile, ActivityLog } from '../models/index.js';
 import { VerificationStatus, DocumentVerificationStatus, NotificationType, UserType } from '../utils/enums.js';
+import { badRequest, forbidden, notFound } from '../errors/AppError.js';
 
 import { Op } from 'sequelize';
 
@@ -9,19 +10,22 @@ import { Op } from 'sequelize';
  */
 
 // Submit verification documents
-export const submitVerificationDocuments = async (req, res) => {
+export const submitVerificationDocuments = async (req, res, next) => {
     try {
-        const { userId, idFront, idBack, selfie, utilityBill } = req.body;
+        const { idFront, idBack, selfie, utilityBill } = req.body;
+        const userId = req.auth.userId;
 
         // Validate required fields
-        if (!userId || !idFront || !idBack || !selfie) {
-            return res.status(400).json({ error: 'ID Front, ID Back and Selfie are required' });
+        if (!idFront || !idBack || !selfie) {
+            return next(badRequest('ID Front, ID Back and Selfie are required', {
+                code: 'VERIFICATION_REQUIRED_DOCUMENTS_MISSING'
+            }));
         }
 
         // Check if user exists
         const user = await User.findByPk(userId);
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return next(notFound('User not found', { code: 'USER_NOT_FOUND' }));
         }
 
         // Check if documents already exist
@@ -114,13 +118,12 @@ export const submitVerificationDocuments = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error submitting verification documents:', error);
-        res.status(500).json({ error: 'Failed to submit verification documents', message: error.message });
+        next(error);
     }
 };
 
 // Get verification documents (admin only)
-export const getVerificationDocuments = async (req, res) => {
+export const getVerificationDocuments = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -135,18 +138,19 @@ export const getVerificationDocuments = async (req, res) => {
         });
 
         if (!documents) {
-            return res.status(404).json({ error: 'Verification documents not found' });
+            return next(notFound('Verification documents not found', {
+                code: 'VERIFICATION_DOCUMENTS_NOT_FOUND'
+            }));
         }
 
         res.json(documents);
     } catch (error) {
-        console.error('Error fetching verification documents:', error);
-        res.status(500).json({ error: 'Failed to fetch verification documents', message: error.message });
+        next(error);
     }
 };
 
 // Get all pending verifications (admin only)
-export const getPendingVerifications = async (req, res) => {
+export const getPendingVerifications = async (req, res, next) => {
     try {
         // Find users with PENDING or IN_PROGRESS status
         const pendingUsers = await User.findAll({
@@ -184,24 +188,25 @@ export const getPendingVerifications = async (req, res) => {
 
         res.json(pendingUsers);
     } catch (error) {
-        console.error('Error fetching pending verifications:', error);
-        res.status(500).json({ error: 'Failed to fetch pending verifications', message: error.message });
+        next(error);
     }
 };
 
 // Approve verification (admin only)
-export const approveVerification = async (req, res) => {
+export const approveVerification = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
         const user = await User.findByPk(userId);
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return next(notFound('User not found', { code: 'USER_NOT_FOUND' }));
         }
 
         const documents = await UserVerificationDocuments.findByPk(userId);
         if (!documents) {
-            return res.status(404).json({ error: 'Verification documents not found' }); // Or allow approval without docs if exceptional? No, enforce docs.
+            return next(notFound('Verification documents not found', {
+                code: 'VERIFICATION_DOCUMENTS_NOT_FOUND'
+            })); // Or allow approval without docs if exceptional? No, enforce docs.
         }
 
         // Update UserVerification model
@@ -261,24 +266,25 @@ export const approveVerification = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error approving verification:', error);
-        res.status(500).json({ error: 'Failed to approve verification', message: error.message });
+        next(error);
     }
 };
 
 // Reject verification (admin only)
-export const rejectVerification = async (req, res) => {
+export const rejectVerification = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { reason } = req.body;
 
         if (!reason) {
-            return res.status(400).json({ error: 'Rejection reason is required' });
+            return next(badRequest('Rejection reason is required', {
+                code: 'REJECTION_REASON_REQUIRED'
+            }));
         }
 
         const user = await User.findByPk(userId);
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return next(notFound('User not found', { code: 'USER_NOT_FOUND' }));
         }
 
         const documents = await UserVerificationDocuments.findByPk(userId);
@@ -343,8 +349,7 @@ export const rejectVerification = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error rejecting verification:', error);
-        res.status(500).json({ error: 'Failed to reject verification', message: error.message });
+        next(error);
     }
 };
 
@@ -352,22 +357,27 @@ export const rejectVerification = async (req, res) => {
 // NEW INDIVIDUAL DOCUMENT FLOW
 // ==========================================
 
-export const submitSingleDocument = async (req, res) => {
+export const submitSingleDocument = async (req, res, next) => {
     try {
-        const { userId, documentType, documentUrl, idNumber } = req.body;
+        const userId = req.auth.userId;
+        const { documentType, documentUrl, idNumber } = req.body;
 
-        if (!userId || !documentType || !documentUrl) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        if (!documentType || !documentUrl) {
+            return next(badRequest('Missing required fields', {
+                code: 'VERIFICATION_REQUIRED_FIELDS_MISSING'
+            }));
         }
 
         const validDocumentTypes = ['idFront', 'idBack', 'selfie', 'utilityBill'];
         if (!validDocumentTypes.includes(documentType)) {
-            return res.status(400).json({ error: 'Invalid document type' });
+            return next(badRequest('Invalid document type', {
+                code: 'VERIFICATION_INVALID_DOCUMENT_TYPE'
+            }));
         }
 
         const user = await User.findByPk(userId);
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return next(notFound('User not found', { code: 'USER_NOT_FOUND' }));
         }
 
         // Upsert user verification document record
@@ -385,7 +395,9 @@ export const submitSingleDocument = async (req, res) => {
             // (Unless we want to allow replacing approved docs? Usually not)
             const currentStatus = docs[`${documentType}Status`];
             if (currentStatus === DocumentVerificationStatus.APPROVED) {
-                return res.status(400).json({ error: 'Document is already approved and cannot be modified' });
+                return next(badRequest('Document is already approved and cannot be modified', {
+                    code: 'VERIFICATION_DOCUMENT_ALREADY_APPROVED'
+                }));
             }
 
             // Update specific document
@@ -438,14 +450,18 @@ export const submitSingleDocument = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error submitting single document:', error);
-        res.status(500).json({ error: 'Failed to submit document', message: error.message });
+        next(error);
     }
 };
 
-export const getVerificationProgress = async (req, res) => {
+export const getVerificationProgress = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        if (req.auth.userId !== userId) {
+            return next(forbidden('No tienes permiso para ver el progreso de verificación de este usuario', {
+                code: 'VERIFICATION_PROGRESS_FORBIDDEN'
+            }));
+        }
 
         const docs = await UserVerificationDocuments.findByPk(userId);
         const user = await User.findByPk(userId, { 
@@ -465,7 +481,7 @@ export const getVerificationProgress = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return next(notFound('User not found', { code: 'USER_NOT_FOUND' }));
         }
 
         const userInfo = {
@@ -501,34 +517,41 @@ export const getVerificationProgress = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error fetching verification progress:', error);
-        res.status(500).json({ error: 'Failed to fetch verification progress', message: error.message });
+        next(error);
     }
 };
 
-export const reviewSingleDocument = async (req, res) => {
+export const reviewSingleDocument = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { documentType, status, reason } = req.body; // status should be 'approved' or 'rejected'
 
         if (!userId || !documentType || !status) {
-            return res.status(400).json({ error: 'Missing required fields' });
+            return next(badRequest('Missing required fields', {
+                code: 'VERIFICATION_REQUIRED_FIELDS_MISSING'
+            }));
         }
 
         const validDocumentTypes = ['idFront', 'idBack', 'selfie', 'utilityBill'];
         if (!validDocumentTypes.includes(documentType)) {
-            return res.status(400).json({ error: 'Invalid document type' });
+            return next(badRequest('Invalid document type', {
+                code: 'VERIFICATION_INVALID_DOCUMENT_TYPE'
+            }));
         }
 
         if (status === DocumentVerificationStatus.REJECTED && !reason) {
-            return res.status(400).json({ error: 'Reason is required when rejecting a document' });
+            return next(badRequest('Reason is required when rejecting a document', {
+                code: 'VERIFICATION_REJECTION_REASON_REQUIRED'
+            }));
         }
 
         const docs = await UserVerificationDocuments.findByPk(userId);
         const user = await User.findByPk(userId);
 
         if (!docs || !user) {
-            return res.status(404).json({ error: 'Documentation or user not found' });
+            return next(notFound('Documentation or user not found', {
+                code: 'VERIFICATION_DOCUMENTS_OR_USER_NOT_FOUND'
+            }));
         }
 
         // Apply document status update
@@ -597,8 +620,7 @@ export const reviewSingleDocument = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error reviewing document:', error);
-        res.status(500).json({ error: 'Failed to review document', message: error.message });
+        next(error);
     }
 };
 
