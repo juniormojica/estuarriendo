@@ -1,5 +1,13 @@
 import { Subscription, User, PaymentRequest } from '../models/index.js';
 import { Op } from 'sequelize';
+import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
+
+const ensureSubscriptionOwnerOrAdmin = (req, targetUserId, forbiddenCode) => ensureOwnUserOrAdmin(req, targetUserId, {
+    authRequiredCode: 'SUBSCRIPTION_AUTH_REQUIRED',
+    authUserNotFoundCode: 'SUBSCRIPTION_AUTH_USER_NOT_FOUND',
+    forbiddenCode,
+    forbiddenMessage: 'No tienes permiso para ver la información de suscripciones de este usuario'
+});
 
 /**
  * Subscription Controller
@@ -10,6 +18,7 @@ import { Op } from 'sequelize';
 export const getUserActiveSubscription = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        await ensureSubscriptionOwnerOrAdmin(req, userId, 'SUBSCRIPTION_ACTIVE_FORBIDDEN');
 
         const subscription = await Subscription.findOne({
             where: {
@@ -39,6 +48,7 @@ export const getUserActiveSubscription = async (req, res, next) => {
 export const getUserSubscriptionHistory = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        await ensureSubscriptionOwnerOrAdmin(req, userId, 'SUBSCRIPTION_HISTORY_FORBIDDEN');
 
         const subscriptions = await Subscription.findAll({
             where: { userId },
