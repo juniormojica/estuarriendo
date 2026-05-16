@@ -20,6 +20,6 @@ router.put('/:id/reject', authMiddleware, requireAdmin, propertyReportController
 
 // Activity logs (admin only — changes report status)
 router.post('/:id/activity', authMiddleware, requireAdmin, reportActivityLogController.addReportActivity);
-router.get('/:id/activity', authMiddleware, reportActivityLogController.getReportActivity);
+router.get('/:id/activity', authMiddleware, requireAdmin, reportActivityLogController.getReportActivity);
 
 export default router;

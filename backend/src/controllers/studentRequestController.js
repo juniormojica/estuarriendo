@@ -2,6 +2,7 @@ import { StudentRequest, User, City, Institution, ActivityLog } from '../models/
 import { StudentRequestStatus, UserType } from '../utils/enums.js';
 import { Op } from 'sequelize';
 import { badRequest, notFound, forbidden } from '../errors/AppError.js';
+import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
 
 /**
  * StudentRequest Controller
@@ -87,6 +88,11 @@ export const getStudentRequestById = async (req, res, next) => {
         if (!request) {
             throw notFound('Student request not found', { code: 'STUDENT_REQUEST_NOT_FOUND' });
         }
+
+        await ensureOwnUserOrAdmin(req, request.studentId, {
+            forbiddenCode: 'STUDENT_REQUEST_FORBIDDEN',
+            forbiddenMessage: 'Solo puedes ver tus propias solicitudes'
+        });
 
         res.json(request);
     } catch (error) {

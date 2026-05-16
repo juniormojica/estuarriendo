@@ -74,12 +74,10 @@ export const getAllProperties = async (req, res, next) => {
             }
         }
 
-        // Default to 'approved' status for public endpoint
-        // This ensures only approved properties are shown on the homepage
-        // Admin can override by explicitly passing status parameter
-        // Use status='all' to fetch all properties regardless of status
+        // Public listing must remain approved-only on this unauthenticated route.
+        // Even if callers send status=all (or any other status), we force approved.
         const filters = {
-            status: status === 'all' ? undefined : (status || 'approved'),
+            status: 'approved',
             typeId: resolvedTypeId,
             cityId: resolvedCityId,
             minRent: minPrice ? parseFloat(minPrice) : undefined,

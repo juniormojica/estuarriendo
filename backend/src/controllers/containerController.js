@@ -241,6 +241,22 @@ export const getContainer = async (req, res, next) => {
             return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
+        if (container.status !== 'approved') {
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
+        }
+
+        const approvedUnits = Array.isArray(container.units)
+            ? container.units.filter((unit) => unit.status === 'approved')
+            : [];
+
+        if (container.dataValues) {
+            container.dataValues.units = approvedUnits;
+            container.dataValues.unitStats = {
+                approved: approvedUnits.length,
+                total: approvedUnits.length
+            };
+        }
+
         res.status(200).json({
             success: true,
             data: container
@@ -517,8 +533,19 @@ export const getContainerUnits = async (req, res, next) => {
 
         const { Property, PropertyImage, Amenity } = await import('../models/index.js');
 
+        const container = await Property.findByPk(containerId, {
+            attributes: ['id', 'status', 'isContainer']
+        });
+
+        if (!container || !container.isContainer || container.status !== 'approved') {
+            return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
+        }
+
         const units = await Property.findAll({
-            where: { parentId: containerId },
+            where: {
+                parentId: containerId,
+                status: 'approved'
+            },
             include: [
                 { model: PropertyImage, as: 'images' },
                 { model: Amenity, as: 'amenities', through: { attributes: [] } }
