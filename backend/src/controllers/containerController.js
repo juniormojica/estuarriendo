@@ -5,6 +5,7 @@ import { AppError, badRequest, forbidden, notFound } from '../errors/AppError.js
 import { UserType } from '../utils/enums.js';
 import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
 import { assertContainerOwnership, assertUnitOwnership } from '../services/propertyOwnershipService.js';
+import { sanitizePublicProperty, sanitizePublicPropertyList } from '../services/publicPropertySanitizer.js';
 
 /**
  * Container Controller
@@ -257,9 +258,11 @@ export const getContainer = async (req, res, next) => {
             };
         }
 
+        const sanitizedContainer = sanitizePublicProperty(container);
+
         res.status(200).json({
             success: true,
-            data: container
+            data: sanitizedContainer
         });
     } catch (error) {
         next(error);
@@ -552,9 +555,11 @@ export const getContainerUnits = async (req, res, next) => {
             ]
         });
 
+        const sanitizedUnits = sanitizePublicPropertyList(units);
+
         res.status(200).json({
             success: true,
-            data: units
+            data: sanitizedUnits
         });
     } catch (error) {
         next(error);

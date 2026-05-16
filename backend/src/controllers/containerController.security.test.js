@@ -37,11 +37,27 @@ describe('containerController secondary leak guards', () => {
         const container = {
             id: 'c-1',
             status: 'approved',
+            contact: { email: 'secret@mail.com' },
+            owner: { id: 'o-1', name: 'Owner', email: 'owner@mail.com' },
             units: [
-                { id: 'u-1', status: 'approved' },
+                {
+                    id: 'u-1',
+                    status: 'approved',
+                    contact: { phone: '12345' },
+                    owner: { id: 'o-1', name: 'Owner', email: 'owner@mail.com' }
+                },
                 { id: 'u-2', status: 'pending' }
             ],
-            dataValues: {}
+            dataValues: {},
+            toJSON() {
+                return {
+                    id: this.id,
+                    status: this.status,
+                    contact: this.contact,
+                    owner: this.owner,
+                    units: this.dataValues.units
+                };
+            }
         };
         vi.spyOn(containerService, 'findContainerWithUnits').mockResolvedValue(container);
 
@@ -51,8 +67,16 @@ describe('containerController secondary leak guards', () => {
         await containerController.getContainer(req, res, vi.fn());
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(container.dataValues.units).toEqual([{ id: 'u-1', status: 'approved' }]);
+        expect(container.dataValues.units).toEqual([
+            expect.objectContaining({ id: 'u-1', status: 'approved' })
+        ]);
         expect(container.dataValues.unitStats).toEqual({ approved: 1, total: 1 });
+
+        const payload = res.json.mock.calls[0][0].data;
+        expect(payload.contact).toBeUndefined();
+        expect(payload.owner).toEqual({ id: 'o-1', name: 'Owner' });
+        expect(payload.units[0].contact).toBeUndefined();
+        expect(payload.units[0].owner).toEqual({ id: 'o-1', name: 'Owner' });
     });
 
     it('hides units when parent container is not approved', async () => {
@@ -74,7 +98,22 @@ describe('containerController secondary leak guards', () => {
 
     it('queries only approved units for approved containers', async () => {
         vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', isContainer: true, status: 'approved' });
-        const findAllSpy = vi.spyOn(Property, 'findAll').mockResolvedValue([]);
+        const findAllSpy = vi.spyOn(Property, 'findAll').mockResolvedValue([
+            {
+                id: 'u-1',
+                status: 'approved',
+                contact: { email: 'unit@mail.com' },
+                owner: { id: 'o-1', name: 'Owner', email: 'owner@mail.com' },
+                toJSON() {
+                    return {
+                        id: this.id,
+                        status: this.status,
+                        contact: this.contact,
+                        owner: this.owner
+                    };
+                }
+            }
+        ]);
 
         const req = { params: { containerId: 'c-1' } };
         const res = createRes();
@@ -85,5 +124,9 @@ describe('containerController secondary leak guards', () => {
             where: expect.objectContaining({ parentId: 'c-1', status: 'approved' })
         }));
         expect(res.status).toHaveBeenCalledWith(200);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.data[0].contact).toBeUndefined();
+        expect(payload.data[0].owner).toEqual({ id: 'o-1', name: 'Owner' });
     });
 });
