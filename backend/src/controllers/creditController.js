@@ -2,33 +2,15 @@ import { User, Property, CreditBalance, CreditTransaction, ContactUnlock, Notifi
 import { CreditTransactionType, ContactUnlockStatus, UserType } from '../utils/enums.js';
 import notificationService from '../services/notificationService.js';
 import { sequelize } from '../config/database.js';
-import { AppError, badRequest, notFound, unauthorized, forbidden } from '../errors/AppError.js';
+import { AppError, badRequest, notFound, unauthorized } from '../errors/AppError.js';
+import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
 
-const ensureOwnUserOrAdmin = async (req, targetUserId, forbiddenCode) => {
-    const authUserId = req.auth?.userId;
-    if (!authUserId) {
-        throw unauthorized('Autenticación requerida', { code: 'CREDIT_AUTH_REQUIRED' });
-    }
-
-    if (authUserId === targetUserId) {
-        return;
-    }
-
-    const authUser = await User.findByPk(authUserId, {
-        attributes: ['userType']
-    });
-
-    if (!authUser) {
-        throw unauthorized('Usuario autenticado no encontrado', { code: 'CREDIT_AUTH_USER_NOT_FOUND' });
-    }
-
-    const isAdmin = [UserType.ADMIN, UserType.SUPER_ADMIN].includes(authUser.userType);
-    if (!isAdmin) {
-        throw forbidden('No tienes permiso para acceder a esta información de créditos', {
-            code: forbiddenCode
-        });
-    }
-};
+const ensureCreditOwnerOrAdmin = (req, targetUserId, forbiddenCode) => ensureOwnUserOrAdmin(req, targetUserId, {
+    authRequiredCode: 'CREDIT_AUTH_REQUIRED',
+    authUserNotFoundCode: 'CREDIT_AUTH_USER_NOT_FOUND',
+    forbiddenCode,
+    forbiddenMessage: 'No tienes permiso para acceder a esta información de créditos'
+});
 
 /**
  * Get user's credit balance
@@ -36,7 +18,7 @@ const ensureOwnUserOrAdmin = async (req, targetUserId, forbiddenCode) => {
 export const getCreditBalance = async (req, res, next) => {
     try {
         const { userId } = req.params;
-        await ensureOwnUserOrAdmin(req, userId, 'CREDIT_BALANCE_FORBIDDEN');
+        await ensureCreditOwnerOrAdmin(req, userId, 'CREDIT_BALANCE_FORBIDDEN');
 
         const balance = await CreditBalance.findOne({ where: { userId } });
 
@@ -61,7 +43,7 @@ export const getCreditTransactions = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { limit = 20, offset = 0 } = req.query;
-        await ensureOwnUserOrAdmin(req, userId, 'CREDIT_TRANSACTIONS_FORBIDDEN');
+        await ensureCreditOwnerOrAdmin(req, userId, 'CREDIT_TRANSACTIONS_FORBIDDEN');
 
         const transactions = await CreditTransaction.findAll({
             where: { userId },
@@ -82,7 +64,7 @@ export const getCreditTransactions = async (req, res, next) => {
 export const checkContactUnlocked = async (req, res, next) => {
     try {
         const { userId, propertyId } = req.params;
-        await ensureOwnUserOrAdmin(req, userId, 'CREDIT_UNLOCK_CHECK_FORBIDDEN');
+        await ensureCreditOwnerOrAdmin(req, userId, 'CREDIT_UNLOCK_CHECK_FORBIDDEN');
 
         const unlock = await ContactUnlock.findOne({
             where: {

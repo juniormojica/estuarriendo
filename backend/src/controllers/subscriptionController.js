@@ -1,33 +1,13 @@
 import { Subscription, User, PaymentRequest } from '../models/index.js';
 import { Op } from 'sequelize';
-import { UserType } from '../utils/enums.js';
-import { unauthorized, forbidden } from '../errors/AppError.js';
+import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
 
-const ensureOwnUserOrAdmin = async (req, targetUserId, forbiddenCode) => {
-    const authUserId = req.auth?.userId;
-    if (!authUserId) {
-        throw unauthorized('Autenticación requerida', { code: 'SUBSCRIPTION_AUTH_REQUIRED' });
-    }
-
-    if (authUserId === targetUserId) {
-        return;
-    }
-
-    const authUser = await User.findByPk(authUserId, {
-        attributes: ['userType']
-    });
-
-    if (!authUser) {
-        throw unauthorized('Usuario autenticado no encontrado', { code: 'SUBSCRIPTION_AUTH_USER_NOT_FOUND' });
-    }
-
-    const isAdmin = [UserType.ADMIN, UserType.SUPER_ADMIN].includes(authUser.userType);
-    if (!isAdmin) {
-        throw forbidden('No tienes permiso para ver la información de suscripciones de este usuario', {
-            code: forbiddenCode
-        });
-    }
-};
+const ensureSubscriptionOwnerOrAdmin = (req, targetUserId, forbiddenCode) => ensureOwnUserOrAdmin(req, targetUserId, {
+    authRequiredCode: 'SUBSCRIPTION_AUTH_REQUIRED',
+    authUserNotFoundCode: 'SUBSCRIPTION_AUTH_USER_NOT_FOUND',
+    forbiddenCode,
+    forbiddenMessage: 'No tienes permiso para ver la información de suscripciones de este usuario'
+});
 
 /**
  * Subscription Controller
@@ -38,7 +18,7 @@ const ensureOwnUserOrAdmin = async (req, targetUserId, forbiddenCode) => {
 export const getUserActiveSubscription = async (req, res, next) => {
     try {
         const { userId } = req.params;
-        await ensureOwnUserOrAdmin(req, userId, 'SUBSCRIPTION_ACTIVE_FORBIDDEN');
+        await ensureSubscriptionOwnerOrAdmin(req, userId, 'SUBSCRIPTION_ACTIVE_FORBIDDEN');
 
         const subscription = await Subscription.findOne({
             where: {
@@ -68,7 +48,7 @@ export const getUserActiveSubscription = async (req, res, next) => {
 export const getUserSubscriptionHistory = async (req, res, next) => {
     try {
         const { userId } = req.params;
-        await ensureOwnUserOrAdmin(req, userId, 'SUBSCRIPTION_HISTORY_FORBIDDEN');
+        await ensureSubscriptionOwnerOrAdmin(req, userId, 'SUBSCRIPTION_HISTORY_FORBIDDEN');
 
         const subscriptions = await Subscription.findAll({
             where: { userId },
