@@ -105,6 +105,55 @@ describe('studentRequestController auth/IDOR guards', () => {
         });
     });
 
+    // ---------- getStudentRequestById ----------
+    describe('getStudentRequestById', () => {
+        it('returns 403 when attacker tries to read another student request detail', async () => {
+            vi.spyOn(StudentRequest, 'findByPk').mockResolvedValue({
+                id: 'sr-1',
+                studentId: OWNER.id
+            });
+            mockUserFindByPk();
+
+            const req = { params: { id: 'sr-1' }, auth: { userId: ATTACKER.id } };
+            const res = createRes();
+
+            await studentRequestController.getStudentRequestById(req, res, (err) => {
+                res.status(err.statusCode);
+                res.json({ error: err.message, code: err.code });
+            });
+
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({ code: 'STUDENT_REQUEST_FORBIDDEN' })
+            );
+        });
+
+        it('returns request when owner reads their own request detail', async () => {
+            const request = { id: 'sr-1', studentId: OWNER.id };
+            vi.spyOn(StudentRequest, 'findByPk').mockResolvedValue(request);
+
+            const req = { params: { id: 'sr-1' }, auth: { userId: OWNER.id } };
+            const res = createRes();
+
+            await studentRequestController.getStudentRequestById(req, res, vi.fn());
+
+            expect(res.json).toHaveBeenCalledWith(request);
+        });
+
+        it('returns request when admin reads another student request detail', async () => {
+            const request = { id: 'sr-1', studentId: OWNER.id };
+            vi.spyOn(StudentRequest, 'findByPk').mockResolvedValue(request);
+            mockUserFindByPk();
+
+            const req = { params: { id: 'sr-1' }, auth: { userId: ADMIN.id } };
+            const res = createRes();
+
+            await studentRequestController.getStudentRequestById(req, res, vi.fn());
+
+            expect(res.json).toHaveBeenCalledWith(request);
+        });
+    });
+
     // ---------- createStudentRequest ----------
     describe('createStudentRequest', () => {
         it('uses auth.userId as studentId (ignores client-provided value)', async () => {
