@@ -1,8 +1,9 @@
 import { Property, User, Amenity, Notification, ActivityLog } from '../models/index.js';
 import { PropertyStatus, NotificationType, UserType } from '../utils/enums.js';
-import { badRequest, notFound } from '../errors/AppError.js';
+import { badRequest, notFound, unauthorized } from '../errors/AppError.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';
+import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
 
 /**
  * Property Controller
@@ -181,10 +182,15 @@ export const getUserProperties = async (req, res, next) => {
 // Create new property
 export const createProperty = async (req, res, next) => {
     try {
-        const { ownerId, amenityIds, services, rules, nearbyInstitutions, ...propertyData } = req.body;
+        const { ownerId: _ignoredOwnerId, amenityIds, services, rules, nearbyInstitutions, ...propertyData } = req.body;
+        const authUserId = req.auth?.userId || req.userId;
+
+        if (!authUserId) {
+            return next(unauthorized('Autenticación requerida', { code: 'AUTH_REQUIRED' }));
+        }
 
         // Validate owner exists
-        const owner = await User.findByPk(ownerId);
+        const owner = await User.findByPk(authUserId);
         if (!owner) {
             return next(notFound('Propietario no encontrado', { code: 'OWNER_NOT_FOUND' }));
         }
@@ -203,7 +209,7 @@ export const createProperty = async (req, res, next) => {
         // Create property with all associations
         const property = await propertyService.createPropertyWithAssociations({
             ...propertyData,
-            ownerId,
+            ownerId: owner.id,
             status: PropertyStatus.PENDING,
             createdAt: new Date()
         });
@@ -317,6 +323,11 @@ export const updateProperty = async (req, res, next) => {
             return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
+        await ensureOwnUserOrAdmin(req, property.ownerId, {
+            forbiddenCode: 'PROPERTY_ACCESS_FORBIDDEN',
+            forbiddenMessage: 'No tienes permiso para modificar esta propiedad'
+        });
+
         // Update property with all associations
         const updatedProperty = await propertyService.updatePropertyWithAssociations(id, updates);
 
@@ -356,6 +367,11 @@ export const deleteProperty = async (req, res, next) => {
         if (!property) {
             return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
+
+        await ensureOwnUserOrAdmin(req, property.ownerId, {
+            forbiddenCode: 'PROPERTY_ACCESS_FORBIDDEN',
+            forbiddenMessage: 'No tienes permiso para eliminar esta propiedad'
+        });
 
         const ownerId = property.ownerId;
         const status = property.status;

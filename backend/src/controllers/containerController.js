@@ -1,8 +1,10 @@
 import containerService from '../services/containerService.js';
 import * as propertyService from '../services/propertyService.js';
 import { sequelize } from '../models/index.js';
-import { badRequest, forbidden, notFound } from '../errors/AppError.js';
+import { AppError, badRequest, forbidden, notFound } from '../errors/AppError.js';
 import { UserType } from '../utils/enums.js';
+import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
+import { assertContainerOwnership, assertUnitOwnership } from '../services/propertyOwnershipService.js';
 
 /**
  * Container Controller
@@ -274,11 +276,10 @@ export const updateContainer = async (req, res, next) => {
             return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
-        // Verify ownership (simplified - only owner can update)
-        if (container.ownerId !== req.userId) {
-            await transaction.rollback();
-            return next(forbidden('No autorizado para actualizar esta pensión/apartamento'));
-        }
+        await ensureOwnUserOrAdmin(req, container.ownerId, {
+            forbiddenCode: 'CONTAINER_ACCESS_FORBIDDEN',
+            forbiddenMessage: 'No autorizado para actualizar esta pensión/apartamento'
+        });
 
         // Ensure only valid property fields are updated 
         if (Object.keys(propertyFields).length > 0) {
@@ -363,11 +364,10 @@ export const deleteContainer = async (req, res, next) => {
             return next(notFound('Pensión/apartamento no encontrado', { code: 'CONTAINER_NOT_FOUND' }));
         }
 
-        // Verify ownership (simplified - only owner can delete)
-        if (container.ownerId !== req.userId) {
-            await transaction.rollback();
-            return next(forbidden('No autorizado para eliminar esta pensión/apartamento'));
-        }
+        await ensureOwnUserOrAdmin(req, container.ownerId, {
+            forbiddenCode: 'CONTAINER_ACCESS_FORBIDDEN',
+            forbiddenMessage: 'No autorizado para eliminar esta pensión/apartamento'
+        });
 
         await container.destroy({ transaction });
 
@@ -395,6 +395,11 @@ export const rentCompleteContainer = async (req, res, next) => {
     try {
         const { id } = req.params;
 
+        await assertContainerOwnership(req, id, {
+            transaction,
+            forbiddenMessage: 'No autorizado para alquilar esta pensión/apartamento por completo'
+        });
+
         const container = await containerService.rentCompleteContainer(id, transaction);
 
         await transaction.commit();
@@ -407,6 +412,9 @@ export const rentCompleteContainer = async (req, res, next) => {
     } catch (error) {
         if (!transaction.finished) {
             await transaction.rollback();
+        }
+        if (error instanceof AppError) {
+            return next(error);
         }
         next(badRequest(error.message, { code: 'RENT_COMPLETE_FAILED' }));
     }
@@ -422,6 +430,11 @@ export const changeRentalMode = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { mode } = req.body;
+
+        await assertContainerOwnership(req, id, {
+            transaction,
+            forbiddenMessage: 'No autorizado para cambiar el modo de alquiler de esta pensión/apartamento'
+        });
 
         let container;
 
@@ -442,6 +455,9 @@ export const changeRentalMode = async (req, res, next) => {
         if (!transaction.finished) {
             await transaction.rollback();
         }
+        if (error instanceof AppError) {
+            return next(error);
+        }
         next(badRequest(error.message, { code: 'RENTAL_MODE_CHANGE_FAILED' }));
     }
 };
@@ -456,6 +472,11 @@ export const createUnit = async (req, res, next) => {
     try {
         const { containerId } = req.params;
         const { images, ...unitData } = req.body;
+
+        await assertContainerOwnership(req, containerId, {
+            transaction,
+            forbiddenMessage: 'No autorizado para crear habitaciones en esta pensión/apartamento'
+        });
 
         const unit = await containerService.createUnit(containerId, unitData, transaction);
 
@@ -526,17 +547,10 @@ export const updateUnit = async (req, res, next) => {
 
         const { Property, PropertyImage } = await import('../models/index.js');
 
-        const unit = await Property.findByPk(id, { transaction });
-
-        if (!unit) {
-            await transaction.rollback();
-            return next(notFound('Habitación no encontrada', { code: 'UNIT_NOT_FOUND' }));
-        }
-
-        if (!unit.parentId) {
-            await transaction.rollback();
-            return next(badRequest('La propiedad no es una habitación', { code: 'PROPERTY_NOT_UNIT' }));
-        }
+        const unit = await assertUnitOwnership(req, id, {
+            transaction,
+            forbiddenMessage: 'No autorizado para actualizar esta habitación'
+        });
 
         await unit.update(updateData, { transaction });
 
@@ -579,6 +593,11 @@ export const deleteUnit = async (req, res, next) => {
     try {
         const { id } = req.params;
 
+        await assertUnitOwnership(req, id, {
+            transaction,
+            forbiddenMessage: 'No autorizado para eliminar esta habitación'
+        });
+
         await containerService.deleteUnit(id, transaction);
 
         await transaction.commit();
@@ -605,6 +624,11 @@ export const updateUnitRentalStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { isRented } = req.body;
+
+        await assertUnitOwnership(req, id, {
+            transaction,
+            forbiddenMessage: 'No autorizado para modificar el estado de alquiler de esta habitación'
+        });
 
         const unit = await containerService.updateUnitRentalStatus(id, isRented, transaction);
 
