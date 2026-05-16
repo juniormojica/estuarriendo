@@ -2,7 +2,33 @@ import { User, Property, CreditBalance, CreditTransaction, ContactUnlock, Notifi
 import { CreditTransactionType, ContactUnlockStatus, UserType } from '../utils/enums.js';
 import notificationService from '../services/notificationService.js';
 import { sequelize } from '../config/database.js';
-import { AppError, badRequest, notFound } from '../errors/AppError.js';
+import { AppError, badRequest, notFound, unauthorized, forbidden } from '../errors/AppError.js';
+
+const ensureOwnUserOrAdmin = async (req, targetUserId, forbiddenCode) => {
+    const authUserId = req.auth?.userId;
+    if (!authUserId) {
+        throw unauthorized('Autenticación requerida', { code: 'CREDIT_AUTH_REQUIRED' });
+    }
+
+    if (authUserId === targetUserId) {
+        return;
+    }
+
+    const authUser = await User.findByPk(authUserId, {
+        attributes: ['userType']
+    });
+
+    if (!authUser) {
+        throw unauthorized('Usuario autenticado no encontrado', { code: 'CREDIT_AUTH_USER_NOT_FOUND' });
+    }
+
+    const isAdmin = [UserType.ADMIN, UserType.SUPER_ADMIN].includes(authUser.userType);
+    if (!isAdmin) {
+        throw forbidden('No tienes permiso para acceder a esta información de créditos', {
+            code: forbiddenCode
+        });
+    }
+};
 
 /**
  * Get user's credit balance
@@ -10,6 +36,7 @@ import { AppError, badRequest, notFound } from '../errors/AppError.js';
 export const getCreditBalance = async (req, res, next) => {
     try {
         const { userId } = req.params;
+        await ensureOwnUserOrAdmin(req, userId, 'CREDIT_BALANCE_FORBIDDEN');
 
         const balance = await CreditBalance.findOne({ where: { userId } });
 
@@ -34,6 +61,7 @@ export const getCreditTransactions = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { limit = 20, offset = 0 } = req.query;
+        await ensureOwnUserOrAdmin(req, userId, 'CREDIT_TRANSACTIONS_FORBIDDEN');
 
         const transactions = await CreditTransaction.findAll({
             where: { userId },
@@ -54,6 +82,7 @@ export const getCreditTransactions = async (req, res, next) => {
 export const checkContactUnlocked = async (req, res, next) => {
     try {
         const { userId, propertyId } = req.params;
+        await ensureOwnUserOrAdmin(req, userId, 'CREDIT_UNLOCK_CHECK_FORBIDDEN');
 
         const unlock = await ContactUnlock.findOne({
             where: {
@@ -76,11 +105,19 @@ export const unlockContact = async (req, res, next) => {
     const t = await sequelize.transaction();
 
     try {
-        const { tenantId, propertyId } = req.body;
+        const tenantId = req.auth?.userId;
+        const { propertyId } = req.body;
 
-        if (!tenantId || !propertyId) {
+        if (!tenantId) {
             await t.rollback();
-            return next(badRequest('tenantId and propertyId are required', {
+            return next(unauthorized('Autenticación requerida', {
+                code: 'CREDIT_UNLOCK_AUTH_REQUIRED'
+            }));
+        }
+
+        if (!propertyId) {
+            await t.rollback();
+            return next(badRequest('propertyId is required', {
                 code: 'CREDIT_UNLOCK_REQUIRED_FIELDS'
             }));
         }

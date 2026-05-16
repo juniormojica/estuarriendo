@@ -10,8 +10,8 @@ import { requireAdmin } from '../middleware/role.js';
 const router = express.Router();
 
 // User-facing subscription routes
-router.get('/user/:userId/active', getUserActiveSubscription);
-router.get('/user/:userId/history', getUserSubscriptionHistory);
+router.get('/user/:userId/active', authMiddleware, getUserActiveSubscription);
+router.get('/user/:userId/history', authMiddleware, getUserSubscriptionHistory);
 
 // Admin: expire old subscriptions
 router.post('/expire-old', authMiddleware, requireAdmin, expireOldSubscriptions);

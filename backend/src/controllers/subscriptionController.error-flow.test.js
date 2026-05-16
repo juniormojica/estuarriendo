@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as subscriptionController from './subscriptionController.js';
-import { Subscription } from '../models/index.js';
+import { Subscription, User } from '../models/index.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { UserType } from '../utils/enums.js';
 
 const createResponse = () => {
     const res = {};
@@ -34,7 +35,7 @@ describe('subscriptionController incremental migration -> centralized errorHandl
     it('forwards getUserActiveSubscription unexpected errors to centralized errorHandler', async () => {
         vi.spyOn(Subscription, 'findOne').mockRejectedValue(new Error('query exploded'));
 
-        const req = { params: { userId: '1' } };
+        const req = { auth: { userId: '1' }, params: { userId: '1' } };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             subscriptionController.getUserActiveSubscription,
             { req }
@@ -48,6 +49,26 @@ describe('subscriptionController incremental migration -> centralized errorHandl
             error: 'Error interno del servidor',
             message: 'Error interno del servidor',
             code: 'INTERNAL_SERVER_ERROR'
+        });
+    });
+
+    it('rejects cross-user subscription history access for non-admin with 403', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ userType: UserType.TENANT });
+
+        const req = { auth: { userId: 'attacker' }, params: { userId: 'victim' } };
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            subscriptionController.getUserSubscriptionHistory,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No tienes permiso para ver la información de suscripciones de este usuario',
+            message: 'No tienes permiso para ver la información de suscripciones de este usuario',
+            code: 'SUBSCRIPTION_HISTORY_FORBIDDEN'
         });
     });
 });

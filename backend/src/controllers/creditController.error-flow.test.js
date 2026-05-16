@@ -3,6 +3,7 @@ import * as creditController from './creditController.js';
 import { CreditBalance, User } from '../models/index.js';
 import { sequelize } from '../config/database.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { UserType } from '../utils/enums.js';
 
 const createResponse = () => {
     const res = {};
@@ -35,7 +36,7 @@ describe('creditController incremental migration -> centralized errorHandler', (
     it('delegates getCreditBalance unexpected errors to centralized internal-error contract', async () => {
         vi.spyOn(CreditBalance, 'findOne').mockRejectedValue(new Error('db down'));
 
-        const req = { params: { userId: '1' } };
+        const req = { auth: { userId: '1' }, params: { userId: '1' } };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             creditController.getCreditBalance,
             { req }
@@ -57,7 +58,7 @@ describe('creditController incremental migration -> centralized errorHandler', (
         const commit = vi.fn().mockResolvedValue(undefined);
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit });
 
-        const req = { body: { tenantId: 7 } };
+        const req = { auth: { userId: '7' }, body: {} };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             creditController.unlockContact,
             { req }
@@ -70,10 +71,42 @@ describe('creditController incremental migration -> centralized errorHandler', (
         expect(jsonCallsBeforeHandler).toBe(0);
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'tenantId and propertyId are required',
-            message: 'tenantId and propertyId are required',
+            error: 'propertyId is required',
+            message: 'propertyId is required',
             code: 'CREDIT_UNLOCK_REQUIRED_FIELDS'
         });
+    });
+
+    it('delegates getCreditBalance cross-user access to standardized 403 contract', async () => {
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ userType: UserType.TENANT });
+
+        const req = { auth: { userId: 'attacker' }, params: { userId: 'victim' } };
+        const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
+            creditController.getCreditBalance,
+            { req }
+        );
+
+        expect(capturedError).toBeInstanceOf(Error);
+        expect(statusCallsBeforeHandler).toBe(0);
+        expect(jsonCallsBeforeHandler).toBe(0);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No tienes permiso para acceder a esta información de créditos',
+            message: 'No tienes permiso para acceder a esta información de créditos',
+            code: 'CREDIT_BALANCE_FORBIDDEN'
+        });
+    });
+
+    it('uses authenticated user id for unlockContact even if tenantId is supplied in body', async () => {
+        const rollback = vi.fn().mockResolvedValue(undefined);
+        const commit = vi.fn().mockResolvedValue(undefined);
+        vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit });
+        const findByPkSpy = vi.spyOn(User, 'findByPk').mockRejectedValue(new Error('stop after tenant lookup'));
+
+        const req = { auth: { userId: 'auth-user' }, body: { tenantId: 'victim-user', propertyId: 20 } };
+        await runThroughErrorHandler(creditController.unlockContact, { req });
+
+        expect(findByPkSpy).toHaveBeenCalledWith('auth-user', expect.any(Object));
     });
 
     it('rolls back and delegates unexpected unlockContact errors to centralized internal-error contract', async () => {
@@ -82,7 +115,7 @@ describe('creditController incremental migration -> centralized errorHandler', (
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit });
         vi.spyOn(User, 'findByPk').mockRejectedValue(new Error('transactional query failed'));
 
-        const req = { body: { tenantId: 7, propertyId: 20 } };
+        const req = { auth: { userId: '7' }, body: { tenantId: 7, propertyId: 20 } };
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             creditController.unlockContact,
             { req }
