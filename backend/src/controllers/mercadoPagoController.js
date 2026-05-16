@@ -1,5 +1,5 @@
 import { MercadoPagoConfig, Preference, PreApproval, Payment } from 'mercadopago';
-import { badRequest } from '../errors/AppError.js';
+import { badRequest, unauthorized } from '../errors/AppError.js';
 
 // Get base URL for callbacks depending on environment
 const getFrontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -27,10 +27,17 @@ const CREDIT_CONFIGS = {
 
 export const createCheckoutLink = async (req, res, next) => {
     try {
-        const { userId, planType, userEmail } = req.body;
+        const { planType, userEmail } = req.body;
+        const authenticatedUserId = req.auth?.userId || req.userId;
 
-        if (!userId || !planType) {
-            throw badRequest('Faltan campos requeridos (userId, planType)', {
+        if (!authenticatedUserId) {
+            throw unauthorized('Autenticación requerida', {
+                code: 'MP_CHECKOUT_AUTH_REQUIRED'
+            });
+        }
+
+        if (!planType) {
+            throw badRequest('Faltan campos requeridos (planType)', {
                 code: 'MP_CHECKOUT_VALIDATION_ERROR'
             });
         }
@@ -39,7 +46,9 @@ export const createCheckoutLink = async (req, res, next) => {
         const successUrl = `${getFrontendUrl()}/success-payment?planType=${planType}`;
         const failureUrl = `${getFrontendUrl()}/perfil?tab=billing`;
         // We use external_reference to identify the user and plan when the webhook arrives
-        const externalReference = `userId:${userId}|planType:${planType}`;
+        // Security: never trust body.userId for billing ownership.
+        // Route requires auth and user identity is derived from JWT.
+        const externalReference = `userId:${authenticatedUserId}|planType:${planType}`;
 
         // 1. Check if it's a Subscription plan (owner plans) — use Preference instead of PreApproval
         //    PreApproval has strict country validation that breaks in local dev.

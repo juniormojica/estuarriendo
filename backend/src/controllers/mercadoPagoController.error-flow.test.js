@@ -2,12 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../middleware/errorHandler.js';
 
 const paymentGetMock = vi.fn();
+const preferenceCreateMock = vi.fn();
 
 vi.mock('mercadopago', () => {
     return {
         MercadoPagoConfig: class {},
         Preference: class {
-            create = vi.fn();
+            create = preferenceCreateMock;
         },
         PreApproval: class {},
         Payment: class {
@@ -45,6 +46,7 @@ describe('mercadoPagoController incremental migration -> centralized errorHandle
     afterEach(() => {
         vi.restoreAllMocks();
         paymentGetMock.mockReset();
+        preferenceCreateMock.mockReset();
     });
 
     it('delegates createCheckoutLink required-field validation to standardized 400 contract', async () => {
@@ -58,16 +60,32 @@ describe('mercadoPagoController incremental migration -> centralized errorHandle
         expect(capturedError).toBeInstanceOf(Error);
         expect(statusCallsBeforeHandler).toBe(0);
         expect(jsonCallsBeforeHandler).toBe(0);
-        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'Faltan campos requeridos (userId, planType)',
-            message: 'Faltan campos requeridos (userId, planType)',
-            code: 'MP_CHECKOUT_VALIDATION_ERROR'
+            error: 'Autenticación requerida',
+            message: 'Autenticación requerida',
+            code: 'MP_CHECKOUT_AUTH_REQUIRED'
         });
     });
 
+    it('uses authenticated user id and ignores body.userId in external_reference', async () => {
+        preferenceCreateMock.mockResolvedValue({ init_point: 'https://mp.test/init' });
+
+        const req = {
+            auth: { userId: 'auth-user-1' },
+            body: { userId: 'tampered-user', planType: 'weekly', userEmail: 'a@test.com' }
+        };
+        const res = createResponse();
+
+        await mercadoPagoController.createCheckoutLink(req, res, vi.fn());
+
+        expect(preferenceCreateMock).toHaveBeenCalledTimes(1);
+        expect(preferenceCreateMock.mock.calls[0][0].body.external_reference).toBe('userId:auth-user-1|planType:weekly');
+        expect(res.json).toHaveBeenCalledWith({ init_point: 'https://mp.test/init' });
+    });
+
     it('delegates createCheckoutLink unknown plan flow to standardized 400 contract', async () => {
-        const req = { body: { userId: 10, planType: 'invalid_plan' } };
+        const req = { auth: { userId: 'u-10' }, body: { userId: 10, planType: 'invalid_plan' } };
 
         const { res, capturedError, statusCallsBeforeHandler, jsonCallsBeforeHandler } = await runThroughErrorHandler(
             mercadoPagoController.createCheckoutLink,
