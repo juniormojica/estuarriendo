@@ -4,6 +4,7 @@ import { badRequest, notFound, unauthorized } from '../errors/AppError.js';
 import { Op } from 'sequelize';
 import * as propertyService from '../services/propertyService.js';
 import { ensureOwnUserOrAdmin } from '../utils/authorization.js';
+import { sanitizePublicProperty, sanitizePublicPropertyList } from '../services/publicPropertySanitizer.js';
 
 /**
  * Property Controller
@@ -104,10 +105,11 @@ export const getAllProperties = async (req, res, next) => {
         };
 
         const result = await propertyService.findPropertiesWithAssociations(filters, options);
+        const sanitizedRows = sanitizePublicPropertyList(result.rows);
 
         res.json({
             success: true,
-            data: result.rows,
+            data: sanitizedRows,
             count: result.count,
             limit: parseInt(limit),
             offset: parseInt(offset)
@@ -131,6 +133,10 @@ export const getPropertyById = async (req, res, next) => {
             return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
         }
 
+        if (property.status !== PropertyStatus.APPROVED) {
+            return next(notFound('Propiedad no encontrada', { code: 'PROPERTY_NOT_FOUND' }));
+        }
+
         // Increment views count
         await property.increment('viewsCount');
 
@@ -145,7 +151,7 @@ export const getPropertyById = async (req, res, next) => {
             });
         }
 
-        res.json(property);
+        res.json(sanitizePublicProperty(property));
     } catch (error) {
         next(error);
     }
@@ -156,11 +162,11 @@ export const getUserProperties = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
-        // Import necessary models
-        const { PropertyImage, Amenity } = await import('../models/index.js');
-
         const result = await propertyService.findPropertiesWithAssociations(
-            { ownerId: userId },
+            {
+                ownerId: userId,
+                status: PropertyStatus.APPROVED
+            },
             {
                 order: [['createdAt', 'DESC']],
                 // Include units for containers
@@ -168,9 +174,11 @@ export const getUserProperties = async (req, res, next) => {
             }
         );
 
+        const sanitizedRows = sanitizePublicPropertyList(result.rows);
+
         res.json({
             success: true,
-            data: result.rows
+            data: sanitizedRows
         });
     } catch (error) {
         next(error);
