@@ -113,7 +113,7 @@ describe('notificationController incremental migration -> centralized errorHandl
         });
     });
 
-    it('delegates markAsRead missing-notification flow to centralized handler', async () => {
+    it('fails closed with 401 when markAsRead is called without req.auth', async () => {
         vi.spyOn(Notification, 'findByPk').mockResolvedValue(null);
 
         const req = { params: { id: '404' } };
@@ -125,15 +125,15 @@ describe('notificationController incremental migration -> centralized errorHandl
         expect(capturedError).toBeInstanceOf(Error);
         expect(statusCallsBeforeHandler).toBe(0);
         expect(jsonCallsBeforeHandler).toBe(0);
-        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'Notification not found',
-            message: 'Notification not found',
-            code: 'NOTIFICATION_NOT_FOUND'
+            error: 'Autenticación requerida',
+            message: 'Autenticación requerida',
+            code: 'NOTIFICATION_AUTH_REQUIRED'
         });
     });
 
-    it('delegates deleteNotification missing-notification flow to centralized handler', async () => {
+    it('fails closed with 401 when deleteNotification is called without req.auth', async () => {
         vi.spyOn(Notification, 'findByPk').mockResolvedValue(null);
 
         const req = { params: { id: '404' } };
@@ -145,15 +145,15 @@ describe('notificationController incremental migration -> centralized errorHandl
         expect(capturedError).toBeInstanceOf(Error);
         expect(statusCallsBeforeHandler).toBe(0);
         expect(jsonCallsBeforeHandler).toBe(0);
-        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'Notification not found',
-            message: 'Notification not found',
-            code: 'NOTIFICATION_NOT_FOUND'
+            error: 'Autenticación requerida',
+            message: 'Autenticación requerida',
+            code: 'NOTIFICATION_AUTH_REQUIRED'
         });
     });
 
-    it('delegates getUserNotifications unexpected errors to centralized internal-error contract', async () => {
+    it('fails closed with 401 when getUserNotifications is called without req.auth', async () => {
         vi.spyOn(Notification, 'findAll').mockRejectedValue(new Error('query exploded'));
 
         const req = { params: { userId: '1' }, query: {} };
@@ -165,11 +165,11 @@ describe('notificationController incremental migration -> centralized errorHandl
         expect(capturedError).toBeInstanceOf(Error);
         expect(statusCallsBeforeHandler).toBe(0);
         expect(jsonCallsBeforeHandler).toBe(0);
-        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'Error interno del servidor',
-            message: 'Error interno del servidor',
-            code: 'INTERNAL_SERVER_ERROR'
+            error: 'Autenticación requerida',
+            message: 'Autenticación requerida',
+            code: 'NOTIFICATION_AUTH_REQUIRED'
         });
     });
 });
