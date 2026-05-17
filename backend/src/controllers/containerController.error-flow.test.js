@@ -139,9 +139,12 @@ describe('containerController deleteUnit migrated flow -> errorHandler', () => {
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk')
+            .mockResolvedValueOnce({ id: 'u-500', parentId: 'c-1' })
+            .mockResolvedValueOnce({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'deleteUnit').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { id: 'u-500' } };
+        const req = { params: { id: 'u-500' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -175,9 +178,12 @@ describe('containerController updateUnitRentalStatus migrated flow -> errorHandl
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk')
+            .mockResolvedValueOnce({ id: 'u-500', parentId: 'c-1' })
+            .mockResolvedValueOnce({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'updateUnitRentalStatus').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { id: 'u-500' }, body: { isRented: true } };
+        const req = { params: { id: 'u-500' }, body: { isRented: true }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -205,9 +211,12 @@ describe('containerController updateUnitRentalStatus migrated flow -> errorHandl
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(Property, 'findByPk')
+            .mockResolvedValueOnce({ id: 'u-500', parentId: 'c-1' })
+            .mockResolvedValueOnce({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'updateUnitRentalStatus').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { id: 'u-500' }, body: { isRented: true } };
+        const req = { params: { id: 'u-500' }, body: { isRented: true }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -241,9 +250,10 @@ describe('containerController rentCompleteContainer migrated flow -> errorHandle
 
         const mockContainer = { id: 'c-1', title: 'Test Container', rentalMode: 'complete' };
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'rentCompleteContainer').mockResolvedValue(mockContainer);
 
-        const req = { params: { id: 'c-1' } };
+        const req = { params: { id: 'c-1' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         const next = vi.fn();
 
@@ -264,9 +274,10 @@ describe('containerController rentCompleteContainer migrated flow -> errorHandle
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'rentCompleteContainer').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { id: 'c-1' } };
+        const req = { params: { id: 'c-1' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -294,9 +305,10 @@ describe('containerController rentCompleteContainer migrated flow -> errorHandle
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'rentCompleteContainer').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { id: 'c-1' } };
+        const req = { params: { id: 'c-1' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -330,9 +342,10 @@ describe('containerController changeRentalMode migrated flow -> errorHandler', (
 
         const mockContainer = { id: 'c-1', title: 'Test Container', rentalMode: 'by_unit' };
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'changeToByUnitMode').mockResolvedValue(mockContainer);
 
-        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' } };
+        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         const next = vi.fn();
 
@@ -353,9 +366,10 @@ describe('containerController changeRentalMode migrated flow -> errorHandler', (
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'changeToByUnitMode').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' } };
+        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -384,7 +398,9 @@ describe('containerController changeRentalMode migrated flow -> errorHandler', (
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
 
-        const req = { params: { id: 'c-1' }, body: { mode: 'complete' } };
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
+
+        const req = { params: { id: 'c-1' }, body: { mode: 'complete' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -412,9 +428,10 @@ describe('containerController changeRentalMode migrated flow -> errorHandler', (
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'changeToByUnitMode').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' } };
+        const req = { params: { id: 'c-1' }, body: { mode: 'by_unit' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -468,8 +485,9 @@ describe('containerController deleteContainer migrated flow -> errorHandler', ()
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
         vi.spyOn(Property, 'findByPk').mockResolvedValue({ ownerId: 'other-user' });
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'current-user', userType: 'tenant' });
 
-        const req = { params: { id: 'c-403' }, userId: 'current-user' };
+        const req = { params: { id: 'c-403' }, auth: { userId: 'current-user' } };
         const res = await runThroughErrorHandler(containerController.deleteContainer, { req });
 
         expect(rollback).toHaveBeenCalledTimes(1);
@@ -478,7 +496,7 @@ describe('containerController deleteContainer migrated flow -> errorHandler', ()
         expect(res.json).toHaveBeenCalledWith({
             error: 'No autorizado para eliminar esta pensión/apartamento',
             message: 'No autorizado para eliminar esta pensión/apartamento',
-            code: 'FORBIDDEN'
+            code: 'CONTAINER_ACCESS_FORBIDDEN'
         });
     });
 
@@ -573,8 +591,9 @@ describe('containerController updateContainer migrated flow -> errorHandler', ()
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
         vi.spyOn(Property, 'findByPk').mockResolvedValue({ ownerId: 'other-user' });
+        vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'current-user', userType: 'tenant' });
 
-        const req = { params: { id: 'c-403' }, userId: 'current-user', body: {} };
+        const req = { params: { id: 'c-403' }, auth: { userId: 'current-user' }, body: {} };
         const res = await runThroughErrorHandler(containerController.updateContainer, { req });
 
         expect(rollback).toHaveBeenCalledTimes(1);
@@ -583,7 +602,7 @@ describe('containerController updateContainer migrated flow -> errorHandler', ()
         expect(res.json).toHaveBeenCalledWith({
             error: 'No autorizado para actualizar esta pensión/apartamento',
             message: 'No autorizado para actualizar esta pensión/apartamento',
-            code: 'FORBIDDEN'
+            code: 'CONTAINER_ACCESS_FORBIDDEN'
         });
     });
 
@@ -658,9 +677,10 @@ describe('containerController createUnit migrated flow -> errorHandler', () => {
 
         const mockUnit = { id: 'u-1', title: 'Habitación 1', parentId: 'c-1' };
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'createUnit').mockResolvedValue(mockUnit);
 
-        const req = { params: { containerId: 'c-1' }, body: { title: 'Habitación 1' } };
+        const req = { params: { containerId: 'c-1' }, body: { title: 'Habitación 1' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         const next = vi.fn();
 
@@ -681,9 +701,10 @@ describe('containerController createUnit migrated flow -> errorHandler', () => {
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: undefined });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'createUnit').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { containerId: 'c-1' }, body: { title: 'Habitación 1' } };
+        const req = { params: { containerId: 'c-1' }, body: { title: 'Habitación 1' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {
@@ -711,9 +732,10 @@ describe('containerController createUnit migrated flow -> errorHandler', () => {
         const commit = vi.fn().mockResolvedValue(undefined);
 
         vi.spyOn(sequelize, 'transaction').mockResolvedValue({ rollback, commit, finished: true });
+        vi.spyOn(Property, 'findByPk').mockResolvedValue({ id: 'c-1', ownerId: 'owner-1', isContainer: true });
         vi.spyOn(containerService, 'createUnit').mockRejectedValue(new Error('service error'));
 
-        const req = { params: { containerId: 'c-1' }, body: { title: 'Habitación 1' } };
+        const req = { params: { containerId: 'c-1' }, body: { title: 'Habitación 1' }, auth: { userId: 'owner-1' } };
         const res = createResponse();
         let capturedError;
         const next = vi.fn((error) => {

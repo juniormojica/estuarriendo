@@ -19,10 +19,10 @@ describe('propertyController ActivityLog parity', () => {
         vi.spyOn(propertyService, 'findPropertyWithAssociations').mockResolvedValue({ id: 'p-1' });
         const activitySpy = vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
 
-        const req = { params: { id: 'p-1' }, body: { status: 'pending' }, userId: 'u-1' };
+        const req = { params: { id: 'p-1' }, body: { status: 'pending' }, auth: { userId: 'u-1' }, userId: 'u-1' };
         const res = createRes();
 
-        await propertyController.updateProperty(req, res);
+        await propertyController.updateProperty(req, res, vi.fn());
 
         expect(activitySpy).toHaveBeenCalledWith(expect.objectContaining({
             type: 'property_updated',

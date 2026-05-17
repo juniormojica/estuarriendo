@@ -283,7 +283,7 @@ describe('propertyController create slice migrated flow -> errorHandler', () => 
     it('returns standard 404 JSON when createProperty forwards owner notFound AppError', async () => {
         vi.spyOn(User, 'findByPk').mockResolvedValue(null);
 
-        const req = { body: { ownerId: 'u-404', images: ['img-1'] } };
+        const req = { auth: { userId: 'u-404' }, body: { ownerId: 'u-404', images: ['img-1'] } };
         const res = await runThroughErrorHandler(propertyController.createProperty, { req });
 
         expect(res.status).toHaveBeenCalledWith(404);
@@ -297,7 +297,7 @@ describe('propertyController create slice migrated flow -> errorHandler', () => 
     it('returns standard 400 JSON when createProperty forwards missing-images AppError', async () => {
         vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1' });
 
-        const req = { body: { ownerId: 'u-1', images: [] } };
+        const req = { auth: { userId: 'u-1' }, body: { ownerId: 'u-1', images: [] } };
         const res = await runThroughErrorHandler(propertyController.createProperty, { req });
 
         expect(res.status).toHaveBeenCalledWith(400);
@@ -311,7 +311,7 @@ describe('propertyController create slice migrated flow -> errorHandler', () => 
     it('returns standard 400 JSON when createProperty forwards image-limit AppError', async () => {
         vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1' });
 
-        const req = { body: { ownerId: 'u-1', images: new Array(11).fill('img') } };
+        const req = { auth: { userId: 'u-1' }, body: { ownerId: 'u-1', images: new Array(11).fill('img') } };
         const res = await runThroughErrorHandler(propertyController.createProperty, { req });
 
         expect(res.status).toHaveBeenCalledWith(400);
@@ -326,7 +326,7 @@ describe('propertyController create slice migrated flow -> errorHandler', () => 
         vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1' });
         vi.spyOn(propertyService, 'createPropertyWithAssociations').mockRejectedValue(new Error('db down'));
 
-        const req = { body: { ownerId: 'u-1', images: ['img-1'], title: 'Depto Centro' } };
+        const req = { auth: { userId: 'u-1' }, body: { ownerId: 'u-1', images: ['img-1'], title: 'Depto Centro' } };
         const res = await runThroughErrorHandler(propertyController.createProperty, { req });
 
         expect(res.status).toHaveBeenCalledWith(500);

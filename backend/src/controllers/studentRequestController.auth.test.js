@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as studentRequestController from './studentRequestController.js';
-import { StudentRequest, User } from '../models/index.js';
+import { ActivityLog, StudentRequest, User } from '../models/index.js';
 import { UserType } from '../utils/enums.js';
 
 const createRes = () => {
@@ -159,6 +159,7 @@ describe('studentRequestController auth/IDOR guards', () => {
         it('uses auth.userId as studentId (ignores client-provided value)', async () => {
             mockUserFindByPk();
             vi.spyOn(StudentRequest, 'create').mockResolvedValue({ id: 'sr-1', studentId: OWNER.id });
+            vi.spyOn(ActivityLog, 'create').mockResolvedValue({ id: 'log-1' });
 
             const req = {
                 auth: { userId: OWNER.id },
