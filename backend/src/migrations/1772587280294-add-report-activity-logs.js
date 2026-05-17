@@ -28,7 +28,7 @@ module.exports = {
                 onDelete: 'CASCADE'
             },
             admin_id: {
-                type: Sequelize.UUID,
+                type: Sequelize.STRING(255),
                 allowNull: false,
                 references: {
                     model: 'users',

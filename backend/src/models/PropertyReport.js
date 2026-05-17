@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
+import { PropertyReportReason, PropertyReportStatus, getEnumValues } from '../utils/enums.js';
 
 /**
  * PropertyReport Model
@@ -43,7 +44,7 @@ const PropertyReport = sequelize.define('PropertyReport', {
         comment: 'Associated unlock to refund if confirmed'
     },
     reason: {
-        type: DataTypes.ENUM('already_rented', 'incorrect_info', 'scam', 'other'),
+        type: DataTypes.ENUM(...getEnumValues(PropertyReportReason)),
         allowNull: false
     },
     description: {
@@ -51,7 +52,7 @@ const PropertyReport = sequelize.define('PropertyReport', {
         allowNull: true
     },
     status: {
-        type: DataTypes.ENUM('pending', 'confirmed', 'rejected'),
+        type: DataTypes.ENUM(...getEnumValues(PropertyReportStatus)),
         allowNull: false,
         defaultValue: 'pending'
     },
