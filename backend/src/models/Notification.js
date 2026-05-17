@@ -75,7 +75,18 @@ const Notification = sequelize.define('Notification', {
 }, {
     tableName: 'notifications',
     underscored: true,
-    timestamps: false
+    timestamps: false,
+    indexes: [
+        {
+            fields: ['user_id']
+        },
+        {
+            fields: ['read']
+        },
+        {
+            fields: ['user_id', 'read']
+        }
+    ]
 });
 
 export default Notification;

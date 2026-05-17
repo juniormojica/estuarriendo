@@ -243,7 +243,24 @@ const Property = sequelize.define('Property', {
 }, {
     tableName: 'properties',
     underscored: true,
-    timestamps: false
+    timestamps: false,
+    indexes: [
+        {
+            fields: ['owner_id']
+        },
+        {
+            fields: ['location_id']
+        },
+        {
+            fields: ['type_id']
+        },
+        {
+            fields: ['status']
+        },
+        {
+            fields: ['is_container']
+        }
+    ]
 });
 
 
