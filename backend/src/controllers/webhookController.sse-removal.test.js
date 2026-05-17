@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ActivityLog, Subscription, User } from '../models/index.js';
+import { ActivityLog, CreditTransaction, Subscription, User } from '../models/index.js';
 import crypto from 'crypto';
 
 vi.mock('../services/notificationService.js', () => ({
@@ -29,6 +29,7 @@ describe('webhookController ActivityLog parity', () => {
     it('logs payment_auto_verified when approved payment is processed', async () => {
         const { handleMercadoPagoWebhook } = await import('./webhookController.js');
 
+        vi.spyOn(CreditTransaction, 'findOne').mockResolvedValue(null);
         vi.spyOn(ActivityLog, 'findOne').mockResolvedValue(null);
         vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1', name: 'Ana', premiumSince: null, update: vi.fn() });
         vi.spyOn(Subscription, 'create').mockResolvedValue({ id: 'sub-1' });
@@ -65,6 +66,7 @@ describe('webhookController ActivityLog parity', () => {
         const v1 = crypto.createHmac('sha256', process.env.MP_WEBHOOK_SECRET).update(manifest).digest('hex');
 
         const { handleMercadoPagoWebhook } = await import('./webhookController.js');
+        vi.spyOn(CreditTransaction, 'findOne').mockResolvedValue(null);
         vi.spyOn(ActivityLog, 'findOne').mockResolvedValue(null);
         vi.spyOn(User, 'findByPk').mockResolvedValue({ id: 'u-1', name: 'Ana', premiumSince: null, update: vi.fn() });
         vi.spyOn(Subscription, 'create').mockResolvedValue({ id: 'sub-1' });
