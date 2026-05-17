@@ -7,6 +7,10 @@
     "scripts": {
         "start": "node src/server.js",
         "dev": "nodemon src/server.js",
+        "db:migrate": "sequelize-cli db:migrate --config src/config/sequelize-cli.cjs --migrations-path src/migrations",
+        "db:migrate:undo": "sequelize-cli db:migrate:undo --config src/config/sequelize-cli.cjs --migrations-path src/migrations",
+        "db:migrate:status": "sequelize-cli db:migrate:status --config src/config/sequelize-cli.cjs --migrations-path src/migrations",
+        "db:smoke:migrations": "node scripts/dbSmokeMigrations.js",
         "seed": "node scripts/seed.js seed",
         "seed:drop": "node scripts/seed.js drop",
         "seed:reset": "node scripts/seed.js reset",
@@ -48,6 +52,7 @@
     "devDependencies": {
         "@faker-js/faker": "^10.1.0",
         "nodemon": "^3.0.2",
+        "sequelize-cli": "^6.6.2",
         "vitest": "^3.2.4"
     }
 }
