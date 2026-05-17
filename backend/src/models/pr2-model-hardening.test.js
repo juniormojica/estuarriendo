@@ -7,6 +7,8 @@ import ContactUnlock from './ContactUnlock.js';
 import City from './City.js';
 import Department from './Department.js';
 import Favorite from './Favorite.js';
+import ReportActivityLog from './ReportActivityLog.js';
+import { User } from './index.js';
 
 const indexFields = model => (model.options.indexes ?? []).map(index => index.fields.join(','));
 
@@ -53,5 +55,12 @@ describe('PR2 model hardening', () => {
     it('keeps Favorite uniqueness strategy unchanged in PR2', () => {
         expect(Favorite.primaryKeyAttributes).toEqual(expect.arrayContaining(['userId', 'propertyId']));
         expect(indexFields(Favorite)).toContain('user_id,property_id');
+    });
+
+    it('keeps ReportActivityLog admin relationship metadata aligned with users.id contract', () => {
+        expect(ReportActivityLog.rawAttributes.adminId.type.options.length).toBe(255);
+        expect(ReportActivityLog.rawAttributes.adminId.references).toEqual({ model: 'users', key: 'id' });
+
+        expect(User.associations.reportActivities.options.onDelete).toBe('CASCADE');
     });
 });

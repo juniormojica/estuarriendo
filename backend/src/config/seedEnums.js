@@ -5,103 +5,121 @@ import { sequelize } from './database.js';
  * This function is idempotent - it can be run multiple times safely
  * It will only create ENUMs if they don't already exist
  */
+export const enumDefinitions = [
+    {
+        name: 'enum_users_id_type',
+        values: ['CC', 'NIT', 'CE', 'Pasaporte'],
+        comment: 'Types of identification documents'
+    },
+    {
+        name: 'enum_users_owner_role',
+        values: ['individual', 'agency'],
+        comment: 'Owner types: individual or agency'
+    },
+    {
+        name: 'enum_users_user_type',
+        values: ['owner', 'tenant', 'admin', 'super_admin'],
+        comment: 'User roles in the system'
+    },
+    {
+        name: 'enum_users_payment_preference',
+        values: ['PSE', 'CreditCard', 'Nequi', 'Daviplata', 'BankTransfer', 'MercadoPago'],
+        comment: 'Available payment methods'
+    },
+    {
+        name: 'enum_users_verification_status',
+        values: ['not_submitted', 'in_progress', 'pending', 'verified', 'rejected'],
+        comment: 'User verification status'
+    },
+    {
+        name: 'enum_users_plan',
+        values: ['free', 'premium'],
+        comment: 'Subscription plan types'
+    },
+    {
+        name: 'enum_users_plan_type',
+        values: ['weekly', 'monthly', 'quarterly'],
+        comment: 'Subscription duration types'
+    },
+    {
+        name: 'enum_properties_type',
+        values: ['pension', 'habitacion', 'apartamento', 'aparta-estudio'],
+        comment: 'Types of properties available'
+    },
+    {
+        name: 'enum_properties_status',
+        values: ['pending', 'approved', 'rejected'],
+        comment: 'Property approval status'
+    },
+    {
+        name: 'enum_payment_requests_plan_type',
+        values: ['weekly', 'monthly', 'quarterly'],
+        comment: 'Subscription duration types for payment requests'
+    },
+    {
+        name: 'enum_payment_requests_status',
+        values: ['pending', 'verified', 'rejected'],
+        comment: 'Payment request processing status'
+    },
+    {
+        name: 'enum_notifications_type',
+        values: [
+            'property_interest',
+            'payment_verified',
+            'payment_rejected',
+            'payment_submitted',
+            'property_submitted',
+            'property_approved',
+            'property_rejected',
+            'verification_doc_submitted',
+            'verification_doc_approved',
+            'verification_doc_rejected',
+            'verification_submitted',
+            'verification_approved',
+            'verification_rejected',
+            'credit_purchased',
+            'credit_used',
+            'credit_refunded',
+            'property_reported',
+            'report_resolved'
+        ],
+        comment: 'Types of user notifications'
+    },
+    {
+        name: 'enum_student_requests_property_type_desired',
+        values: ['pension', 'habitacion', 'apartamento', 'aparta-estudio'],
+        comment: 'Desired property type for student requests'
+    },
+    {
+        name: 'enum_student_requests_status',
+        values: ['open', 'closed'],
+        comment: 'Student request status'
+    },
+    {
+        name: 'enum_contact_unlocks_status',
+        values: ['active', 'refunded'],
+        comment: 'Contact unlock lifecycle status'
+    },
+    {
+        name: 'enum_property_reports_reason',
+        values: ['already_rented', 'incorrect_info', 'scam', 'other'],
+        comment: 'Reasons users can report a property'
+    },
+    {
+        name: 'enum_property_reports_status',
+        values: ['pending', 'investigating', 'confirmed', 'rejected'],
+        comment: 'Property report workflow status'
+    },
+    {
+        name: 'enum_report_activity_logs_action',
+        values: ['contact_attempt', 'note_added', 'owner_contacted', 'owner_confirmed_rented', 'owner_denied', 'confirmed', 'rejected'],
+        comment: 'Admin actions logged for property report review'
+    }
+];
+
 export const seedEnums = async () => {
     try {
         console.log('🌱 Seeding database ENUM types...');
-
-        // Define all ENUM types with their values
-        const enumDefinitions = [
-            {
-                name: 'enum_users_id_type',
-                values: ['CC', 'NIT', 'CE', 'Pasaporte'],
-                comment: 'Types of identification documents'
-            },
-            {
-                name: 'enum_users_owner_role',
-                values: ['individual', 'agency'],
-                comment: 'Owner types: individual or agency'
-            },
-            {
-                name: 'enum_users_user_type',
-                values: ['owner', 'tenant', 'admin', 'super_admin'],
-                comment: 'User roles in the system'
-            },
-            {
-                name: 'enum_users_payment_preference',
-                values: ['PSE', 'CreditCard', 'Nequi', 'Daviplata', 'BankTransfer'],
-                comment: 'Available payment methods'
-            },
-            {
-                name: 'enum_users_verification_status',
-                values: ['not_submitted', 'pending', 'verified', 'rejected'],
-                comment: 'User verification status'
-            },
-            {
-                name: 'enum_users_plan',
-                values: ['free', 'premium'],
-                comment: 'Subscription plan types'
-            },
-            {
-                name: 'enum_users_plan_type',
-                values: ['weekly', 'monthly', 'quarterly'],
-                comment: 'Subscription duration types'
-            },
-            {
-                name: 'enum_properties_type',
-                values: ['pension', 'habitacion', 'apartamento', 'aparta-estudio'],
-                comment: 'Types of properties available'
-            },
-            {
-                name: 'enum_properties_status',
-                values: ['pending', 'approved', 'rejected'],
-                comment: 'Property approval status'
-            },
-            {
-                name: 'enum_payment_requests_plan_type',
-                values: ['weekly', 'monthly', 'quarterly'],
-                comment: 'Subscription duration types for payment requests'
-            },
-            {
-                name: 'enum_payment_requests_status',
-                values: ['pending', 'verified', 'rejected'],
-                comment: 'Payment request processing status'
-            },
-            {
-                name: 'enum_notifications_type',
-                values: ['property_interest', 'payment_verified', 'property_approved', 'property_rejected'],
-                comment: 'Types of user notifications'
-            },
-            {
-                name: 'enum_student_requests_property_type_desired',
-                values: ['pension', 'habitacion', 'apartamento', 'aparta-estudio'],
-                comment: 'Desired property type for student requests'
-            },
-            {
-                name: 'enum_student_requests_status',
-                values: ['open', 'closed'],
-                comment: 'Student request status'
-            },
-            {
-                name: 'enum_contact_unlocks_status',
-                values: ['active', 'refunded'],
-                comment: 'Contact unlock lifecycle status'
-            },
-            {
-                name: 'enum_property_reports_reason',
-                values: ['already_rented', 'incorrect_info', 'scam', 'other'],
-                comment: 'Reasons users can report a property'
-            },
-            {
-                name: 'enum_property_reports_status',
-                values: ['pending', 'investigating', 'confirmed', 'rejected'],
-                comment: 'Property report workflow status'
-            },
-            {
-                name: 'enum_report_activity_logs_action',
-                values: ['contact_attempt', 'note_added', 'owner_contacted', 'owner_confirmed_rented', 'owner_denied', 'confirmed', 'rejected'],
-                comment: 'Admin actions logged for property report review'
-            }
-        ];
 
         // Create each ENUM type if it doesn't exist
         for (const enumDef of enumDefinitions) {
@@ -146,26 +164,7 @@ export const dropAllEnums = async () => {
     try {
         console.log('🗑️  Dropping all ENUM types...');
 
-        const enumNames = [
-            'enum_users_id_type',
-            'enum_users_owner_role',
-            'enum_users_user_type',
-            'enum_users_payment_preference',
-            'enum_users_verification_status',
-            'enum_users_plan',
-            'enum_users_plan_type',
-            'enum_properties_type',
-            'enum_properties_status',
-            'enum_payment_requests_plan_type',
-            'enum_payment_requests_status',
-            'enum_notifications_type',
-            'enum_student_requests_property_type_desired',
-            'enum_student_requests_status',
-            'enum_contact_unlocks_status',
-            'enum_property_reports_reason',
-            'enum_property_reports_status',
-            'enum_report_activity_logs_action'
-        ];
+        const enumNames = enumDefinitions.map(({ name }) => name);
 
         for (const enumName of enumNames) {
             await sequelize.query(`DROP TYPE IF EXISTS ${enumName} CASCADE;`);
