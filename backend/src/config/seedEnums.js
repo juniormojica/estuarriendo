@@ -80,6 +80,26 @@ export const seedEnums = async () => {
                 name: 'enum_student_requests_status',
                 values: ['open', 'closed'],
                 comment: 'Student request status'
+            },
+            {
+                name: 'enum_contact_unlocks_status',
+                values: ['active', 'refunded'],
+                comment: 'Contact unlock lifecycle status'
+            },
+            {
+                name: 'enum_property_reports_reason',
+                values: ['already_rented', 'incorrect_info', 'scam', 'other'],
+                comment: 'Reasons users can report a property'
+            },
+            {
+                name: 'enum_property_reports_status',
+                values: ['pending', 'investigating', 'confirmed', 'rejected'],
+                comment: 'Property report workflow status'
+            },
+            {
+                name: 'enum_report_activity_logs_action',
+                values: ['contact_attempt', 'note_added', 'owner_contacted', 'owner_confirmed_rented', 'owner_denied', 'confirmed', 'rejected'],
+                comment: 'Admin actions logged for property report review'
             }
         ];
 
@@ -140,7 +160,11 @@ export const dropAllEnums = async () => {
             'enum_payment_requests_status',
             'enum_notifications_type',
             'enum_student_requests_property_type_desired',
-            'enum_student_requests_status'
+            'enum_student_requests_status',
+            'enum_contact_unlocks_status',
+            'enum_property_reports_reason',
+            'enum_property_reports_status',
+            'enum_report_activity_logs_action'
         ];
 
         for (const enumName of enumNames) {

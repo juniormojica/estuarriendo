@@ -18,7 +18,7 @@ const ReportActivityLog = sequelize.define('ReportActivityLog', {
         }
     },
     adminId: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(255),
         allowNull: false,
         field: 'admin_id',
         references: {

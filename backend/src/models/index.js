@@ -490,6 +490,17 @@ ContactUnlock.belongsTo(User, {
     as: 'tenant'
 });
 
+// User (Owner) <-> ContactUnlock (One-to-Many)
+User.hasMany(ContactUnlock, {
+    foreignKey: 'ownerId',
+    as: 'ownedContactUnlocks',
+    onDelete: 'CASCADE'
+});
+ContactUnlock.belongsTo(User, {
+    foreignKey: 'ownerId',
+    as: 'owner'
+});
+
 // Property <-> ContactUnlock (One-to-Many)
 Property.hasMany(ContactUnlock, {
     foreignKey: 'propertyId',
@@ -548,7 +559,8 @@ ReportActivityLog.belongsTo(PropertyReport, {
 // User (Admin) <-> ReportActivityLog (One-to-Many)
 User.hasMany(ReportActivityLog, {
     foreignKey: 'adminId',
-    as: 'reportActivities'
+    as: 'reportActivities',
+    onDelete: 'CASCADE'
 });
 ReportActivityLog.belongsTo(User, {
     foreignKey: 'adminId',
