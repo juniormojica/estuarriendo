@@ -72,6 +72,12 @@ const ContactUnlock = sequelize.define('ContactUnlock', {
             unique: true,
             fields: ['tenant_id', 'property_id'],
             name: 'unique_tenant_property_unlock'
+        },
+        {
+            fields: ['owner_id']
+        },
+        {
+            fields: ['status']
         }
     ]
 });

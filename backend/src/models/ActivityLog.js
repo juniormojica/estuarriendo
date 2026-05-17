@@ -50,7 +50,15 @@ const ActivityLog = sequelize.define('ActivityLog', {
 }, {
     tableName: 'activity_log',
     underscored: true,
-    timestamps: false
+    timestamps: false,
+    indexes: [
+        {
+            fields: ['user_id']
+        },
+        {
+            fields: ['type']
+        }
+    ]
 });
 
 export default ActivityLog;

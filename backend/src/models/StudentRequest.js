@@ -108,7 +108,15 @@ const StudentRequest = sequelize.define('StudentRequest', {
 }, {
     tableName: 'student_requests',
     underscored: true,
-    timestamps: false
+    timestamps: false,
+    indexes: [
+        {
+            fields: ['city_id']
+        },
+        {
+            fields: ['status']
+        }
+    ]
 });
 
 export default StudentRequest;
