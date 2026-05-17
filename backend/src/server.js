@@ -2,10 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { env } from './config/env.js';
 
 import { sequelize, testConnection } from './config/database.js';
 import { seedEnums } from './config/seedEnums.js';
+import { bootstrapDatabaseSchema } from './config/schemaBootstrap.js';
 
 // Import all routes
 import authRoutes from './routes/authRoutes.js';
@@ -36,6 +40,23 @@ import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
 const PORT = env.port;
+const execFileAsync = promisify(execFile);
+const backendRoot = fileURLToPath(new URL('../', import.meta.url));
+
+const runMigrations = async () => {
+    await execFileAsync(
+        process.platform === 'win32' ? 'npx.cmd' : 'npx',
+        [
+            'sequelize-cli',
+            'db:migrate',
+            '--config',
+            'src/config/sequelize-cli.cjs',
+            '--migrations-path',
+            'src/migrations'
+        ],
+        { cwd: backendRoot }
+    );
+};
 
 // CORS configuration
 const corsOptions = {
@@ -159,18 +180,11 @@ const startServer = async () => {
     try {
         await testConnection();
 
-        // Seed ENUM types before syncing models
-        await seedEnums();
-
-        // Sync database
-        // Note: We use sync() without alter to avoid ENUM recreation conflicts
-        // ENUMs are managed separately via seedEnums()
-        if (env.nodeEnv === 'development') {
-            // Only create tables if they don't exist, don't alter existing ones
-            // This prevents Sequelize from trying to recreate ENUMs
-            await sequelize.sync({ force: false, alter: false });
-            console.log('✅ Database models synchronized');
-        }
+        await bootstrapDatabaseSchema({
+            sequelize,
+            seedEnums,
+            runMigrations
+        });
 
         // Start the plan expiration scheduler
         await startPlanScheduler();
